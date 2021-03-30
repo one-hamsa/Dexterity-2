@@ -38,8 +38,7 @@ namespace OneHamsa.Dexterity.Visual
                 new SearchTreeEntry(new GUIContent("Decision", _indentationIcon))
                 {
                     level = 1, userData = new DecisionNode()
-                },
-                new SearchTreeGroupEntry(new GUIContent("Misc."), 1),
+                }
             };
 
             return tree;

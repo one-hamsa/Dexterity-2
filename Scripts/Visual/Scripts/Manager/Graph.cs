@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity.Visual
     //. Don't confuse the nodes mentioned here with Dexterity.Visual.Node.
     public class Graph
     {
-        bool dirty;
+        protected bool dirty;
 
         // API and user-defined data
         protected HashSet<BaseField> nodes = new HashSet<BaseField>();
@@ -26,6 +26,7 @@ namespace OneHamsa.Dexterity.Visual
             nodes.Remove(node);
             dirty = true;
         }
+        public bool SetDirty() => dirty = true;
 
         // cached graph data
         protected List<BaseField> sortedNodes = new List<BaseField>();
@@ -38,13 +39,6 @@ namespace OneHamsa.Dexterity.Visual
         {
             // ask all nodes to refresh their edges
             RefreshEdges();
-
-            // dynamically calculate edges
-            if (!GetEdges())
-            {
-                Debug.LogError("Graph sort failed");
-                return;
-            }
 
             if (dirty)
             {
@@ -80,21 +74,6 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-
-        bool GetEdges()
-        {
-            foreach (var node in nodes)
-            {
-                if (node.isDirty)
-                {
-                    dirty = true;
-                    break;
-                }
-            }
-            return true;
-        }
-
-
         HashSet<BaseField> visited = new HashSet<BaseField>();
         Stack<(bool, BaseField)> dfs = new Stack<(bool, BaseField)>();
 
@@ -118,8 +97,6 @@ namespace OneHamsa.Dexterity.Visual
                     if (b)
                     {
                         sortedNodes.Add(n);
-                        // this is here just to save another iteration
-                        n.ClearDirty();
                         continue;
                     }
                     visited.Add(n);

@@ -28,40 +28,24 @@ namespace OneHamsa.Dexterity.Visual
             };
         }
 
-        public void SaveGraph(string fileName)
+        public void SaveData(StateFunction sfContainerObject)
         {
-            var sfContainerObject = ScriptableObject.CreateInstance<StateFunction>();
             if (!SaveNodes(sfContainerObject))
             {
                 Debug.LogError($"SaveNodes() failed");
                 return;
             }
-            SaveExposedProperties(sfContainerObject);
 
-            if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-                AssetDatabase.CreateFolder("Assets", "Resources");
-
-            UnityEngine.Object loadedAsset = AssetDatabase.LoadAssetAtPath($"Assets/Resources/{fileName}.asset", typeof(StateFunction));
-
-            if (loadedAsset == null || !AssetDatabase.Contains(loadedAsset))
-            {
-                AssetDatabase.CreateAsset(sfContainerObject, $"Assets/Resources/{fileName}.asset");
-            }
-            else
-            {
-                var container = loadedAsset as StateFunction;
-                container.NodeLinks = sfContainerObject.NodeLinks;
-                container.ConditionNodeData = sfContainerObject.ConditionNodeData;
-                container.DecisionNodeData = sfContainerObject.DecisionNodeData;
-                container.ExposedProperties = sfContainerObject.ExposedProperties;
-                EditorUtility.SetDirty(container);
-            }
-
+            EditorUtility.SetDirty(sfContainerObject);
             AssetDatabase.SaveAssets();
         }
 
         private bool SaveNodes(StateFunction sfContainerObject)
         {
+            sfContainerObject.NodeLinks.Clear();
+            sfContainerObject.ConditionNodeData.Clear();
+            sfContainerObject.DecisionNodeData.Clear();
+
             var connectedSockets = Edges.Where(x => x.input.node != null).ToArray();
             for (var i = 0; i < connectedSockets.Count(); i++)
             {
@@ -108,12 +92,6 @@ namespace OneHamsa.Dexterity.Visual
             return true;
         }
 
-        private void SaveExposedProperties(StateFunction sfContainer)
-        {
-            sfContainer.ExposedProperties.Clear();
-            sfContainer.ExposedProperties.AddRange(_graphView.ExposedProperties);
-        }
-
         public void LoadData(string fileName) => LoadData(Resources.Load<StateFunction>(fileName));
         public void LoadData(StateFunction container)
         {
@@ -127,7 +105,6 @@ namespace OneHamsa.Dexterity.Visual
             ClearGraph();
             GenerateNodes();
             ConnectNodes();
-            AddExposedProperties();
         }
 
         /// <summary>
@@ -184,15 +161,6 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     Debug.Log($"bn = {baseNode.title} bp= {basePort}, tn = {targetNode.title} tp = {targetPort}");
                 }
-            }
-        }
-
-        private void AddExposedProperties()
-        {
-            _graphView.ClearBlackBoardAndExposedProperties();
-            foreach (var exposedProperty in _sfContainer.ExposedProperties)
-            {
-                _graphView.AddPropertyToBlackBoard(exposedProperty);
             }
         }
     }

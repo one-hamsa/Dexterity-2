@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.Callbacks;
-using UnityEditor.Experimental.GraphView;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,24 +10,18 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : EditorWindow
     {
-        private string _fileName = "New State Function";
-
         private StateFunctionGraphView _graphView;
-        private StateFunction _sfContainer;
-        private TextField _fileNameTextField;
+        public StateFunction data;
 
-        public event Action OnRefresh;
-
-        public static void CreateGraphViewWindow(StateFunction data = null)
+        public static void CreateGraphViewWindow(StateFunction data)
         {
             var window = GetWindow<StateFunctionGraph>();
-            window.titleContent = new GUIContent("State Function Graph");
-            if (data != null)
-            {
-                window._fileNameTextField.SetValueWithoutNotify(data.name);
-                var saveUtility = GraphSaveUtility.GetInstance(window._graphView);
-                saveUtility.LoadData(data);
-            }
+            window.data = data;
+            window.titleContent = new GUIContent("State Function");
+            window.Setup();
+
+            var saveUtility = GraphSaveUtility.GetInstance(window._graphView);
+            saveUtility.LoadData(data);
         }
 
         [OnOpenAsset(1)]
@@ -46,93 +36,79 @@ namespace OneHamsa.Dexterity.Visual
             return false;
         }
 
-        private void ConstructGraphView()
+        Button _saveButton, _discardButton;
+        bool showInspector = true;
+        private void Setup()
         {
+            rootVisualElement.Clear();
+
             _graphView = new StateFunctionGraphView(this)
             {
-                name = "State Function Graph",
+                name = "State Function",
             };
-            _graphView.StretchToParentSize();
             rootVisualElement.Add(_graphView);
-        }
 
-        private void GenerateToolbar()
-        {
+            _saveButton = new Button(Save) { text = "Save" };
+            _discardButton = new Button(Discard) { text = "Discard" };
             var toolbar = new Toolbar();
-
-            _fileNameTextField = new TextField("File Name:");
-            _fileNameTextField.SetValueWithoutNotify(_fileName);
-            _fileNameTextField.MarkDirtyRepaint();
-            _fileNameTextField.RegisterValueChangedCallback(evt => _fileName = evt.newValue);
-            toolbar.Add(_fileNameTextField);
-            toolbar.Add(new Button(() => RequestDataOperation(true)) {text = "Save"});
-            toolbar.Add(new Button(() => RequestDataOperation(false)) { text = "Load" });
-            toolbar.Add(new Button(() => OnRefresh?.Invoke()) { text = "Refresh" });
+            toolbar.Add(_saveButton);
+            toolbar.Add(_discardButton);
+            toolbar.Add(new Button(() => showInspector = !showInspector) { text = "Toggle Inspector" });
             rootVisualElement.Add(toolbar);
+            RecycleInspector();
         }
 
-        private void RequestDataOperation(bool save)
+        private void OnGUI()
         {
-            if (!string.IsNullOrEmpty(_fileName))
-            {
-                var saveUtility = GraphSaveUtility.GetInstance(_graphView);
-                if (save)
-                    saveUtility.SaveGraph(_fileName);
-                else
-                    saveUtility.LoadData(_fileName);
-            }
-            else
-            {
-                EditorUtility.DisplayDialog("Invalid File name", "Please Enter a valid filename", "OK");
-            }
+            _graphView.ClearClassList();
+            _graphView.AddToClassList(showInspector ? "inspector" : "noInspector");
+
+            if (!showInspector)
+                return;
+
+            GUILayout.BeginArea(new Rect(new Vector2(position.width * .75f, 0), 
+                new Vector2(position.width * .25f, position.height)));
+            GUILayout.BeginScrollView(default);
+            embeddedInspector.ShowInspectorGUI(false);
+            GUILayout.EndScrollView();
+            GUILayout.EndArea();
         }
 
-        private void OnEnable()
-        {
-            ConstructGraphView();
-            GenerateToolbar();
-            //GenerateMiniMap();
-            //GenerateBlackBoard();
-        }
+        StateFunctionEditor embeddedInspector;
 
-        private void GenerateMiniMap()
+        // a helper method that destroys the current inspector instance before creating a new one
+        // use this in place of "Editor.CreateEditor"
+        void RecycleInspector()
         {
-            var miniMap = new MiniMap {anchored = true};
-            var cords = _graphView.contentViewContainer.WorldToLocal(new Vector2(this.maxSize.x - 10, 30));
-            miniMap.SetPosition(new Rect(cords.x, cords.y, 200, 140));
-            _graphView.Add(miniMap);
-        }
-
-        private void GenerateBlackBoard()
-        {
-            var blackboard = new Blackboard(_graphView);
-            blackboard.Add(new BlackboardSection {title = "Exposed Variables"});
-            blackboard.addItemRequested = _blackboard =>
-            {
-                _graphView.AddPropertyToBlackBoard(ExposedProperty.CreateInstance(), false);
-            };
-            blackboard.editTextRequested = (_blackboard, element, newValue) =>
-            {
-                var oldPropertyName = ((BlackboardField) element).text;
-                if (_graphView.ExposedProperties.Any(x => x.PropertyName == newValue))
-                {
-                    EditorUtility.DisplayDialog("Error", "This property name already exists, please chose another one.",
-                        "OK");
-                    return;
-                }
-
-                var targetIndex = _graphView.ExposedProperties.FindIndex(x => x.PropertyName == oldPropertyName);
-                _graphView.ExposedProperties[targetIndex].PropertyName = newValue;
-                ((BlackboardField) element).text = newValue;
-            };
-            blackboard.SetPosition(new Rect(10,30,200,300));
-            _graphView.Add(blackboard);
-            _graphView.Blackboard = blackboard;
+            if (embeddedInspector != null) DestroyImmediate(embeddedInspector);
+            embeddedInspector = (StateFunctionEditor)Editor.CreateEditor(data);
         }
 
         private void OnDisable()
         {
-            rootVisualElement.Remove(_graphView);
+            rootVisualElement.Clear();
+            if (embeddedInspector != null) DestroyImmediate(embeddedInspector);
+        }
+
+        private void Update()
+        {
+            var dirty = EditorUtility.IsDirty(data);
+            titleContent.text = $"{(dirty ? "*" : "")}State Function ({data.name})";
+            _saveButton.SetEnabled(dirty);
+            _discardButton.SetEnabled(dirty);
+        }
+
+        void Save()
+        {
+            var saveUtility = GraphSaveUtility.GetInstance(_graphView);
+            saveUtility.SaveData(data);
+        }
+
+        void Discard()
+        {
+            var saveUtility = GraphSaveUtility.GetInstance(_graphView);
+            saveUtility.LoadData(data);
+            EditorUtility.ClearDirty(data);
         }
     }
 }

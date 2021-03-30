@@ -19,7 +19,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             serializedObject.Update();
 
-            var functions = Manager.Instance.StateFunctions.Select(f => f.name).ToArray();
+            var functions = Manager.Instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
             var stateFunctionProperty = serializedObject.FindProperty("stateFunction");
 
             var customProps = new List<SerializedProperty>();

@@ -13,28 +13,12 @@ namespace OneHamsa.Dexterity.Visual
         private readonly HashSet<BaseField> upstreamFields = new HashSet<BaseField>();
 
         /// <summary>
-        /// marks whether a graph (dependency) re-sorting is required
-        /// </summary>
-        protected bool dirty;
-
-        /// <summary>
-        /// getter for dirty
-        /// </summary>
-        public bool isDirty => dirty;
-
-        /// <summary>
-        /// clears the dirty flag after graph sort
-        /// </summary>
-        /// <returns></returns>
-        public bool ClearDirty() => dirty = false;
-
-        /// <summary>
         /// adds an upstream field
         /// </summary>
         protected void AddUpstreamField(BaseField field)
         {
             upstreamFields.Add(field);
-            dirty = true;
+            Manager.Instance.SetDirty();
         }
         /// <summary>
         /// removes an existing upstream field
@@ -42,7 +26,7 @@ namespace OneHamsa.Dexterity.Visual
         protected void RemoveUpstreamField(BaseField field)
         {
             upstreamFields.Remove(field);
-            dirty = true;
+            Manager.Instance.SetDirty();
         }
         /// <summary>
         /// clears all upstream fields
@@ -50,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         protected void ClearUpstreamFields()
         {
             upstreamFields.Clear();
-            dirty = true;
+            Manager.Instance.SetDirty();
         }
 
         /// <summary>

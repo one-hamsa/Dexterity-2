@@ -18,8 +18,7 @@ namespace OneHamsa.Dexterity.Visual
 
         [SerializeField]
         private FieldDefinition[] fieldDefinitions;
-        [SerializeField]
-        private List<StateFunction> stateFunctions;
+        public List<StateFunction> stateFunctions;
 
         public FieldDefinition[] FieldDefinitions => fieldDefinitions;
         Dictionary<string, FieldDefinition> cachedFieldDefs = null;
@@ -42,12 +41,9 @@ namespace OneHamsa.Dexterity.Visual
             Debug.LogWarning($"No field definition for {name}");
             return null;
         }
-        public StateFunction[] StateFunctions => stateFunctions.Where(sf => sf != null).ToArray();
         public StateFunction GetStateFunction(string name) => stateFunctions
             .Where(sf => sf != null && sf.name == name)
             .First();
-
-        private static bool destroyed;
 
         // TODO improve singleton implementation (spawn first, die last)
         private static Manager instance;
@@ -55,7 +51,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             get
             {
-                if (instance == null && !destroyed)
+                if (instance == null)
                 {
                     instance = FindObjectOfType<Manager>();
                     if (instance == null)
@@ -71,6 +67,7 @@ namespace OneHamsa.Dexterity.Visual
         protected Graph graph = new Graph();
         public void RegisterField(BaseField field) => graph.AddNode(field);
         public void UnregisterField(BaseField field) => graph.RemoveNode(field);
+        public void SetDirty() => graph.SetDirty();
 
         public void Awake()
         {
@@ -88,7 +85,6 @@ namespace OneHamsa.Dexterity.Visual
             BuildCache();
         }
 
-        // Update is called once per frame
         void Update()
         {
             graph.Run();

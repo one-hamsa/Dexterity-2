@@ -1,3 +1,12 @@
+StateFunctionGraphView.inspector {
+    width: 75%;
+    height: 100%;
+}
+StateFunctionGraphView.noInspector {
+    width: 100%;
+    height: 100%;
+}
+
 GridBackground {
     --grid-background-color: #282828;
     --line-color: rgba(193, 196, 192, 0.1);

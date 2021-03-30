@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -16,15 +15,8 @@ namespace OneHamsa.Dexterity.Visual
     public class StateFunctionGraphView : GraphView
     {
         public readonly Vector2 DefaultNodeSize = new Vector2(200, 150);
-        public Blackboard Blackboard = new Blackboard();
-        public List<ExposedProperty> ExposedProperties { get; private set; } = new List<ExposedProperty>();
         private NodeSearchWindow _searchWindow;
-
-        StateFunctionGraph _parent;
-        void RegisterOnRefresh(UnityEditor.Experimental.GraphView.Node node, Action action)
-        {
-            _parent.OnRefresh += action;
-        }
+        private StateFunctionGraph _parent;
 
         public StateFunctionGraphView(StateFunctionGraph editorWindow)
         {
@@ -44,6 +36,18 @@ namespace OneHamsa.Dexterity.Visual
             _parent = editorWindow;
 
             RegisterCallback<MouseUpEvent>(OnMouseUp);
+            graphViewChanged = OnGraphChanged;
+        }
+
+        void SetDirty()
+        {
+            EditorUtility.SetDirty(_parent.data);
+        }
+
+        private GraphViewChange OnGraphChanged(GraphViewChange graphViewChange)
+        {
+            SetDirty();
+            return graphViewChange;
         }
 
         void OnMouseUp(MouseUpEvent evt)
@@ -66,46 +70,6 @@ namespace OneHamsa.Dexterity.Visual
                 SearchWindow.Open(new SearchWindowContext(context.screenMousePosition), _searchWindow);
         }
 
-
-        public void ClearBlackBoardAndExposedProperties()
-        {
-            ExposedProperties.Clear();
-            Blackboard.Clear();
-        }
-
-        public void AddPropertyToBlackBoard(ExposedProperty property, bool loadMode = false)
-        {
-            var localPropertyName = property.PropertyName;
-            var localPropertyValue = property.PropertyValue;
-            if (!loadMode)
-            {
-                while (ExposedProperties.Any(x => x.PropertyName == localPropertyName))
-                    localPropertyName = $"{localPropertyName}(1)";
-            }
-
-            var item = ExposedProperty.CreateInstance();
-            item.PropertyName = localPropertyName;
-            item.PropertyValue = localPropertyValue;
-            ExposedProperties.Add(item);
-
-            var container = new VisualElement();
-            var field = new BlackboardField {text = localPropertyName, typeText = "string"};
-            container.Add(field);
-
-            var propertyValueTextField = new TextField("Value:")
-            {
-                value = localPropertyValue
-            };
-            propertyValueTextField.RegisterValueChangedCallback(evt =>
-            {
-                var index = ExposedProperties.FindIndex(x => x.PropertyName == item.PropertyName);
-                ExposedProperties[index].PropertyValue = evt.newValue;
-            });
-            var sa = new BlackboardRow(field, propertyValueTextField);
-            container.Add(sa);
-            Blackboard.Add(container);
-        }
-
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
         {
             var compatiblePorts = new List<Port>();
@@ -123,6 +87,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public void CreateNewConditionNode(Vector2 position, string nodeName = "", string fieldName = "", bool entry = false)
         {
+            entry |= nodes.ToList().Where(n => n is ConditionNode).Count() == 0;
             AddElement(CreateConditionNode(position, nodeName, fieldName, entry));
         }
         public void CreateNewDecisionNode(Vector2 position, string nodeName = "", string stateName = "")
@@ -147,11 +112,12 @@ namespace OneHamsa.Dexterity.Visual
             checkbox.RegisterValueChangedCallback(evt =>
             {
                 tempNode.EntryPoint = evt.newValue;
-                Debug.Log(evt.newValue);
                 if (evt.newValue)
                     tempNode.AddToClassList("entry");
                 else
                     tempNode.RemoveFromClassList("entry");
+
+                SetDirty();
             });
             checkbox.value = entry;
             tempNode.titleButtonContainer.Add(checkbox);
@@ -170,6 +136,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 tempNode.FreeText = evt.newValue;
                 tempNode.title = GetConditionNodeTitle(tempNode);
+                SetDirty();
+
             });
             textField.SetValueWithoutNotify(tempNode.title);
             tempNode.mainContainer.Add(textField);
@@ -178,7 +146,6 @@ namespace OneHamsa.Dexterity.Visual
             tempNode.RefreshExpandedState();
 
             DrawConditionNodeDynamic(tempNode);
-            RegisterOnRefresh(tempNode, () => DrawConditionNodeDynamic(tempNode));
 
             return tempNode;
         }
@@ -289,6 +256,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 tempNode.FreeText = evt.newValue;
                 tempNode.title = GetDecisionNodeTitle(tempNode);
+                SetDirty();
             });
             freeTextField.SetValueWithoutNotify(tempNode.title);
             tempNode.mainContainer.Add(freeTextField);
@@ -300,6 +268,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 tempNode.State = evt.newValue;
                 tempNode.title = GetDecisionNodeTitle(tempNode);
+                SetDirty();
             });
             stateField.SetValueWithoutNotify(tempNode.State);
             tempNode.outputContainer.Add(stateField);

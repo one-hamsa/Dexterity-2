@@ -61,7 +61,7 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     // draw the options to the layout
                     GUILayout.Label(name.stringValue, EditorStyles.boldLabel);
-                    GUILayout.Label("First element is used as default", EditorStyles.helpBox);
+                    EditorGUILayout.HelpBox("First element is used as default", MessageType.None);
                     EditorGUILayout.PropertyField(values, GUIContent.none);
                 }
             }
@@ -89,10 +89,7 @@ namespace OneHamsa.Dexterity.Visual
                     continue;
                 if (!current.Validate())
                 {
-                    var origColor = GUI.color;
-                    GUI.color = Color.red;
-                    GUILayout.Label($"{current.name}: {current.ErrorString}", EditorStyles.helpBox);
-                    GUI.color = origColor;
+                    EditorGUILayout.HelpBox($"{current.name}: {current.ErrorString}", MessageType.Error);
                     errors++;
                 }
                 else
@@ -102,15 +99,10 @@ namespace OneHamsa.Dexterity.Visual
             }
             if (errors == 0 && validated > 0)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.green;
-                GUILayout.Label($"{validated} function(s) validated", EditorStyles.helpBox);
-                GUI.color = origColor;
-            }
-
-            if (GUILayout.Button("Open State Function Editor"))
-            {
-                StateFunctionGraph.CreateGraphViewWindow();
+                var origColor = GUI.backgroundColor;
+                GUI.backgroundColor = Color.green;
+                EditorGUILayout.HelpBox($"{validated} function(s) validated", MessageType.Info);
+                GUI.backgroundColor = origColor;
             }
 
             // We need to call this so that changes on the Inspector are saved by Unity.

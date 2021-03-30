@@ -2,17 +2,16 @@
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Text;
 
 namespace OneHamsa.Dexterity.Visual
 {
     [Serializable]
+    [CreateAssetMenu(fileName = "StateFunction", menuName = "Dexterity/State Function", order = 100)]
     public class StateFunction : ScriptableObject
     {
         public List<NodeLinkData> NodeLinks = new List<NodeLinkData>();
         public List<ConditionNodeData> ConditionNodeData = new List<ConditionNodeData>();
         public List<DecisionNodeData> DecisionNodeData = new List<DecisionNodeData>();
-        public List<ExposedProperty> ExposedProperties = new List<ExposedProperty>();
 
         public string ErrorString { get; private set; }
 
@@ -37,6 +36,7 @@ namespace OneHamsa.Dexterity.Visual
         public bool Validate()
         {
             InvalidateCache();
+            ErrorString = "";
 
             // start at entry point
             var entries = ConditionNodeData.Where(n => n.EntryPoint);
@@ -242,7 +242,7 @@ namespace OneHamsa.Dexterity.Visual
                     return;
                 }
             }
-            Debug.LogWarning($"Could not find entry point for state function {name}");
+            //Debug.LogWarning($"Could not find entry point for state function {name}");
         }
     }
 }
