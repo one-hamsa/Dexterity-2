@@ -347,5 +347,13 @@ namespace OneHamsa.Dexterity.Visual
             }
             overridesIncrement++;
         }
+
+#if UNITY_EDITOR
+        // update overrides every frame to allow setting overrides from editor
+        void LateUpdate()
+        {
+            CacheOverrides();
+        }
+#endif
     }
 }
