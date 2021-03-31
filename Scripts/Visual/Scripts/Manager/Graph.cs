@@ -106,23 +106,28 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     updateOperations++;
                     var (b, n) = dfs.Pop();
+                    onStack[n] = false;
 
                     if (b)
                     {
+                        // finish sorting for n
                         sortedNodes.Add(n);
-                        onStack[n] = false;
                         continue;
                     }
                     
-                    if (!visited.Add(n))
-                        onStack[n] = false;
-                    else
+                    if (visited.Add(n))
                     {
+                        // first-time visit, add to stack before pushing all dependencies
                         dfs.Push((true, n));
+                        // also, mark as "on stack". this will help track down cycles.
+                        //. if we later find this as a dependency WHILE this is still on stack,
+                        //. it means we have a cycle.
                         onStack[n] = true;
                     }
 
+                    // push all dependencies of n on top of the stack
                     if (!edges.TryGetValue(n, out var refs))
+                        // no dependencies, no need to push anything
                         continue;
 
                     foreach (var son in refs)
@@ -132,6 +137,7 @@ namespace OneHamsa.Dexterity.Visual
                             dfs.Push((false, son));
                         }
                         else if (onStack.TryGetValue(son, out var sonOnStack) && sonOnStack)
+                            // this is already a dependency somewhere on the stack, it means we have a cycle
                             return false;
                     }
                 }
