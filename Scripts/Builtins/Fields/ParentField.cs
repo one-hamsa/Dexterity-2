@@ -14,9 +14,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         Node parent = null;
 
         public override bool isProxy => true;
-        public override int GetValue() => parent.GetOutputField(FieldName).GetValue();
+        public override int GetValue() => parent != null ? parent.GetOutputField(FieldName).GetValue() : 0;
 
-        Transform[] parentsTransform;
+        List<Transform> parentsTransform = new List<Transform>();
 
         public override void RefreshReferences()
         {
@@ -27,28 +27,29 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     // traverse to check if the chain broke
                     var current = context.transform.parent;
                     var i = 0;
-                    while (current != null && i < parentsTransform.Length && current == parentsTransform[i])
+                    while (current != null && i < parentsTransform.Count && current == parentsTransform[i])
                     {
                         i++;
                         current = current.parent;
                     }
-                    if (current != null && i == parentsTransform.Length)
+                    if (current != null && i == parentsTransform.Count && i > 0)
                         // no need to update
                         return;
                 }
 
                 // save new references
                 parent = context.transform.parent.GetComponentInParent<Node>();
-                var currentParents = new List<Transform>();
+                parentsTransform.Clear();
+
+                if (parent != null)
                 {
                     var current = context.transform.parent;
                     while (current.gameObject != parent.gameObject)
                     {
-                        currentParents.Add(current);
+                        parentsTransform.Add(current);
                         current = current.parent;
                     }
                 }
-                parentsTransform = currentParents.ToArray();
             }
 
             ClearUpstreamFields();
