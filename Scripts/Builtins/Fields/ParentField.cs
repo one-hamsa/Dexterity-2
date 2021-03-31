@@ -17,34 +17,37 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override int GetValue() => parent != null ? parent.GetOutputField(FieldName).GetValue() : 0;
 
         List<Transform> parentsTransform = new List<Transform>();
-
         public override void RefreshReferences()
         {
             if (parent == null || UpdateParentReference)
             {
-                if (parent != null)
                 {
                     // traverse to check if the chain broke
                     var current = context.transform.parent;
-                    var i = 0;
-                    while (current != null && i < parentsTransform.Count && current == parentsTransform[i])
+
+                    // make sure you don't skip the update in case the cache is empty
+                    if (current == null || parentsTransform.Count > 0)
                     {
-                        i++;
-                        current = current.parent;
+                        var i = 0;
+                        while (current != null && i < parentsTransform.Count && current == parentsTransform[i])
+                        {
+                            i++;
+                            current = current.parent;
+                        }
+                        if (i == parentsTransform.Count)
+                            // no need to update
+                            return;
                     }
-                    if (current != null && i == parentsTransform.Count && i > 0)
-                        // no need to update
-                        return;
                 }
 
                 // save new references
                 parent = context.transform.parent.GetComponentInParent<Node>();
                 parentsTransform.Clear();
 
-                if (parent != null)
                 {
                     var current = context.transform.parent;
-                    while (current.gameObject != parent.gameObject)
+                    // save until the parent, or until the root if the parent is null
+                    while (current != null && (parent == null || current.gameObject != parent.gameObject))
                     {
                         parentsTransform.Add(current);
                         current = current.parent;
