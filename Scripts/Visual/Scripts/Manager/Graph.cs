@@ -20,7 +20,11 @@ namespace OneHamsa.Dexterity.Visual
 
 
         // API and user-defined data
-        protected HashSet<BaseField> nodes = new HashSet<BaseField>();
+        public HashSet<BaseField> nodes { get; } = new HashSet<BaseField>();
+        // (hopefully) pre-allocated data structures
+        public Dictionary<BaseField, HashSet<BaseField>> edges { get; } 
+            = new Dictionary<BaseField, HashSet<BaseField>>();
+
         public void AddNode(BaseField node)
         {
             nodes.Add(node);
@@ -36,9 +40,6 @@ namespace OneHamsa.Dexterity.Visual
 
         // cached graph data
         protected List<BaseField> sortedNodes = new List<BaseField>();
-
-        // (hopefully) pre-allocated data structures
-        Dictionary<BaseField, HashSet<BaseField>> edges = new Dictionary<BaseField, HashSet<BaseField>>();
 
         // updates the graph (if needed), then invokes the update functions for each field
         public void Run()

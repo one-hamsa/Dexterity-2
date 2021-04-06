@@ -62,9 +62,9 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 return instance;
             }
-        }
+        }   
 
-        protected Graph graph = new Graph();
+        public Graph graph { get; } = new Graph();
         public void RegisterField(BaseField field) => graph.AddNode(field);
         public void UnregisterField(BaseField field) => graph.RemoveNode(field);
         public void SetDirty() => graph.SetDirty();

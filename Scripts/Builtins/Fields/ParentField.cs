@@ -26,13 +26,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     var current = context.transform.parent;
 
                     // make sure you don't skip the update in case the cache is empty
-                    if (current == null || parentsTransform.Count > 0)
+                    if (parentsTransform.Count > 0)
                     {
                         var i = 0;
-                        while (current != null && i < parentsTransform.Count && current == parentsTransform[i])
+                        while (i < parentsTransform.Count && current == parentsTransform[i])
                         {
                             i++;
-                            current = current.parent;
+                            current = current?.parent;
                         }
                         if (i == parentsTransform.Count)
                             // no need to update
@@ -47,11 +47,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 {
                     var current = context.transform.parent;
                     // save until the parent, or until the root if the parent is null
-                    while (current != null && (parent == null || current.gameObject != parent.gameObject))
+                    do
                     {
                         parentsTransform.Add(current);
-                        current = current.parent;
+                        current = current?.parent;
                     }
+                    while (current != null && (parent == null || current.gameObject != parent.gameObject));
                 }
             }
 
