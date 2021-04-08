@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,6 +10,7 @@ namespace OneHamsa.Dexterity.Visual
     {
         public bool shouldUpdate = true;
         public float lastUpdateTime = -1;
+        public float updateTimeDelta = 1f;
         Graph graph => Manager.Instance.graph;
 
         public DebugGraphView(DebugWindow editorWindow)
@@ -21,21 +23,38 @@ namespace OneHamsa.Dexterity.Visual
             this.AddManipulator(new FreehandSelector());
         }
 
+
+        Dictionary<BaseField, FieldNode> shownNodes = new Dictionary<BaseField, FieldNode>();
         public void Update()
         {
-            if (!Application.isPlaying || !shouldUpdate || lastUpdateTime >= graph.lastSuccessfulUpdate)
+            if (!Application.isPlaying || !shouldUpdate || Time.time - updateTimeDelta < lastUpdateTime
+                || graph.lastSuccessfulUpdate <= lastUpdateTime)
                 return;
 
-            DeleteElements(edges.ToList());
-            DeleteElements(nodes.ToList());
-
+            HashSet<FieldNode> relevantNodes = new HashSet<FieldNode>();
             foreach (var node in graph.nodes)
             {
-                CreateNode(node);
+                if (!shownNodes.ContainsKey(node))
+                {
+                    shownNodes[node] = CreateNode(node);
+                }
+                relevantNodes.Add(shownNodes[node]);
             }
+            foreach (var node in nodes.ToList())
+            {
+                var fnode = node as FieldNode;
+                if (!relevantNodes.Contains(fnode))
+                {
+                    shownNodes.Remove(fnode.field);
+                    RemoveElement(fnode);
+                }
+            }
+
+
+            lastUpdateTime = Time.time;
         }
 
-        public void CreateNode(BaseField field)
+        internal FieldNode CreateNode(BaseField field)
         {
             var tempNode = new FieldNode(field);
 
@@ -45,12 +64,13 @@ namespace OneHamsa.Dexterity.Visual
             tempNode.RefreshExpandedState();
 
             AddElement(tempNode);
+            return tempNode;
         }
 
 
         internal class FieldNode : UnityEditor.Experimental.GraphView.Node
         {
-            private BaseField field;
+            internal BaseField field;
             public FieldNode(BaseField field) : base()
             {
                 this.field = field;
