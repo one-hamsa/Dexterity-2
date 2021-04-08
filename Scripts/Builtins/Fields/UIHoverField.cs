@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class UIHoverField : BaseField
     {
-        DexterityUIHoverFieldProvider provider;
+        DexterityUIHoverFieldProvider provider = null;
         public class DexterityUIHoverFieldProvider : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         {
             public bool Hover { get;  private set; }
@@ -22,6 +22,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             provider = context.gameObject.AddComponent<DexterityUIHoverFieldProvider>();
         }
 
-        public override int GetValue() => provider.Hover ? 1 : 0;
+        public override int GetValue() => (provider && provider.Hover) ? 1 : 0;
     }
 }

@@ -6,6 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Node")]
+    [DefaultExecutionOrder(Manager.NodeExecutionPriority)]
     public class Node : MonoBehaviour
     {
         public const int EMPTY_FIELD_VALUE = -1;

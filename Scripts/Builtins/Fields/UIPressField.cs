@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class UIPressField : BaseField
     {
-        DexterityUIPressFieldProvider provider;
+        DexterityUIPressFieldProvider provider = null;
         public class DexterityUIPressFieldProvider : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             public bool Click { get;  private set; }
@@ -23,6 +23,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             provider = context.gameObject.AddComponent<DexterityUIPressFieldProvider>();
         }
 
-        public override int GetValue() => provider.Click ? 1 : 0;
+        public override int GetValue() => (provider && provider.Click) ? 1 : 0;
     }
 }
