@@ -8,6 +8,9 @@ namespace OneHamsa.Dexterity.Visual
     [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Manager")]
     public class Manager : MonoBehaviour
     {
+        internal const int NodeExecutionPriority = 10;
+        internal const int ModifierExecutionPriority = 15;
+
         [Serializable]
         public struct FieldDefinition
         {

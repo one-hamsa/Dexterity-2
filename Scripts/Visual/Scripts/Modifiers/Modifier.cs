@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
+    [DefaultExecutionOrder(Manager.ModifierExecutionPriority)]
     public abstract class Modifier : MonoBehaviour
     {
         [SerializeField]
@@ -62,14 +63,7 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Start()
         {
-            if (!node)
-                node = GetComponentInParent<Node>();
-
-            if (!node)
-            {
-                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
-                enabled = false;
-            }
+            TryFindNode();
 
             if (string.IsNullOrEmpty(defaultState))
             {
@@ -86,19 +80,36 @@ namespace OneHamsa.Dexterity.Visual
             RegisterOutputEvents();
         }
 
+        void TryFindNode()
+        {
+            if (!node)
+                node = GetComponentInParent<Node>();
+
+            if (!node)
+            {
+                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
+                enabled = false;
+            }
+        }
+
         float stateChangeTime;
         bool isDirty = true;
 
         List<Node.OutputField> outputFields;
         protected virtual void OnEnable()
         {
+            TryFindNode();
             RegisterOutputEvents();
         }
 
         private void RegisterOutputEvents()
         {
             isDirty = true;
-            outputFields = stateFunction.GetFields().Select(f => node.GetOutputField(f)).ToList();
+            outputFields = new List<Node.OutputField>();
+            foreach (var f in stateFunction.GetFields())
+            {
+                outputFields.Add(node.GetOutputField(f));
+            }
             foreach (var field in outputFields)
             {
                 field.OnValueChanged += MarkStateDirty;
