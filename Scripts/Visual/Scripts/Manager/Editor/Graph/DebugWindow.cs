@@ -36,6 +36,18 @@ namespace OneHamsa.Dexterity.Visual
 
         private void Update()
         {
+            if (!Application.isPlaying)
+            {
+                var label = new Label("Enter Play Mode to watch debug graph");
+                label.style.unityTextAlign = TextAnchor.MiddleCenter;
+                label.style.flexGrow = 1;
+                label.style.fontSize = 25;
+
+                rootVisualElement.Clear();
+                rootVisualElement.Add(label);
+                return;
+            }
+
             _graphView.Update();
         }
     }
