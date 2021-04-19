@@ -141,6 +141,13 @@ namespace OneHamsa.Dexterity.Visual
                     foldedStates[state] = true;
             }
 
+            if (string.IsNullOrEmpty(defaultState.stringValue) && states.Count > 0)
+            {
+                var first = states.First();
+                Debug.LogWarning($"no default state selected, selecting first ({first})", target);
+                defaultState.stringValue = first;
+            }
+
             var activeState = (target as Modifier).ActiveState;
 
             // draw the editor for each value in property

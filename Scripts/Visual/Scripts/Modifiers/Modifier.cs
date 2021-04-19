@@ -68,7 +68,7 @@ namespace OneHamsa.Dexterity.Visual
             if (string.IsNullOrEmpty(defaultState))
             {
                 defaultState = properties[0].State;
-                Debug.LogWarning($"no default state selected, selecting first ({defaultState})");
+                Debug.LogWarning($"no default state selected, selecting first ({defaultState})", this);
             }
 
             lastState = defaultState;
