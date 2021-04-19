@@ -175,7 +175,7 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     value = Node.DEFAULT_FIELD_VALUE;
                 }
-                fields[field.Name] = value;
+                fields[field.name] = value;
             }
             return fields;
         }

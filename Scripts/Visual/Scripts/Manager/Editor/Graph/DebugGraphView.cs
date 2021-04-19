@@ -312,7 +312,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (field is Visual.Node.OutputField)
                 {
                     var fnode = field as Visual.Node.OutputField;
-                    return $"Output: {fnode.Name}";
+                    return $"Output: {fnode.name}";
                 }
                 return GetFieldType();
             }
@@ -395,7 +395,7 @@ namespace OneHamsa.Dexterity.Visual
 
                     var val = kv.Key.GetValue();
 
-                    var fd = Manager.Instance.GetFieldDefinition(kv.Key.Name);
+                    var fd = Manager.Instance.GetFieldDefinition(kv.Key.name);
                     if (fd.Value.Type == Node.FieldType.Boolean)
                     {
                         label.text = val == 1 ? "true" : "false";

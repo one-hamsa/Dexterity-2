@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity.Visual
             for (var i = 0; i < gatesProp.arraySize; ++i)
             {
                 var gateProp = gatesProp.GetArrayElementAtIndex(i);
-                var field = gateProp.FindPropertyRelative("OutputFieldName").stringValue;
+                var field = gateProp.FindPropertyRelative("outputFieldName").stringValue;
                 List<(int, SerializedProperty)> lst;
                 if (!gatesByField.TryGetValue(field, out lst))
                 {
@@ -65,8 +65,8 @@ namespace OneHamsa.Dexterity.Visual
                         gatesProp.arraySize++;
                         // override new value
                         var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                        newProp.FindPropertyRelative("OutputFieldName").stringValue = kv.Key;
-                        newProp.FindPropertyRelative("Field").managedReferenceValue = null;
+                        newProp.FindPropertyRelative("outputFieldName").stringValue = kv.Key;
+                        newProp.FindPropertyRelative("field").managedReferenceValue = null;
                     }
                 }
                 GUI.color = origColor;
@@ -77,7 +77,7 @@ namespace OneHamsa.Dexterity.Visual
                 foreach ((var i, var gateProp) in kv.Value)
                 {
                     // show output field dropdown
-                    var outputProp = gateProp.FindPropertyRelative("OutputFieldName");
+                    var outputProp = gateProp.FindPropertyRelative("outputFieldName");
                     var output = outputProp.stringValue;
                     var fields = Manager.Instance.FieldDefinitions.Select(f => f.Name).ToArray();
 
@@ -118,7 +118,7 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUILayout.EndHorizontal();
 
                     // show field (create new reference if doesnt exist)
-                    var fieldProp = gateProp.FindPropertyRelative("Field");
+                    var fieldProp = gateProp.FindPropertyRelative("field");
                     ShowReference(fieldProp);
 
                     DrawSeparator(Color.gray);
@@ -132,8 +132,8 @@ namespace OneHamsa.Dexterity.Visual
                 gatesProp.arraySize++;
                 // override new value
                 var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                newProp.FindPropertyRelative("OutputFieldName").stringValue = null;
-                newProp.FindPropertyRelative("Field").managedReferenceValue = null;
+                newProp.FindPropertyRelative("outputFieldName").stringValue = null;
+                newProp.FindPropertyRelative("field").managedReferenceValue = null;
             }
 
             if (deleteIndex != -1)
@@ -149,11 +149,11 @@ namespace OneHamsa.Dexterity.Visual
                 var p1 = gatesProp.GetArrayElementAtIndex(moveIndex.Item1);
                 var p2 = gatesProp.GetArrayElementAtIndex(moveIndex.Item2);
 
-                p2.FindPropertyRelative("OutputFieldName").stringValue = g1.OutputFieldName;
-                p2.FindPropertyRelative("Field").managedReferenceValue = g1.Field;
+                p2.FindPropertyRelative("outputFieldName").stringValue = g1.outputFieldName;
+                p2.FindPropertyRelative("field").managedReferenceValue = g1.field;
 
-                p1.FindPropertyRelative("OutputFieldName").stringValue = g2.OutputFieldName;
-                p1.FindPropertyRelative("Field").managedReferenceValue = g2.Field;
+                p1.FindPropertyRelative("outputFieldName").stringValue = g2.outputFieldName;
+                p1.FindPropertyRelative("field").managedReferenceValue = g2.field;
             }
         }
 
@@ -227,16 +227,16 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.Name))
+                if (overrides.ContainsKey(field.name))
                 {
-                    var outputOverride = overrides[field.Name];
+                    var outputOverride = overrides[field.name];
                     GUI.color = Color.magenta;
-                    strValue = $"{outputOverride.Value} ({StrikeThrough(strValue)})";
+                    strValue = $"{outputOverride.value} ({StrikeThrough(strValue)})";
                     unusedOverrides.Remove(outputOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.Name);
+                EditorGUILayout.LabelField(field.name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();
@@ -249,9 +249,9 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.color = Color.magenta;
                     
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(outputOverride.OutputFieldName);
+                EditorGUILayout.LabelField(outputOverride.outputFieldName);
                 GUILayout.FlexibleSpace();
-                EditorGUILayout.LabelField(outputOverride.Value.ToString());
+                EditorGUILayout.LabelField(outputOverride.value.ToString());
                 EditorGUILayout.EndHorizontal();
 
                 GUI.color = origColor;
