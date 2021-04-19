@@ -20,6 +20,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
+            if (TargetNode == null)
+            {
+                Debug.LogError($"target node == null", context);
+                throw new FieldInitializationException();
+            }
+
             string fieldName = FieldName;
             isNegated = FieldName[0] == '!';
             if (isNegated) {
