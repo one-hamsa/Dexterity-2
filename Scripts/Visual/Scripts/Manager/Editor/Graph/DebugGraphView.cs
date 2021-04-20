@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public DebugGraphView(DebugWindow editorWindow)
         {
-            styleSheets.Add(Resources.Load<StyleSheet>("Graph"));
+            styleSheets.Add(Resources.Load<StyleSheet>("DebugGraph"));
             SetupZoom(ContentZoomer.DefaultMinScale * 2, ContentZoomer.DefaultMaxScale * 2);
 
             this.AddManipulator(new ContentDragger());

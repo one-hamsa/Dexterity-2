@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public StateFunctionGraphView(StateFunctionGraph editorWindow)
         {
-            styleSheets.Add(Resources.Load<StyleSheet>("Graph"));
+            styleSheets.Add(Resources.Load<StyleSheet>("StateFunctionGraph"));
             SetupZoom(ContentZoomer.DefaultMinScale * 2, ContentZoomer.DefaultMaxScale * 2);
 
             this.AddManipulator(new ContentDragger());
