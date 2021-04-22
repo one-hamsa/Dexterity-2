@@ -1,5 +1,8 @@
-﻿using System;
+﻿using QuikGraph;
+using QuikGraph.Graphviz;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -28,6 +31,20 @@ namespace OneHamsa.Dexterity.Visual
             = new Dictionary<Visual.Node, GraphViewVisualNode>();
         Dictionary<BaseField, GraphViewFieldNode> shownFieldNodes 
             = new Dictionary<BaseField, GraphViewFieldNode>();
+
+        void Sort()
+        {
+            var dgraph = new AdjacencyGraph<UnityEditor.Experimental.GraphView.Node, Edge<UnityEditor.Experimental.GraphView.Node>>();
+            dgraph.AddVertexRange(nodes.ToList());
+            dgraph.AddEdgeRange(edges.ToList().Select(e => new Edge<UnityEditor.Experimental.GraphView.Node>(
+                e.input.node,
+                e.output.node
+            )));
+
+            var viz = dgraph.ToGraphviz();
+            Debug.Log(viz);
+        }
+
         public void Update()
         {
             if (!shouldUpdate)
@@ -110,6 +127,8 @@ namespace OneHamsa.Dexterity.Visual
                 node.RefreshPorts();
                 node.RefreshExpandedState();
             }
+
+            Sort();
 
             lastUpdateTime = Time.time;
         }
