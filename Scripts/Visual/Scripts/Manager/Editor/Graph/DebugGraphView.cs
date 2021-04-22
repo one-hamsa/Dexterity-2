@@ -1,11 +1,13 @@
 ﻿using QuikGraph;
 using QuikGraph.Graphviz;
+using Rubjerg.Graphviz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityGraphNode = UnityEditor.Experimental.GraphView.Node;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -34,15 +36,28 @@ namespace OneHamsa.Dexterity.Visual
 
         void Sort()
         {
-            var dgraph = new AdjacencyGraph<UnityEditor.Experimental.GraphView.Node, Edge<UnityEditor.Experimental.GraphView.Node>>();
+            // TODO check out ClusteredAdjacencyGraph once you have UnionFind
+            var dgraph = new AdjacencyGraph<UnityGraphNode, Edge<UnityGraphNode>>();
             dgraph.AddVertexRange(nodes.ToList());
-            dgraph.AddEdgeRange(edges.ToList().Select(e => new Edge<UnityEditor.Experimental.GraphView.Node>(
-                e.input.node,
-                e.output.node
+            dgraph.AddEdgeRange(edges.ToList().Select(e => new Edge<UnityGraphNode>(
+                e.output.node,
+                e.input.node
             )));
 
-            var viz = dgraph.ToGraphviz();
-            Debug.Log(viz);
+            var algo = new GraphvizAlgorithm<UnityGraphNode, Edge<UnityGraphNode>>(dgraph) 
+            { ImageType = QuikGraph.Graphviz.Dot.GraphvizImageType.PlainText };
+            algo.GraphFormat.RankDirection = QuikGraph.Graphviz.Dot.GraphvizRankDirection.LR;
+            var root = RootGraph.FromDotString(algo.Generate());
+            // Let's have graphviz compute a dot layout for us
+            root.ComputeLayout();
+
+            var nodes_ = nodes.ToList();
+            var lnodes = root.Nodes().ToList();
+            for (var i = 0; i < lnodes.Count(); ++i)
+            {
+                var pos = lnodes[i].Position();
+                nodes_[i].SetPosition(new Rect(pos.X * 2, pos.Y * 2, 150, 150));
+            }
         }
 
         public void Update()
@@ -278,14 +293,14 @@ namespace OneHamsa.Dexterity.Visual
             RemoveElement(fnode);
         }
 
-        private static Port GetPortInstance(UnityEditor.Experimental.GraphView.Node node, Direction nodeDirection,
+        private static Port GetPortInstance(UnityGraphNode node, Direction nodeDirection,
     Port.Capacity capacity = Port.Capacity.Multi)
         {
             return node.InstantiatePort(Orientation.Horizontal, nodeDirection, capacity, typeof(int));
         }
 
 
-        internal class GraphViewFieldNode : UnityEditor.Experimental.GraphView.Node
+        internal class GraphViewFieldNode : UnityGraphNode
         {
             internal DebugGraphView view;
             internal BaseField field;
@@ -349,7 +364,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        internal class GraphViewVisualNode : UnityEditor.Experimental.GraphView.Node
+        internal class GraphViewVisualNode : UnityGraphNode
         {
             internal DebugGraphView view;
             internal Visual.Node visualNode;
