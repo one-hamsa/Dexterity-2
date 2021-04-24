@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual
 
             public override string ToString()
             {
-                return $"{outputFieldName} Gate ({field})";
+                return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
             }
         }
 
@@ -69,7 +69,7 @@ namespace OneHamsa.Dexterity.Visual
             // initialize all fields
             fields.ToList().ForEach(f =>
             {
-                if (f is OutputField)
+                if (f == null || f is OutputField)
                     return;
 
                 Manager.Instance.RegisterField(f);
@@ -92,7 +92,7 @@ namespace OneHamsa.Dexterity.Visual
             // finalize all gate fields and output fields
             fields.Concat(outputFields.Values).ToList().ForEach(f =>
             {
-                if (f is OutputField)
+                if (f == null || f is OutputField)
                     return;
 
                 f.Finalize(this);

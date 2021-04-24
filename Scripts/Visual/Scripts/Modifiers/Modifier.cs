@@ -95,9 +95,32 @@ namespace OneHamsa.Dexterity.Visual
         float stateChangeTime;
         bool isDirty = true;
 
-        List<Node.OutputField> outputFields;
+        bool EnsureValidState()
+        {
+            if (stateFunction == null)
+            {
+                Debug.LogWarning("No state function assigned", this);
+                return false;
+            }
+
+            if (transitionStrategy == null)
+            {
+                Debug.LogWarning("No transition strategy assigned", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        List<Node.OutputField> outputFields = new List<Node.OutputField>();
         protected virtual void OnEnable()
         {
+            if (!EnsureValidState())
+            {
+                enabled = false;
+                return;
+            }
+
             TryFindNode();
             RegisterOutputEvents();
         }
@@ -105,7 +128,7 @@ namespace OneHamsa.Dexterity.Visual
         private void RegisterOutputEvents()
         {
             isDirty = true;
-            outputFields = new List<Node.OutputField>();
+            outputFields.Clear();
             foreach (var f in stateFunction.GetFields())
             {
                 outputFields.Add(node.GetOutputField(f));

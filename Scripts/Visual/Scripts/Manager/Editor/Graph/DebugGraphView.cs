@@ -8,6 +8,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityGraphNode = UnityEditor.Experimental.GraphView.Node;
+using VisualNode = OneHamsa.Dexterity.Visual.Node;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -29,10 +30,12 @@ namespace OneHamsa.Dexterity.Visual
             this.AddManipulator(new FreehandSelector());
         }
 
-        Dictionary<Visual.Node, GraphViewVisualNode> shownVisualNodes 
-            = new Dictionary<Visual.Node, GraphViewVisualNode>();
+        Dictionary<VisualNode, GraphViewVisualNode> shownVisualNodes 
+            = new Dictionary<VisualNode, GraphViewVisualNode>();
         Dictionary<BaseField, GraphViewFieldNode> shownFieldNodes 
             = new Dictionary<BaseField, GraphViewFieldNode>();
+        Dictionary<VisualNode.OutputField, (Port, GraphViewVisualNode)> shownOutputFields
+            = new Dictionary<VisualNode.OutputField, (Port, GraphViewVisualNode)>();
 
         void Sort()
         {
@@ -70,11 +73,11 @@ namespace OneHamsa.Dexterity.Visual
             if (Time.time - updateTimeDelta < lastUpdateTime)
                 return;
 
-            var visualNodes = UnityEngine.Object.FindObjectsOfType<Visual.Node>();
+            var visualNodes = UnityEngine.Object.FindObjectsOfType<VisualNode>();
             if (lastUpdateTime < graph.lastSuccessfulUpdate)
                 RefreshVisualNodes(visualNodes);
 
-            var activeNode = UnityEditor.Selection.activeGameObject?.GetComponent<Visual.Node>();
+            var activeNode = UnityEditor.Selection.activeGameObject?.GetComponent<VisualNode>();
             foreach (var visualNode in visualNodes)
             {
                 var node = shownVisualNodes[visualNode];
@@ -91,30 +94,31 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // TODO mutate
-            foreach (var port in ports.ToList())
+            foreach (var edge in edges.ToList())
             {
-                foreach (var edge in port.connections)
-                {
-                    RemoveElement(edge);
-                }
+                RemoveElement(edge);
             }
 
-            var outputs = new Dictionary<Visual.Node.OutputField, (Port, GraphViewVisualNode)>();
+            shownOutputFields.Clear();
             foreach (var node in shownVisualNodes.Values)
             {
                 foreach (var input in node.outputs)
                 {
                     var (ingoing, outgoing, label) = input.Value;
-                    outputs.Add(input.Key, (outgoing, node));
+                    shownOutputFields.Add(input.Key, (outgoing, node));
 
                     var outputField = input.Key;
                     var port = input.Value.Item1;
+                    port.DisconnectAll();
 
+                    // connect the output field port to the field(s) that feeds it
                     foreach (var connection in graph.edges[outputField])
                     {
                         if (shownFieldNodes.TryGetValue(connection, out var outField))
                         {
-                            AddElement(port.ConnectTo(outField.outputPort));
+                            var edge = port.ConnectTo(outField.outputPort);
+                            AddElement(edge);
+                            edge.BringToFront();
                         }
                     }
                 }
@@ -127,20 +131,25 @@ namespace OneHamsa.Dexterity.Visual
 
                 foreach (var connection in graph.edges[node.field])
                 {
+                    // connect to another field 
                     if (shownFieldNodes.TryGetValue(connection, out var outField))
                     {
-                        AddElement(node.inputPort.ConnectTo(outField.outputPort));
+                        var edge = node.inputPort.ConnectTo(outField.outputPort);
+                        AddElement(edge);
+                        edge.BringToFront();
                         outField.RefreshPorts();
                     }
-                    else if (connection is Visual.Node.OutputField 
-                        && outputs.TryGetValue(connection as Visual.Node.OutputField, out var outNode))
+                    // connect the input of this field to the output of an output field
+                    else if (connection is VisualNode.OutputField 
+                        && shownOutputFields.TryGetValue(connection as VisualNode.OutputField, out var outNode))
                     {
-                        AddElement(node.inputPort.ConnectTo(outNode.Item1));
+                        var edge = node.inputPort.ConnectTo(outNode.Item1);
+                        AddElement(edge);
+                        edge.BringToFront();
                         outNode.Item2.RefreshPorts();
                     }
                 }
                 node.RefreshPorts();
-                node.RefreshExpandedState();
             }
 
             Sort();
@@ -160,16 +169,16 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        HashSet<BaseField> GetRelatedFields(Visual.Node visualNode, int depth = 5)
+        HashSet<BaseField> GetRelatedFields(VisualNode visualNode, int depth = 5)
         {
-            var outputFields = new HashSet<Visual.Node.OutputField>(visualNode.GetOutputFields().Values);
+            var outputFields = new HashSet<VisualNode.OutputField>(visualNode.GetOutputFields().Values);
             var res = new HashSet<BaseField>();
             Stack<(int, BaseField)> dfs = new Stack<(int, BaseField)>();
 
             foreach (var node in graph.nodes)
             {
-                if (!res.Contains(node) && node is Visual.Node.OutputField 
-                    && outputFields.Contains(node as Visual.Node.OutputField))
+                if (!res.Contains(node) && node is VisualNode.OutputField 
+                    && outputFields.Contains(node as VisualNode.OutputField))
                 {
                     dfs.Push((0, node));
                 }
@@ -196,7 +205,7 @@ namespace OneHamsa.Dexterity.Visual
             return res;
         }
 
-        void RefreshVisualNodes(IEnumerable<Visual.Node> visualNodes)
+        void RefreshVisualNodes(IEnumerable<VisualNode> visualNodes)
         {
             HashSet<GraphViewVisualNode> relevantNodes = new HashSet<GraphViewVisualNode>();
             // create new nodes not existing in graph
@@ -228,7 +237,7 @@ namespace OneHamsa.Dexterity.Visual
             // create new nodes not existing in graph
             foreach (var node in graphNodes)
             {
-                if (node is Visual.Node.OutputField)
+                if (node is VisualNode.OutputField)
                     continue;
 
                 if (!shownFieldNodes.ContainsKey(node))
@@ -251,7 +260,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        internal GraphViewVisualNode CreateVisualNode(Visual.Node visualNode)
+        internal GraphViewVisualNode CreateVisualNode(VisualNode visualNode)
         {
             var node = new GraphViewVisualNode(this, visualNode);
 
@@ -343,9 +352,9 @@ namespace OneHamsa.Dexterity.Visual
 
             string GetTitle()
             {
-                if (field is Visual.Node.OutputField)
+                if (field is VisualNode.OutputField)
                 {
-                    var fnode = field as Visual.Node.OutputField;
+                    var fnode = field as VisualNode.OutputField;
                     return $"Output: {fnode.name}";
                 }
                 return GetFieldType();
@@ -367,18 +376,18 @@ namespace OneHamsa.Dexterity.Visual
         internal class GraphViewVisualNode : UnityGraphNode
         {
             internal DebugGraphView view;
-            internal Visual.Node visualNode;
-            internal Dictionary<Visual.Node.OutputField, (Port, Port, Label)> outputs
-                = new Dictionary<Node.OutputField, (Port, Port, Label)>();
+            internal VisualNode visualNode;
+            internal Dictionary<VisualNode.OutputField, (Port, Port, Label)> outputs
+                = new Dictionary<VisualNode.OutputField, (Port, Port, Label)>();
 
-            public GraphViewVisualNode(DebugGraphView view, Visual.Node visualNode) : base()
+            public GraphViewVisualNode(DebugGraphView view, VisualNode visualNode) : base()
             {
                 this.view = view;
                 this.visualNode = visualNode;
                 title = visualNode.name;
                 expanded = false;
 
-                foreach (var kv in visualNode.GetOutputFields())
+                foreach (var kv in visualNode.GetOutputFields().OrderBy(f => f.Key))
                 {
                     var name = kv.Key;
                     var field = kv.Value;
@@ -422,6 +431,11 @@ namespace OneHamsa.Dexterity.Visual
 
             public void Update()
             {
+                RefreshValue();
+            }
+
+            void RefreshValue()
+            {
                 foreach (var kv in outputs)
                 {
                     var (ingoing, outgoing, label) = kv.Value;
@@ -430,7 +444,7 @@ namespace OneHamsa.Dexterity.Visual
                     var val = kv.Key.GetValue();
 
                     var fd = Manager.Instance.GetFieldDefinition(kv.Key.name);
-                    if (fd.Value.Type == Node.FieldType.Boolean)
+                    if (fd.Value.Type == VisualNode.FieldType.Boolean)
                     {
                         label.text = val == 1 ? "true" : "false";
                         label.EnableInClassList(label.text, true);

@@ -76,6 +76,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var sf in stateFunctions.ToArray()) // clone to modify original
             {
+                if (sf == null)
+                    continue;
+
                 sf.Initialize();
                 if (!sf.Validate())
                 {
