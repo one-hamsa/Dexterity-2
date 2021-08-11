@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected Node node;
 
         [SerializeField]
-        protected UnityEvent onClick;
+        public UnityEvent onClick;
 
         Node.OutputField pressedField;
         Node.OutputField hoverField;
