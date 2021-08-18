@@ -6,7 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Node")]
-    [DefaultExecutionOrder(Manager.NodeExecutionPriority)]
+    [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class Node : MonoBehaviour
     {
         // stores the coupling between input fields and their output name

@@ -9,11 +9,11 @@ namespace OneHamsa.Dexterity.Visual
     [CreateAssetMenu(fileName = "StateFunction", menuName = "Dexterity/State Function", order = 100)]
     public class StateFunction : ScriptableObject
     {
-        public List<NodeLinkData> NodeLinks = new List<NodeLinkData>();
-        public List<ConditionNodeData> ConditionNodeData = new List<ConditionNodeData>();
-        public List<DecisionNodeData> DecisionNodeData = new List<DecisionNodeData>();
+        public List<NodeLinkData> nodeLinks = new List<NodeLinkData>();
+        public List<ConditionNodeData> conditionNodeData = new List<ConditionNodeData>();
+        public List<DecisionNodeData> decisionNodeData = new List<DecisionNodeData>();
 
-        public string ErrorString { get; private set; }
+        public string errorString { get; private set; }
 
         public void Initialize()
         {
@@ -36,63 +36,63 @@ namespace OneHamsa.Dexterity.Visual
         public bool Validate()
         {
             InvalidateCache();
-            ErrorString = "";
+            errorString = "";
 
             // start at entry point
-            var entries = ConditionNodeData.Where(n => n.EntryPoint);
+            var entries = conditionNodeData.Where(n => n.entryPoint);
             if (entries.Count() != 1)
             {
-                ErrorString = "Should have exactly one entry point";
+                errorString = "Should have exactly one entry point";
                 return false;
             }
 
             var decisionRefCount = new Dictionary<string, int>();
             foreach (var desc in cachedDecisions.Values)
             {
-                if (string.IsNullOrWhiteSpace(desc.State))
+                if (string.IsNullOrWhiteSpace(desc.state))
                 {
-                    ErrorString = "State must be filled for every decision";
+                    errorString = "State must be filled for every decision";
                     return false;
                 }
-                decisionRefCount[desc.NodeGUID] = 0;
+                decisionRefCount[desc.nodeGUID] = 0;
             }
 
             var queue = new Queue<ConditionNodeData>(new[] { entries.First() });
             while (queue.Count > 0)
             {
                 var current = queue.Dequeue();
-                if (string.IsNullOrWhiteSpace(current.Field))
+                if (string.IsNullOrWhiteSpace(current.field))
                 {
-                    ErrorString = "Field must be selected for every condition";
+                    errorString = "Field must be selected for every condition";
                     return false;
                 }
 
-                if (!current.EntryPoint && !cachedEdges.ContainsKey(current.NodeGUID))
+                if (!current.entryPoint && !cachedEdges.ContainsKey(current.nodeGUID))
                 {
-                    ErrorString = $"All conditions must be referenced ({current.Field})";
+                    errorString = $"All conditions must be referenced ({current.field})";
                     return false;
                 }
 
-                var globalFieldOrNull = Manager.Instance.GetFieldDefinition(current.Field);
+                var globalFieldOrNull = Manager.Instance.GetFieldDefinition(current.field);
                 if (globalFieldOrNull == null)
                 {
-                    ErrorString = $"Field {current.Field} not found in Manager";
+                    errorString = $"Field {current.field} not found in Manager";
                     return false;
                 }
                 var globalField = globalFieldOrNull.Value;
 
                 var edgeCount = 0;
-                if (cachedEdges.TryGetValue(current.NodeGUID, out var cachedLst))
+                if (cachedEdges.TryGetValue(current.nodeGUID, out var cachedLst))
                     edgeCount = cachedLst.Count;
 
-                if ((globalField.Type == Node.FieldType.Boolean && edgeCount != 2)
-                    || (globalField.Type == Node.FieldType.Enum && edgeCount != globalField.EnumValues.Length))
+                if ((globalField.type == Node.FieldType.Boolean && edgeCount != 2)
+                    || (globalField.type == Node.FieldType.Enum && edgeCount != globalField.enumValues.Length))
                 {
-                    ErrorString = $"All condition fields must point somewhere ({current.Field})";
+                    errorString = $"All condition fields must point somewhere ({current.field})";
                     return false;
                 }
 
-                foreach (var targetUUID in cachedEdges[current.NodeGUID].Values)
+                foreach (var targetUUID in cachedEdges[current.nodeGUID].Values)
                 {
                     if (cachedConditions.TryGetValue(targetUUID, out var cond))
                         queue.Enqueue(cond);
@@ -102,7 +102,7 @@ namespace OneHamsa.Dexterity.Visual
                     }
                     else
                     {
-                        ErrorString = "Invalid reference from condition";
+                        errorString = "Invalid reference from condition";
                         return false;
                     }
                 }
@@ -110,7 +110,7 @@ namespace OneHamsa.Dexterity.Visual
 
             if (decisionRefCount.Values.Any(d => d == 0))
             {
-                ErrorString = "All decisions must be referenced";
+                errorString = "All decisions must be referenced";
                 return false;
             }
 
@@ -145,18 +145,18 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 visited.Add(node);
 
-                if (!fields.ContainsKey(node.Field))
+                if (!fields.ContainsKey(node.field))
                 {
-                    Debug.LogError($"{node.Field} is required for evaluating state function {name}");
+                    Debug.LogError($"{node.field} is required for evaluating state function {name}");
                     result = null;
                     break;
                 }
 
-                var gField = Manager.Instance.GetFieldDefinition(node.Field).Value;
-                var value = fields[node.Field];
+                var gField = Manager.Instance.GetFieldDefinition(node.field).Value;
+                var value = fields[node.field];
                 string target;
-                var branches = cachedEdges[node.NodeGUID];
-                if (gField.Type == Node.FieldType.Boolean)
+                var branches = cachedEdges[node.nodeGUID];
+                if (gField.type == Node.FieldType.Boolean)
                 {
                     if (value == 1)
                         target = branches["true"];
@@ -165,12 +165,12 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 else // == Enum
                 {
-                    target = branches[gField.EnumValues[value]];
+                    target = branches[gField.enumValues[value]];
                 }
 
                 if (cachedDecisions.TryGetValue(target, out var decision))
                 {
-                    result = decision.State;
+                    result = decision.state;
                     break;
                 }
 
@@ -197,10 +197,10 @@ namespace OneHamsa.Dexterity.Visual
         void BuildConditions()
         {
             cachedConditions.Clear();
-            foreach (var cond in ConditionNodeData)
+            foreach (var cond in conditionNodeData)
             {
-                cachedConditions[cond.NodeGUID] = cond;
-                cachedFields.Add(cond.Field);
+                cachedConditions[cond.nodeGUID] = cond;
+                cachedFields.Add(cond.field);
             }
         }
 
@@ -209,10 +209,10 @@ namespace OneHamsa.Dexterity.Visual
         void BuildDecisions()
         {
             cachedDecisions.Clear();
-            foreach (var desc in DecisionNodeData)
+            foreach (var desc in decisionNodeData)
             {
-                cachedDecisions[desc.NodeGUID] = desc;
-                cachedStates.Add(desc.State);
+                cachedDecisions[desc.nodeGUID] = desc;
+                cachedStates.Add(desc.state);
             }
         }
 
@@ -222,21 +222,21 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var d in cachedEdges.Values)
                 d.Clear();
 
-            foreach (var link in NodeLinks)
+            foreach (var link in nodeLinks)
             {
-                if (!cachedEdges.ContainsKey(link.BaseNodeGUID))
-                    cachedEdges[link.BaseNodeGUID] = new Dictionary<string, string>();
+                if (!cachedEdges.ContainsKey(link.baseNodeGUID))
+                    cachedEdges[link.baseNodeGUID] = new Dictionary<string, string>();
 
-                cachedEdges[link.BaseNodeGUID].Add(link.BasePort, link.TargetNodeGUID);
+                cachedEdges[link.baseNodeGUID].Add(link.basePort, link.targetNodeGUID);
             }
         }
 
         ConditionNodeData cachedEntryPoint;
         void FindEntryPoint()
         {
-            foreach (var cond in ConditionNodeData)
+            foreach (var cond in conditionNodeData)
             {
-                if (cond.EntryPoint)
+                if (cond.entryPoint)
                 {
                     cachedEntryPoint = cond;
                     return;

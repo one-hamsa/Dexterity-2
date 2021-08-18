@@ -7,8 +7,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class NodeField : BaseField
     {
-        public Node TargetNode;
-        public string FieldName;        
+        public Node targetNode;
+        public string fieldName;
 
         Node.OutputField outputField;
         bool isNegated = false;
@@ -20,18 +20,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            if (TargetNode == null)
+            if (targetNode == null)
             {
                 Debug.LogError($"target node == null", context);
                 throw new FieldInitializationException();
             }
 
-            string fieldName = FieldName;
-            isNegated = FieldName[0] == '!';
+            string fieldName = this.fieldName;
+            isNegated = this.fieldName[0] == '!';
             if (isNegated) {
                 fieldName = fieldName.Substring(1);
             }
-            outputField = TargetNode.GetOutputField(fieldName);
+            outputField = targetNode.GetOutputField(fieldName);
             
             ClearUpstreamFields();
             AddUpstreamField(outputField);

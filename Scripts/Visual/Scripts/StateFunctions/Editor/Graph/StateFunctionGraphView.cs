@@ -155,7 +155,7 @@ namespace OneHamsa.Dexterity.Visual
             string extraText = "";
             if (node.Field.Length > 0)
             {
-                switch (Manager.Instance.GetFieldDefinition(node.Field).Value.Type)
+                switch (Manager.Instance.GetFieldDefinition(node.Field).Value.type)
                 {
                     case Node.FieldType.Boolean:
                         extraText = "?";
@@ -186,7 +186,7 @@ namespace OneHamsa.Dexterity.Visual
             toolbar.text = node.Field?.Length > 0 ? node.Field : "(Select)";
             foreach (var field in Manager.Instance.FieldDefinitions)
             {
-                toolbar.menu.AppendAction(field.Name, evt => SetConditionField(evt, node));
+                toolbar.menu.AppendAction(field.name, evt => SetConditionField(evt, node));
             }
             node.outputContainer.Add(toolbar);
 
@@ -194,14 +194,14 @@ namespace OneHamsa.Dexterity.Visual
             if (node.Field.Length > 0)
             {
                 var field = Manager.Instance.GetFieldDefinition(node.Field).Value;
-                switch (field.Type)
+                switch (field.type)
                 {
                     case Node.FieldType.Boolean:
                         newPorts.Add(AddFieldPort(node, "true"));
                         newPorts.Add(AddFieldPort(node, "false"));
                         break;
                     case Node.FieldType.Enum:
-                        foreach (var value in field.EnumValues)
+                        foreach (var value in field.enumValues)
                         {
                             newPorts.Add(AddFieldPort(node, value));
                         }

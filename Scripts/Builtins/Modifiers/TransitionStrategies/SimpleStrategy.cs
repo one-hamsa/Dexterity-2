@@ -10,9 +10,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         [Serializable]
         public class TransitionDelay
         {
-            public string State;
-            public float Delay = 0;
-            public float PreviousStateThreshold = .95f;
+            public string state;
+            public float delay = 0;
+            public float previousStateThreshold = .95f;
         } 
 
         public enum TransitionStyle
@@ -21,15 +21,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             Discrete,
         }
 
-        public float TransitionSpeed = 10f;
-        public TransitionStyle Style = TransitionStyle.ContinuousLerp;
-        public float ActivityThreshold = .999f;
-        public List<TransitionDelay> Delays;
+        public float transitionSpeed = 10f;
+        public TransitionStyle style = TransitionStyle.ContinuousLerp;
+        public float activityThreshold = .999f;
+        public List<TransitionDelay> delays;
 
         TransitionDelay GetDelay(string state)
         {
-            foreach (var d in Delays)
-                if (d.State == state)
+            foreach (var d in delays)
+                if (d.state == state)
                     return d;
 
             return null;
@@ -51,15 +51,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             string currentState, float stateChangeDeltaTime, out bool changed)
         {
             changed = false;
-            if (prevState[currentState] > ActivityThreshold)
+            if (prevState[currentState] > activityThreshold)
                 return prevState;
 
             var delay = GetDelay(currentState);
-            if (delay != null && stateChangeDeltaTime < delay.Delay)
+            if (delay != null && stateChangeDeltaTime < delay.delay)
             {
                 foreach (var kv in prevState)
                 {
-                    if (kv.Key != currentState && kv.Value >= delay.PreviousStateThreshold)
+                    if (kv.Key != currentState && kv.Value >= delay.previousStateThreshold)
                         return prevState;
                 }
             }
@@ -72,10 +72,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var state = kv.Key;
                 var value = kv.Value;
 
-                switch (Style)
+                switch (style)
                 {
                     case TransitionStyle.ContinuousLerp:
-                        nextResult[state] = Mathf.Lerp(value, state == currentState ? 1 : 0, TransitionSpeed * Time.deltaTime);
+                        nextResult[state] = Mathf.Lerp(value, state == currentState ? 1 : 0, transitionSpeed * Time.deltaTime);
                         break;
                     case TransitionStyle.Discrete:
                         nextResult[state] = state == currentState ? 1 : 0;

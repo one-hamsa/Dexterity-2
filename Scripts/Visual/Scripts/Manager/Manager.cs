@@ -8,15 +8,15 @@ namespace OneHamsa.Dexterity.Visual
     [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Manager")]
     public class Manager : MonoBehaviour
     {
-        internal const int NodeExecutionPriority = 10;
-        internal const int ModifierExecutionPriority = 15;
+        internal const int nodeExecutionPriority = 10;
+        internal const int modifierExecutionPriority = 15;
 
         [Serializable]
         public struct FieldDefinition
         {
-            public string Name;
-            public Node.FieldType Type;
-            public string[] EnumValues;
+            public string name;
+            public Node.FieldType type;
+            public string[] enumValues;
         }
 
         [SerializeField]
@@ -37,7 +37,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // editor realtime data
                 foreach (var df in fieldDefinitions)
-                    if (df.Name == name)
+                    if (df.name == name)
                         return df;
             }
 
@@ -98,7 +98,7 @@ namespace OneHamsa.Dexterity.Visual
 
         void BuildCache()
         {
-            cachedFieldDefs = fieldDefinitions.ToDictionary(fd => fd.Name);
+            cachedFieldDefs = fieldDefinitions.ToDictionary(fd => fd.name);
         }
     }
 }

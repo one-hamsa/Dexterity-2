@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual
         public class OutputField : BaseField
         {
             // hide
-            public static new bool ShowInInspector = false;
+            public static new bool showInInspector = false;
 
             Node node;
             public readonly string name;
@@ -40,9 +40,9 @@ namespace OneHamsa.Dexterity.Visual
 
             /// register to events like that:
             /// <code>node.GetOutputField("fieldName").OnValueChanged += HandleValueChanged;</code>
-            public event Action<OutputField, int, int> OnValueChanged;
+            public event Action<OutputField, int, int> onValueChanged;
 
-            protected OutputOverride Override
+            protected OutputOverride fieldOverride
             {
                 get 
                 {
@@ -129,7 +129,7 @@ namespace OneHamsa.Dexterity.Visual
             private void RegisterUpstreamOutput(BaseField field)
             {
                 if (field is OutputField)
-                    (field as OutputField).OnValueChanged += UpstreamOutputChanged;
+                    (field as OutputField).onValueChanged += UpstreamOutputChanged;
                 else if (field.isProxy)
                     foreach (var f in field.GetUpstreamFields())
                         RegisterUpstreamOutput(f);
@@ -137,7 +137,7 @@ namespace OneHamsa.Dexterity.Visual
             private void UnregisterUpstreamOutput(BaseField field)
             {
                 if (field is OutputField)
-                    (field as OutputField).OnValueChanged -= UpstreamOutputChanged;
+                    (field as OutputField).onValueChanged -= UpstreamOutputChanged;
                 else if (field.isProxy)
                     foreach (var f in field.GetUpstreamFields())
                         UnregisterUpstreamOutput(f);
@@ -160,7 +160,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (!allUpstreamFieldsAreOutputFields || areUpstreamOutputFieldsDirty)
                 {
                     // merge it with the other gate according to the field's type
-                    if (definition.Type == FieldType.Boolean)
+                    if (definition.type == FieldType.Boolean)
                     {
                         // additive: 1 if any is 1, 0 otherwise
                         var result = false;
@@ -173,7 +173,7 @@ namespace OneHamsa.Dexterity.Visual
 
                         cachedValueWithoutOverride = result ? 1 : 0;
                     }
-                    else if (definition.Type == FieldType.Enum)
+                    else if (definition.type == FieldType.Enum)
                     { 
                         // override: take last one
                         cachedValueWithoutOverride = cachedGates.Last().field.GetValue();
@@ -185,7 +185,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 // if there's an override, just use it
-                var outputOverride = Override;
+                var outputOverride = fieldOverride;
                 if (outputOverride != null) 
                 {
                     cachedValue = outputOverride.value;
@@ -200,7 +200,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // notify if value changed
                 if (cachedValue != originalValue)
-                    OnValueChanged?.Invoke(this, originalValue, cachedValue);
+                    onValueChanged?.Invoke(this, originalValue, cachedValue);
             }
 
             // for debug purposes only, mostly for editor view (to avoid masking the original field value)

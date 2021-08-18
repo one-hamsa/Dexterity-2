@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class MaterialColorModifier : ColorModifier
     {
-        public string MaterialColorName = "_Color";
+        public string materialColorName = "_Color";
 
         Renderer rend;
         protected override void Start()
@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         protected override void SetColor(Color color)
         {
-            var name = MaterialColorName;
+            var name = materialColorName;
             if (string.IsNullOrEmpty(name))
                 name = "_Color";
 

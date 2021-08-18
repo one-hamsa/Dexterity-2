@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public class Property : PropertyBase
         {
             // custom params
-            public Color Color;
+            public Color color;
         }
 
         protected abstract void SetColor(Color color);
@@ -30,10 +30,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;
 
-                r += property.Color.r * value;
-                g += property.Color.g * value;
-                b += property.Color.b * value;
-                a += property.Color.a * value;
+                r += property.color.r * value;
+                g += property.color.g * value;
+                b += property.color.b * value;
+                a += property.color.a * value;
             }
 
             SetColor(new Color(r, g, b, a));

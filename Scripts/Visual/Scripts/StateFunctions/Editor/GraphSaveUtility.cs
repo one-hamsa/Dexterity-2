@@ -42,9 +42,9 @@ namespace OneHamsa.Dexterity.Visual
 
         private bool SaveNodes(StateFunction sfContainerObject)
         {
-            sfContainerObject.NodeLinks.Clear();
-            sfContainerObject.ConditionNodeData.Clear();
-            sfContainerObject.DecisionNodeData.Clear();
+            sfContainerObject.nodeLinks.Clear();
+            sfContainerObject.conditionNodeData.Clear();
+            sfContainerObject.decisionNodeData.Clear();
 
             var connectedSockets = Edges.Where(x => x.input.node != null).ToArray();
             for (var i = 0; i < connectedSockets.Count(); i++)
@@ -55,11 +55,11 @@ namespace OneHamsa.Dexterity.Visual
                 if (inputNode == null || outputNode == null)
                     continue;
 
-                sfContainerObject.NodeLinks.Add(new NodeLinkData
+                sfContainerObject.nodeLinks.Add(new NodeLinkData
                 {
-                    BaseNodeGUID = outputNode.GUID,
-                    TargetNodeGUID = inputNode.GUID,
-                    BasePort = connectedSockets[i].output.portName,
+                    baseNodeGUID = outputNode.GUID,
+                    targetNodeGUID = inputNode.GUID,
+                    basePort = connectedSockets[i].output.portName,
                 });
             }
 
@@ -68,22 +68,22 @@ namespace OneHamsa.Dexterity.Visual
                 switch (node)
                 {
                     case ConditionNode cNode:
-                        sfContainerObject.ConditionNodeData.Add(new ConditionNodeData
+                        sfContainerObject.conditionNodeData.Add(new ConditionNodeData
                         {
-                            NodeGUID = cNode.GUID,
-                            Field = cNode.Field,
-                            FreeText = cNode.FreeText,
-                            EntryPoint = cNode.EntryPoint,
-                            Position = cNode.GetPosition().position
+                            nodeGUID = cNode.GUID,
+                            field = cNode.Field,
+                            freeText = cNode.FreeText,
+                            entryPoint = cNode.EntryPoint,
+                            position = cNode.GetPosition().position
                         });
                         break;
                     case DecisionNode dNode:
-                        sfContainerObject.DecisionNodeData.Add(new DecisionNodeData
+                        sfContainerObject.decisionNodeData.Add(new DecisionNodeData
                         {
-                            NodeGUID = dNode.GUID,
-                            State = dNode.State,
-                            FreeText = dNode.FreeText,
-                            Position = dNode.GetPosition().position
+                            nodeGUID = dNode.GUID,
+                            state = dNode.State,
+                            freeText = dNode.FreeText,
+                            position = dNode.GetPosition().position
                         });
                         break;
                 }
@@ -127,30 +127,30 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         private void GenerateNodes()
         {
-            foreach (var perNode in _sfContainer.DecisionNodeData)
+            foreach (var perNode in _sfContainer.decisionNodeData)
             {
-                var tempNode = _graphView.CreateDecisionNode(perNode.Position, perNode.FreeText, perNode.State);
-                tempNode.GUID = perNode.NodeGUID;
+                var tempNode = _graphView.CreateDecisionNode(perNode.position, perNode.freeText, perNode.state);
+                tempNode.GUID = perNode.nodeGUID;
                 _graphView.AddElement(tempNode);
             }
 
-            foreach (var perNode in _sfContainer.ConditionNodeData)
+            foreach (var perNode in _sfContainer.conditionNodeData)
             {
-                var tempNode = _graphView.CreateConditionNode(perNode.Position, perNode.FreeText, 
-                    perNode.Field, perNode.EntryPoint);
-                tempNode.GUID = perNode.NodeGUID;
+                var tempNode = _graphView.CreateConditionNode(perNode.position, perNode.freeText, 
+                    perNode.field, perNode.entryPoint);
+                tempNode.GUID = perNode.nodeGUID;
                 _graphView.AddElement(tempNode);
             }
         }
 
         private void ConnectNodes()
         {
-            foreach (var edge in _sfContainer.NodeLinks)
+            foreach (var edge in _sfContainer.nodeLinks)
             {
-                var baseNode = Nodes.Where(n => edge.BaseNodeGUID == n.GUID).First();
-                var targetNode = Nodes.Where(n => edge.TargetNodeGUID == n.GUID).First();
+                var baseNode = Nodes.Where(n => edge.baseNodeGUID == n.GUID).First();
+                var targetNode = Nodes.Where(n => edge.targetNodeGUID == n.GUID).First();
 
-                var basePort = baseNode?.outputContainer.Q<Port>(edge.BasePort);
+                var basePort = baseNode?.outputContainer.Q<Port>(edge.basePort);
                 var targetPort = targetNode?.inputContainer.Q<Port>();
 
                 if (basePort != null && targetPort != null)

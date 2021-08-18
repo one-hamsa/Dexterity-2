@@ -11,9 +11,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         DexterityUIHoverFieldProvider provider = null;
         public class DexterityUIHoverFieldProvider : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         {
-            public bool Hover { get;  private set; }
-            public void OnPointerEnter(PointerEventData eventData) => Hover = true;
-            public void OnPointerExit(PointerEventData eventData) => Hover = false;
+            public bool hover { get;  private set; }
+            public void OnPointerEnter(PointerEventData eventData) => hover = true;
+            public void OnPointerExit(PointerEventData eventData) => hover = false;
         }
 
         public override void Initialize(Node context)
@@ -22,6 +22,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             provider = context.gameObject.AddComponent<DexterityUIHoverFieldProvider>();
         }
 
-        public override int GetValue() => (provider && provider.Hover) ? 1 : 0;
+        public override int GetValue() => (provider && provider.hover) ? 1 : 0;
     }
 }

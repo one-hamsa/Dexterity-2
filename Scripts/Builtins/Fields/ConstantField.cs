@@ -7,8 +7,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ConstantField : BaseField
     {
-        public int Constant;
+        public int constant;
 
-        public override int GetValue() => Constant;
+        public override int GetValue() => constant;
     }
 }

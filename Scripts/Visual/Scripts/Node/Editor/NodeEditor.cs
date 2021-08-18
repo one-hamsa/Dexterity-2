@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     var style = new GUIStyle(EditorStyles.helpBox);
                     style.alignment = TextAnchor.MiddleLeft;
-                    switch (Manager.Instance.GetFieldDefinition(kv.Key).Value.Type)
+                    switch (Manager.Instance.GetFieldDefinition(kv.Key).Value.type)
                     {
                         case Node.FieldType.Boolean:
                             GUILayout.Label("Boolean", style);
@@ -79,7 +79,7 @@ namespace OneHamsa.Dexterity.Visual
                     // show output field dropdown
                     var outputProp = gateProp.FindPropertyRelative("outputFieldName");
                     var output = outputProp.stringValue;
-                    var fields = Manager.Instance.FieldDefinitions.Select(f => f.Name).ToArray();
+                    var fields = Manager.Instance.FieldDefinitions.Select(f => f.name).ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))

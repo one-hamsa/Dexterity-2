@@ -8,13 +8,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class AndField : BaseField
     {
         [SerializeReference]
-        public BaseField First;
+        public BaseField first;
         [SerializeReference]
-        public BaseField Second;
+        public BaseField second;
 
         // TODO
         public override int GetValue() {
-            return First.GetValue() == 1 && Second.GetValue() == 1 ? 1 : 0;
+            return first.GetValue() == 1 && second.GetValue() == 1 ? 1 : 0;
         }
 
         public override void Initialize(Node context) {
@@ -22,8 +22,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             ClearUpstreamFields();
 
-            AddUpstreamField(First);
-            AddUpstreamField(Second);
+            AddUpstreamField(first);
+            AddUpstreamField(second);
         }
     }
 }

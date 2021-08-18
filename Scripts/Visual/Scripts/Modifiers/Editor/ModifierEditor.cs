@@ -148,7 +148,7 @@ namespace OneHamsa.Dexterity.Visual
                 defaultState.stringValue = first;
             }
 
-            var activeState = (target as Modifier).ActiveState;
+            var activeState = (target as Modifier).activeState;
 
             // draw the editor for each value in property
             for (var i = 0; i < properties.arraySize; ++i)

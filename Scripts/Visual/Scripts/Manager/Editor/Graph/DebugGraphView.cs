@@ -444,14 +444,14 @@ namespace OneHamsa.Dexterity.Visual
                     var val = kv.Key.GetValue();
 
                     var fd = Manager.Instance.GetFieldDefinition(kv.Key.name);
-                    if (fd.Value.Type == VisualNode.FieldType.Boolean)
+                    if (fd.Value.type == VisualNode.FieldType.Boolean)
                     {
                         label.text = val == 1 ? "true" : "false";
                         label.EnableInClassList(label.text, true);
                     }
                     else
                     {
-                        label.text = fd.Value.EnumValues[val];
+                        label.text = fd.Value.enumValues[val];
                     }
                 }
             }

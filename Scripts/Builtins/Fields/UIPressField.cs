@@ -11,9 +11,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         DexterityUIPressFieldProvider provider = null;
         public class DexterityUIPressFieldProvider : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
-            public bool Click { get;  private set; }
-            public void OnPointerDown(PointerEventData eventData) => Click = true;
-            public void OnPointerUp(PointerEventData eventData) => Click = false;
+            public bool click { get;  private set; }
+            public void OnPointerDown(PointerEventData eventData) => click = true;
+            public void OnPointerUp(PointerEventData eventData) => click = false;
         }
 
         public override void Initialize(Node context)
@@ -23,6 +23,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             provider = context.gameObject.AddComponent<DexterityUIPressFieldProvider>();
         }
 
-        public override int GetValue() => (provider && provider.Click) ? 1 : 0;
+        public override int GetValue() => (provider && provider.click) ? 1 : 0;
     }
 }

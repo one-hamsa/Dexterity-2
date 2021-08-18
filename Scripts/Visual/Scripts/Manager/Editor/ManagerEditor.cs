@@ -89,7 +89,7 @@ namespace OneHamsa.Dexterity.Visual
                     continue;
                 if (!current.Validate())
                 {
-                    EditorGUILayout.HelpBox($"{current.name}: {current.ErrorString}", MessageType.Error);
+                    EditorGUILayout.HelpBox($"{current.name}: {current.errorString}", MessageType.Error);
                     errors++;
                 }
                 else

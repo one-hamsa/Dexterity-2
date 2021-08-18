@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [DefaultExecutionOrder(Manager.ModifierExecutionPriority)]
+    [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     public abstract class Modifier : MonoBehaviour
     {
         [SerializeField]
@@ -15,7 +15,6 @@ namespace OneHamsa.Dexterity.Visual
 
         [SerializeField]
         protected StateFunction stateFunction;
-        public StateFunction StateFunction => stateFunction;
 
         [SerializeReference]
         protected ITransitionStrategy transitionStrategy;
@@ -25,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
         [HideInInspector]
         protected string defaultState;
         protected string lastState { get; private set; }
-        public string ActiveState => lastState;
+        public string activeState => lastState;
 
         [SerializeReference]
         protected List<PropertyBase> properties = new List<PropertyBase>();
@@ -40,25 +39,25 @@ namespace OneHamsa.Dexterity.Visual
 
             // editor
             foreach (var prop in properties)
-                if (prop.State == state)
+                if (prop.state == state)
                     return prop;
 
             return null;
         }
-        public PropertyBase ActiveProperty => GetProperty(ActiveState);
+        public PropertyBase ActiveProperty => GetProperty(activeState);
         protected virtual void HandleStateChange() { }
 
         [Serializable]
         public abstract class PropertyBase
         {
-            public string State;
+            public string state;
         }
 
         protected Dictionary<string, float> transitionState;
 
         private void Awake()
         {
-            propertiesCache = properties.ToDictionary(p => p.State);
+            propertiesCache = properties.ToDictionary(p => p.state);
         }
 
         protected virtual void Start()
@@ -67,14 +66,14 @@ namespace OneHamsa.Dexterity.Visual
 
             if (string.IsNullOrEmpty(defaultState))
             {
-                defaultState = properties[0].State;
+                defaultState = properties[0].state;
                 Debug.LogWarning($"no default state selected, selecting first ({defaultState})", this);
             }
 
             lastState = defaultState;
             HandleStateChange();
 
-            transitionState = transitionStrategy.Initialize(properties.Select(p => p.State).ToArray(), lastState);
+            transitionState = transitionStrategy.Initialize(properties.Select(p => p.state).ToArray(), lastState);
             ForceTransitionUpdate();
 
             RegisterOutputEvents();
@@ -135,7 +134,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             foreach (var field in outputFields)
             {
-                field.OnValueChanged += MarkStateDirty;
+                field.onValueChanged += MarkStateDirty;
             }
         }
 
@@ -145,7 +144,7 @@ namespace OneHamsa.Dexterity.Visual
             isDirty = true;
             foreach (var field in outputFields)
             {
-                field.OnValueChanged -= MarkStateDirty;
+                field.onValueChanged -= MarkStateDirty;
             }
         }
 

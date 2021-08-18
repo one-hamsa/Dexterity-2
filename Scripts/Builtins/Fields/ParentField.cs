@@ -7,19 +7,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ParentField : BaseField
     {
-        public string FieldName;
-        public bool UpdateParentReference;
+        public string fieldName;
+        public bool updateParentReference;
 
         Node context = null;
         Node parent = null;
 
         public override bool isProxy => true;
-        public override int GetValue() => parent != null ? parent.GetOutputField(FieldName).GetValue() : 0;
+        public override int GetValue() => parent != null ? parent.GetOutputField(fieldName).GetValue() : 0;
 
         List<Transform> parentsTransform = new List<Transform>();
         public override void RefreshReferences()
         {
-            if (parent == null || UpdateParentReference)
+            if (parent == null || updateParentReference)
             {
                 {
                     // traverse to check if the chain broke
@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             ClearUpstreamFields();
             if (parent != null)
-                AddUpstreamField(parent.GetOutputField(FieldName));
+                AddUpstreamField(parent.GetOutputField(fieldName));
         }
 
         public override void Initialize(Node context)
