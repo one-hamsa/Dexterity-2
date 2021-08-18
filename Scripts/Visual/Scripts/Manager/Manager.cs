@@ -19,11 +19,9 @@ namespace OneHamsa.Dexterity.Visual
             public string[] enumValues;
         }
 
-        [SerializeField]
-        private FieldDefinition[] fieldDefinitions;
+        public FieldDefinition[] fieldDefinitions;
         public List<StateFunction> stateFunctions;
 
-        public FieldDefinition[] FieldDefinitions => fieldDefinitions;
         Dictionary<string, FieldDefinition> cachedFieldDefs = null;
         public FieldDefinition? GetFieldDefinition(string name)
         {

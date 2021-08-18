@@ -11,24 +11,22 @@ namespace OneHamsa.Dexterity.Visual
     public abstract class Modifier : MonoBehaviour
     {
         [SerializeField]
-        protected Node node;
+        public Node node;
 
         [SerializeField]
-        protected StateFunction stateFunction;
+        public StateFunction stateFunction;
 
         [SerializeReference]
-        protected ITransitionStrategy transitionStrategy;
+        public ITransitionStrategy transitionStrategy;
 
-        // TODO validate this is marked!
         [SerializeField]
         [HideInInspector]
-        protected string defaultState;
+        public string defaultState;
         protected string lastState { get; private set; }
         public string activeState => lastState;
 
         [SerializeReference]
-        protected List<PropertyBase> properties = new List<PropertyBase>();
-        public IEnumerable<PropertyBase> Properties => properties.ToArray();
+        public List<PropertyBase> properties = new List<PropertyBase>();
 
         Dictionary<string, PropertyBase> propertiesCache = null;
         public PropertyBase GetProperty(string state)

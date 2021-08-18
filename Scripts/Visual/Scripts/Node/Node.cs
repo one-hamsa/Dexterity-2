@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [SerializeField]
-        protected List<Gate> gates;
+        public List<Gate> gates;
 
         [Serializable]
         public class OutputOverride
@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [SerializeField]
-        protected List<OutputOverride> overrides;
+        public List<OutputOverride> overrides;
 
         protected void OnEnable()
         {
@@ -101,7 +101,6 @@ namespace OneHamsa.Dexterity.Visual
             });
         }
 
-        public List<Gate> Gates => gates;
         int gateIncrement;
         public void AddGate(Gate gate)
         {

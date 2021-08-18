@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             var functions = Manager.Instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
-            var stateFunctionProperty = serializedObject.FindProperty("stateFunction");
+            var stateFunctionProperty = serializedObject.FindProperty(nameof(Modifier.stateFunction));
 
             var customProps = new List<SerializedProperty>();
             var parent = serializedObject.GetIterator();
@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity.Visual
                     case "m_Script":
                         break;
                     case "node":
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty("node"));
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier.node)));
                         EditorGUI.indentLevel++;
                         EditorGUILayout.LabelField("Leave empty for parent", EditorStyles.miniLabel);
                         EditorGUI.indentLevel--;
@@ -113,8 +113,8 @@ namespace OneHamsa.Dexterity.Visual
                 objType = objType.BaseType;
             }
 
-            var properties = serializedObject.FindProperty("properties");
-            var defaultState = serializedObject.FindProperty("defaultState");
+            var properties = serializedObject.FindProperty(nameof(Modifier.properties));
+            var defaultState = serializedObject.FindProperty(nameof(Modifier.defaultState));
             var states = sf.GetStates();
 
             // find all existing references to properties by state name, add more entries if needed
@@ -122,7 +122,7 @@ namespace OneHamsa.Dexterity.Visual
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
-                var propState = property?.FindPropertyRelative("State")?.stringValue;
+                var propState = property?.FindPropertyRelative(nameof(Modifier.PropertyBase.state))?.stringValue;
                 currentPropStates.Add(propState);
             }
 
@@ -134,7 +134,7 @@ namespace OneHamsa.Dexterity.Visual
                     properties.arraySize++;
                     var newElement = properties.GetArrayElementAtIndex(last);
                     newElement.managedReferenceValue = Activator.CreateInstance(propType);
-                    newElement.FindPropertyRelative("State").stringValue = state;
+                    newElement.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue = state;
                 }
 
                 if (!foldedStates.ContainsKey(state))
@@ -154,7 +154,7 @@ namespace OneHamsa.Dexterity.Visual
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
-                var propState = property.FindPropertyRelative("State").stringValue;
+                var propState = property.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue;
 
                 if (!states.Contains(propState))
                     continue;
@@ -199,7 +199,7 @@ namespace OneHamsa.Dexterity.Visual
 
         bool ShowStrategy()
         {
-            var strategyProp = serializedObject.FindProperty("transitionStrategy");
+            var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
             var className = Utils.GetClassName(strategyProp);
 
             var types = Utils.GetSubtypes<ITransitionStrategy>();

@@ -6,7 +6,7 @@ using UnityEngine.Events;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class UIClickListener : MonoBehaviour
+    public class ClickListener : MonoBehaviour
     {
         [SerializeField]
         protected Node node;

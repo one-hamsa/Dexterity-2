@@ -12,7 +12,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         [SerializeReference]
         public BaseField second;
 
-        // TODO
         public override int GetValue() {
             return first.GetValue() == 1 && second.GetValue() == 1 ? 1 : 0;
         }

@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual
 
 		private void OnEnable()
 		{
-			fieldDefinitions = serializedObject.FindProperty("fieldDefinitions");
+            fieldDefinitions = serializedObject.FindProperty(nameof(Manager.fieldDefinitions));
 
 			// Set up the reorderable list       
 			fieldDefinitionsList = new ReorderableList(serializedObject, fieldDefinitions, true, true, true, true);
@@ -29,9 +29,9 @@ namespace OneHamsa.Dexterity.Visual
 
             SerializedProperty element = fieldDefinitionsList.serializedProperty.GetArrayElementAtIndex(index);
 
-            var type = element.FindPropertyRelative("Type");
-            var values = element.FindPropertyRelative("EnumValues");
-            var name = element.FindPropertyRelative("Name");
+            var type = element.FindPropertyRelative(nameof(Manager.FieldDefinition.type));
+            var values = element.FindPropertyRelative(nameof(Manager.FieldDefinition.enumValues));
+            var name = element.FindPropertyRelative(nameof(Manager.FieldDefinition.name));
 
             //Create a property field and label field for each property. 
             EditorGUI.PropertyField(
@@ -79,7 +79,7 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldDefinitionsList.DoLayoutList(); // Have the ReorderableList do its work
 
-            var sf = serializedObject.FindProperty("stateFunctions");
+            var sf = serializedObject.FindProperty(nameof(Manager.stateFunctions));
             var validated = 0;
             var errors = 0;
             EditorGUILayout.PropertyField(sf);

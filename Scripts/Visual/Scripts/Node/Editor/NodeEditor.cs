@@ -21,12 +21,12 @@ namespace OneHamsa.Dexterity.Visual
         }
         void ShowGates()
         {
-            var gatesProp = serializedObject.FindProperty("gates");
+            var gatesProp = serializedObject.FindProperty(nameof(Node.gates));
             var gatesByField = new Dictionary<string, List<(int, SerializedProperty)>>();
             for (var i = 0; i < gatesProp.arraySize; ++i)
             {
                 var gateProp = gatesProp.GetArrayElementAtIndex(i);
-                var field = gateProp.FindPropertyRelative("outputFieldName").stringValue;
+                var field = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue;
                 List<(int, SerializedProperty)> lst;
                 if (!gatesByField.TryGetValue(field, out lst))
                 {
@@ -65,8 +65,8 @@ namespace OneHamsa.Dexterity.Visual
                         gatesProp.arraySize++;
                         // override new value
                         var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                        newProp.FindPropertyRelative("outputFieldName").stringValue = kv.Key;
-                        newProp.FindPropertyRelative("field").managedReferenceValue = null;
+                        newProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = kv.Key;
+                        newProp.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = null;
                     }
                 }
                 GUI.color = origColor;
@@ -77,9 +77,10 @@ namespace OneHamsa.Dexterity.Visual
                 foreach ((var i, var gateProp) in kv.Value)
                 {
                     // show output field dropdown
-                    var outputProp = gateProp.FindPropertyRelative("outputFieldName");
+                    var outputProp = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName));
                     var output = outputProp.stringValue;
-                    var fields = Manager.Instance.FieldDefinitions.Select(f => f.name).ToArray();
+                    // TODO check if manager exists!
+                    var fields = Manager.Instance.fieldDefinitions.Select(f => f.name).ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))
@@ -118,7 +119,7 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUILayout.EndHorizontal();
 
                     // show field (create new reference if doesnt exist)
-                    var fieldProp = gateProp.FindPropertyRelative("field");
+                    var fieldProp = gateProp.FindPropertyRelative(nameof(Node.Gate.field));
                     ShowReference(fieldProp);
 
                     DrawSeparator(Color.gray);
@@ -132,8 +133,8 @@ namespace OneHamsa.Dexterity.Visual
                 gatesProp.arraySize++;
                 // override new value
                 var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                newProp.FindPropertyRelative("outputFieldName").stringValue = null;
-                newProp.FindPropertyRelative("field").managedReferenceValue = null;
+                newProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = null;
+                newProp.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = null;
             }
 
             if (deleteIndex != -1)
@@ -143,17 +144,17 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // MoveArrayElement just makes unity crash, and since Gate is a Serializable 
                 //. it looks like that's the most straightforward way around...
-                var g1 = ((Node)target).Gates[moveIndex.Item1];
-                var g2 = ((Node)target).Gates[moveIndex.Item2];
+                var g1 = ((Node)target).gates[moveIndex.Item1];
+                var g2 = ((Node)target).gates[moveIndex.Item2];
 
                 var p1 = gatesProp.GetArrayElementAtIndex(moveIndex.Item1);
                 var p2 = gatesProp.GetArrayElementAtIndex(moveIndex.Item2);
 
-                p2.FindPropertyRelative("outputFieldName").stringValue = g1.outputFieldName;
-                p2.FindPropertyRelative("field").managedReferenceValue = g1.field;
+                p2.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = g1.outputFieldName;
+                p2.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = g1.field;
 
-                p1.FindPropertyRelative("outputFieldName").stringValue = g2.outputFieldName;
-                p1.FindPropertyRelative("field").managedReferenceValue = g2.field;
+                p1.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = g2.outputFieldName;
+                p1.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = g2.field;
             }
         }
 
@@ -161,7 +162,8 @@ namespace OneHamsa.Dexterity.Visual
         {
             string className = Utils.GetClassName(property);
             var types = Utils.GetSubtypes<BaseField>()
-                .Where(t => (bool)t.GetField("ShowInInspector", BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy).GetValue(null))
+                .Where(t => (bool)t.GetField(nameof(BaseField.showInInspector), 
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy).GetValue(null))
                 .ToArray();
             var fieldTypesNames = types
                 .Select(t => t.ToString())
@@ -194,7 +196,7 @@ namespace OneHamsa.Dexterity.Visual
 
         void ShowOverrides()
         {
-            var overridesProp = serializedObject.FindProperty("overrides");
+            var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp);
         }
 

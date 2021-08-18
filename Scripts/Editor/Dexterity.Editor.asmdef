@@ -2,10 +2,8 @@
     "name": "Dexterity.Editor",
     "rootNamespace": "OneHamsa.Dexterity.Visual",
     "references": [
-        "GUID:c4ba3c356a1a1d543b4800450b79cb50",
-        "GUID:75469ad4d38634e559750d17036d5f7c",
-        "GUID:d178ac4b10764814c8ae876ce6354d19",
-        "GUID:466d4cb32fd66ef4f99747d4eb7191d9"
+        "Dexterity",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

@@ -184,7 +184,7 @@ namespace OneHamsa.Dexterity.Visual
             node.outputContainer.Add(new Label("Field: "));
             var toolbar = new ToolbarMenu();
             toolbar.text = node.Field?.Length > 0 ? node.Field : "(Select)";
-            foreach (var field in Manager.Instance.FieldDefinitions)
+            foreach (var field in Manager.Instance.fieldDefinitions)
             {
                 toolbar.menu.AppendAction(field.name, evt => SetConditionField(evt, node));
             }
