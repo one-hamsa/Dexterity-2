@@ -49,14 +49,19 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     var style = new GUIStyle(EditorStyles.helpBox);
                     style.alignment = TextAnchor.MiddleLeft;
-                    switch (Manager.Instance.GetFieldDefinition(kv.Key).Value.type)
+
+                    var definition = Manager.Instance.GetFieldDefinition(kv.Key);
+                    if (definition.HasValue)
                     {
-                        case Node.FieldType.Boolean:
-                            GUILayout.Label("Boolean", style);
-                            break;
-                        case Node.FieldType.Enum:
-                            GUILayout.Label("Enum", style);
-                            break;
+                        switch (definition.Value.type)
+                        {
+                            case Node.FieldType.Boolean:
+                                GUILayout.Label("Boolean", style);
+                                break;
+                            case Node.FieldType.Enum:
+                                GUILayout.Label("Enum", style);
+                                break;
+                        }
                     }
                     GUI.color = Color.green;
 

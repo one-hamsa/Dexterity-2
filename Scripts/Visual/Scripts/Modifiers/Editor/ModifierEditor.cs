@@ -186,7 +186,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (foldedStates[propState]) 
                     foreach (var field in Utils.GetChildren(property))
                     {
-                        if (field.name == "State")
+                        if (field.name == nameof(Modifier.PropertyBase.state))
                             continue;
                         EditorGUILayout.PropertyField(field);
                     }
