@@ -6,9 +6,9 @@ namespace OneHamsa.Dexterity.Visual
     [Serializable]
     public class DecisionNodeData
     {
-        public string NodeGUID;
-        public string FreeText;
-        public string State;
-        public Vector2 Position;
+        public string nodeGUID;
+        public string freeText;
+        public string state;
+        public Vector2 position;
     }
 }

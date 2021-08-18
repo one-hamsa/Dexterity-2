@@ -8,13 +8,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class Scale3DModifier : Modifier
     {
-        public Vector3 BaseScale = Vector3.one;
+        public Vector3 baseScale = Vector3.one;
 
         [Serializable]
         public class Property : PropertyBase
         {
             // custom params
-            public Vector3 Scale = Vector3.one;
+            public Vector3 scale = Vector3.one;
         }
 
         protected override void Update()
@@ -30,11 +30,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;
 
-                scale += property.Scale * value;
+                scale += property.scale * value;
             }
-            scale.x *= BaseScale.x;
-            scale.y *= BaseScale.y;
-            scale.x *= BaseScale.z;
+            scale.x *= baseScale.x;
+            scale.y *= baseScale.y;
+            scale.x *= baseScale.z;
 
             transform.localScale = scale;
         }

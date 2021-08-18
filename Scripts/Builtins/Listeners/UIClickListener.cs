@@ -36,11 +36,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         void OnEnable()
         {
-            pressedField.OnValueChanged += HandlePress;
+            pressedField.onValueChanged += HandlePress;
         }
         void OnDisable()
         {
-            pressedField.OnValueChanged -= HandlePress;
+            pressedField.onValueChanged -= HandlePress;
         }
 
         private void HandlePress(Node.OutputField field, int oldValue, int newValue)

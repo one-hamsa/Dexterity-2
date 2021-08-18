@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     var style = new GUIStyle(EditorStyles.helpBox);
                     style.alignment = TextAnchor.MiddleLeft;
-                    switch (Manager.Instance.GetFieldDefinition(kv.Key).Value.Type)
+                    switch (Manager.Instance.GetFieldDefinition(kv.Key).Value.type)
                     {
                         case Node.FieldType.Boolean:
                             GUILayout.Label("Boolean", style);
@@ -79,7 +79,7 @@ namespace OneHamsa.Dexterity.Visual
                     // show output field dropdown
                     var outputProp = gateProp.FindPropertyRelative("OutputFieldName");
                     var output = outputProp.stringValue;
-                    var fields = Manager.Instance.FieldDefinitions.Select(f => f.Name).ToArray();
+                    var fields = Manager.Instance.FieldDefinitions.Select(f => f.name).ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))
@@ -227,16 +227,16 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.Name))
+                if (overrides.ContainsKey(field.name))
                 {
-                    var outputOverride = overrides[field.Name];
+                    var outputOverride = overrides[field.name];
                     GUI.color = Color.magenta;
                     strValue = $"{outputOverride.Value} ({StrikeThrough(strValue)})";
                     unusedOverrides.Remove(outputOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.Name);
+                EditorGUILayout.LabelField(field.name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();

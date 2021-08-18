@@ -67,7 +67,7 @@ namespace OneHamsa.Dexterity.Visual
             try
             {
                 validated = sf.Validate();
-                error = sf.ErrorString;
+                error = sf.errorString;
             }
             catch (Exception e)
             {

@@ -77,6 +77,6 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// should the node field show in the list of available node fields?
         /// </summary>
-        public static bool ShowInInspector = true;
+        public static bool showInInspector = true;
     }
 }
