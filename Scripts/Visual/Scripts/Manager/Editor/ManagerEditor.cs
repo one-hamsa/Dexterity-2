@@ -84,7 +84,7 @@ namespace OneHamsa.Dexterity.Visual
             var errors = 0;
             EditorGUILayout.PropertyField(sf);
             for (var i = 0; i < sf.arraySize; ++i) {
-                var current = (StateFunction)sf.GetArrayElementAtIndex(i).objectReferenceValue;
+                var current = (StateFunctionGraph)sf.GetArrayElementAtIndex(i).objectReferenceValue;
                 if (current == null)
                     continue;
                 if (!current.Validate())

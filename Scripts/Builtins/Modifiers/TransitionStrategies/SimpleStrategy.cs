@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -26,19 +27,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public float activityThreshold = .999f;
         public List<TransitionDelay> delays;
 
-        TransitionDelay GetDelay(string state)
-        {
-            foreach (var d in delays)
-                if (d.state == state)
-                    return d;
+        ListMap<int, TransitionDelay> cachedDelays;
 
-            return null;
-        }
-
-        Dictionary<string, float> result = new Dictionary<string, float>();
-        Dictionary<string, float> nextResult = new Dictionary<string, float>();
-        public Dictionary<string, float> Initialize(string[] states, string currentState) 
+        IDictionary<int, float> result = new ListMap<int, float>();
+        IDictionary<int, float> nextResult = new ListMap<int, float>();
+        public IDictionary<int, float> Initialize(int[] states, int currentState) 
         {
+            // cache delays
+            cachedDelays = new ListMap<int, TransitionDelay>();
+            foreach (var delay in delays)
+                cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
+
             result.Clear();
             foreach (var state in states)
             {
@@ -47,14 +46,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             return result;
         }
-        public Dictionary<string, float> GetTransition(Dictionary<string, float> prevState, 
-            string currentState, float stateChangeDeltaTime, out bool changed)
+        public IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
+            int currentState, float stateChangeDeltaTime, out bool changed)
         {
             changed = false;
             if (prevState[currentState] > activityThreshold)
                 return prevState;
 
-            var delay = GetDelay(currentState);
+            cachedDelays.TryGetValue(currentState, out var delay);
             if (delay != null && stateChangeDeltaTime < delay.delay)
             {
                 foreach (var kv in prevState)

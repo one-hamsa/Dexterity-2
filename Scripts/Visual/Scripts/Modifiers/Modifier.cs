@@ -1,8 +1,7 @@
+using OneHumus.Data;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -14,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual
         public Node node;
 
         [SerializeField]
-        public StateFunction stateFunction;
+        public StateFunctionGraph stateFunction;
 
         [SerializeReference]
         public ITransitionStrategy transitionStrategy;
@@ -22,27 +21,27 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeField]
         [HideInInspector]
         public string defaultState;
-        protected string lastState { get; private set; }
-        public string activeState => lastState;
+        public int activeState { get; private set; } = -1;
 
         [SerializeReference]
         public List<PropertyBase> properties = new List<PropertyBase>();
 
-        Dictionary<string, PropertyBase> propertiesCache = null;
-        public PropertyBase GetProperty(string state)
+        ListMap<int, PropertyBase> propertiesCache = null;
+        public PropertyBase GetProperty(int stateId)
         {
             // runtime
             if (propertiesCache != null)
-                return propertiesCache[state];
+                return propertiesCache[stateId];
 
             // editor
             foreach (var prop in properties)
-                if (prop.state == state)
+                if (Manager.instance.GetStateID(prop.state) == stateId)
                     return prop;
 
             return null;
         }
-        public PropertyBase ActiveProperty => GetProperty(activeState);
+        public StateFunctionGraph activeStateFunction { get; private set; }
+        public PropertyBase activeProperty => GetProperty(activeState);
         protected virtual void HandleStateChange() { }
 
         [Serializable]
@@ -51,27 +50,44 @@ namespace OneHamsa.Dexterity.Visual
             public string state;
         }
 
-        protected Dictionary<string, float> transitionState;
+        protected IDictionary<int, float> transitionState;
 
         private void Awake()
         {
-            propertiesCache = properties.ToDictionary(p => p.state);
+            propertiesCache = new ListMap<int, PropertyBase>();
+            foreach (var prop in properties)
+            {
+                var id = Manager.instance.GetStateID(prop.state);
+                if (id == -1)
+                {
+                    // those properties are kept serialized in order to maintain history, no biggie
+                    continue;
+                }
+                propertiesCache.Add(id, prop);
+            }
         }
 
         protected virtual void Start()
         {
             TryFindNode();
 
-            if (string.IsNullOrEmpty(defaultState))
+            var defaultStateId = Manager.instance.GetStateID(defaultState);
+            if (defaultStateId == -1)
             {
-                defaultState = properties[0].state;
-                Debug.LogWarning($"no default state selected, selecting first ({defaultState})", this);
+                defaultStateId = Manager.instance.GetStateID(properties[0].state);
+                Debug.LogWarning($"no default state selected, selecting first ({properties[0].state})", this);
             }
 
-            lastState = defaultState;
+            activeState = defaultStateId;
             HandleStateChange();
 
-            transitionState = transitionStrategy.Initialize(properties.Select(p => p.state).ToArray(), lastState);
+            var states = new int[propertiesCache.Count];
+            var keys = propertiesCache.Keys.GetEnumerator();
+            var i = 0;
+            while (keys.MoveNext())
+                states[i++] = keys.Current;
+
+            transitionState = transitionStrategy.Initialize(states, activeState);
             ForceTransitionUpdate();
 
             RegisterOutputEvents();
@@ -97,6 +113,19 @@ namespace OneHamsa.Dexterity.Visual
             if (stateFunction == null)
             {
                 Debug.LogWarning("No state function assigned", this);
+                return false;
+            }
+            
+            activeStateFunction = Manager.instance.GetActiveStateFunction(stateFunction);
+            if (activeStateFunction == null)
+            {
+                Debug.LogError($"stateFunction {stateFunction.name} not found in Manager", this);
+                return false;
+            }
+
+            if (activeStateFunction.GetStates().Count() != propertiesCache.Count)
+            {
+                Debug.LogError($"properties count != stateFunction states count", this);
                 return false;
             }
 
@@ -126,7 +155,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             isDirty = true;
             outputFields.Clear();
-            foreach (var f in stateFunction.GetFields())
+            foreach (var f in activeStateFunction.GetFields())
             {
                 outputFields.Add(node.GetOutputField(f));
             }
@@ -148,30 +177,31 @@ namespace OneHamsa.Dexterity.Visual
 
         protected bool transitionChanged;
         protected int forceTransitionChangeFrames;
+        private FieldsState fieldsState = new FieldsState(32);
         public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
 
         protected virtual void Update()
         {
-            string newState;
+            int newState;
             if (isDirty)
             {
                 newState = GetState();
-                if (newState == null)
+                if (newState == -1)
                 {
-                    Debug.LogWarning($"{name}: got null for new state, not updating");
+                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
                     return;
                 }
-                if (newState != lastState)
+                if (newState != activeState)
                 {
                     stateChangeTime = Time.time;
-                    lastState = newState;
+                    activeState = newState;
                     HandleStateChange();
                 }
                 isDirty = false;
             }
             else
             {
-                newState = lastState;
+                newState = activeState;
             }
             transitionState = transitionStrategy.GetTransition(transitionState,
                 newState, Time.time - stateChangeTime, out transitionChanged);
@@ -183,23 +213,23 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        Dictionary<string, int> fields = new Dictionary<string, int>();
-        private Dictionary<string, int> GetFields()
+        private FieldsState GetFields()
         {
-            fields.Clear();
+            fieldsState.Clear();
+
             foreach (var field in outputFields)
             {
                 var value = field.GetValue();
                 // if this field isn't provided just assume default
-                if (value == Node.EMPTY_FIELD_VALUE)
+                if (value == Node.emptyFieldValue)
                 {
-                    value = Node.DEFAULT_FIELD_VALUE;
+                    value = Node.defaultFieldValue;
                 }
-                fields[field.name] = value;
+                fieldsState.Add((field.definitionId, value));
             }
-            return fields;
+            return fieldsState;
         }
-        protected string GetState() => stateFunction.Evaluate(GetFields());
+        protected int GetState() => activeStateFunction.Evaluate(GetFields());
     }
 
 }

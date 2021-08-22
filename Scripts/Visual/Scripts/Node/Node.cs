@@ -72,7 +72,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (f == null || f is OutputField)
                     return;
 
-                Manager.Instance.RegisterField(f);
+                Manager.instance.RegisterField(f);
                 try
                 {
                     f.Initialize(this);
@@ -96,7 +96,7 @@ namespace OneHamsa.Dexterity.Visual
                     return;
 
                 f.Finalize(this);
-                Manager.Instance?.UnregisterField(f);
+                Manager.instance?.UnregisterField(f);
                 FinalizeFields(gate, f.GetUpstreamFields());
             });
         }

@@ -3,7 +3,10 @@
     "rootNamespace": "OneHamsa.Dexterity.Visual",
     "references": [
         "Dexterity",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "com.alelievr.NodeGraphProcessor.Runtime",
+        "com.alelievr.NodeGraphProcessor.Editor",
+        "OneHumus"
     ],
     "includePlatforms": [
         "Editor"

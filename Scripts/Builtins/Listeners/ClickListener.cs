@@ -48,8 +48,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // only handle if unpressed while on object
             if (oldValue == 1 && newValue == 0 && hoverField.GetValue() == 1)
             {
-                onClick?.Invoke();
+                Click();
             }
         }
+
+        public void Click() => onClick?.Invoke();
     }
 }

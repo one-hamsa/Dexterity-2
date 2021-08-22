@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,8 +6,8 @@ namespace OneHamsa.Dexterity.Visual
 {
     public partial class Node
     {
-        public const int EMPTY_FIELD_VALUE = -1;
-        public const int DEFAULT_FIELD_VALUE = 0;
+        public const int emptyFieldValue = -1;
+        public const int defaultFieldValue = 0;
 
         // differentiates between field types. the underlying data is always int, but the way
         //. the system treats this data can vary.
@@ -26,8 +25,10 @@ namespace OneHamsa.Dexterity.Visual
 
             Node node;
             public readonly string name;
-            protected int cachedValue = EMPTY_FIELD_VALUE;
-            protected int cachedValueWithoutOverride = EMPTY_FIELD_VALUE;
+            public int definitionId { get; private set; }
+
+            protected int cachedValue = emptyFieldValue;
+            protected int cachedValueWithoutOverride = emptyFieldValue;
             protected Manager.FieldDefinition definition;
 
             // optimizations
@@ -64,13 +65,14 @@ namespace OneHamsa.Dexterity.Visual
             {
                 base.Initialize(context);
                 node = context;
-                Manager.Instance.RegisterField(this);
-                definition = Manager.Instance.GetFieldDefinition(name).Value;                
+                Manager.instance.RegisterField(this);
+                definitionId = Manager.instance.GetFieldID(name);
+                definition = Manager.instance.GetFieldDefinition(definitionId);
             }
             public override void Finalize(Node context)
             {
                 base.Finalize(context);
-                Manager.Instance?.UnregisterField(this);
+                Manager.instance?.UnregisterField(this);
             }
 
             public override void RefreshReferences()
@@ -174,9 +176,13 @@ namespace OneHamsa.Dexterity.Visual
                         cachedValueWithoutOverride = result ? 1 : 0;
                     }
                     else if (definition.type == FieldType.Enum)
-                    { 
-                        // override: take last one
-                        cachedValueWithoutOverride = cachedGates.Last().field.GetValue();
+                    {
+                        if (cachedGates.Count > 0)
+                            // override: take last one
+                            cachedValueWithoutOverride = cachedGates[cachedGates.Count - 1].field.GetValue();
+                        else
+                            // default enum value is first value
+                            cachedValueWithoutOverride = 0;
                     }
                 }
                 else

@@ -50,10 +50,10 @@ namespace OneHamsa.Dexterity.Visual
                     var style = new GUIStyle(EditorStyles.helpBox);
                     style.alignment = TextAnchor.MiddleLeft;
 
-                    var definition = Manager.Instance.GetFieldDefinition(kv.Key);
-                    if (definition.HasValue)
+                    var definition = Manager.instance.GetFieldDefinitionByName(kv.Key);
+                    if (definition.name != null)
                     {
-                        switch (definition.Value.type)
+                        switch (definition.type)
                         {
                             case Node.FieldType.Boolean:
                                 GUILayout.Label("Boolean", style);
@@ -85,7 +85,7 @@ namespace OneHamsa.Dexterity.Visual
                     var outputProp = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName));
                     var output = outputProp.stringValue;
                     // TODO check if manager exists!
-                    var fields = Manager.Instance.fieldDefinitions.Select(f => f.name).ToArray();
+                    var fields = Manager.instance.fieldDefinitions.Select(f => f.name).ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))
@@ -225,11 +225,11 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.color = origColor;
             }
 
-            foreach (var field in outputFields.Values.OrderBy(f => f.GetValue() == Node.EMPTY_FIELD_VALUE))
+            foreach (var field in outputFields.Values.OrderBy(f => f.GetValue() == Node.emptyFieldValue))
             {
                 var value = field.GetValueWithoutOverride();
                 string strValue = value.ToString();
-                if (value == Node.EMPTY_FIELD_VALUE)
+                if (value == Node.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";

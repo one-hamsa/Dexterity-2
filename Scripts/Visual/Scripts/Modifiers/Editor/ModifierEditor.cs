@@ -10,16 +10,22 @@ namespace OneHamsa.Dexterity.Visual
     [CustomEditor(typeof(Modifier), true)]
     public class ModifierEditor : Editor
     {
-        StateFunction stateFunctionObj = null;
+        StateFunctionGraph stateFunctionObj = null;
         int stateFunctionIdx;
         static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
         bool strategyDefined;
+        Modifier modifier;
+
+        private void OnEnable()
+        {
+            modifier = target as Modifier;
+        }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            var functions = Manager.Instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
+            var functions = Manager.instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
             var stateFunctionProperty = serializedObject.FindProperty(nameof(Modifier.stateFunction));
 
             var customProps = new List<SerializedProperty>();
@@ -30,24 +36,24 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     case "m_Script":
                         break;
-                    case "node":
+                    case nameof(Modifier.node):
                         EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier.node)));
                         EditorGUI.indentLevel++;
                         EditorGUILayout.LabelField("Leave empty for parent", EditorStyles.miniLabel);
                         EditorGUI.indentLevel--;
                         break;
 
-                    case "stateFunction":
-                        stateFunctionObj = (StateFunction)stateFunctionProperty.objectReferenceValue;
+                    case nameof(Modifier.stateFunction):
+                        stateFunctionObj = (StateFunctionGraph)stateFunctionProperty.objectReferenceValue;
 
                         
                         stateFunctionIdx = EditorGUILayout.Popup("State Function",
                             Array.IndexOf(functions, stateFunctionObj?.name), functions);
                         break;
-                    case "properties":
+                    case nameof(Modifier.properties):
                         // show later
                         break;
-                    case "transitionStrategy":
+                    case nameof(Modifier.transitionStrategy):
                         strategyDefined = ShowStrategy();
                         break;
 
@@ -67,10 +73,19 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUILayout.PropertyField(prop, true);
             }
 
+            // show state function button (play time)
+            if (Application.isPlaying)
+            {
+                if (GUILayout.Button("State Function Live View"))
+                {
+                    EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(modifier.activeStateFunction);
+                }
+            }
+
             // finally show states
             if (stateFunctionIdx >= 0)
             {
-                var stateFunction = Manager.Instance.GetStateFunction(functions[stateFunctionIdx]);
+                var stateFunction = Manager.instance.GetStateFunctionByName(functions[stateFunctionIdx]);
                 stateFunctionProperty.objectReferenceValue = stateFunction;
 
                 if (stateFunction != null)
@@ -100,10 +115,8 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.ApplyModifiedProperties();
         }
 
-        void ShowProperties(StateFunction sf)
+        void ShowProperties(StateFunctionGraph sf)
         {
-            sf.InvalidateCache();
-
             // get property info, iterate through parent classes to support inheritance
             Type propType = null;
             var objType = target.GetType();
@@ -141,7 +154,7 @@ namespace OneHamsa.Dexterity.Visual
                     foldedStates[state] = true;
             }
 
-            if (string.IsNullOrEmpty(defaultState.stringValue) && states.Count > 0)
+            if (string.IsNullOrEmpty(defaultState.stringValue) && states.Count() > 0)
             {
                 var first = states.First();
                 Debug.LogWarning($"no default state selected, selecting first ({first})", target);
@@ -165,7 +178,7 @@ namespace OneHamsa.Dexterity.Visual
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
-                if (activeState == propState)
+                if (Application.isPlaying && activeState == Manager.instance.GetStateID(propState))
                 {
                     GUI.contentColor = Color.green;
                     suffix = " (current)";

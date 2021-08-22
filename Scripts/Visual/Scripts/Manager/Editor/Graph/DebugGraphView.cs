@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual
         public bool shouldUpdate = true;
         public float lastUpdateTime = -1;
         public float updateTimeDelta = 1f;
-        Graph graph => Manager.Instance.graph;
+        Graph graph => Manager.instance.graph;
 
         public DebugGraphView(DebugWindow editorWindow)
         {
@@ -442,8 +442,9 @@ namespace OneHamsa.Dexterity.Visual
                     label.ClearClassList();
 
                     var val = kv.Key.GetValue();
-
-                    var fd = Manager.Instance.GetFieldDefinition(kv.Key.name);
+                    /*
+                     * TODO this blah blah is working but translate it to new graph
+                    var fd = Manager.instance.GetFieldDefinition(kv.Key.name);
                     if (fd.Value.type == VisualNode.FieldType.Boolean)
                     {
                         label.text = val == 1 ? "true" : "false";
@@ -453,6 +454,7 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         label.text = fd.Value.enumValues[val];
                     }
+                    */
                 }
             }
         }

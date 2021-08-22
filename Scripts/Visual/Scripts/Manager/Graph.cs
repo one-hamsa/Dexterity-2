@@ -1,3 +1,4 @@
+using OneHumus.Data;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,16 +19,18 @@ namespace OneHamsa.Dexterity.Visual
         public float lastSuccessfulUpdate { get; private set; }
         public float updateOperations { get; private set; }
 
+        public bool started { get; set; }
 
-        // API and user-defined data
-        public HashSet<BaseField> nodes { get; } = new HashSet<BaseField>();
-        // (hopefully) pre-allocated data structures
-        public Dictionary<BaseField, HashSet<BaseField>> edges { get; } 
-            = new Dictionary<BaseField, HashSet<BaseField>>();
+        public List<BaseField> nodes { get; } = new List<BaseField>();
+        
+        public ListMap<BaseField, HashSet<BaseField>> edges { get; } 
+            = new ListMap<BaseField, HashSet<BaseField>>();
 
         public void AddNode(BaseField node)
         {
-            nodes.Add(node);
+            if (!nodes.Contains(node))
+                nodes.Add(node);
+
             edges[node] = node.GetUpstreamFields();
             dirty = true;
         }
@@ -44,6 +47,9 @@ namespace OneHamsa.Dexterity.Visual
         // updates the graph (if needed), then invokes the update functions for each field
         public void Run()
         {
+            if (!started)
+                return;
+
             // ask all nodes to refresh their edges
             RefreshEdges();
 
@@ -84,7 +90,7 @@ namespace OneHamsa.Dexterity.Visual
 
         HashSet<BaseField> visited = new HashSet<BaseField>();
         Stack<(bool, BaseField)> dfs = new Stack<(bool, BaseField)>();
-        Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
+        ListMap<BaseField, bool> onStack = new ListMap<BaseField, bool>();
 
         // https://stackoverflow.com/questions/20153488/topological-sort-using-dfs-without-recursion
         //. and https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
