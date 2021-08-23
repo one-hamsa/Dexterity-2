@@ -1,6 +1,7 @@
 using GraphProcessor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -17,8 +18,11 @@ namespace OneHamsa.Dexterity.Visual
 
 		public override string name => string.IsNullOrWhiteSpace(fieldName) ? "Condition" : $"{fieldName}?";
 
-		protected int definitionId = -1;
+		// save definition in asset - for editing purposes
+		[SerializeField, HideInInspector]
 		protected FieldDefinition definition;
+
+		protected int definitionId = -1;
 		public int processIndex { get; private set; } = -1;
 		private List<SerializableEdge> cachedOutputEdges;
 
@@ -27,19 +31,15 @@ namespace OneHamsa.Dexterity.Visual
 			definitionId = Manager.instance.GetFieldID(fieldName);
 			if (definitionId == -1)
 			{
-				Debug.LogError($"definition id == -1 (field {fieldName})");
+				UnityEngine.Debug.LogError($"definition id == -1 (field {fieldName})");
 			}
 			definition = Manager.instance.GetFieldDefinition(definitionId);
 		}
 
-		protected override void EnableEditor()
+		[Conditional("DEBUG")]
+		public void SetDefinitionFromEditor(FieldDefinition fd)
         {
-			InitFieldDefinition();
-        }
-
-		public void InitFieldDefinition()
-        {
-			definition = Manager.instance.GetFieldDefinitionByName(fieldName);
+			definition = fd;
 		}
 
 		private void CacheOutputEdges()
@@ -90,7 +90,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-			Debug.LogError($"didn't find anything to do for field {fieldName}");
+			UnityEngine.Debug.LogError($"didn't find anything to do for field {fieldName}");
 		}
 
 		[CustomPortBehavior(nameof(outputs))]

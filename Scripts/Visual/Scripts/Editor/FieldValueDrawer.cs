@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var definition = Manager.instance.GetFieldDefinitionByName(actualFieldName);
+            var definition = DexteritySettingsProvider.GetFieldDefinitionByName(actualFieldName);
 
             switch (definition.type)
             {

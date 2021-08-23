@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
 {
 	public class StateFunctionGraphAssetCallbacks
 	{
-		[MenuItem("Assets/Create/State Function", false, 10)]
+		[MenuItem("Assets/Create/Dexterity/State Function", false, 10)]
 		public static void CreateGraphPorcessor()
 		{
 			var graph = ScriptableObject.CreateInstance<StateFunctionGraph>();

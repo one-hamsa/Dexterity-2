@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var fields = Manager.instance.fieldDefinitions.Select(f => f.name).ToArray();
+            var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name).ToArray();
 
             var prevIndex = Array.IndexOf(fields, property.stringValue);
 

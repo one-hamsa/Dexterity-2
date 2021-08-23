@@ -6,15 +6,15 @@ using UnityEditorInternal;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [CustomEditor(typeof(Manager))]
-    public class ManagerEditor : Editor
+    [CustomEditor(typeof(DexteritySettings))]
+    public class DexteritySettingsEditor : Editor
     {
 		SerializedProperty fieldDefinitions;
 		ReorderableList fieldDefinitionsList;
 
 		private void OnEnable()
 		{
-            fieldDefinitions = serializedObject.FindProperty(nameof(Manager.fieldDefinitions));
+            fieldDefinitions = serializedObject.FindProperty(nameof(DexteritySettings.fieldDefinitions));
 
 			// Set up the reorderable list       
 			fieldDefinitionsList = new ReorderableList(serializedObject, fieldDefinitions, true, true, true, true);
@@ -79,7 +79,7 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldDefinitionsList.DoLayoutList(); // Have the ReorderableList do its work
 
-            var sf = serializedObject.FindProperty(nameof(Manager.stateFunctions));
+            var sf = serializedObject.FindProperty(nameof(DexteritySettings.stateFunctions));
             var validated = 0;
             var errors = 0;
             EditorGUILayout.PropertyField(sf);

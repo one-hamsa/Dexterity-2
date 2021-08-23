@@ -11,9 +11,7 @@ namespace OneHamsa.Dexterity.Visual
         internal const int nodeExecutionPriority = 10;
         internal const int modifierExecutionPriority = 15;
 
-        public FieldDefinition[] fieldDefinitions;
-
-        public List<StateFunctionGraph> stateFunctions;
+        public DexteritySettings settings;
 
         public StateFunctionGraph[] activeStateFunctions { get; private set; }
 
@@ -38,44 +36,20 @@ namespace OneHamsa.Dexterity.Visual
             return stateNames.IndexOf(name);
         }
 
-        /**
-         * returns field definition by name - slow.
-         */
-        public FieldDefinition GetFieldDefinitionByName(string name)
-        {
-            if (!Application.isEditor)
-            {
-                Debug.LogError("GetFieldDefinitionByName should only be called from editor");
-            }
-
-            foreach (var fd in fieldDefinitions)
-                if (fd.name == name)
-                    return fd;
-
-            return default;
-        }
-
         internal StateFunctionGraph GetActiveStateFunction(StateFunctionGraph stateFunction)
         {
-            var index = stateFunctions.IndexOf(stateFunction);
+            var index = settings.stateFunctions.IndexOf(stateFunction);
             if (index == -1)
                 return null;
             return activeStateFunctions[index];
         }
 
         /**
-* returns state function by name - slow.
-*/
-        public StateFunctionGraph GetStateFunctionByName(string name) => stateFunctions
-            .Where(sf => sf?.name == name)
-            .First();
-
-        /**
-         * returns field definition by ID - quick.
+         * returns field definition by ID - fast.
          */
         public FieldDefinition GetFieldDefinition(int id)
         {
-            return fieldDefinitions[id];
+            return settings.fieldDefinitions[id];
         }        
 
         // TODO improve singleton implementation (spawn first, die last)
@@ -108,10 +82,10 @@ namespace OneHamsa.Dexterity.Visual
             BuildCache();
 
             // clone all state functions
-            activeStateFunctions = new StateFunctionGraph[stateFunctions.Count];
-            for (var i = 0; i < stateFunctions.Count; ++i)
+            activeStateFunctions = new StateFunctionGraph[settings.stateFunctions.Count];
+            for (var i = 0; i < settings.stateFunctions.Count; ++i)
             {
-                activeStateFunctions[i] = Instantiate(stateFunctions[i]);
+                activeStateFunctions[i] = Instantiate(settings.stateFunctions[i]);
             }
         }
         public void Start()
@@ -122,12 +96,12 @@ namespace OneHamsa.Dexterity.Visual
 
         private void BuildCache()
         {
-            fieldNames = new string[fieldDefinitions.Length];
-            for (var i = 0; i < fieldDefinitions.Length; ++i)
-                fieldNames[i] = fieldDefinitions[i].name;
+            fieldNames = new string[settings.fieldDefinitions.Length];
+            for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
+                fieldNames[i] = settings.fieldDefinitions[i].name;
 
             stateNames = new List<string>(32);
-            foreach (var fn in stateFunctions)
+            foreach (var fn in settings.stateFunctions)
             {
                 if (fn == null)
                     continue;

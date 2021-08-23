@@ -24,6 +24,7 @@ namespace OneHamsa.Dexterity.Visual
 			contentContainer.Q<PropertyField>(nameof(ConditionNode.fieldName))
 				.RegisterValueChangeCallback(HandleFieldChange);
 			HandleGraphChanges();
+			RefreshField();
 
 			// runtime
 			node.onProcessed += HandleNodeProcessed;
@@ -47,7 +48,9 @@ namespace OneHamsa.Dexterity.Visual
 		{
 			EnableInClassList("selected", node.shouldExecute);
 
-			var ports = portsPerFieldName[nameof(ConditionNode.outputs)];
+			if (!portsPerFieldName.TryGetValue(nameof(ConditionNode.outputs), out var ports))
+				return;
+
 			for (var i = 0; i < ports.Count; ++i)
             {
 				ports[i].EnableInClassList("selected", node.processIndex == i);
@@ -77,7 +80,13 @@ namespace OneHamsa.Dexterity.Visual
 
 		private void HandleFieldChange(SerializedPropertyChangeEvent evt)
         {
-			node.InitFieldDefinition();
+			RefreshField();
+		}
+		
+		private void RefreshField()
+        {
+			node.SetDefinitionFromEditor(DexteritySettingsProvider.GetFieldDefinitionByName(node.fieldName));
+			owner.SaveGraphToDisk();
 
 			UpdateTitle();
 			nodeTarget.UpdateAllPorts();

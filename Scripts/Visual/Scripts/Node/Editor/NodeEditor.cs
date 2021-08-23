@@ -10,7 +10,6 @@ namespace OneHamsa.Dexterity.Visual
     [CustomEditor(typeof(Node))]
     public class NodeEditor : Editor
     {
-
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -50,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
                     var style = new GUIStyle(EditorStyles.helpBox);
                     style.alignment = TextAnchor.MiddleLeft;
 
-                    var definition = Manager.instance.GetFieldDefinitionByName(kv.Key);
+                    var definition = DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key);
                     if (definition.name != null)
                     {
                         switch (definition.type)
@@ -85,7 +84,7 @@ namespace OneHamsa.Dexterity.Visual
                     var outputProp = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName));
                     var output = outputProp.stringValue;
                     // TODO check if manager exists!
-                    var fields = Manager.instance.fieldDefinitions.Select(f => f.name).ToArray();
+                    var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name).ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))

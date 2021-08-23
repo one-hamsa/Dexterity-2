@@ -25,7 +25,8 @@ namespace OneHamsa.Dexterity.Visual
         {
             serializedObject.Update();
 
-            var functions = Manager.instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
+            var functions = DexteritySettingsProvider.settings.stateFunctions
+                .Where(f => f != null).Select(f => f.name).ToArray();
             var stateFunctionProperty = serializedObject.FindProperty(nameof(Modifier.stateFunction));
 
             var customProps = new List<SerializedProperty>();
@@ -85,7 +86,7 @@ namespace OneHamsa.Dexterity.Visual
             // finally show states
             if (stateFunctionIdx >= 0)
             {
-                var stateFunction = Manager.instance.GetStateFunctionByName(functions[stateFunctionIdx]);
+                var stateFunction = DexteritySettingsProvider.GetStateFunctionByName(functions[stateFunctionIdx]);
                 stateFunctionProperty.objectReferenceValue = stateFunction;
 
                 if (stateFunction != null)
