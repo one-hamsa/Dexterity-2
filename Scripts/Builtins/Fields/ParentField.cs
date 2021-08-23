@@ -7,13 +7,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ParentField : BaseField
     {
+        [Field]
         public string fieldName;
         public bool updateParentReference;
 
         Node context = null;
         Node parent = null;
 
-        public override bool isProxy => true;
+        public override bool proxy => true;
         public override int GetValue() => parent != null ? parent.GetOutputField(fieldName).GetValue() : 0;
 
         List<Transform> parentsTransform = new List<Transform>();

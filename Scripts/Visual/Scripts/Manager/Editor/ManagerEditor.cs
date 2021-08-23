@@ -29,9 +29,9 @@ namespace OneHamsa.Dexterity.Visual
 
             SerializedProperty element = fieldDefinitionsList.serializedProperty.GetArrayElementAtIndex(index);
 
-            var type = element.FindPropertyRelative(nameof(Manager.FieldDefinition.type));
-            var values = element.FindPropertyRelative(nameof(Manager.FieldDefinition.enumValues));
-            var name = element.FindPropertyRelative(nameof(Manager.FieldDefinition.name));
+            var type = element.FindPropertyRelative(nameof(FieldDefinition.type));
+            var values = element.FindPropertyRelative(nameof(FieldDefinition.enumValues));
+            var name = element.FindPropertyRelative(nameof(FieldDefinition.name));
 
             //Create a property field and label field for each property. 
             EditorGUI.PropertyField(

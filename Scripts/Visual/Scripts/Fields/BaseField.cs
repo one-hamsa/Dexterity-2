@@ -40,8 +40,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// is the field a dependency itself, or is it only reflecting another field?
         /// </summary>
-        public virtual bool isProxy { get; protected set; } = false;
-
+        public virtual bool proxy { get; protected set; } = false;
 
         /// <summary>
         /// returns the field this provider relies on. 

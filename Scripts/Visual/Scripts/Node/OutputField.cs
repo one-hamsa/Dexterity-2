@@ -29,7 +29,7 @@ namespace OneHamsa.Dexterity.Visual
 
             protected int cachedValue = emptyFieldValue;
             protected int cachedValueWithoutOverride = emptyFieldValue;
-            protected Manager.FieldDefinition definition;
+            protected FieldDefinition definition;
 
             // optimizations
             int gateIncrement = -1;
@@ -119,11 +119,11 @@ namespace OneHamsa.Dexterity.Visual
 
             private bool IsAllUpstreamProxyOrOutput(BaseField field)
             {
-                if (!(field is OutputField) && !field.isProxy)
+                if (!(field is OutputField) && !field.proxy)
                     return false;
 
                 bool proxyOrOutput = true;
-                if (field.isProxy)
+                if (field.proxy)
                     foreach (var f in field.GetUpstreamFields())
                         proxyOrOutput &= IsAllUpstreamProxyOrOutput(f);
                 return proxyOrOutput;
@@ -132,7 +132,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (field is OutputField)
                     (field as OutputField).onValueChanged += UpstreamOutputChanged;
-                else if (field.isProxy)
+                else if (field.proxy)
                     foreach (var f in field.GetUpstreamFields())
                         RegisterUpstreamOutput(f);
             }
@@ -140,7 +140,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (field is OutputField)
                     (field as OutputField).onValueChanged -= UpstreamOutputChanged;
-                else if (field.isProxy)
+                else if (field.proxy)
                     foreach (var f in field.GetUpstreamFields())
                         UnregisterUpstreamOutput(f);
             }

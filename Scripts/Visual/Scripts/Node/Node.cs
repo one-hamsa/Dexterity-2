@@ -13,6 +13,7 @@ namespace OneHamsa.Dexterity.Visual
         [Serializable]
         public class Gate
         {
+            [Field]
             public string outputFieldName;
 
             [SerializeReference]
@@ -30,7 +31,9 @@ namespace OneHamsa.Dexterity.Visual
         [Serializable]
         public class OutputOverride
         {
+            [Field]
             public string outputFieldName;
+            [FieldValue(nameof(outputFieldName), proxy = true)]
             public int value;
         }
 
@@ -76,6 +79,7 @@ namespace OneHamsa.Dexterity.Visual
                 try
                 {
                     f.Initialize(this);
+
                     InitializeFields(gate, f.GetUpstreamFields());
                 }
                 catch (BaseField.FieldInitializationException)

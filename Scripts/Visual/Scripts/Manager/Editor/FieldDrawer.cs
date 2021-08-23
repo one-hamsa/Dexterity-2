@@ -28,13 +28,22 @@ namespace OneHamsa.Dexterity.Visual
 
             var prevIndex = Array.IndexOf(fields, property.stringValue);
 
-            var lblPos = position;
-            lblPos.width /= 2;
-            EditorGUI.LabelField(lblPos, label.text);
+            var attr = attribute as FieldAttribute;
+            int index;
+            if (attr.drawLabelSeparately)
+            {
+                var lblPos = position;
+                lblPos.width /= 2;
+                EditorGUI.LabelField(lblPos, label.text);
 
-            var popPos = lblPos;
-            popPos.x += lblPos.width;
-            var index = EditorGUI.Popup(popPos, prevIndex, fields);
+                var popPos = lblPos;
+                popPos.x += lblPos.width;
+                index = EditorGUI.Popup(popPos, prevIndex, fields);
+            }
+            else
+            {
+                index = EditorGUI.Popup(position, label.text, prevIndex, fields);
+            }
 
             if (index != prevIndex)
                 property.stringValue = fields[index];

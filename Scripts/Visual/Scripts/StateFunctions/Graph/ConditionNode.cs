@@ -12,13 +12,13 @@ namespace OneHamsa.Dexterity.Visual
 		[Output]
 		public IEnumerable<bool> outputs;
 
-		[Field, InspectorName("Field")]
+		[Field(drawLabelSeparately = true), InspectorName("Field")]
 		public string fieldName;
 
 		public override string name => string.IsNullOrWhiteSpace(fieldName) ? "Condition" : $"{fieldName}?";
 
 		protected int definitionId = -1;
-		protected Manager.FieldDefinition definition;
+		protected FieldDefinition definition;
 		public int processIndex { get; private set; } = -1;
 		private List<SerializableEdge> cachedOutputEdges;
 

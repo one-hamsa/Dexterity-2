@@ -11,14 +11,6 @@ namespace OneHamsa.Dexterity.Visual
         internal const int nodeExecutionPriority = 10;
         internal const int modifierExecutionPriority = 15;
 
-        [Serializable]
-        public struct FieldDefinition
-        {
-            public string name;
-            public Node.FieldType type;
-            public string[] enumValues;
-        }
-
         public FieldDefinition[] fieldDefinitions;
 
         public List<StateFunctionGraph> stateFunctions;
@@ -103,7 +95,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 return inst;
             }
-        }   
+        }  
 
         public Graph graph { get; } = new Graph();
         public void RegisterField(BaseField field) => graph.AddNode(field);
