@@ -124,7 +124,8 @@ namespace OneHamsa.Dexterity.Visual
 
                     // show field (create new reference if doesnt exist)
                     var fieldProp = gateProp.FindPropertyRelative(nameof(Node.Gate.field));
-                    ShowReference(fieldProp);
+                    var fieldName = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue;
+                    ShowReference(fieldName, fieldProp);
 
                     DrawSeparator(Color.gray);
 
@@ -162,7 +163,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        void ShowReference(SerializedProperty property)
+        void ShowReference(string fieldName, SerializedProperty property)
         {
             string className = Utils.GetClassName(property);
             var types = Utils.GetSubtypes<BaseField>()
@@ -185,10 +186,14 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel++;
             foreach (var child in Utils.GetChildren(property))
             {
-                if (child.propertyType == SerializedPropertyType.ManagedReference)
+                if (child.name == nameof(BaseField.relatedFieldName))
+                {
+                    child.stringValue = fieldName;
+                }
+                else if (child.propertyType == SerializedPropertyType.ManagedReference)
                 {
                     EditorGUILayout.LabelField(child.displayName, EditorStyles.boldLabel);
-                    ShowReference(child);
+                    ShowReference(fieldName, child);
                 }
                 else
                 {

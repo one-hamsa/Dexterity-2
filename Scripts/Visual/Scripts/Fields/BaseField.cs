@@ -38,6 +38,11 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
+        /// related field name (null if not exist), should be set by editor
+        /// </summary>
+        public string relatedFieldName;
+
+        /// <summary>
         /// is the field a dependency itself, or is it only reflecting another field?
         /// </summary>
         public virtual bool proxy { get; protected set; } = false;
