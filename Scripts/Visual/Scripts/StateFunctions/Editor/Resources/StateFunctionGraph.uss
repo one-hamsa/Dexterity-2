@@ -7,6 +7,16 @@
     width: 180px;
 }
 
+
+.unity-property-field > * {
+    flex-direction: column;
+}
+.unity-property-field #unity-text-input {
+    width: 95%;
+    align-self: flex-end;
+} 
+
+
 ConditionNodeView #title {
     background-color: rgba(29, 115, 57, 0.91);
 }

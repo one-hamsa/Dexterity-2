@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
 			owner.onAfterGraphChanged += HandleGraphChanges;
 			contentContainer.Q<PropertyField>(nameof(DecisionNode.stateName))
 				.RegisterValueChangeCallback(HandleStateChange);
-			HandleGraphChanges();
+			HandleGraphChanges(null);
 
 			// runtime
 			node.onProcessed += HandleNodeProcessed;
@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity.Visual
 			EnableInClassList("selected", node.shouldExecute);
 		}
 
-		private void HandleGraphChanges()
+		private void HandleGraphChanges(GraphChanges changes)
 		{
 			RemoveMessageView(kNoInputMessage);
 

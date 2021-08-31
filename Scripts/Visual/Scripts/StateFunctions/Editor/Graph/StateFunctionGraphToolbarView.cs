@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual
             graphView.initialized += GraphView_initialized;
         }
 
-        private void HandleGraphChanges()
+        private void HandleGraphChanges(GraphChanges changes)
         {
             dirty = true;
             RefreshSaveButtonColor();

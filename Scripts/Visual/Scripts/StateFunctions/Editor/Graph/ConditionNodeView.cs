@@ -23,7 +23,7 @@ namespace OneHamsa.Dexterity.Visual
 			owner.onAfterGraphChanged += HandleGraphChanges;
 			contentContainer.Q<PropertyField>(nameof(ConditionNode.fieldName))
 				.RegisterValueChangeCallback(HandleFieldChange);
-			HandleGraphChanges();
+			HandleGraphChanges(null);
 			RefreshField();
 
 			// runtime
@@ -57,7 +57,7 @@ namespace OneHamsa.Dexterity.Visual
 			}
 		}
 
-		private void HandleGraphChanges()
+		private void HandleGraphChanges(GraphChanges changes)
 		{
 			RemoveMessageView(kNotAllOutputsConnectedMessage);
 			if (nodeTarget.outputPorts
