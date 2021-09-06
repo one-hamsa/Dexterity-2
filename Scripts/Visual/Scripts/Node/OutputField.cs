@@ -95,7 +95,7 @@ namespace OneHamsa.Dexterity.Visual
                 allUpstreamFieldsAreOutputFields = true;
                 foreach (var gate in node.gates)
                 {
-                    if (gate.outputFieldName != name)
+                    if (gate.outputFieldName != name || gate.field == null)
                         continue;
 
                     // XXX could possibly cache each gate field independently

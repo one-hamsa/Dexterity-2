@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -23,6 +24,14 @@ namespace OneHamsa.Dexterity.Visual
             {
                 return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
             }
+        }
+
+        // mainly for debugging graph problems
+        private static ListMap<BaseField, Node> fieldsToNodes = new ListMap<BaseField, Node>();
+        internal static Node ByField(BaseField f)
+        {
+            fieldsToNodes.TryGetValue(f, out var node);
+            return node;
         }
 
         [SerializeField]
@@ -79,8 +88,9 @@ namespace OneHamsa.Dexterity.Visual
                 try
                 {
                     f.Initialize(this);
-
                     InitializeFields(gate, f.GetUpstreamFields());
+
+                    fieldsToNodes[f] = this;
                 }
                 catch (BaseField.FieldInitializationException)
                 {
@@ -102,6 +112,8 @@ namespace OneHamsa.Dexterity.Visual
                 f.Finalize(this);
                 Manager.instance?.UnregisterField(f);
                 FinalizeFields(gate, f.GetUpstreamFields());
+
+                fieldsToNodes.Remove(f);
             });
         }
 
@@ -132,6 +144,8 @@ namespace OneHamsa.Dexterity.Visual
                 output = new OutputField(name);
                 output.Initialize(this);
                 outputFields[name] = output;
+
+                fieldsToNodes[output] = this;
             }
 
             return output;

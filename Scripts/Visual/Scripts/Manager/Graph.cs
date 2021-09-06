@@ -76,7 +76,14 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var node in nodes)
             {
-                node.RefreshReferences();
+                try
+                {
+                    node.RefreshReferences();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e, Node.ByField(node));
+                }
             }
         }
 
