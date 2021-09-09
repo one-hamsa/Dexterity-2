@@ -20,6 +20,21 @@ namespace OneHamsa.Dexterity.Visual
             [SerializeReference]
             public BaseField field;
 
+            public int outputFieldDefinitionId { get; private set; } = -1;
+
+            public bool Initialize(int fieldId = -1)
+            {
+                if (fieldId != -1)
+                {
+                    outputFieldDefinitionId = fieldId;
+                    return true;
+                }
+                if (string.IsNullOrEmpty(outputFieldName))
+                    return false;
+
+                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
+            }
+
             public override string ToString()
             {
                 return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
@@ -44,6 +59,21 @@ namespace OneHamsa.Dexterity.Visual
             public string outputFieldName;
             [FieldValue(nameof(outputFieldName), proxy = true)]
             public int value;
+
+            public int outputFieldDefinitionId { get; private set; } = -1;
+
+            public bool Initialize(int fieldId = -1)
+            {
+                if (fieldId != -1)
+                {
+                    outputFieldDefinitionId = fieldId;
+                    return true;
+                }
+                if (string.IsNullOrEmpty(outputFieldName))
+                    return false;
+
+                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
+            }
         }
 
         [SerializeField]
@@ -53,9 +83,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
             {
-                if (string.IsNullOrEmpty(gate.outputFieldName))
+                if (!gate.Initialize())
                 {
-                    Debug.LogWarning($"Removing empty gate {gate}", this);
+                    Debug.LogWarning($"Removing invalid gate {gate}", this);
                     RemoveGate(gate);
                     continue;
                 }
@@ -76,7 +106,7 @@ namespace OneHamsa.Dexterity.Visual
         void InitializeFields(Gate gate, IEnumerable<BaseField> fields)
         {
             // make sure output field for gate is initialized
-            GetOutputField(gate.outputFieldName);
+            GetOutputField(gate.outputFieldDefinitionId);
 
             // initialize all fields
             fields.ToList().ForEach(f =>
@@ -133,17 +163,19 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // output fields of this node
-        protected Dictionary<string, OutputField> outputFields = new Dictionary<string, OutputField>();
-        public Dictionary<string, OutputField> GetOutputFields() => outputFields;
-        public OutputField GetOutputField(string name)
+        public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
+
+        public OutputField GetOutputField(string name) 
+            => GetOutputField(Manager.instance.GetFieldID(name));
+        public OutputField GetOutputField(int fieldId)
         {
             // lazy initialization
             OutputField output;
-            if (!outputFields.TryGetValue(name, out output))
+            if (!outputFields.TryGetValue(fieldId, out output))
             {
-                output = new OutputField(name);
+                output = new OutputField(fieldId);
                 output.Initialize(this);
-                outputFields[name] = output;
+                outputFields[fieldId] = output;
 
                 fieldsToNodes[output] = this;
             }
@@ -152,23 +184,25 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         int overridesIncrement;
-        Dictionary<string, OutputOverride> cachedOverrides = new Dictionary<string, OutputOverride>();
-        public Dictionary<string, OutputOverride> GetOverrides() => cachedOverrides;
-        public void SetOverride(string name, int value)
+        public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
+        public void SetOverride(int fieldId, int value)
         {
-            if (!cachedOverrides.ContainsKey(name))
+            if (!cachedOverrides.ContainsKey(fieldId))
             {
-                overrides.Add(new OutputOverride { outputFieldName = name });
+                var newOverride = new OutputOverride();
+                newOverride.Initialize(fieldId);
+
+                overrides.Add(newOverride);
                 CacheOverrides();
             }
-            var overrideOutput = cachedOverrides[name];
+            var overrideOutput = cachedOverrides[fieldId];
             overrideOutput.value = value;
         }
-        public void ClearOverride(string name)
+        public void ClearOverride(int fieldId)
         {
-            if (cachedOverrides.ContainsKey(name))
+            if (cachedOverrides.ContainsKey(fieldId))
             {
-                overrides.Remove(cachedOverrides[name]);
+                overrides.Remove(cachedOverrides[fieldId]);
                 CacheOverrides();
             }
             else
@@ -182,7 +216,8 @@ namespace OneHamsa.Dexterity.Visual
             cachedOverrides.Clear();
             foreach (var o in overrides)
             {
-                cachedOverrides[o.outputFieldName] = o;
+                o.Initialize();
+                cachedOverrides[o.outputFieldDefinitionId] = o;
             }
             overridesIncrement++;
         }

@@ -123,7 +123,7 @@ namespace OneHamsa.Dexterity.Visual
                 return false;
             }
 
-            if (activeStateFunction.GetStates().Count() != propertiesCache.Count)
+            if (activeStateFunction.GetStateIDs().Count() != propertiesCache.Count)
             {
                 Debug.LogError($"properties count != stateFunction states count", this);
                 return false;
@@ -155,7 +155,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             isDirty = true;
             outputFields.Clear();
-            foreach (var f in activeStateFunction.GetFields())
+            foreach (var f in activeStateFunction.GetFieldIDs())
             {
                 outputFields.Add(node.GetOutputField(f));
             }

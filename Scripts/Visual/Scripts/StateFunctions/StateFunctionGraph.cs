@@ -20,12 +20,12 @@ namespace OneHamsa.Dexterity.Visual
         }
 
 
-        public IEnumerable<string> GetFields()
+        public IEnumerable<int> GetFieldIDs()
         {
             foreach (var node in nodes)
             {
                 if (node is ConditionNode cond)
-                    yield return cond.fieldName;
+                    yield return Manager.instance.GetFieldID(cond.fieldName);
             }
         }
 
@@ -47,6 +47,11 @@ namespace OneHamsa.Dexterity.Visual
                 if (node is DecisionNode desc)
                     yield return desc.stateName;
             }
+        }
+        public IEnumerable<int> GetStateIDs()
+        {
+            foreach (var stateName in GetStates())
+                yield return Manager.instance.GetStateID(stateName);
         }
 
 

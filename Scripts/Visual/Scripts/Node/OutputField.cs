@@ -24,7 +24,6 @@ namespace OneHamsa.Dexterity.Visual
             public static new bool showInInspector = false;
 
             Node node;
-            public readonly string name;
             public int definitionId { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
@@ -50,23 +49,22 @@ namespace OneHamsa.Dexterity.Visual
                     if (overridesIncrement == node.overridesIncrement)
                         return cachedOverride;
 
-                    if (!node.cachedOverrides.TryGetValue(name, out cachedOverride))
+                    if (!node.cachedOverrides.TryGetValue(definitionId, out cachedOverride))
                         cachedOverride = null;
                     overridesIncrement = node.overridesIncrement;
                     return cachedOverride;
                 }
             }
 
-            public OutputField(string name)
+            public OutputField(int definitionId)
             {
-                this.name = name;
+                this.definitionId = definitionId;
             }
             public override void Initialize(Node context)
             {
                 base.Initialize(context);
                 node = context;
                 Manager.instance.RegisterField(this);
-                definitionId = Manager.instance.GetFieldID(name);
                 definition = Manager.instance.GetFieldDefinition(definitionId);
             }
             public override void Finalize(Node context)
@@ -95,7 +93,7 @@ namespace OneHamsa.Dexterity.Visual
                 allUpstreamFieldsAreOutputFields = true;
                 foreach (var gate in node.gates)
                 {
-                    if (gate.outputFieldName != name || gate.field == null)
+                    if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;
 
                     // XXX could possibly cache each gate field independently
@@ -220,7 +218,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (!node)
                     return base.ToString();
 
-                return $"OutputNode {node.name}::{name} -> {GetValue()}";
+                return $"OutputNode {node.name}::{Manager.instance.GetFieldDefinition(definitionId).name} -> {GetValue()}";
             }
         }
     }

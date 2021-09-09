@@ -171,7 +171,7 @@ namespace OneHamsa.Dexterity.Visual
 
         HashSet<BaseField> GetRelatedFields(VisualNode visualNode, int depth = 5)
         {
-            var outputFields = new HashSet<VisualNode.OutputField>(visualNode.GetOutputFields().Values);
+            var outputFields = new HashSet<VisualNode.OutputField>(visualNode.outputFields.Values);
             var res = new HashSet<BaseField>();
             Stack<(int, BaseField)> dfs = new Stack<(int, BaseField)>();
 
@@ -355,7 +355,8 @@ namespace OneHamsa.Dexterity.Visual
                 if (field is VisualNode.OutputField)
                 {
                     var fnode = field as VisualNode.OutputField;
-                    return $"Output: {fnode.name}";
+                    return "XXXXX";
+                    //return $"Output: {fnode.name}";
                 }
                 return GetFieldType();
             }
@@ -387,10 +388,12 @@ namespace OneHamsa.Dexterity.Visual
                 title = visualNode.name;
                 expanded = false;
 
-                foreach (var kv in visualNode.GetOutputFields().OrderBy(f => f.Key))
+                foreach (var kv in visualNode.outputFields.OrderBy(f => f.Key))
                 {
-                    var name = kv.Key;
+                    var fieldId = kv.Key;
                     var field = kv.Value;
+
+                    var name = "XXXX";
 
                     Port ingoing, outgoing;
                     Label valLabel;

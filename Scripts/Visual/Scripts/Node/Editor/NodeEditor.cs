@@ -217,8 +217,8 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             var node = (Node)target;
-            var outputFields = node.GetOutputFields();
-            var overrides = node.GetOverrides();
+            var outputFields = node.outputFields;
+            var overrides = node.cachedOverrides;
             var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
             var origColor = GUI.color;
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
@@ -229,7 +229,7 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.color = origColor;
             }
 
-            foreach (var field in outputFields.Values.OrderBy(f => f.GetValue() == Node.emptyFieldValue))
+            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
             {
                 var value = field.GetValueWithoutOverride();
                 string strValue = value.ToString();
@@ -238,16 +238,16 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.name))
+                if (overrides.ContainsKey(field.definitionId))
                 {
-                    var outputOverride = overrides[field.name];
+                    var outputOverride = overrides[field.definitionId];
                     GUI.color = Color.magenta;
                     strValue = $"{outputOverride.value} ({StrikeThrough(strValue)})";
                     unusedOverrides.Remove(outputOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.name);
+                EditorGUILayout.LabelField(Manager.instance.GetFieldDefinition(field.definitionId).name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();

@@ -9,13 +9,22 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         [Field]
         public string fieldName;
+        public bool negate;
         public bool updateParentReference;
 
         Node context = null;
         Node parent = null;
+        int fieldId;
 
         public override bool proxy => true;
-        public override int GetValue() => parent != null ? parent.GetOutputField(fieldName).GetValue() : 0;
+        public override int GetValue()
+        {
+            if (parent == null)
+                return 0;
+
+            var value = parent.GetOutputField(fieldId).GetValue();
+            return negate ? (value + 1) % 2 : value;
+        }
 
         List<Transform> parentsTransform = new List<Transform>();
         public override void RefreshReferences()
@@ -59,13 +68,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             ClearUpstreamFields();
             if (parent != null)
-                AddUpstreamField(parent.GetOutputField(fieldName));
+                AddUpstreamField(parent.GetOutputField(fieldId));
         }
 
         public override void Initialize(Node context)
         {
             base.Initialize(context);
 
+            fieldId = Manager.instance.GetFieldID(fieldName);
             this.context = context;
             RefreshReferences();
         }
