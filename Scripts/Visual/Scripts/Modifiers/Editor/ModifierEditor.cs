@@ -10,11 +10,10 @@ namespace OneHamsa.Dexterity.Visual
     [CustomEditor(typeof(Modifier), true)]
     public class ModifierEditor : Editor
     {
-        StateFunctionGraph stateFunctionObj = null;
-        int stateFunctionIdx;
         static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
         bool strategyDefined;
         Modifier modifier;
+        List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
 
         private void OnEnable()
         {
@@ -25,10 +24,6 @@ namespace OneHamsa.Dexterity.Visual
         {
             serializedObject.Update();
 
-            var functions = DexteritySettingsProvider.settings.stateFunctions
-                .Where(f => f != null).Select(f => f.name).ToArray();
-            var stateFunctionProperty = serializedObject.FindProperty(nameof(Modifier.stateFunction));
-
             var customProps = new List<SerializedProperty>();
             var parent = serializedObject.GetIterator();
             foreach (var prop in Utils.GetVisibleChildren(parent))
@@ -37,19 +32,12 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     case "m_Script":
                         break;
-                    case nameof(Modifier.node):
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier.node)));
+                    case nameof(Modifier._node):
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
                         EditorGUI.indentLevel++;
-                        EditorGUILayout.LabelField("Leave empty for parent", EditorStyles.miniLabel);
+                        EditorGUILayout.LabelField($"Automatically selecting parent ({modifier.node.name})", 
+                            EditorStyles.miniLabel);
                         EditorGUI.indentLevel--;
-                        break;
-
-                    case nameof(Modifier.stateFunction):
-                        stateFunctionObj = (StateFunctionGraph)stateFunctionProperty.objectReferenceValue;
-
-                        
-                        stateFunctionIdx = EditorGUILayout.Popup("State Function",
-                            Array.IndexOf(functions, stateFunctionObj?.name), functions);
                         break;
                     case nameof(Modifier.properties):
                         // show later
@@ -83,22 +71,16 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            // finally show states
-            if (stateFunctionIdx >= 0)
+            var stateFunction = modifier.stateFunction;
+            if (stateFunction != null)
             {
-                var stateFunction = DexteritySettingsProvider.GetStateFunctionByName(functions[stateFunctionIdx]);
-                stateFunctionProperty.objectReferenceValue = stateFunction;
-
-                if (stateFunction != null)
-                {
-                    EditorGUILayout.Space();
-                    EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                    ShowProperties(stateFunction);
-                }
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
+                ShowProperties(stateFunction);
             }
 
             // warnings
-            if (stateFunctionObj == null)
+            if (stateFunction == null)
             {
                 var origColor = GUI.color;
                 GUI.color = Color.red;
@@ -115,7 +97,7 @@ namespace OneHamsa.Dexterity.Visual
 
             serializedObject.ApplyModifiedProperties();
         }
-
+        
         void ShowProperties(StateFunctionGraph sf)
         {
             // get property info, iterate through parent classes to support inheritance
@@ -128,7 +110,6 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var properties = serializedObject.FindProperty(nameof(Modifier.properties));
-            var defaultState = serializedObject.FindProperty(nameof(Modifier.defaultState));
             var states = sf.GetStates();
 
             // find all existing references to properties by state name, add more entries if needed
@@ -155,13 +136,6 @@ namespace OneHamsa.Dexterity.Visual
                     foldedStates[state] = true;
             }
 
-            if (string.IsNullOrEmpty(defaultState.stringValue) && states.Count() > 0)
-            {
-                var first = states.First();
-                Debug.LogWarning($"no default state selected, selecting first ({first})", target);
-                defaultState.stringValue = first;
-            }
-
             var activeState = (target as Modifier).activeState;
 
             // draw the editor for each value in property
@@ -175,7 +149,17 @@ namespace OneHamsa.Dexterity.Visual
 
                 DrawSeparator();
 
-                EditorGUILayout.BeginHorizontal();
+                stateProps.Clear();
+
+                // fields
+                foreach (var field in Utils.GetChildren(property))
+                {
+                    if (field.name == nameof(Modifier.PropertyBase.state))
+                        continue;
+
+                    stateProps.Add(field.Copy());
+                }
+
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
@@ -184,26 +168,29 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.contentColor = Color.green;
                     suffix = " (current)";
                 }
-                foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState], 
-                    $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
-                GUI.contentColor = origColor;
-                GUILayout.FlexibleSpace();
 
-                // default?
-                if (GUILayout.Toggle(propState == defaultState.stringValue, 
-                    new GUIContent("", $"default ({propState})?"))) {
-                    defaultState.stringValue = propState;
+                if (stateProps.Count > 1)
+                {
+                    // multiple - fold
+                    EditorGUILayout.BeginHorizontal();
+                    foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState],
+                        $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
+                    GUI.contentColor = origColor;
+                    EditorGUILayout.EndHorizontal();
+
+                    // show fields
+                    if (foldedStates[propState])
+                        foreach (var field in stateProps)
+                            EditorGUILayout.PropertyField(field);
                 }
-                EditorGUILayout.EndHorizontal();
-
-                // fields
-                if (foldedStates[propState]) 
-                    foreach (var field in Utils.GetChildren(property))
-                    {
-                        if (field.name == nameof(Modifier.PropertyBase.state))
-                            continue;
-                        EditorGUILayout.PropertyField(field);
-                    }
+                else if (stateProps.Count == 1)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"{propState}{suffix}");
+                    GUI.contentColor = origColor;
+                    EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
+                    EditorGUILayout.EndHorizontal();
+                }
             }
             DrawSeparator();
 

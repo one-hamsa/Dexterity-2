@@ -22,10 +22,18 @@ namespace OneHamsa.Dexterity.Visual
 
         public IEnumerable<int> GetFieldIDs()
         {
+            foreach (var name in GetFieldNames())
+            {
+                yield return Manager.instance.GetFieldID(name);
+            }
+        }
+
+        public IEnumerable<string> GetFieldNames()
+        {
             foreach (var node in nodes)
             {
                 if (node is ConditionNode cond)
-                    yield return Manager.instance.GetFieldID(cond.fieldName);
+                    yield return cond.fieldName;
             }
         }
 

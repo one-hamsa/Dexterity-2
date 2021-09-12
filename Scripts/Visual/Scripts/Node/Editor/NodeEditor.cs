@@ -7,200 +7,64 @@ using System;
 
 namespace OneHamsa.Dexterity.Visual
 {
+
     [CustomEditor(typeof(Node))]
     public class NodeEditor : Editor
     {
+        Node node;
+
         public override void OnInspectorGUI()
         {
+            node = target as Node;
+
             serializedObject.Update();
-            ShowGates();
+
+            ShowChooseReference();
+            ShowChooseInitialState();
             ShowOverrides();
             ShowDebug();
             serializedObject.ApplyModifiedProperties();
         }
-        void ShowGates()
+
+        private void ShowChooseInitialState()
         {
-            var gatesProp = serializedObject.FindProperty(nameof(Node.gates));
-            var gatesByField = new Dictionary<string, List<(int, SerializedProperty)>>();
-            for (var i = 0; i < gatesProp.arraySize; ++i)
+            if (node.reference == null)
+                return;
+
+            var prop = serializedObject.FindProperty(nameof(Node.initialState));
+
+            var states = node.reference.stateFunction.GetStates().ToList();
+
+            EditorGUI.BeginChangeCheck();
+            var newIdx = EditorGUILayout.Popup("Initial state", states.IndexOf(node.initialState), states.ToArray());
+            if (EditorGUI.EndChangeCheck())
             {
-                var gateProp = gatesProp.GetArrayElementAtIndex(i);
-                var field = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue;
-                List<(int, SerializedProperty)> lst;
-                if (!gatesByField.TryGetValue(field, out lst))
-                {
-                    lst = gatesByField[field] = new List<(int, SerializedProperty)>();
-                }
-                lst.Add((i, gateProp));
-            }
-
-            var deleteIndex = -1;
-            var moveIndex = (-1, -1);
-            foreach (var kv in gatesByField)
-            {
-                GUILayout.BeginHorizontal();
-                var origColor = GUI.color;
-                GUI.color = !string.IsNullOrEmpty(kv.Key) ? Color.green : Color.yellow;
-                GUILayout.Label(!string.IsNullOrEmpty(kv.Key) ? kv.Key : "<unassigned>", EditorStyles.largeLabel);
-                if (!string.IsNullOrEmpty(kv.Key))
-                {
-                    GUILayout.FlexibleSpace();
-                    GUI.color = Color.gray;
-                    var style = new GUIStyle(EditorStyles.helpBox);
-                    style.alignment = TextAnchor.MiddleLeft;
-
-                    var definition = DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key);
-                    if (definition.name != null)
-                    {
-                        switch (definition.type)
-                        {
-                            case Node.FieldType.Boolean:
-                                GUILayout.Label("Boolean", style);
-                                break;
-                            case Node.FieldType.Enum:
-                                GUILayout.Label("Enum", style);
-                                break;
-                        }
-                    }
-                    GUI.color = Color.green;
-
-                    if (GUILayout.Button("+", EditorStyles.miniButtonRight, GUILayout.Width(20)))
-                    {
-                        gatesProp.arraySize++;
-                        // override new value
-                        var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                        newProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = kv.Key;
-                        newProp.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = null;
-                    }
-                }
-                GUI.color = origColor;
-                GUILayout.EndHorizontal();
-
-                DrawSeparator(!string.IsNullOrEmpty(kv.Key) ? Color.green : Color.yellow);
-                var indexInFieldType = 0;
-                foreach ((var i, var gateProp) in kv.Value)
-                {
-                    // show output field dropdown
-                    var outputProp = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName));
-                    var output = outputProp.stringValue;
-                    // TODO check if manager exists!
-                    var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name).ToArray();
-
-                    EditorGUILayout.BeginHorizontal();
-                    if (!string.IsNullOrEmpty(kv.Key))
-                    {
-                        GUI.backgroundColor = Color.clear;
-                        GUI.contentColor = Color.gray;
-                    }
-                    var outputIdx = EditorGUILayout.Popup($"Output Field {indexInFieldType + 1}",
-                        Array.IndexOf(fields, output), fields);
-                    if (outputIdx >= 0)
-                        outputProp.stringValue = fields[outputIdx];
-
-                    GUI.contentColor = indexInFieldType > 0 ? Color.white : Color.gray;
-                    EditorGUI.BeginDisabledGroup(indexInFieldType == 0);
-                    if (GUILayout.Button('\u25B2'.ToString(), EditorStyles.miniButtonRight, GUILayout.Width(20)))
-                    {
-                        moveIndex = (i, kv.Value[indexInFieldType - 1].Item1);
-                    }
-                    EditorGUI.EndDisabledGroup();
-
-                    GUI.contentColor = indexInFieldType < kv.Value.Count - 1 ? Color.white : Color.gray;
-                    EditorGUI.BeginDisabledGroup(indexInFieldType == kv.Value.Count - 1);
-                    if (GUILayout.Button('\u25BC'.ToString(), EditorStyles.miniButtonRight, GUILayout.Width(20)))
-                    {
-                        moveIndex = (i, kv.Value[indexInFieldType + 1].Item1);
-                    }
-                    EditorGUI.EndDisabledGroup();
-
-                    GUI.contentColor = Color.red;
-                    if (GUILayout.Button("-", EditorStyles.miniButtonRight, GUILayout.Width(20)))
-                    {
-                        deleteIndex = i;
-                    }
-                    GUI.backgroundColor = origColor;
-                    GUI.contentColor = origColor;
-                    EditorGUILayout.EndHorizontal();
-
-                    // show field (create new reference if doesnt exist)
-                    var fieldProp = gateProp.FindPropertyRelative(nameof(Node.Gate.field));
-                    var fieldName = gateProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue;
-                    ShowReference(fieldName, fieldProp);
-
-                    DrawSeparator(Color.gray);
-
-                    indexInFieldType++;
-                }
-            }
-
-            if (GUILayout.Button("+", EditorStyles.miniButton))
-            {
-                gatesProp.arraySize++;
-                // override new value
-                var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                newProp.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = null;
-                newProp.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = null;
-            }
-
-            if (deleteIndex != -1)
-                gatesProp.DeleteArrayElementAtIndex(deleteIndex);
-
-            if (moveIndex != (-1, -1))
-            {
-                // MoveArrayElement just makes unity crash, and since Gate is a Serializable 
-                //. it looks like that's the most straightforward way around...
-                var g1 = ((Node)target).gates[moveIndex.Item1];
-                var g2 = ((Node)target).gates[moveIndex.Item2];
-
-                var p1 = gatesProp.GetArrayElementAtIndex(moveIndex.Item1);
-                var p2 = gatesProp.GetArrayElementAtIndex(moveIndex.Item2);
-
-                p2.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = g1.outputFieldName;
-                p2.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = g1.field;
-
-                p1.FindPropertyRelative(nameof(Node.Gate.outputFieldName)).stringValue = g2.outputFieldName;
-                p1.FindPropertyRelative(nameof(Node.Gate.field)).managedReferenceValue = g2.field;
+                prop.stringValue = states[newIdx];
             }
         }
 
-        void ShowReference(string fieldName, SerializedProperty property)
+        void ShowChooseReference()
         {
-            string className = Utils.GetClassName(property);
-            var types = Utils.GetSubtypes<BaseField>()
-                .Where(t => (bool)t.GetField(nameof(BaseField.showInInspector), 
-                    BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy).GetValue(null))
-                .ToArray();
-            var fieldTypesNames = types
-                .Select(t => t.ToString())
-                .ToArray();
-            var currentIdx = Array.IndexOf(fieldTypesNames, className);
-            var fieldIdx = EditorGUILayout.Popup("Field", currentIdx,
-                Utils.GetNiceName(fieldTypesNames, suffix: "Field").ToArray());
+            var prop = serializedObject.FindProperty(nameof(Node.reference));
 
-            if (fieldIdx >= 0 && currentIdx != fieldIdx)
+            var references = FindAssetsByType<NodeReference>();
+            var names = references.Select(r => r.name);
+            var currentIdx = references.IndexOf(node.reference);
+            EditorGUI.BeginChangeCheck();
+            var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.ToArray());
+            if (EditorGUI.EndChangeCheck())
             {
-                var type = types[fieldIdx];
-                property.managedReferenceValue = Activator.CreateInstance(type);
+                EditorGUIUtility.PingObject(node.reference);
+                prop.objectReferenceValue = references[newIdx];
             }
+            
 
-            EditorGUI.indentLevel++;
-            foreach (var child in Utils.GetChildren(property))
+            GUI.enabled = node.reference != null;
+            if (GUILayout.Button("Select Reference Asset"))
             {
-                if (child.name == nameof(BaseField.relatedFieldName))
-                {
-                    child.stringValue = fieldName;
-                }
-                else if (child.propertyType == SerializedPropertyType.ManagedReference)
-                {
-                    EditorGUILayout.LabelField(child.displayName, EditorStyles.boldLabel);
-                    ShowReference(fieldName, child);
-                }
-                else
-                {
-                    EditorGUILayout.PropertyField(child);
-                }
+                Selection.activeObject = node.reference;
             }
-            EditorGUI.indentLevel--;
+            GUI.enabled = true;
         }
 
         void ShowOverrides()
@@ -216,7 +80,6 @@ namespace OneHamsa.Dexterity.Visual
             if (!debugOpen)
                 return;
 
-            var node = (Node)target;
             var outputFields = node.outputFields;
             var overrides = node.cachedOverrides;
             var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
@@ -269,6 +132,22 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
+        }
+
+        static List<T> FindAssetsByType<T>() where T : UnityEngine.Object
+        {
+            List<T> assets = new List<T>();
+            string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T)));
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                if (asset != null)
+                {
+                    assets.Add(asset as T);
+                }
+            }
+            return assets;
         }
 
         public static string StrikeThrough(string s)

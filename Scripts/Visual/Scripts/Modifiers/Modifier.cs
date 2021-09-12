@@ -10,21 +10,18 @@ namespace OneHamsa.Dexterity.Visual
     public abstract class Modifier : MonoBehaviour
     {
         [SerializeField]
-        public Node node;
-
-        [SerializeField]
-        public StateFunctionGraph stateFunction;
+        public Node _node;
 
         [SerializeReference]
         public ITransitionStrategy transitionStrategy;
 
-        [SerializeField]
-        [HideInInspector]
-        public string defaultState;
         public int activeState { get; private set; } = -1;
 
         [SerializeReference]
         public List<PropertyBase> properties = new List<PropertyBase>();
+
+        public Node node => TryFindNode();
+        public StateFunctionGraph stateFunction => node.reference.stateFunction;
 
         ListMap<int, PropertyBase> propertiesCache = null;
         public PropertyBase GetProperty(int stateId)
@@ -69,9 +66,14 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Start()
         {
-            TryFindNode();
+            if ((_node = TryFindNode()) == null)
+            {
+                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
+                enabled = false;
+                return;
+            }
 
-            var defaultStateId = Manager.instance.GetStateID(defaultState);
+            var defaultStateId = Manager.instance.GetStateID(node.initialState);
             if (defaultStateId == -1)
             {
                 defaultStateId = Manager.instance.GetStateID(properties[0].state);
@@ -93,16 +95,13 @@ namespace OneHamsa.Dexterity.Visual
             RegisterOutputEvents();
         }
 
-        void TryFindNode()
+        Node TryFindNode()
         {
-            if (!node)
-                node = GetComponentInParent<Node>();
+            Node current = _node;
+            if (current == null)
+                current = GetComponentInParent<Node>();
 
-            if (!node)
-            {
-                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
-                enabled = false;
-            }
+            return current;
         }
 
         float stateChangeTime;
@@ -147,7 +146,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            TryFindNode();
+            _node = TryFindNode();
             RegisterOutputEvents();
         }
 

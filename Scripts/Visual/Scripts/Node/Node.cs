@@ -6,41 +6,12 @@ using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Node")]
+    using Gate = NodeReference.Gate;
+
+    [AddComponentMenu("Dexterity/Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class Node : MonoBehaviour
     {
-        // stores the coupling between input fields and their output name
-        [Serializable]
-        public class Gate
-        {
-            [Field]
-            public string outputFieldName;
-
-            [SerializeReference]
-            public BaseField field;
-
-            public int outputFieldDefinitionId { get; private set; } = -1;
-
-            public bool Initialize(int fieldId = -1)
-            {
-                if (fieldId != -1)
-                {
-                    outputFieldDefinitionId = fieldId;
-                    return true;
-                }
-                if (string.IsNullOrEmpty(outputFieldName))
-                    return false;
-
-                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
-            }
-
-            public override string ToString()
-            {
-                return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
-            }
-        }
-
         // mainly for debugging graph problems
         private static ListMap<BaseField, Node> fieldsToNodes = new ListMap<BaseField, Node>();
         internal static Node ByField(BaseField f)
@@ -49,8 +20,12 @@ namespace OneHamsa.Dexterity.Visual
             return node;
         }
 
-        [SerializeField]
-        public List<Gate> gates;
+        public NodeReference reference;
+        
+        public string initialState;
+
+        [NonSerialized]
+        public List<Gate> gates = new List<Gate>(8);
 
         [Serializable]
         public class OutputOverride
@@ -79,8 +54,18 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeField]
         public List<OutputOverride> overrides;
 
+        private void LoadFromReference()
+        {
+            gates.Clear();
+
+            foreach (var gate in reference.gates)
+                gates.Add(gate);
+        }
+
         protected void OnEnable()
         {
+            LoadFromReference();
+
             foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
             {
                 if (!gate.Initialize())
@@ -95,6 +80,7 @@ namespace OneHamsa.Dexterity.Visual
 
             CacheOverrides();
         }
+
         protected void OnDisable()
         {
             foreach (var gate in gates.ToArray())

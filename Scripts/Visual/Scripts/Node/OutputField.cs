@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
+    using Gate = NodeReference.Gate;
+
     public partial class Node
     {
         public const int emptyFieldValue = -1;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Manager")]
+    [AddComponentMenu("Dexterity/Manager")]
     public class Manager : MonoBehaviour
     {
         internal const int nodeExecutionPriority = 10;
