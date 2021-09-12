@@ -20,8 +20,11 @@ namespace OneHamsa.Dexterity.Visual
             return node;
         }
 
+        public NodeReference referenceAsset;
+        [NonSerialized]
         public NodeReference reference;
         
+        [State]
         public string initialState;
 
         [NonSerialized]
@@ -64,6 +67,9 @@ namespace OneHamsa.Dexterity.Visual
 
         protected void OnEnable()
         {
+            reference = Instantiate(referenceAsset);
+
+            reference.Initialize();
             LoadFromReference();
 
             foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
@@ -87,6 +93,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 FinalizeFields(gate, new BaseField[] { gate.field });
             }
+
+            Destroy(reference);
         }
 
         void InitializeFields(Gate gate, IEnumerable<BaseField> fields)

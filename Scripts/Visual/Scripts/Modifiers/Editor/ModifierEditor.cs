@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            var stateFunction = modifier.stateFunction;
+            var stateFunction = modifier.node.referenceAsset?.stateFunction;
             if (stateFunction != null)
             {
                 EditorGUILayout.Space();
@@ -80,11 +80,11 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // warnings
-            if (stateFunction == null)
+            if (modifier.node.referenceAsset == null)
             {
                 var origColor = GUI.color;
-                GUI.color = Color.red;
-                EditorGUILayout.LabelField("Must select State Function", EditorStyles.helpBox);
+                GUI.color = Color.yellow;
+                EditorGUILayout.LabelField("Must select Node Reference for node", EditorStyles.helpBox);
                 GUI.color = origColor;
             }
             if (!strategyDefined)
@@ -219,7 +219,12 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             if (!string.IsNullOrEmpty(className))
-                EditorGUILayout.PropertyField(strategyProp, new GUIContent("Strategy Parameters"), true);
+            {
+                foreach (var field in Utils.GetChildren(strategyProp))
+                {
+                    EditorGUILayout.PropertyField(field);
+                }
+            }
 
             return !string.IsNullOrEmpty(className);
         }

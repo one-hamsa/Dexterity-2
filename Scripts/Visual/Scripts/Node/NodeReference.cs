@@ -40,10 +40,38 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        [Serializable]
+        public class TransitionDelay
+        {
+            [State]
+            public string state;
+            public float delay = 0;
+        }
+
         [SerializeField]
         public StateFunctionGraph stateFunction;
 
         [SerializeField]
         public List<Gate> gates;
+
+        [SerializeField]
+        public List<TransitionDelay> delays;
+
+        ListMap<int, TransitionDelay> cachedDelays;
+
+        public void Initialize()
+        {
+            // cache delays
+            cachedDelays = new ListMap<int, TransitionDelay>();
+            foreach (var delay in delays)
+                cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
+        }
+
+        public TransitionDelay GetDelay(int state)
+        {
+            cachedDelays.TryGetValue(state, out var value);
+            return value;
+        }
+
     }
 }

@@ -23,6 +23,7 @@ namespace OneHamsa.Dexterity.Visual
             ShowChooseInitialState();
             ShowOverrides();
             ShowDebug();
+            ShowWarnings();
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -31,39 +32,34 @@ namespace OneHamsa.Dexterity.Visual
             if (node.reference == null)
                 return;
 
-            var prop = serializedObject.FindProperty(nameof(Node.initialState));
-
-            var states = node.reference.stateFunction.GetStates().ToList();
-
-            EditorGUI.BeginChangeCheck();
-            var newIdx = EditorGUILayout.Popup("Initial state", states.IndexOf(node.initialState), states.ToArray());
-            if (EditorGUI.EndChangeCheck())
-            {
-                prop.stringValue = states[newIdx];
-            }
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
         }
 
         void ShowChooseReference()
         {
-            var prop = serializedObject.FindProperty(nameof(Node.reference));
+            var prop = serializedObject.FindProperty(nameof(Node.referenceAsset));
 
             var references = FindAssetsByType<NodeReference>();
             var names = references.Select(r => r.name);
-            var currentIdx = references.IndexOf(node.reference);
+            var currentIdx = references.IndexOf(prop.objectReferenceValue as NodeReference);
+
+            EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.ToArray());
             if (EditorGUI.EndChangeCheck())
             {
-                EditorGUIUtility.PingObject(node.reference);
+                EditorGUIUtility.PingObject(node.referenceAsset);
                 prop.objectReferenceValue = references[newIdx];
             }
             
 
-            GUI.enabled = node.reference != null;
-            if (GUILayout.Button("Select Reference Asset"))
+            GUI.enabled = node.referenceAsset != null;
+            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FilterBySelection"), 
+                EditorStyles.miniButton, GUILayout.Width(24)))
             {
-                Selection.activeObject = node.reference;
+                Selection.activeObject = node.referenceAsset;
             }
+            EditorGUILayout.EndHorizontal();
             GUI.enabled = true;
         }
 
@@ -132,6 +128,17 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
+        }
+
+        private void ShowWarnings()
+        {
+            if (node.referenceAsset == null)
+            {
+                var origColor = GUI.color;
+                GUI.color = Color.red;
+                EditorGUILayout.LabelField("Must select Node Reference", EditorStyles.helpBox);
+                GUI.color = origColor;
+            }
         }
 
         static List<T> FindAssetsByType<T>() where T : UnityEngine.Object

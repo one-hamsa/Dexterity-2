@@ -21,7 +21,13 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
             ShowFunction();
             ShowGates();
+            ShowDelays();
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void ShowDelays()
+        {
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(reference.delays)));
         }
 
         private void ShowFunction()
@@ -29,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
             var functions = DexteritySettingsProvider.settings.stateFunctions
                 .Where(f => f != null).Select(f => f.name).ToArray();
 
-            var stateFunctionProperty = serializedObject.FindProperty(nameof(Modifier.stateFunction));
+            var stateFunctionProperty = serializedObject.FindProperty(nameof(reference.stateFunction));
             var stateFunctionObj = (StateFunctionGraph)stateFunctionProperty.objectReferenceValue;
 
             EditorGUI.BeginChangeCheck();

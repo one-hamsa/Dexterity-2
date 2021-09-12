@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Visual
         public List<PropertyBase> properties = new List<PropertyBase>();
 
         public Node node => TryFindNode();
-        public StateFunctionGraph stateFunction => node.reference.stateFunction;
+        public StateFunctionGraph stateFunction => node.reference?.stateFunction;
 
         ListMap<int, PropertyBase> propertiesCache = null;
         public PropertyBase GetProperty(int stateId)
@@ -104,7 +104,8 @@ namespace OneHamsa.Dexterity.Visual
             return current;
         }
 
-        float stateChangeTime;
+        float stateChangeTime, nextStateChangeTime;
+        int pendingState = -1;
         bool isDirty = true;
 
         bool EnsureValidState()
@@ -181,29 +182,37 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Update()
         {
-            int newState;
             if (isDirty)
             {
-                newState = GetState();
+                // someone marked this dirty, check for new state
+                var newState = GetState();
                 if (newState == -1)
                 {
                     Debug.LogWarning($"{name}: got -1 for new state, not updating");
                     return;
                 }
-                if (newState != activeState)
+                if (newState != pendingState)
                 {
-                    stateChangeTime = Time.time;
-                    activeState = newState;
-                    HandleStateChange();
+                    // add delay to change time
+                    var delay = node.reference.GetDelay(activeState);
+                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
+                    // don't trigger change if moving back to current state
+                    pendingState = newState != activeState ? newState : -1;
                 }
                 isDirty = false;
             }
-            else
+
+            // change to next state (delay is accounted for already)
+            if (nextStateChangeTime <= Time.time && pendingState != -1)
             {
-                newState = activeState;
+                activeState = pendingState;
+                pendingState = -1;
+                stateChangeTime = Time.time;
+                HandleStateChange();
             }
+
             transitionState = transitionStrategy.GetTransition(transitionState,
-                newState, Time.time - stateChangeTime, out transitionChanged);
+                activeState, Time.time - stateChangeTime, out transitionChanged);
 
             if (forceTransitionChangeFrames > 0)
             {

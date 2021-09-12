@@ -105,7 +105,8 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.backgroundColor = origColor;
             }
 
-            // We need to call this so that changes on the Inspector are saved by Unity.
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.globalFloatValues)));
+
             serializedObject.ApplyModifiedProperties();
         }
     }

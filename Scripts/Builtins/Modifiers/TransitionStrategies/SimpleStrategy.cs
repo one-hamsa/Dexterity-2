@@ -7,15 +7,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class SimpleStrategy : ITransitionStrategy
     {
-        // TODO custom attribute drawer
-        [Serializable]
-        public class TransitionDelay
-        {
-            public string state;
-            public float delay = 0;
-            public float previousStateThreshold = .95f;
-        } 
-
         public enum TransitionStyle
         {
             ContinuousLerp,
@@ -24,19 +15,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public float transitionSpeed = 10f;
         public TransitionStyle style = TransitionStyle.ContinuousLerp;
-        public float activityThreshold = .999f;
-        public List<TransitionDelay> delays;
 
-        ListMap<int, TransitionDelay> cachedDelays;
+        private float activityThreshold;
 
         IDictionary<int, float> result = new ListMap<int, float>();
         IDictionary<int, float> nextResult = new ListMap<int, float>();
         public IDictionary<int, float> Initialize(int[] states, int currentState) 
         {
-            // cache delays
-            cachedDelays = new ListMap<int, TransitionDelay>();
-            foreach (var delay in delays)
-                cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
+            activityThreshold = Manager.instance.settings.GetGlobalFloat("activityThreshold", .999f);
 
             result.Clear();
             foreach (var state in states)
@@ -52,16 +38,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             changed = false;
             if (prevState[currentState] > activityThreshold)
                 return prevState;
-
-            cachedDelays.TryGetValue(currentState, out var delay);
-            if (delay != null && stateChangeDeltaTime < delay.delay)
-            {
-                foreach (var kv in prevState)
-                {
-                    if (kv.Key != currentState && kv.Value >= delay.previousStateThreshold)
-                        return prevState;
-                }
-            }
 
             changed = true;
             // write to new pointer
