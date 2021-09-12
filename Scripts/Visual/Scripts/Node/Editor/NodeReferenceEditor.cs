@@ -19,10 +19,32 @@ namespace OneHamsa.Dexterity.Visual
             reference = target as NodeReference;
 
             serializedObject.Update();
+
             ShowFunction();
             ShowGates();
             ShowDelays();
+            ShowDefaultStrategy();
+
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void ShowDefaultStrategy()
+        {
+            var prop = serializedObject.FindProperty(nameof(reference.defaultStrategy));
+
+            var types = Utils.GetSubtypes<ITransitionStrategy>();
+            var typesNames = types
+                .Select(t => t.ToString())
+                .ToArray();
+
+            EditorGUI.BeginChangeCheck();
+            var currentIdx = Array.IndexOf(typesNames, prop.stringValue);
+            var fieldIdx = EditorGUILayout.Popup("Default Transition Strategy", currentIdx,
+                Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
+            if (EditorGUI.EndChangeCheck())
+            {
+                prop.stringValue = typesNames[fieldIdx];
+            }
         }
 
         private void ShowDelays()

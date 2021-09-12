@@ -14,6 +14,7 @@ namespace OneHamsa.Dexterity.Visual
         bool strategyDefined;
         Modifier modifier;
         List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
+        private bool advancedFoldout;
 
         private void OnEnable()
         {
@@ -194,8 +195,8 @@ namespace OneHamsa.Dexterity.Visual
             }
             DrawSeparator();
 
-            // XXX only call when some debug menu is open?
-            Repaint();
+            if (Application.isPlaying) // debug view
+                Repaint();
         }
 
         bool ShowStrategy()
@@ -203,27 +204,44 @@ namespace OneHamsa.Dexterity.Visual
             var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
             var className = Utils.GetClassName(strategyProp);
 
-            var types = Utils.GetSubtypes<ITransitionStrategy>();
-            var typesNames = types
-                .Select(t => t.ToString())
-                .ToArray();
-
-            var currentIdx = Array.IndexOf(typesNames, className);
-            var fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,
-                Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
-
-            if (fieldIdx >= 0 && currentIdx != fieldIdx)
-            {
-                var type = types[fieldIdx];
-                strategyProp.managedReferenceValue = Activator.CreateInstance(type);
-            }
-
             if (!string.IsNullOrEmpty(className))
             {
                 foreach (var field in Utils.GetChildren(strategyProp))
                 {
                     EditorGUILayout.PropertyField(field);
                 }
+            }
+
+
+            var saveStrategy = false;
+            var types = Utils.GetSubtypes<ITransitionStrategy>();
+            var typesNames = types
+                .Select(t => t.ToString())
+                .ToArray();
+
+            var currentIdx = Array.IndexOf(typesNames, className);
+            if (currentIdx == -1)
+            {
+                currentIdx = Array.IndexOf(typesNames, modifier.node.referenceAsset.defaultStrategy);
+                saveStrategy = true;
+            }
+            var fieldIdx = currentIdx;
+
+            if (advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced"))
+            {
+                EditorGUI.BeginChangeCheck();
+                fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,
+                    Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    saveStrategy = true;
+                }
+            }
+            if (saveStrategy)
+            {
+                var type = types[fieldIdx];
+                strategyProp.managedReferenceValue = Activator.CreateInstance(type);
             }
 
             return !string.IsNullOrEmpty(className);

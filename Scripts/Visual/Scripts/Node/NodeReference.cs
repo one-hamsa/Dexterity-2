@@ -57,6 +57,9 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeField]
         public List<TransitionDelay> delays;
 
+        [HideInInspector]
+        public string defaultStrategy;
+
         ListMap<int, TransitionDelay> cachedDelays;
 
         public void Initialize()
