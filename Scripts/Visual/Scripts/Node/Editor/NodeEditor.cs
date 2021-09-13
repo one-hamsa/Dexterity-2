@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity.Visual
             var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.ToArray());
             if (EditorGUI.EndChangeCheck())
             {
-                EditorGUIUtility.PingObject(node.referenceAsset);
+                EditorGUIUtility.PingObject(references[newIdx]);
                 prop.objectReferenceValue = references[newIdx];
             }
             

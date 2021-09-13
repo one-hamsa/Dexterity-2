@@ -19,7 +19,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (!upstreamFields.Contains(field))
                 upstreamFields.Add(field);
-            Manager.instance.SetDirty();
+
+            Manager.instance.SetDirty(field);
+            Manager.instance.SetDirty(this);
         }
         /// <summary>
         /// removes an existing upstream field
@@ -28,7 +30,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (upstreamFields.Contains(field))
                 upstreamFields.Remove(field);
-            Manager.instance.SetDirty();
+
+            Manager.instance.SetDirty(field);
+            Manager.instance.SetDirty(this);
         }
         /// <summary>
         /// clears all upstream fields
@@ -36,7 +40,8 @@ namespace OneHamsa.Dexterity.Visual
         protected void ClearUpstreamFields()
         {
             upstreamFields.Clear();
-            Manager.instance.SetDirty();
+
+            Manager.instance.SetDirty(this);
         }
 
         /// <summary>

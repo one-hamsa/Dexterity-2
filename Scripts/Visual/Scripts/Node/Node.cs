@@ -59,7 +59,7 @@ namespace OneHamsa.Dexterity.Visual
 
         // output fields of this node
         public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
-        private static List<BaseField> registeredFields = new List<BaseField>(10);
+        private List<BaseField> registeredFields = new List<BaseField>(10);
 
         protected void OnEnable()
         {

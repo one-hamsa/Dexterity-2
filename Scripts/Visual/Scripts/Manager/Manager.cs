@@ -79,7 +79,7 @@ namespace OneHamsa.Dexterity.Visual
         public Graph graph { get; } = new Graph();
         public void RegisterField(BaseField field) => graph.AddNode(field);
         public void UnregisterField(BaseField field) => graph.RemoveNode(field);
-        public void SetDirty() => graph.SetDirty();
+        public void SetDirty(BaseField field) => graph.SetDirty(field);
 
         public void Awake()
         {

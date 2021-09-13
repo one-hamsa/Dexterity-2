@@ -125,13 +125,15 @@ namespace OneHamsa.Dexterity.Visual
 
                     if (definition.name != null)
                     {
+                        var liveInstance = Application.isPlaying && reference.owner != null;
+
                         // get value
-                        var value = Application.isPlaying
+                        var value = liveInstance
                             ? reference.owner.GetOutputField(kv.Key).GetValue()
                             : Node.defaultFieldValue;
                         string valueName = "";
 
-                        if (Application.isPlaying)
+                        if (liveInstance)
                         {
                             switch (definition.type)
                             {

@@ -11,8 +11,6 @@ namespace OneHamsa.Dexterity.Visual
     //. Don't confuse the nodes mentioned here with Dexterity.Visual.Node.
     public class Graph
     {
-        protected bool dirty;
-
         // debug info
         public bool lastSortResult { get; private set; }
         public float lastUpdateAttempt { get; private set; }
@@ -26,21 +24,46 @@ namespace OneHamsa.Dexterity.Visual
         public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
             = new ListMap<BaseField, IEnumerable<BaseField>>();
 
+        // keeps track of visits in topological sort
+        List<BaseField> visited = new List<BaseField>();
+        // dfs stack for topological sort
+        Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
+        // helper map for tracking which node is still on stack to avoid loops
+        ListMap<BaseField, bool> onStack = new ListMap<BaseField, bool>();
+        // "color" map (of islands within the graph) - used for only updating relevant nodes
+        ListMap<BaseField, int> nodeToColor = new ListMap<BaseField, int>();
+        ListMap<BaseField, int> nextNodeToColor = new ListMap<BaseField, int>();
+        ListMap<int, bool> dirtyColors = new ListMap<int, bool>();
+
         public void AddNode(BaseField node)
         {
             if (!nodes.Contains(node))
                 nodes.Add(node);
 
             edges[node] = node.GetUpstreamFields();
-            dirty = true;
+
+            SetDirty(node);
+            foreach (var n in node.GetUpstreamFields())
+                SetDirty(n);
         }
         public void RemoveNode(BaseField node)
         {
             nodes.Remove(node);
             edges.Remove(node);
-            dirty = true;
+
+            SetDirty(node);
+            foreach (var n in node.GetUpstreamFields())
+                SetDirty(n);
         }
-        public bool SetDirty() => dirty = true;
+        public void SetDirty(BaseField field)
+        {
+            if (!nodeToColor.TryGetValue(field, out var color))
+            {
+                nodeToColor[field] = color = -1;
+            }
+
+            dirtyColors[color] = true;
+        }
 
         // cached graph data
         protected List<BaseField> sortedNodes = new List<BaseField>();
@@ -54,7 +77,8 @@ namespace OneHamsa.Dexterity.Visual
             // ask all nodes to refresh their edges
             RefreshEdges();
 
-            if (dirty)
+
+            if (IsDirty())
             {
                 // invalidate
                 lastUpdateAttempt = Time.time;
@@ -64,7 +88,6 @@ namespace OneHamsa.Dexterity.Visual
                     return;
                 }
 
-                dirty = false;
                 lastSuccessfulUpdate = Time.time;
             }
 
@@ -72,6 +95,14 @@ namespace OneHamsa.Dexterity.Visual
             RefreshNodeValues();
         }
 
+        bool IsDirty()
+        {
+            foreach (var dirty in dirtyColors.Values)
+                if (dirty)
+                    return true;
+
+            return false;
+        }
 
         void RefreshEdges()
         {
@@ -96,52 +127,61 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        HashSet<BaseField> visited = new HashSet<BaseField>();
-        Stack<(bool, BaseField)> dfs = new Stack<(bool, BaseField)>();
-        ListMap<BaseField, bool> onStack = new ListMap<BaseField, bool>();
-
         // https://stackoverflow.com/questions/20153488/topological-sort-using-dfs-without-recursion
         //. and https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         bool TopologicalSort()
         {
             updateOperations = 0;
+            var currentColor = 0;
 
             sortedNodes.Clear();
             visited.Clear();
             dfs.Clear();
             onStack.Clear();
+            nextNodeToColor.Clear();
 
             foreach (var node in nodes)
             {
+                // skip nodes with non-dirty colors
+                if (nodeToColor.TryGetValue(node, out var color)
+                    && dirtyColors.TryGetValue(color, out var dirty)
+                    && !dirty)
+                    continue;
+
+                // only add nodes we hadn't visted yet
                 if (!visited.Contains(node))
                 {
                     dfs.Push((false, node));
+                    currentColor++;
                 }
                 while (dfs.Count > 0)
                 {
                     updateOperations++;
-                    var (b, n) = dfs.Pop();
-                    onStack[n] = false;
+                    var current = dfs.Pop();
+                    onStack[current.node] = false;
 
-                    if (b)
+                    if (current.process)
                     {
                         // finish sorting for n
-                        sortedNodes.Add(n);
+                        sortedNodes.Add(current.node);
+                        nextNodeToColor.Add(current.node, currentColor);
                         continue;
                     }
                     
-                    if (visited.Add(n))
+                    if (!visited.Contains(current.node))
                     {
+                        visited.Add(current.node);
+
                         // first-time visit, add to stack before pushing all dependencies
-                        dfs.Push((true, n));
+                        dfs.Push((true, current.node));
                         // also, mark as "on stack". this will help track down cycles.
                         //. if we later find this as a dependency WHILE this is still on stack,
                         //. it means we have a cycle.
-                        onStack[n] = true;
+                        onStack[current.node] = true;
                     }
 
                     // push all dependencies of n on top of the stack
-                    if (!edges.TryGetValue(n, out var refs))
+                    if (!edges.TryGetValue(current.node, out var refs))
                         // no dependencies, no need to push anything
                         continue;
 
@@ -162,6 +202,12 @@ namespace OneHamsa.Dexterity.Visual
                     }
                 }
             }
+
+            // swap pointers
+            (nodeToColor, nextNodeToColor) = (nextNodeToColor, nodeToColor);
+            // reset dirty colors
+            foreach (var color in dirtyColors.Keys)
+                dirtyColors[color] = false;
 
             return true;
         }
