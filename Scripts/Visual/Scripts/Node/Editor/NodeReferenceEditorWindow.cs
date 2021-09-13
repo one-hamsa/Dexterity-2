@@ -17,14 +17,17 @@ namespace OneHamsa.Dexterity.Visual
             win.reference = reference;
             return win;
         }
-        
+
+        Vector2 scrollPos;
         private void OnGUI()
         {
             if (reference == null)
                 return;
 
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             var editor = Editor.CreateEditor(reference, typeof(NodeReferenceEditor));
             editor.OnInspectorGUI();
+            EditorGUILayout.EndScrollView();
         }
     }
 }
