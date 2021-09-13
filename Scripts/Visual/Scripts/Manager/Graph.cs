@@ -24,6 +24,8 @@ namespace OneHamsa.Dexterity.Visual
         public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
             = new ListMap<BaseField, IEnumerable<BaseField>>();
 
+        public event Action<int> onGraphColorUpdated;
+
         // keeps track of visits in topological sort
         List<BaseField> visited = new List<BaseField>();
         // dfs stack for topological sort
@@ -127,6 +129,13 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        public IEnumerable<BaseField> GetByColor(int color)
+        {
+            foreach (var node in nodes)
+                if (nodeToColor.TryGetValue(node, out var c) && color == c)
+                    yield return node;
+        }
+
         // https://stackoverflow.com/questions/20153488/topological-sort-using-dfs-without-recursion
         //. and https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         bool TopologicalSort()
@@ -206,8 +215,14 @@ namespace OneHamsa.Dexterity.Visual
             // swap pointers
             (nodeToColor, nextNodeToColor) = (nextNodeToColor, nodeToColor);
             // reset dirty colors
-            foreach (var color in dirtyColors.Keys)
-                dirtyColors[color] = false;
+            foreach (var kv in dirtyColors)
+            {
+                if (kv.Value == true)
+                {
+                    onGraphColorUpdated?.Invoke(kv.Key);
+                    dirtyColors[kv.Key] = false;
+                }
+            }
 
             return true;
         }

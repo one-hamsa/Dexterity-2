@@ -37,11 +37,11 @@ namespace OneHamsa.Dexterity.Visual
                     break;
 
                 case Modifier modifier:
-                    states.AddRange(modifier.node.reference.stateFunction.GetStates());
+                    states.AddRange(modifier.node.referenceAsset.stateFunction.GetStates());
                     break;
 
                 case Node node:
-                    states.AddRange(node.reference.stateFunction.GetStates());
+                    states.AddRange(node.referenceAsset.stateFunction.GetStates());
                     break;
 
                 case NodeReference reference:
