@@ -13,10 +13,12 @@ namespace OneHamsa.Dexterity.Visual
     public class NodeReferenceEditor : Editor
     {
         NodeReference reference;
+        bool gatesUpdated;
 
         public override void OnInspectorGUI()
         {
             reference = target as NodeReference;
+            gatesUpdated = false;
 
             serializedObject.Update();
 
@@ -26,6 +28,10 @@ namespace OneHamsa.Dexterity.Visual
             ShowDefaultStrategy();
 
             serializedObject.ApplyModifiedProperties();
+
+            // do this after ApplyModifiedProperties() to ensure integrity
+            if (gatesUpdated)
+                reference.NotifyGatesUpdate();
         }
 
         private void ShowDefaultStrategy()
@@ -97,6 +103,7 @@ namespace OneHamsa.Dexterity.Visual
 
             var deleteIndex = -1;
             var moveIndex = (-1, -1);
+            var updateIndex = -1;
             foreach (var kv in gatesByField)
             {
                 GUILayout.BeginHorizontal();
@@ -114,23 +121,55 @@ namespace OneHamsa.Dexterity.Visual
 
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
-                    GUILayout.FlexibleSpace();
-                    GUI.color = Color.gray;
-                    var style = new GUIStyle(EditorStyles.helpBox);
-                    style.alignment = TextAnchor.MiddleLeft;
-
                     var definition = DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key);
+
                     if (definition.name != null)
                     {
-                        switch (definition.type)
+                        // get value
+                        var value = Application.isPlaying
+                            ? reference.owner.GetOutputField(kv.Key).GetValue()
+                            : Node.defaultFieldValue;
+                        string valueName = "";
+
+                        if (Application.isPlaying)
                         {
-                            case Node.FieldType.Boolean:
-                                GUILayout.Label("Boolean", style);
-                                break;
-                            case Node.FieldType.Enum:
-                                GUILayout.Label("Enum", style);
-                                break;
+                            switch (definition.type)
+                            {
+                                case Node.FieldType.Boolean when value == 0:
+                                case Node.FieldType.Boolean when value == Node.defaultFieldValue:
+                                    GUI.color = Color.red;
+                                    valueName = "false";
+                                    break;
+                                case Node.FieldType.Boolean when value == 1:
+                                    GUI.color = Color.green;
+                                    valueName = "true";
+                                    break;
+                                case Node.FieldType.Enum:
+                                    GUI.color = new Color(1, .5f, 0);
+                                    valueName = definition.enumValues[value];
+                                    break;
+                            }
                         }
+                        else
+                        {
+                            GUI.color = Color.gray;
+                            switch (definition.type)
+                            {
+                                case Node.FieldType.Boolean:
+                                    valueName = "Boolean";
+                                    break;
+                                case Node.FieldType.Enum:
+                                    valueName = "Enum";
+                                    break;
+                            }
+                        }
+
+                        GUILayout.FlexibleSpace();
+
+                        var style = new GUIStyle(EditorStyles.helpBox);
+                        style.alignment = TextAnchor.MiddleLeft;
+
+                        GUILayout.Label(valueName, style);
                     }
                     GUI.color = Color.green;
 
@@ -170,10 +209,14 @@ namespace OneHamsa.Dexterity.Visual
                         GUI.backgroundColor = Color.clear;
                         GUI.contentColor = Color.gray;
                     }
+                    EditorGUI.BeginChangeCheck();
                     var outputIdx = EditorGUILayout.Popup($"Output Field {indexInFieldType + 1}",
                         Array.IndexOf(fields, output), fields);
-                    if (outputIdx >= 0)
+                    if (EditorGUI.EndChangeCheck())
+                    {
                         outputProp.stringValue = fields[outputIdx];
+                        updateIndex = i;
+                    }
 
                     GUI.contentColor = indexInFieldType > 0 ? Color.white : Color.gray;
                     EditorGUI.BeginDisabledGroup(indexInFieldType == 0);
@@ -203,7 +246,8 @@ namespace OneHamsa.Dexterity.Visual
                     // show field (create new reference if doesnt exist)
                     var fieldProp = gateProp.FindPropertyRelative(nameof(Gate.field));
                     var fieldName = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName)).stringValue;
-                    ShowReference(fieldName, fieldProp);
+                    if (ShowReference(fieldName, fieldProp))
+                        updateIndex = i;
 
                     DrawSeparator(Color.gray);
 
@@ -213,22 +257,20 @@ namespace OneHamsa.Dexterity.Visual
 
             if (GUILayout.Button("+", EditorStyles.miniButton))
             {
-                gatesProp.arraySize++;
-                // override new value
-                var newProp = gatesProp.GetArrayElementAtIndex(gatesProp.arraySize - 1);
-                newProp.FindPropertyRelative(nameof(Gate.outputFieldName)).stringValue = null;
-                newProp.FindPropertyRelative(nameof(Gate.field)).managedReferenceValue = null;
+                reference.AddGate(new Gate());
             }
 
             if (deleteIndex != -1)
-                gatesProp.DeleteArrayElementAtIndex(deleteIndex);
+            {
+                reference.RemoveGate(reference.gates[deleteIndex]);
+            }
 
             if (moveIndex != (-1, -1))
             {
                 // MoveArrayElement just makes unity crash, and since Gate is a Serializable 
                 //. it looks like that's the most straightforward way around...
-                var g1 = ((Node)target).gates[moveIndex.Item1];
-                var g2 = ((Node)target).gates[moveIndex.Item2];
+                var g1 = reference.gates[moveIndex.Item1];
+                var g2 = reference.gates[moveIndex.Item2];
 
                 var p1 = gatesProp.GetArrayElementAtIndex(moveIndex.Item1);
                 var p2 = gatesProp.GetArrayElementAtIndex(moveIndex.Item2);
@@ -239,10 +281,17 @@ namespace OneHamsa.Dexterity.Visual
                 p1.FindPropertyRelative(nameof(Gate.outputFieldName)).stringValue = g2.outputFieldName;
                 p1.FindPropertyRelative(nameof(Gate.field)).managedReferenceValue = g2.field;
             }
+
+            if (updateIndex != -1)
+            {
+                gatesUpdated = true;
+            }
         }
 
-        void ShowReference(string fieldName, SerializedProperty property)
+        bool ShowReference(string fieldName, SerializedProperty property)
         {
+            bool updated = false;
+
             string className = Utils.GetClassName(property);
             var types = Utils.GetSubtypes<BaseField>()
                 .Where(t => (bool)t.GetField(nameof(BaseField.showInInspector), 
@@ -252,13 +301,16 @@ namespace OneHamsa.Dexterity.Visual
                 .Select(t => t.ToString())
                 .ToArray();
             var currentIdx = Array.IndexOf(fieldTypesNames, className);
+
+            EditorGUI.BeginChangeCheck();
             var fieldIdx = EditorGUILayout.Popup("Field", currentIdx,
                 Utils.GetNiceName(fieldTypesNames, suffix: "Field").ToArray());
 
-            if (fieldIdx >= 0 && currentIdx != fieldIdx)
+            if (EditorGUI.EndChangeCheck())
             {
                 var type = types[fieldIdx];
                 property.managedReferenceValue = Activator.CreateInstance(type);
+                updated = true;
             }
 
             EditorGUI.indentLevel++;
@@ -271,14 +323,18 @@ namespace OneHamsa.Dexterity.Visual
                 else if (child.propertyType == SerializedPropertyType.ManagedReference)
                 {
                     EditorGUILayout.LabelField(child.displayName, EditorStyles.boldLabel);
-                    ShowReference(fieldName, child);
+                    updated |= ShowReference(fieldName, child);
                 }
                 else
                 {
+                    EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(child);
+                    updated |= EditorGUI.EndChangeCheck();
                 }
             }
             EditorGUI.indentLevel--;
+
+            return updated;
         }
 
 

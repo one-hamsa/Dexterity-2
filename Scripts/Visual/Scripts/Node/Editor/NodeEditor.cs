@@ -54,10 +54,16 @@ namespace OneHamsa.Dexterity.Visual
             
 
             GUI.enabled = node.referenceAsset != null;
-            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FilterBySelection"), 
+            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FilterBySelection"),
                 EditorStyles.miniButton, GUILayout.Width(24)))
             {
                 Selection.activeObject = node.referenceAsset;
+            }
+            GUI.enabled = node.reference != null;
+            if (GUILayout.Button(EditorGUIUtility.IconContent("ScaleTool"),
+                EditorStyles.miniButton, GUILayout.Width(24)))
+            {
+                NodeReferenceEditorWindow.Open(node.reference); 
             }
             EditorGUILayout.EndHorizontal();
             GUI.enabled = true;

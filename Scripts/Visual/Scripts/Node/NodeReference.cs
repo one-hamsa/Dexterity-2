@@ -60,6 +60,13 @@ namespace OneHamsa.Dexterity.Visual
         [HideInInspector]
         public string defaultStrategy;
 
+        [NonSerialized]
+        public Node owner;
+
+        public event Action<Gate> onGateAdded;
+        public event Action<Gate> onGateRemoved;
+        public event Action onGatesUpdated;
+
         ListMap<int, TransitionDelay> cachedDelays;
 
         public void Initialize()
@@ -76,5 +83,21 @@ namespace OneHamsa.Dexterity.Visual
             return value;
         }
 
+        public void AddGate(Gate gate)
+        {
+            gates.Add(gate);
+            onGateAdded?.Invoke(gate);
+        }
+
+        public void RemoveGate(Gate gate)
+        {
+            gates.Remove(gate);
+            onGateRemoved?.Invoke(gate);
+        }
+
+        public void NotifyGatesUpdate()
+        {
+            onGatesUpdated?.Invoke();
+        }
     }
 }

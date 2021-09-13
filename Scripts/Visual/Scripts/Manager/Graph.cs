@@ -23,8 +23,8 @@ namespace OneHamsa.Dexterity.Visual
 
         public List<BaseField> nodes { get; } = new List<BaseField>();
         
-        public ListMap<BaseField, HashSet<BaseField>> edges { get; } 
-            = new ListMap<BaseField, HashSet<BaseField>>();
+        public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
+            = new ListMap<BaseField, IEnumerable<BaseField>>();
 
         public void AddNode(BaseField node)
         {
@@ -37,6 +37,7 @@ namespace OneHamsa.Dexterity.Visual
         public void RemoveNode(BaseField node)
         {
             nodes.Remove(node);
+            edges.Remove(node);
             dirty = true;
         }
         public bool SetDirty() => dirty = true;
@@ -146,6 +147,11 @@ namespace OneHamsa.Dexterity.Visual
 
                     foreach (var son in refs)
                     {
+                        if (son == null)
+                        {
+                            // this might happen if a field registered uninitialized upstream fields
+                            continue;
+                        }
                         if (!visited.Contains(son))
                         {
                             dfs.Push((false, son));

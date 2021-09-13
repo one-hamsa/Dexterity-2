@@ -72,6 +72,7 @@ namespace OneHamsa.Dexterity.Visual
             public override void Finalize(Node context)
             {
                 base.Finalize(context);
+                onValueChanged?.Invoke(this, cachedValue, defaultFieldValue);
                 Manager.instance?.UnregisterField(this);
             }
 

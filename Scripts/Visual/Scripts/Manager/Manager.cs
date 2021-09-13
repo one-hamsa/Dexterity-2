@@ -49,6 +49,11 @@ namespace OneHamsa.Dexterity.Visual
          */
         public FieldDefinition GetFieldDefinition(int id)
         {
+            if (id == -1)
+            {
+                Debug.LogError("asked for field id == -1", this);
+                return default;
+            }
             return settings.fieldDefinitions[id];
         }        
 

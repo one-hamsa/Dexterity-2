@@ -20,15 +20,6 @@ namespace OneHamsa.Dexterity.Visual
             return node;
         }
 
-        public NodeReference referenceAsset;
-        [NonSerialized]
-        public NodeReference reference;
-        
-        [State]
-        public string initialState;
-
-        [NonSerialized]
-        public List<Gate> gates = new List<Gate>(8);
 
         [Serializable]
         public class OutputOverride
@@ -54,36 +45,36 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        public NodeReference referenceAsset;
+        [NonSerialized]
+        public NodeReference reference;
+        
+        [State]
+        public string initialState;
+
+        public List<Gate> gates => reference.gates;
+
         [SerializeField]
         public List<OutputOverride> overrides;
 
-        private void LoadFromReference()
-        {
-            gates.Clear();
-
-            foreach (var gate in reference.gates)
-                gates.Add(gate);
-        }
+        // output fields of this node
+        public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
+        private static List<BaseField> registeredFields = new List<BaseField>(10);
 
         protected void OnEnable()
         {
             reference = Instantiate(referenceAsset);
+            reference.name = $"{name} (Reference)";
+            reference.owner = this;
 
             reference.Initialize();
-            LoadFromReference();
 
-            foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
-            {
-                if (!gate.Initialize())
-                {
-                    Debug.LogWarning($"Removing invalid gate {gate}", this);
-                    RemoveGate(gate);
-                    continue;
-                }
-                // initialize 
-                InitializeFields(gate, new BaseField[] { gate.field });
-            }
+            // subscribe to more changes
+            reference.onGateAdded += RestartFields;
+            reference.onGateRemoved += RestartFields;
+            reference.onGatesUpdated += RestartFields;
 
+            RestartFields();
             CacheOverrides();
         }
 
@@ -91,17 +82,30 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var gate in gates.ToArray())
             {
-                FinalizeFields(gate, new BaseField[] { gate.field });
+                FinalizeGate(gate);
             }
+
+            // unsubscribe
+            reference.onGateAdded -= RestartFields;
+            reference.onGateRemoved -= RestartFields;
+            reference.onGatesUpdated -= RestartFields;
 
             Destroy(reference);
         }
 
-        void InitializeFields(Gate gate, IEnumerable<BaseField> fields)
+        void RestartFields(Gate g) => RestartFields();
+        void RestartFields()
         {
-            // make sure output field for gate is initialized
-            GetOutputField(gate.outputFieldDefinitionId);
+            // unregister all fields. this might be triggered by editor, so go through this list
+            //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
+            FinalizeFields(registeredFields.ToArray());
+            // re-register all gates
+            foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
+                InitializeGate(gate);
+        }
 
+        void InitializeFields(IEnumerable<BaseField> fields)
+        {
             // initialize all fields
             fields.ToList().ForEach(f =>
             {
@@ -109,23 +113,15 @@ namespace OneHamsa.Dexterity.Visual
                     return;
 
                 Manager.instance.RegisterField(f);
-                try
-                {
-                    f.Initialize(this);
-                    InitializeFields(gate, f.GetUpstreamFields());
 
-                    fieldsToNodes[f] = this;
-                }
-                catch (BaseField.FieldInitializationException)
-                {
-                    Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
-                    RemoveGate(gate);
-                    return;
-                }
+                f.Initialize(this);
+                InitializeFields(f.GetUpstreamFields());
+
+                AuditField(f);
             });
         }
 
-        void FinalizeFields(Gate gate, IEnumerable<BaseField> fields)
+        void FinalizeFields(IEnumerable<BaseField> fields)
         {
             // finalize all gate fields and output fields
             fields.Concat(outputFields.Values).ToList().ForEach(f =>
@@ -135,29 +131,40 @@ namespace OneHamsa.Dexterity.Visual
 
                 f.Finalize(this);
                 Manager.instance?.UnregisterField(f);
-                FinalizeFields(gate, f.GetUpstreamFields());
+                FinalizeFields(f.GetUpstreamFields());
 
-                fieldsToNodes.Remove(f);
+                RemoveAudit(f);
             });
         }
 
         int gateIncrement;
-        public void AddGate(Gate gate)
+        public void InitializeGate(Gate gate)
+        {
+            if (Application.isPlaying && !gate.Initialize())
+                // invalid gate, don't add
+                return;
+
+            gateIncrement++;
+
+            // make sure output field for gate is initialized
+            GetOutputField(gate.outputFieldDefinitionId);
+
+            try
+            {
+                InitializeFields(new[] { gate.field });
+            }
+            catch (BaseField.FieldInitializationException)
+            {
+                Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
+                FinalizeGate(gate);
+            }
+        }
+        public void FinalizeGate(Gate gate)
         {
             gateIncrement++;
-            gates.Add(gate);
 
-            InitializeFields(gate, new[] { gate.field });
+            FinalizeFields(new[] { gate.field });
         }
-        public void RemoveGate(Gate gate)
-        {
-            gateIncrement++;
-            gates.Remove(gate);
-            FinalizeFields(gate, new[] { gate.field });
-        }
-
-        // output fields of this node
-        public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
 
         public OutputField GetOutputField(string name) 
             => GetOutputField(Manager.instance.GetFieldID(name));
@@ -171,10 +178,21 @@ namespace OneHamsa.Dexterity.Visual
                 output.Initialize(this);
                 outputFields[fieldId] = output;
 
-                fieldsToNodes[output] = this;
+                AuditField(output);
             }
 
             return output;
+        }
+
+        private void AuditField(BaseField field)
+        {
+            registeredFields.Add(field);
+            fieldsToNodes[field] = this;
+        }
+        private void RemoveAudit(BaseField field)
+        {
+            registeredFields.Remove(field);
+            fieldsToNodes.Remove(field);
         }
 
         int overridesIncrement;

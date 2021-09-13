@@ -1,8 +1,6 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
 using UnityEngine.EventSystems;
+using OneHumus;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -19,7 +17,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override void Initialize(Node context)
         {
             base.Initialize(context);
-            provider = context.gameObject.AddComponent<DexterityUIHoverFieldProvider>();
+            provider = context.gameObject.GetOrAddComponent<DexterityUIHoverFieldProvider>();
+        }
+        public override void Finalize(Node context)
+        {
+            base.Finalize(context);
+
+            UnityEngine.Object.Destroy(provider);
         }
 
         public override int GetValue() => (provider && provider.hover) ? 1 : 0;

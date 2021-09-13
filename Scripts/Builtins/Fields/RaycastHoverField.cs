@@ -1,8 +1,4 @@
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
-using UnityEngine.EventSystems;
+using OneHumus;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -14,8 +10,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            provider = context.gameObject.AddComponent<DexterityRaycastFieldProvider>();
+            provider = context.gameObject.GetOrAddComponent<DexterityRaycastFieldProvider>();
         }
+
+        // don't destroy on finalize - component might be shared
 
         public override int GetValue() => (provider && provider.hover) ? 1 : 0;
     }

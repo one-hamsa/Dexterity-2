@@ -1,8 +1,6 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
 using UnityEngine.EventSystems;
+using OneHumus;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -20,7 +18,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            provider = context.gameObject.AddComponent<DexterityUIPressFieldProvider>();
+            provider = context.gameObject.GetOrAddComponent<DexterityUIPressFieldProvider>();
+        }
+        public override void Finalize(Node context)
+        {
+            base.Finalize(context);
+
+            UnityEngine.Object.Destroy(provider);
         }
 
         public override int GetValue() => (provider && provider.click) ? 1 : 0;

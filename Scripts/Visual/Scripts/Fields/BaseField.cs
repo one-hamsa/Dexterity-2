@@ -10,14 +10,15 @@ namespace OneHamsa.Dexterity.Visual
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
         /// </summary>
-        private readonly HashSet<BaseField> upstreamFields = new HashSet<BaseField>();
+        private readonly List<BaseField> upstreamFields = new List<BaseField>();
 
         /// <summary>
         /// adds an upstream field
         /// </summary>
         protected void AddUpstreamField(BaseField field)
         {
-            upstreamFields.Add(field);
+            if (!upstreamFields.Contains(field))
+                upstreamFields.Add(field);
             Manager.instance.SetDirty();
         }
         /// <summary>
@@ -25,7 +26,8 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         protected void RemoveUpstreamField(BaseField field)
         {
-            upstreamFields.Remove(field);
+            if (upstreamFields.Contains(field))
+                upstreamFields.Remove(field);
             Manager.instance.SetDirty();
         }
         /// <summary>
@@ -51,7 +53,7 @@ namespace OneHamsa.Dexterity.Visual
         /// returns the field this provider relies on. 
         /// returned set should be treated as read-only (XXX maybe this should be in enforced)
         /// </summary>
-        public HashSet<BaseField> GetUpstreamFields() => upstreamFields;
+        public IEnumerable<BaseField> GetUpstreamFields() => upstreamFields;
 
         /// <summary>
         /// returns the field value calculated by the provider
