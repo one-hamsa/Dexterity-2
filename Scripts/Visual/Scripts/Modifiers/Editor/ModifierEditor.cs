@@ -15,6 +15,7 @@ namespace OneHamsa.Dexterity.Visual
         Modifier modifier;
         List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
         private bool advancedFoldout;
+        private bool propertiesUpdated;
 
         private void OnEnable()
         {
@@ -25,6 +26,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             serializedObject.Update();
 
+            propertiesUpdated = false;
             var customProps = new List<SerializedProperty>();
             var parent = serializedObject.GetIterator();
             foreach (var prop in Utils.GetVisibleChildren(parent))
@@ -36,7 +38,7 @@ namespace OneHamsa.Dexterity.Visual
                     case nameof(Modifier._node):
                         EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
                         EditorGUI.indentLevel++;
-                        EditorGUILayout.LabelField($"Automatically selecting parent ({modifier.node.name})", 
+                        EditorGUILayout.LabelField($"Automatically selecting parent ({modifier?.node?.name})", 
                             EditorStyles.miniLabel);
                         EditorGUI.indentLevel--;
                         break;
@@ -60,7 +62,16 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Modifier Parameters", EditorStyles.whiteLargeLabel);
                 foreach (var prop in customProps)
+                {
+                    EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(prop, true);
+                    propertiesUpdated |= EditorGUI.EndChangeCheck();
+                }
+
+                if (modifier.supportsFreezeValues && GUILayout.Button("Freeze Values"))
+                {
+                    modifier.FreezeValues();
+                }
             }
 
             // show state function button (play time)
@@ -72,16 +83,16 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            var stateFunction = modifier.node.referenceAsset?.stateFunction;
+            var stateFunction = modifier?.node?.referenceAsset?.stateFunction;
             if (stateFunction != null)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                ShowProperties(stateFunction);
+                propertiesUpdated |= ShowProperties(stateFunction);
             }
 
             // warnings
-            if (modifier.node.referenceAsset == null)
+            if (modifier?.node?.referenceAsset == null)
             {
                 var origColor = GUI.color;
                 GUI.color = Color.yellow;
@@ -97,10 +108,15 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             serializedObject.ApplyModifiedProperties();
+
+            if (propertiesUpdated)
+                modifier.ForceTransitionUpdate();
         }
         
-        void ShowProperties(StateFunctionGraph sf)
+        bool ShowProperties(StateFunctionGraph sf)
         {
+            var updated = false;
+
             // get property info, iterate through parent classes to support inheritance
             Type propType = null;
             var objType = target.GetType();
@@ -182,14 +198,22 @@ namespace OneHamsa.Dexterity.Visual
                     // show fields
                     if (foldedStates[propState])
                         foreach (var field in stateProps)
+                        {
+                            EditorGUI.BeginChangeCheck();
                             EditorGUILayout.PropertyField(field);
+                            updated |= EditorGUI.EndChangeCheck();
+                        }
                 }
                 else if (stateProps.Count == 1)
                 {
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField($"{propState}{suffix}");
                     GUI.contentColor = origColor;
+
+                    EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
+                    updated |= EditorGUI.EndChangeCheck();
+
                     EditorGUILayout.EndHorizontal();
                 }
             }
@@ -197,6 +221,8 @@ namespace OneHamsa.Dexterity.Visual
 
             if (Application.isPlaying) // debug view
                 Repaint();
+
+            return updated;
         }
 
         bool ShowStrategy()

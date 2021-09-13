@@ -38,5 +38,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             transform.localScale = scale;
         }
+
+        public override bool supportsFreezeValues => true;
+        public override void FreezeValues()
+        {
+            baseScale = transform.localScale;
+        }
     }
 }

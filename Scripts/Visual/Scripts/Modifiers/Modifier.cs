@@ -39,6 +39,10 @@ namespace OneHamsa.Dexterity.Visual
         }
         public StateFunctionGraph activeStateFunction { get; private set; }
         public PropertyBase activeProperty => GetProperty(activeState);
+
+        public virtual bool supportsFreezeValues => false;
+        public virtual void FreezeValues() { }
+
         protected virtual void HandleStateChange() { }
 
         [Serializable]
@@ -108,6 +112,8 @@ namespace OneHamsa.Dexterity.Visual
         int pendingState = -1;
         bool isDirty = true;
 
+        public void SetDirty() => isDirty = true;
+
         bool EnsureValidState()
         {
             if (stateFunction == null)
@@ -153,7 +159,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void RegisterOutputEvents()
         {
-            isDirty = true;
+            SetDirty();
             outputFields.Clear();
             foreach (var f in activeStateFunction.GetFieldIDs())
             {
@@ -165,7 +171,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => isDirty = true;
+        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => SetDirty();
         protected virtual void OnDisable()
         {
             isDirty = true;
