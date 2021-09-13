@@ -23,15 +23,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public enum EasingStyle
         {
-            Ease,
+            EaseInOut,
             Linear,
         }
 
         public MatrixStrategyRow[] transitions;
-        //public EasingStyle easing;
+        public EasingStyle easing;
         private float estimatedTime;
-        //private AnimationCurve easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        private AnimationCurve easingCurve;
         protected override bool checkActivityThreshold => false;
+        private IDictionary<int, float> actualValues = new ListMap<int, float>();
 
         public override IDictionary<int, float> Initialize(int[] states, int currentState)
         {
@@ -39,6 +40,21 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             {
                 transition.fromId = Manager.instance.GetStateID(transition.from);
                 transition.toId = Manager.instance.GetStateID(transition.to);
+            }
+
+            switch (easing)
+            {
+                case EasingStyle.EaseInOut:
+                    easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+                    break;
+                case EasingStyle.Linear:
+                    easingCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+                    break;
+            }
+
+            foreach (var state in states)
+            {
+                actualValues[state] = state == currentState ? 1 : 0;
             }
 
             return base.Initialize(states, currentState);
@@ -51,7 +67,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             foreach (var kv in prevState)
             {
                 var state = kv.Key;
-                var value = kv.Value;
+                var value = actualValues[state];
                 foreach (var transition in transitions)
                 {
                     if (transition.fromId == state && transition.toId == currentState)
@@ -68,7 +84,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         protected override float GetStateValue(int state, int currentState, float currentValue)
         {
-            return Mathf.Lerp(currentValue, state == currentState ? 1 : 0, Time.deltaTime / estimatedTime);
+            
+            var newValue = Mathf.Lerp(actualValues[state], state == currentState ? 1 : 0, 
+                Time.deltaTime / estimatedTime);
+            actualValues[state] = newValue;
+
+            return easingCurve.Evaluate(newValue);
         }
     }
 }
