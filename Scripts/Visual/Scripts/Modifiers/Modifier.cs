@@ -98,6 +98,57 @@ namespace OneHamsa.Dexterity.Visual
 
             RegisterOutputEvents();
         }
+        protected virtual void OnEnable()
+        {
+            if (!EnsureValidState())
+            {
+                enabled = false;
+                return;
+            }
+
+            _node = TryFindNode();
+            RegisterOutputEvents();
+        }
+        protected virtual void Update()
+        {
+            if (isDirty)
+            {
+                // someone marked this dirty, check for new state
+                var newState = GetState();
+                if (newState == -1)
+                {
+                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
+                    return;
+                }
+                if (newState != pendingState)
+                {
+                    // add delay to change time
+                    var delay = node.reference.GetDelay(activeState);
+                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
+                    // don't trigger change if moving back to current state
+                    pendingState = newState != activeState ? newState : -1;
+                }
+                isDirty = false;
+            }
+
+            // change to next state (delay is accounted for already)
+            if (nextStateChangeTime <= Time.time && pendingState != -1)
+            {
+                activeState = pendingState;
+                pendingState = -1;
+                stateChangeTime = Time.time;
+                HandleStateChange();
+            }
+
+            transitionState = transitionStrategy.GetTransition(transitionState,
+                activeState, Time.time - stateChangeTime, out transitionChanged);
+
+            if (forceTransitionChangeFrames > 0)
+            {
+                forceTransitionChangeFrames--;
+                transitionChanged = true;
+            }
+        }
 
         Node TryFindNode()
         {
@@ -111,8 +162,6 @@ namespace OneHamsa.Dexterity.Visual
         float stateChangeTime, nextStateChangeTime;
         int pendingState = -1;
         bool isDirty = true;
-
-        public void SetDirty() => isDirty = true;
 
         bool EnsureValidState()
         {
@@ -155,21 +204,10 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         List<Node.OutputField> outputFields = new List<Node.OutputField>();
-        protected virtual void OnEnable()
-        {
-            if (!EnsureValidState())
-            {
-                enabled = false;
-                return;
-            }
-
-            _node = TryFindNode();
-            RegisterOutputEvents();
-        }
 
         private void RegisterOutputEvents()
         {
-            SetDirty();
+            isDirty = true;
             outputFields.Clear();
             foreach (var f in activeStateFunction.GetFieldIDs())
             {
@@ -181,7 +219,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => SetDirty();
+        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => isDirty = true;
         protected virtual void OnDisable()
         {
             isDirty = true;
@@ -194,48 +232,12 @@ namespace OneHamsa.Dexterity.Visual
         protected bool transitionChanged;
         protected int forceTransitionChangeFrames;
         private FieldsState fieldsState = new FieldsState(32);
+
+        /// <summary>
+        /// Force updating this modifier's transition (even if the transition function reports it's not needed)
+        /// </summary>
+        /// <param name="frames">How many frames should the update be forced for</param>
         public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
-
-        protected virtual void Update()
-        {
-            if (isDirty)
-            {
-                // someone marked this dirty, check for new state
-                var newState = GetState();
-                if (newState == -1)
-                {
-                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
-                    return;
-                }
-                if (newState != pendingState)
-                {
-                    // add delay to change time
-                    var delay = node.reference.GetDelay(activeState);
-                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
-                    // don't trigger change if moving back to current state
-                    pendingState = newState != activeState ? newState : -1;
-                }
-                isDirty = false;
-            }
-
-            // change to next state (delay is accounted for already)
-            if (nextStateChangeTime <= Time.time && pendingState != -1)
-            {
-                activeState = pendingState;
-                pendingState = -1;
-                stateChangeTime = Time.time;
-                HandleStateChange();
-            }
-
-            transitionState = transitionStrategy.GetTransition(transitionState,
-                activeState, Time.time - stateChangeTime, out transitionChanged);
-
-            if (forceTransitionChangeFrames > 0)
-            {
-                forceTransitionChangeFrames--;
-                transitionChanged = true;
-            }
-        }
 
         private FieldsState GetFields()
         {

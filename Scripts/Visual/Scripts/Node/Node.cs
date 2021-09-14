@@ -167,8 +167,19 @@ namespace OneHamsa.Dexterity.Visual
             FinalizeFields(new[] { gate.field });
         }
 
+        /// <summary>
+        /// Returns the node's output field. Slower than GetOutputField(int fieldId)
+        /// </summary>
+        /// <param name="name">Field name</param>
+        /// <returns></returns>
         public OutputField GetOutputField(string name) 
             => GetOutputField(Manager.instance.GetFieldID(name));
+
+        /// <summary>
+        /// Returns the node's output field. Faster than GetOutputField(string name)
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <returns></returns>
         public OutputField GetOutputField(int fieldId)
         {
             // lazy initialization
@@ -208,7 +219,49 @@ namespace OneHamsa.Dexterity.Visual
 
         int overridesIncrement;
         public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
-        public void SetOverride(int fieldId, int value)
+
+        /// <summary>
+        /// Sets a boolean override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Bool value for field</param>
+        public void SetOverride(int fieldId, bool value)
+        {
+            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            if (definition.type != FieldType.Boolean)
+                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.name}", this);
+
+            SetOverrideRaw(fieldId, value ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Sets an enum override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Enum value for field (should appear in field definition)</param>
+        public void SetOverride(int fieldId, string value)
+        {
+            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            if (definition.type != FieldType.Enum)
+                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.name}", this);
+
+            int index;
+            if ((index = Array.IndexOf(definition.enumValues, value)) == -1)
+            {
+                Debug.LogError($"trying to set enum {definition.name} value to {value}, " +
+                    $"but it is not a valid enum value", this);
+                return;
+            }
+
+            SetOverrideRaw(fieldId, index);
+        }
+
+        /// <summary>
+        /// Sets raw override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
+        public void SetOverrideRaw(int fieldId, int value)
         {
             if (!cachedOverrides.ContainsKey(fieldId))
             {
@@ -221,6 +274,11 @@ namespace OneHamsa.Dexterity.Visual
             var overrideOutput = cachedOverrides[fieldId];
             overrideOutput.value = value;
         }
+
+        /// <summary>
+        /// Clears an existing override from a specific output field
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
         public void ClearOverride(int fieldId)
         {
             if (cachedOverrides.ContainsKey(fieldId))

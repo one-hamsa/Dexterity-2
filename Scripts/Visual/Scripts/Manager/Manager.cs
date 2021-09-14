@@ -18,19 +18,23 @@ namespace OneHamsa.Dexterity.Visual
         private string[] fieldNames;
         private List<string> stateNames;
 
-        /**
-         * returns the field ID, useful for quickly getting the field definition.
-         * only use on Awake, never on Update.
-         */
+        /// <summary>
+        /// returns the field ID, useful for quickly getting the field definition.
+        /// only use on Awake, never on Update.
+        /// </summary>
+        /// <param name="name">Field name</param>
+        /// <returns>Field Definition ID (runtime, may vary from run to run)</returns>
         public int GetFieldID(string name)
         {
             return Array.IndexOf(fieldNames, name);
         }
 
-        /**
-         * returns the state ID, this is the state reference throughout the code.
-         * only use on Awake, never on Update.
-         */
+        /// <summary>
+        /// returns the state ID, this is the state reference throughout the code.
+        /// only use on Awake, never on Update.
+        /// </summary>
+        /// <param name="name">State name</param>
+        /// <returns>State ID (runtime, may vary from run to run)</returns>
         public int GetStateID(string name)
         {
             return stateNames.IndexOf(name);
@@ -44,9 +48,11 @@ namespace OneHamsa.Dexterity.Visual
             return activeStateFunctions[index];
         }
 
-        /**
-         * returns field definition by ID - fast.
-         */
+        /// <summary>
+        /// returns field definition by ID - fast.
+        /// </summary>
+        /// <param name="id">Field Definition ID</param>
+        /// <returns>corresponding Field Definition</returns>
         public FieldDefinition GetFieldDefinition(int id)
         {
             if (id == -1)
@@ -77,27 +83,21 @@ namespace OneHamsa.Dexterity.Visual
         }  
 
         public Graph graph { get; } = new Graph();
+        /// <summary>
+        /// Registers a field to the graph.
+        /// </summary>
+        /// <param name="field">BaseField to register to the graph</param>
         public void RegisterField(BaseField field) => graph.AddNode(field);
+        /// <summary>
+        /// Removes a registered field from the graph.
+        /// </summary>
+        /// <param name="field">BaseField remove from the graph</param>
         public void UnregisterField(BaseField field) => graph.RemoveNode(field);
+        /// <summary>
+        /// Marks a field as dirty (forces re-sorting).
+        /// </summary>
+        /// <param name="field">BaseField to mark as dirty</param>
         public void SetDirty(BaseField field) => graph.SetDirty(field);
-
-        public void Awake()
-        {
-            // build cache first - important, builds runtime data structures
-            BuildCache();
-
-            // clone all state functions
-            activeStateFunctions = new StateFunctionGraph[settings.stateFunctions.Count];
-            for (var i = 0; i < settings.stateFunctions.Count; ++i)
-            {
-                activeStateFunctions[i] = Instantiate(settings.stateFunctions[i]);
-            }
-        }
-        public void Start()
-        {
-            // enable on start to let all nodes register to graph during OnEnable
-            graph.started = true;
-        }
 
         private void BuildCache()
         {
@@ -116,7 +116,25 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        void Update()
+        protected void Awake()
+        {
+            // build cache first - important, builds runtime data structures
+            BuildCache();
+
+            // clone all state functions
+            activeStateFunctions = new StateFunctionGraph[settings.stateFunctions.Count];
+            for (var i = 0; i < settings.stateFunctions.Count; ++i)
+            {
+                activeStateFunctions[i] = Instantiate(settings.stateFunctions[i]);
+            }
+        }
+        protected void Start()
+        {
+            // enable on start to let all nodes register to graph during OnEnable
+            graph.started = true;
+        }
+
+        protected void Update()
         {
             graph.Run();
         }
