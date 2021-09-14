@@ -106,6 +106,7 @@ namespace OneHamsa.Dexterity.Visual
             RefreshNodeValues();
         }
 
+        // if any is dirty, return true
         bool IsDirty()
         {
             foreach (var dirty in dirtyColors.Values)
@@ -113,6 +114,27 @@ namespace OneHamsa.Dexterity.Visual
                     return true;
 
             return false;
+        }
+
+        // disjointed-set-style search
+        private bool IsDirty(BaseField node)
+        {
+            if (!nodeToColor.TryGetValue(node, out var color))
+                // couldn't find, assume dirty
+                return true;
+
+            var candidateColor = color;
+            while (colorToColorMap[color] != candidateColor)
+            {
+                // compress and keep searching
+                candidateColor = colorToColorMap[candidateColor] = colorToColorMap[color];
+            }
+
+            if (!dirtyColors.TryGetValue(colorToColorMap[color], out var dirty))
+                // couldn't find, assume dirty
+                return true;
+
+            return dirty;
         }
 
         void RefreshEdges()
@@ -162,13 +184,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var node in nodes)
             {
                 // skip nodes with non-dirty colors
-                if (
-                    // get node's color
-                    nodeToColor.TryGetValue(node, out var color)
-                    // get actual color (in case this color points to another) and check if it's dirty
-                    && dirtyColors.TryGetValue(colorToColorMap[color], out var dirty)
-                    // check if it needs updating
-                    && !dirty)
+                if (!IsDirty(node))
                     continue;
 
                 // only add nodes we hadn't visted yet
