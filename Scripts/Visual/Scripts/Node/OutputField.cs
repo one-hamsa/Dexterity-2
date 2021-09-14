@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity.Visual
             // hide
             public static new bool showInInspector = false;
 
-            Node node;
+            public Node node { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
             protected int cachedValueWithoutOverride = emptyFieldValue;

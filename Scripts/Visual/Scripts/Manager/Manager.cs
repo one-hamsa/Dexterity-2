@@ -8,8 +8,8 @@ namespace OneHamsa.Dexterity.Visual
     [AddComponentMenu("Dexterity/Manager")]
     public class Manager : MonoBehaviour
     {
-        internal const int nodeExecutionPriority = 10;
-        internal const int modifierExecutionPriority = 15;
+        internal const int nodeExecutionPriority = -15;
+        internal const int modifierExecutionPriority = -10;
 
         public DexteritySettings settings;
 

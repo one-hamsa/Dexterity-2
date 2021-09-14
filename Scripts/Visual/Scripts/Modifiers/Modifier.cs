@@ -116,9 +116,19 @@ namespace OneHamsa.Dexterity.Visual
 
         bool EnsureValidState()
         {
+            if (node == null)
+            {
+                Debug.LogError("Node is null", this);
+                return false;
+            }
+            if (!node.enabled)
+            {
+                Debug.LogError("Node is disabled", this);
+                return false;
+            }
             if (stateFunction == null)
             {
-                Debug.LogWarning("No state function assigned", this);
+                Debug.LogError("No state function assigned", this);
                 return false;
             }
             
@@ -137,7 +147,7 @@ namespace OneHamsa.Dexterity.Visual
 
             if (transitionStrategy == null)
             {
-                Debug.LogWarning("No transition strategy assigned", this);
+                Debug.LogError("No transition strategy assigned", this);
                 return false;
             }
 

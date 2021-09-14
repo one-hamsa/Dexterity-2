@@ -29,13 +29,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 return;
             }
 
-            pressedField = node.GetOutputField("pressed");
-            hoverField = node.GetOutputField("hover");
-
         }
 
         void OnEnable()
         {
+            pressedField = node.GetOutputField("pressed");
+            hoverField = node.GetOutputField("hover");
+
             pressedField.onBooleanValueChanged += HandlePress;
         }
         void OnDisable()
