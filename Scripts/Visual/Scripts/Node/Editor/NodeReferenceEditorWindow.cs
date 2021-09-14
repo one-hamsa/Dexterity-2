@@ -22,7 +22,10 @@ namespace OneHamsa.Dexterity.Visual
         private void OnGUI()
         {
             if (reference == null)
+            {
+                Close();
                 return;
+            }
 
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
             var editor = Editor.CreateEditor(reference, typeof(NodeReferenceEditor));
