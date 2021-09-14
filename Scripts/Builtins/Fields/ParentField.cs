@@ -5,7 +5,6 @@ using System;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    // note that it CANNOT be proxy, since it returns 0 in case no parent is found
     public class ParentField : BaseField
     {
         [Field]
@@ -16,6 +15,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         Node context = null;
         Node parent = null;
         int fieldId;
+
+        // only proxy when parent is found
+        public override bool proxy => parent != null;
 
         public override int GetValue()
         {
@@ -69,6 +71,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             ClearUpstreamFields();
             if (parent != null)
                 AddUpstreamField(parent.GetOutputField(fieldId));
+
+            // proxy might have changed - re-calculate node's outputs
+            context.SetDirty();
         }
 
         protected override void Initialize(Node context)

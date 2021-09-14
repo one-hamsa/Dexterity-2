@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity.Visual
             protected int cachedValueWithoutOverride = emptyFieldValue;
 
             // optimizations
-            int gateIncrement = -1;
+            int dirtyIncrement = -1;
             bool allUpstreamFieldsAreOutputOrProxy;
             bool areUpstreamOutputOrProxyFieldsDirty;
             protected List<Gate> cachedGates = new List<Gate>();
@@ -72,7 +72,7 @@ namespace OneHamsa.Dexterity.Visual
 
             public override void RefreshReferences()
             {
-                if (gateIncrement == node.gateIncrement)
+                if (dirtyIncrement == node.dirtyIncrement)
                     return;
 
                 cachedGates.Clear();
@@ -99,7 +99,7 @@ namespace OneHamsa.Dexterity.Visual
                     cachedGates.Add(gate);
                     AddUpstreamField(gate.field);
                 }
-                gateIncrement = node.gateIncrement;
+                dirtyIncrement = node.dirtyIncrement;
 
                 if (allUpstreamFieldsAreOutputOrProxy)
                 {

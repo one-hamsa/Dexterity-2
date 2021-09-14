@@ -60,6 +60,7 @@ namespace OneHamsa.Dexterity.Visual
         // output fields of this node
         public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
+        int dirtyIncrement;
 
         protected void OnEnable()
         {
@@ -148,14 +149,13 @@ namespace OneHamsa.Dexterity.Visual
             });
         }
 
-        int gateIncrement;
         private void InitializeGate(Gate gate)
         {
             if (Application.isPlaying && !gate.Initialize())
                 // invalid gate, don't add
                 return;
 
-            gateIncrement++;
+            SetDirty();
 
             // make sure output field for gate is initialized
             GetOutputField(gate.outputFieldDefinitionId);
@@ -172,7 +172,7 @@ namespace OneHamsa.Dexterity.Visual
         }
         private void FinalizeGate(Gate gate)
         {
-            gateIncrement++;
+            SetDirty();
 
             FinalizeFields(new[] { gate.field });
         }
@@ -204,6 +204,11 @@ namespace OneHamsa.Dexterity.Visual
 
             return output;
         }
+
+        /// <summary>
+        /// Sets the node as dirty. Forces output fields update
+        /// </summary>
+        public void SetDirty() => dirtyIncrement++;
 
         private void AuditField(BaseField field)
         {
