@@ -93,6 +93,16 @@ namespace OneHamsa.Dexterity.Visual
             Destroy(reference);
         }
 
+        protected void OnDestroy()
+        {
+            // only now it's ok to remove output fields
+            foreach (var output in outputFields.Values.ToArray())
+            {
+                output.Finalize(this);
+            }
+            outputFields.Clear();
+        }
+
         void RestartFields(Gate g) => RestartFields();
 
         void RestartFields()

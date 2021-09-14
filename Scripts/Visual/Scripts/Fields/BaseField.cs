@@ -59,7 +59,7 @@ namespace OneHamsa.Dexterity.Visual
         public int definitionId { get; private set; }
 
         /// <summary>
-        /// is the field a dependency itself, or is it only reflecting another field?
+        /// is the field a dependency itself, or is it only reflecting another node's outputs?
         /// </summary>
         public virtual bool proxy { get; protected set; } = false;
 

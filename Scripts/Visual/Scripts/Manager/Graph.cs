@@ -35,6 +35,9 @@ namespace OneHamsa.Dexterity.Visual
         // "color" map (of islands within the graph) - used for only updating relevant nodes
         ListMap<BaseField, int> nodeToColor = new ListMap<BaseField, int>();
         ListMap<BaseField, int> nextNodeToColor = new ListMap<BaseField, int>();
+        ListMap<int, int> colorToColorMap = new ListMap<int, int>();
+        ListMap<int, int> nextColorToColorMap = new ListMap<int, int>();
+
         ListMap<int, bool> dirtyColors = new ListMap<int, bool>();
 
         public void AddNode(BaseField node)
@@ -64,7 +67,13 @@ namespace OneHamsa.Dexterity.Visual
                 nodeToColor[field] = color = -1;
             }
 
+            if (!colorToColorMap.TryGetValue(color, out var colorToColor))
+            {
+                colorToColorMap[color] = colorToColor = color;
+            }
+
             dirtyColors[color] = true;
+            dirtyColors[colorToColor] = true;
         }
 
         // cached graph data
@@ -141,19 +150,24 @@ namespace OneHamsa.Dexterity.Visual
         bool TopologicalSort()
         {
             updateOperations = 0;
-            var currentColor = 0;
+            var currentColor = -1;
 
             sortedNodes.Clear();
             visited.Clear();
             dfs.Clear();
             onStack.Clear();
             nextNodeToColor.Clear();
+            nextColorToColorMap.Clear();
 
             foreach (var node in nodes)
             {
                 // skip nodes with non-dirty colors
-                if (nodeToColor.TryGetValue(node, out var color)
-                    && dirtyColors.TryGetValue(color, out var dirty)
+                if (
+                    // get node's color
+                    nodeToColor.TryGetValue(node, out var color)
+                    // get actual color (in case this color points to another) and check if it's dirty
+                    && dirtyColors.TryGetValue(colorToColorMap[color], out var dirty)
+                    // check if it needs updating
                     && !dirty)
                     continue;
 
@@ -162,6 +176,8 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     dfs.Push((false, node));
                     currentColor++;
+                    // for now, point the color to itself
+                    nextColorToColorMap[currentColor] = currentColor;
                 }
                 while (dfs.Count > 0)
                 {
@@ -205,15 +221,22 @@ namespace OneHamsa.Dexterity.Visual
                         {
                             dfs.Push((false, son));
                         }
-                        else if (onStack.TryGetValue(son, out var sonOnStack) && sonOnStack)
-                            // this is already a dependency somewhere on the stack, it means we have a cycle
-                            return false;
+                        else
+                        {
+                            if (onStack.TryGetValue(son, out var sonOnStack) && sonOnStack)
+                                // this is already a dependency somewhere on the stack, it means we have a cycle
+                                return false;
+
+                            // we visited this node, copy its color
+                            nextColorToColorMap[currentColor] = nextNodeToColor[son];
+                        }
                     }
                 }
             }
 
             // swap pointers
             (nodeToColor, nextNodeToColor) = (nextNodeToColor, nodeToColor);
+            (colorToColorMap, nextColorToColorMap) = (nextColorToColorMap, colorToColorMap);
             // reset dirty colors
             foreach (var kv in dirtyColors)
             {

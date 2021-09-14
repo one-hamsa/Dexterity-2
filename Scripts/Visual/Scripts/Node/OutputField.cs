@@ -32,8 +32,8 @@ namespace OneHamsa.Dexterity.Visual
 
             // optimizations
             int gateIncrement = -1;
-            bool allUpstreamFieldsAreOutputFields;
-            bool areUpstreamOutputFieldsDirty;
+            bool allUpstreamFieldsAreOutputOrProxy;
+            bool areUpstreamOutputOrProxyFieldsDirty;
             protected List<Gate> cachedGates = new List<Gate>();
             OutputOverride cachedOverride = null;
             int overridesIncrement = -1;
@@ -77,7 +77,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 cachedGates.Clear();
 
-                if (allUpstreamFieldsAreOutputFields)
+                if (allUpstreamFieldsAreOutputOrProxy)
                 {
                     // clear update subscriptions
                     foreach (var field in GetUpstreamFields())
@@ -87,23 +87,23 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 ClearUpstreamFields();
-                allUpstreamFieldsAreOutputFields = true;
+                allUpstreamFieldsAreOutputOrProxy = true;
                 foreach (var gate in node.gates)
                 {
                     if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;
 
                     // XXX could possibly cache each gate field independently
-                    allUpstreamFieldsAreOutputFields &= IsAllUpstreamProxyOrOutput(gate.field);
+                    allUpstreamFieldsAreOutputOrProxy &= IsAllUpstreamProxyOrOutput(gate.field);
 
                     cachedGates.Add(gate);
                     AddUpstreamField(gate.field);
                 }
                 gateIncrement = node.gateIncrement;
 
-                if (allUpstreamFieldsAreOutputFields)
+                if (allUpstreamFieldsAreOutputOrProxy)
                 {
-                    areUpstreamOutputFieldsDirty = true;
+                    areUpstreamOutputOrProxyFieldsDirty = true;
                     // we can just register to the output fields changes
                     foreach (var field in GetUpstreamFields())
                     {
@@ -157,7 +157,7 @@ namespace OneHamsa.Dexterity.Visual
             private void UpstreamOutputChanged(OutputField field, int oldValue, int newValue)
             {
                 // whatever the new value is, just mark as dirty
-                areUpstreamOutputFieldsDirty = true;
+                areUpstreamOutputOrProxyFieldsDirty = true;
             }
 
             public override int GetValue()
@@ -168,7 +168,7 @@ namespace OneHamsa.Dexterity.Visual
             public override void CacheValue()
             {
                 var originalValue = cachedValue;
-                if (!allUpstreamFieldsAreOutputFields || areUpstreamOutputFieldsDirty)
+                if (!allUpstreamFieldsAreOutputOrProxy || areUpstreamOutputOrProxyFieldsDirty)
                 {
                     // merge it with the other gate according to the field's type
                     if (definition.type == FieldType.Boolean)
@@ -210,8 +210,8 @@ namespace OneHamsa.Dexterity.Visual
                     cachedValue = cachedValueWithoutOverride;
                 }
 
-                if (allUpstreamFieldsAreOutputFields)
-                    areUpstreamOutputFieldsDirty = false;
+                if (allUpstreamFieldsAreOutputOrProxy)
+                    areUpstreamOutputOrProxyFieldsDirty = false;
 
                 // notify if value changed
                 if (cachedValue != originalValue)

@@ -14,6 +14,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         Node.OutputField outputField;
 
+        // we always report about someone else's field, so mark as proxy
         public override bool proxy => true;
         public override int GetValue() => negate ? (outputField.GetValue() + 1) % 2 : outputField.GetValue();
 
