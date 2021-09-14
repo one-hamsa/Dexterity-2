@@ -36,17 +36,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         void OnEnable()
         {
-            pressedField.onValueChanged += HandlePress;
+            pressedField.onBooleanValueChanged += HandlePress;
         }
         void OnDisable()
         {
-            pressedField.onValueChanged -= HandlePress;
+            pressedField.onBooleanValueChanged -= HandlePress;
         }
 
-        private void HandlePress(Node.OutputField field, int oldValue, int newValue)
+        private void HandlePress(Node.OutputField field, bool oldValue, bool newValue)
         {
             // only handle if unpressed while on object
-            if (oldValue == 1 && newValue == 0 && hoverField.GetValue() == 1)
+            if (oldValue && !newValue && hoverField.GetBooleanValue())
             {
                 Click();
             }

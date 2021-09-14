@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public void OnPointerExit(PointerEventData eventData) => hover = false;
         }
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
             provider = context.gameObject.GetOrAddComponent<DexterityUIHoverFieldProvider>();

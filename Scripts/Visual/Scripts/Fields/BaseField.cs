@@ -50,6 +50,15 @@ namespace OneHamsa.Dexterity.Visual
         public string relatedFieldName;
 
         /// <summary>
+        /// field definition, set on runtime
+        /// </summary>
+        public FieldDefinition definition { get; private set; }
+        /// <summary>
+        /// field definition id, set on runtime
+        /// </summary>
+        public int definitionId { get; private set; }
+
+        /// <summary>
         /// is the field a dependency itself, or is it only reflecting another field?
         /// </summary>
         public virtual bool proxy { get; protected set; } = false;
@@ -68,7 +77,20 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// dispatched by the node when initializing a new field
         /// </summary>
-        public virtual void Initialize(Node context) { }
+        public void Initialize(Node context, int definitionId)
+        {
+            this.definitionId = definitionId;
+            definition = Manager.instance.GetFieldDefinition(definitionId);
+
+            if (definitionId == -1 || string.IsNullOrEmpty(definition.name))
+                throw new FieldInitializationException();
+
+            Initialize(context);
+        }
+        /// <summary>
+        /// override for custom initialization
+        /// </summary>
+        protected virtual void Initialize(Node context) { }
 
         /// <summary>
         /// dispatched by the node when the field is destroyed

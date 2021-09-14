@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override bool proxy => true;
         public override int GetValue() => negate ? (outputField.GetValue() + 1) % 2 : outputField.GetValue();
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
 

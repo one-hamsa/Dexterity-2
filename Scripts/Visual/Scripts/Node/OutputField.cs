@@ -26,11 +26,9 @@ namespace OneHamsa.Dexterity.Visual
             public static new bool showInInspector = false;
 
             Node node;
-            public int definitionId { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
             protected int cachedValueWithoutOverride = emptyFieldValue;
-            protected FieldDefinition definition;
 
             // optimizations
             int gateIncrement = -1;
@@ -43,6 +41,8 @@ namespace OneHamsa.Dexterity.Visual
             /// register to events like that:
             /// <code>node.GetOutputField("fieldName").OnValueChanged += HandleValueChanged;</code>
             public event Action<OutputField, int, int> onValueChanged;
+            public event Action<OutputField, bool, bool> onBooleanValueChanged;
+            public event Action<OutputField, string, string> onEnumValueChanged;
 
             protected OutputOverride fieldOverride
             {
@@ -57,22 +57,16 @@ namespace OneHamsa.Dexterity.Visual
                     return cachedOverride;
                 }
             }
-
-            public OutputField(int definitionId)
-            {
-                this.definitionId = definitionId;
-            }
-            public override void Initialize(Node context)
+            protected override void Initialize(Node context)
             {
                 base.Initialize(context);
                 node = context;
                 Manager.instance.RegisterField(this);
-                definition = Manager.instance.GetFieldDefinition(definitionId);
             }
             public override void Finalize(Node context)
             {
                 base.Finalize(context);
-                onValueChanged?.Invoke(this, cachedValue, defaultFieldValue);
+                InvokeEvents(cachedValue, defaultFieldValue);
                 Manager.instance?.UnregisterField(this);
             }
 
@@ -115,6 +109,20 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         RegisterUpstreamOutput(field);
                     }
+                }
+            }
+
+            private void InvokeEvents(int oldValue, int newValue)
+            {
+                onValueChanged?.Invoke(this, oldValue, newValue);
+                switch (definition.type)
+                {
+                    case FieldType.Boolean:
+                        onBooleanValueChanged?.Invoke(this, oldValue == 1, newValue == 1);
+                        break;
+                    case FieldType.Enum:
+                        onEnumValueChanged?.Invoke(this, definition.enumValues[oldValue], definition.enumValues[newValue]);
+                        break;
                 }
             }
 
@@ -207,7 +215,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // notify if value changed
                 if (cachedValue != originalValue)
-                    onValueChanged?.Invoke(this, originalValue, cachedValue);
+                    InvokeEvents(originalValue, cachedValue);
             }
 
             // for debug purposes only, mostly for editor view (to avoid masking the original field value)

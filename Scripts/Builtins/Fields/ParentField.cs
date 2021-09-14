@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 AddUpstreamField(parent.GetOutputField(fieldId));
         }
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
 

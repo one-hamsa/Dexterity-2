@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return first?.GetValue() == 1 && second?.GetValue() == 1 ? 1 : 0;
         }
 
-        public override void Initialize(Node context) {
+        protected override void Initialize(Node context) {
             base.Initialize(context);
 
             ClearUpstreamFields();

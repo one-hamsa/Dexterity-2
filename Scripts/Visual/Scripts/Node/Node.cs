@@ -104,7 +104,7 @@ namespace OneHamsa.Dexterity.Visual
                 InitializeGate(gate);
         }
 
-        void InitializeFields(IEnumerable<BaseField> fields)
+        void InitializeFields(int definitionId, IEnumerable<BaseField> fields)
         {
             // initialize all fields
             fields.ToList().ForEach(f =>
@@ -114,8 +114,8 @@ namespace OneHamsa.Dexterity.Visual
 
                 Manager.instance.RegisterField(f);
 
-                f.Initialize(this);
-                InitializeFields(f.GetUpstreamFields());
+                f.Initialize(this, definitionId);
+                InitializeFields(definitionId, f.GetUpstreamFields());
 
                 AuditField(f);
             });
@@ -151,7 +151,7 @@ namespace OneHamsa.Dexterity.Visual
 
             try
             {
-                InitializeFields(new[] { gate.field });
+                InitializeFields(gate.outputFieldDefinitionId, new[] { gate.field });
             }
             catch (BaseField.FieldInitializationException)
             {
@@ -174,8 +174,8 @@ namespace OneHamsa.Dexterity.Visual
             OutputField output;
             if (!outputFields.TryGetValue(fieldId, out output))
             {
-                output = new OutputField(fieldId);
-                output.Initialize(this);
+                output = new OutputField();
+                output.Initialize(this, fieldId);
                 outputFields[fieldId] = output;
 
                 AuditField(output);

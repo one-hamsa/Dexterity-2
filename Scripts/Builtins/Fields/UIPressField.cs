@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public void OnPointerUp(PointerEventData eventData) => click = false;
         }
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
 

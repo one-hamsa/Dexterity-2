@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         DexterityRaycastFieldProvider provider = null;
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
