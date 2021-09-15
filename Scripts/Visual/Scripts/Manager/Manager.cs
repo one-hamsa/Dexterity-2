@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [AddComponentMenu("Dexterity/Manager")]
+    [AddComponentMenu("Dexterity/Dexterity Manager")]
     public class Manager : MonoBehaviour
     {
         internal const int nodeExecutionPriority = -15;
@@ -82,7 +82,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }  
 
-        public Graph graph { get; } = new Graph();
+        public Graph graph { get; private set; }
         /// <summary>
         /// Registers a field to the graph.
         /// </summary>
@@ -127,16 +127,14 @@ namespace OneHamsa.Dexterity.Visual
             {
                 activeStateFunctions[i] = Instantiate(settings.stateFunctions[i]);
             }
+
+            // create graph instance
+            graph = gameObject.AddComponent<Graph>();
         }
         protected void Start()
         {
             // enable on start to let all nodes register to graph during OnEnable
             graph.started = true;
-        }
-
-        protected void Update()
-        {
-            graph.Run();
         }
     }
 }

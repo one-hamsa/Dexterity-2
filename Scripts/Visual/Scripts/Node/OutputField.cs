@@ -177,7 +177,7 @@ namespace OneHamsa.Dexterity.Visual
                         var result = false;
                         foreach (var field in GetUpstreamFields())
                         {
-                            result |= field.GetValue() == 1;
+                            result |= field.GetBooleanValue();
                             if (result)
                                 break;
                         }

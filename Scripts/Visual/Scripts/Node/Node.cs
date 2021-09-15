@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual
 {
     using Gate = NodeReference.Gate;
 
-    [AddComponentMenu("Dexterity/Node")]
+    [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class Node : MonoBehaviour
     {
