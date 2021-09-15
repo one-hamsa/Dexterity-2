@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
         public bool started { get; set; }
         public bool updating { get; private set; }
 
-        public List<BaseField> nodes { get; } = new List<BaseField>();
+        public ListSet<BaseField> nodes { get; } = new ListSet<BaseField>();
         
         public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
             = new ListMap<BaseField, IEnumerable<BaseField>>();
@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Visual
         public event Action<int> onGraphColorUpdated;
 
         // keeps track of visits in topological sort
-        List<BaseField> visited = new List<BaseField>();
+        ListSet<BaseField> visited = new ListSet<BaseField>();
         // dfs stack for topological sort
         Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
         // helper map for tracking which node is still on stack to avoid loops
@@ -44,12 +44,11 @@ namespace OneHamsa.Dexterity.Visual
         ListMap<int, int> nextColorToColorMap = new ListMap<int, int>();
         ListMap<int, bool> dirtyColors = new ListMap<int, bool>();
         // cached graph data
-        protected List<BaseField> sortedNodes = new List<BaseField>();
+        protected ListSet<BaseField> sortedNodes = new ListSet<BaseField>();
 
         public void AddNode(BaseField node)
         {
-            if (!nodes.Contains(node))
-                nodes.Add(node);
+            nodes.Add(node);
 
             edges[node] = node.GetUpstreamFields();
 
@@ -66,8 +65,8 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var n in node.GetUpstreamFields())
                 SetDirty(n);
 
-            if (sortedNodes.Contains(node))
-                sortedNodes.Remove(node);
+            // try removing
+            sortedNodes.Remove(node);
         }
         public void SetDirty(BaseField field)
         {
@@ -244,8 +243,7 @@ namespace OneHamsa.Dexterity.Visual
                     if (current.process)
                     {
                         // remove from sorted if it already exists
-                        if (sortedNodes.Contains(current.node))
-                            sortedNodes.Remove(current.node);
+                        sortedNodes.Remove(current.node);
 
                         // finish sorting for n
                         sortedNodes.Add(current.node);
@@ -253,10 +251,8 @@ namespace OneHamsa.Dexterity.Visual
                         continue;
                     }
                     
-                    if (!visited.Contains(current.node))
+                    if (visited.Add(current.node))
                     {
-                        visited.Add(current.node);
-
                         // first-time visit, add to stack before pushing all dependencies
                         dfs.Push((true, current.node));
                         // also, mark as "on stack". this will help track down cycles.

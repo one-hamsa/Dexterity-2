@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OneHumus.Data;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -16,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual
         public StateFunctionGraph[] activeStateFunctions { get; private set; }
 
         private string[] fieldNames;
-        private List<string> stateNames;
+        private ListSet<string> stateNames;
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -105,7 +106,7 @@ namespace OneHamsa.Dexterity.Visual
             for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
                 fieldNames[i] = settings.fieldDefinitions[i].name;
 
-            stateNames = new List<string>(32);
+            stateNames = new ListSet<string>(32);
             foreach (var fn in settings.stateFunctions)
             {
                 if (fn == null)
