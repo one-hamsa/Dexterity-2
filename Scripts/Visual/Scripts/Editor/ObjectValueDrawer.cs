@@ -30,28 +30,29 @@ namespace OneHamsa.Dexterity.Visual
             var obj = unityObjectProp.objectReferenceValue;
             var objType = obj.GetType();
 
-            var options = new List<string>();
+            var options = new List<MemberInfo>();
             foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (method.GetParameters().Length == 0 && method.ReturnType == attr.fieldType)
-                    options.Add(method.Name);
+                    options.Add(method);
             }
             foreach (var field in objType.GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (field.FieldType == attr.fieldType)
-                    options.Add(field.Name);
+                    options.Add(field);
             }
             foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (prop.PropertyType == attr.fieldType)
-                    options.Add(prop.Name);
+                    options.Add(prop);
             }
+            var stringOptions = options.Select(o => o.Name).ToList();
 
             EditorGUI.BeginChangeCheck();
-            var index = EditorGUI.Popup(position, label.text, options.IndexOf(property.stringValue),
-                        options.ToArray());
+            var index = EditorGUI.Popup(position, label.text, stringOptions.IndexOf(property.stringValue),
+                        options.Select(o => $"{o.DeclaringType}::{o.Name}").ToArray());
             if (EditorGUI.EndChangeCheck())
-                property.stringValue = options[index];
+                property.stringValue = stringOptions[index];
         }
     }
 }
