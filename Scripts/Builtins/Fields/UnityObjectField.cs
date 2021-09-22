@@ -12,6 +12,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(bool))]
         public string targetProperty;
 
-        public override int GetValue() => ObjectValueAttribute.Read<bool>(targetObject, targetProperty) ? 1 : 0;
+        ObjectValueAttribute cachedAttribute;
+
+        protected override void Initialize(Node context)
+        {
+            base.Initialize(context);
+
+            cachedAttribute = ObjectValueAttribute.Initialize(this, nameof(targetProperty));
+        }
+
+        public override int GetValue() => cachedAttribute.GetValue<bool>() ? 1 : 0;
     }
 }
