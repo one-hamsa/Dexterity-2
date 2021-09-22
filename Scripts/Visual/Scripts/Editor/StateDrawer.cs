@@ -27,32 +27,35 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var unityObject = property.serializedObject.targetObject;
+            StateFunctionGraph sf;
             List<string> states = new List<string>();
 
             switch (unityObject)
             {
-                case DexteritySettings settings:
-                    foreach (var sf in settings.stateFunctions)
-                        states.AddRange(sf.GetStates());
-                    break;
-
                 case Modifier modifier:
-                    states.AddRange(modifier.node.referenceAsset.stateFunction.GetStates());
+                    sf = modifier.node?.referenceAsset?.stateFunctionAsset;
                     break;
 
                 case Node node:
-                    states.AddRange(node.referenceAsset.stateFunction.GetStates());
+                    sf = node.referenceAsset?.stateFunctionAsset;
                     break;
 
                 case NodeReference reference:
-                    states.AddRange(reference.stateFunction.GetStates());
+                    sf = reference.stateFunctionAsset;
                     break;
                 default:
                     EditorGUI.LabelField(position, label.text, 
                         $"Unsupported object type {unityObject.GetType()} for attribute [State]");
                     return;
             }
-            
+
+            if (sf == null)
+            {
+                EditorGUI.LabelField(position, label.text,
+                        $"State function not found for attribute [State]");
+            }
+            states.AddRange(sf.GetStates());
+
             var index = EditorGUI.Popup(position, label.text, states.IndexOf(property.stringValue), states.ToArray());
             if (index >= 0 && index < states.Count)
                 property.stringValue = states[index];

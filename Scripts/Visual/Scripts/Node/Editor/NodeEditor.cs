@@ -13,6 +13,11 @@ namespace OneHamsa.Dexterity.Visual
     {
         Node node;
 
+        private void OnEnable()
+        {
+            debugOpen = Application.isPlaying;
+        }
+
         public override void OnInspectorGUI()
         {
             node = target as Node;
@@ -39,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             var prop = serializedObject.FindProperty(nameof(Node.referenceAsset));
 
-            var references = FindAssetsByType<NodeReference>();
+            var references = Utils.FindAssetsByType<NodeReference>();
             var names = references.Select(r => r.name);
             var currentIdx = references.IndexOf(prop.objectReferenceValue as NodeReference);
 
@@ -78,6 +83,15 @@ namespace OneHamsa.Dexterity.Visual
         static bool debugOpen;
         void ShowDebug()
         {
+            // show state function button (play time)
+            if (Application.isPlaying)
+            {
+                if (GUILayout.Button("State Function Live View"))
+                {
+                    EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(node.reference.stateFunction);
+                }
+            }
+
             debugOpen = EditorGUILayout.Foldout(debugOpen, "Debug", true, EditorStyles.foldoutHeader);
             if (!debugOpen)
                 return;
@@ -145,22 +159,6 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.LabelField("Must select Node Reference", EditorStyles.helpBox);
                 GUI.color = origColor;
             }
-        }
-
-        static List<T> FindAssetsByType<T>() where T : UnityEngine.Object
-        {
-            List<T> assets = new List<T>();
-            string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T)));
-            for (int i = 0; i < guids.Length; i++)
-            {
-                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
-                UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                if (asset != null)
-                {
-                    assets.Add(asset as T);
-                }
-            }
-            return assets;
         }
 
         public static string StrikeThrough(string s)

@@ -26,12 +26,26 @@ namespace OneHamsa.Dexterity.Visual
             ShowGates();
             ShowDelays();
             ShowDefaultStrategy();
+            ShowWarnings();
 
             serializedObject.ApplyModifiedProperties();
 
             // do this after ApplyModifiedProperties() to ensure integrity
             if (gatesUpdated)
                 reference.NotifyGatesUpdate();
+        }
+
+        private void ShowWarnings()
+        {
+            var sf = reference.stateFunctionAsset;
+            if (sf == null)
+            {
+                EditorGUILayout.HelpBox($"No state function selected", MessageType.Error);
+            }
+            else if (!sf.Validate())
+            {
+                EditorGUILayout.HelpBox($"{sf.name}: {sf.errorString}", MessageType.Error);
+            }
         }
 
         private void ShowDefaultStrategy()
@@ -60,31 +74,31 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowFunction()
         {
-            var functions = DexteritySettingsProvider.settings.stateFunctions
-                .Where(f => f != null).Select(f => f.name).ToArray();
+            var functions = Utils.FindAssetsByType<StateFunctionGraph>();
+            var funcNames = functions.Select(f => f.name).ToArray();
 
-            var stateFunctionProperty = serializedObject.FindProperty(nameof(reference.stateFunction));
+            var stateFunctionProperty = serializedObject.FindProperty(nameof(reference.stateFunctionAsset));
             var stateFunctionObj = (StateFunctionGraph)stateFunctionProperty.objectReferenceValue;
 
             EditorGUI.BeginChangeCheck();
             var stateFunctionIdx = EditorGUILayout.Popup("State Function",
-                Array.IndexOf(functions, stateFunctionObj?.name), functions);
+                Array.IndexOf(funcNames, stateFunctionObj?.name), funcNames);
 
             if (EditorGUI.EndChangeCheck() && stateFunctionIdx >= 0)
             {
-                var stateFunction = DexteritySettingsProvider.GetStateFunctionByName(functions[stateFunctionIdx]);
+                var stateFunction = functions[stateFunctionIdx];
                 stateFunctionProperty.objectReferenceValue = stateFunction;
             }
 
-            if (reference.stateFunction != null && GUILayout.Button("Open State Function Graph"))
+            if (reference.stateFunctionAsset != null && GUILayout.Button("Open State Function Graph"))
             {
-                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(reference.stateFunction);
+                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(reference.stateFunctionAsset);
             }
         }
 
         void ShowGates()
         {
-            if (reference.stateFunction == null)
+            if (reference.stateFunctionAsset == null)
                 return;
 
             var gatesProp = serializedObject.FindProperty(nameof(NodeReference.gates));
@@ -109,7 +123,7 @@ namespace OneHamsa.Dexterity.Visual
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                bool fieldExistsInFunction = reference.stateFunction.GetFieldNames()
+                bool fieldExistsInFunction = reference.stateFunctionAsset.GetFieldNames()
                     .ToList().IndexOf(kv.Key) != -1;
 
                 if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
@@ -203,7 +217,7 @@ namespace OneHamsa.Dexterity.Visual
                     var outputProp = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName));
                     var output = outputProp.stringValue;
                     // TODO check if manager exists!
-                    var fields = reference.stateFunction.GetFieldNames().ToArray();
+                    var fields = reference.stateFunctionAsset.GetFieldNames().ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))

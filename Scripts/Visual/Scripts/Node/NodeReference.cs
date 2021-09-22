@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [SerializeField]
-        public StateFunctionGraph stateFunction;
+        public StateFunctionGraph stateFunctionAsset;
 
         [SerializeField]
         public List<Gate> gates;
@@ -63,6 +63,9 @@ namespace OneHamsa.Dexterity.Visual
         [NonSerialized]
         public Node owner;
 
+        [NonSerialized]
+        public StateFunctionGraph stateFunction;
+
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
@@ -71,10 +74,14 @@ namespace OneHamsa.Dexterity.Visual
 
         public void Initialize()
         {
+            Manager.instance.RegisterStateFunction(stateFunctionAsset);
+
             // cache delays
             cachedDelays = new ListMap<int, TransitionDelay>();
             foreach (var delay in delays)
                 cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
+
+            stateFunction = Instantiate(stateFunctionAsset);
         }
 
         public TransitionDelay GetDelay(int state)

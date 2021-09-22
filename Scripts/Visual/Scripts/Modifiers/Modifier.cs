@@ -15,15 +15,16 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeReference]
         public ITransitionStrategy transitionStrategy;
 
-        public int activeState { get; private set; } = -1;
-
         [SerializeReference]
         public List<PropertyBase> properties = new List<PropertyBase>();
 
         public Node node => TryFindNode();
-        public StateFunctionGraph stateFunction => node.reference?.stateFunction;
 
         ListMap<int, PropertyBase> propertiesCache = null;
+
+        protected bool transitionChanged;
+        protected int forceTransitionChangeFrames;
+
         public PropertyBase GetProperty(int stateId)
         {
             // runtime
@@ -37,13 +38,12 @@ namespace OneHamsa.Dexterity.Visual
 
             return null;
         }
-        public StateFunctionGraph activeStateFunction { get; private set; }
-        public PropertyBase activeProperty => GetProperty(activeState);
+        public PropertyBase activeProperty => GetProperty(node.activeState);
 
         public virtual bool supportsFreezeValues => false;
         public virtual void FreezeValues() { }
 
-        protected virtual void HandleStateChange() { }
+        protected virtual void HandleStateChange(int oldState, int newState) { }
 
         [Serializable]
         public abstract class PropertyBase
@@ -70,22 +70,7 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Start()
         {
-            if ((_node = TryFindNode()) == null)
-            {
-                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
-                enabled = false;
-                return;
-            }
-
-            var defaultStateId = Manager.instance.GetStateID(node.initialState);
-            if (defaultStateId == -1)
-            {
-                defaultStateId = Manager.instance.GetStateID(properties[0].state);
-                Debug.LogWarning($"no default state selected, selecting first ({properties[0].state})", this);
-            }
-
-            activeState = defaultStateId;
-            HandleStateChange();
+            HandleStateChange(node.activeState, node.activeState);
 
             var states = new int[propertiesCache.Count];
             var keys = propertiesCache.Keys.GetEnumerator();
@@ -93,10 +78,7 @@ namespace OneHamsa.Dexterity.Visual
             while (keys.MoveNext())
                 states[i++] = keys.Current;
 
-            transitionState = transitionStrategy.Initialize(states, activeState);
-            ForceTransitionUpdate();
-
-            RegisterOutputEvents();
+            transitionState = transitionStrategy.Initialize(states, node.activeState);
         }
         protected virtual void OnEnable()
         {
@@ -106,42 +88,26 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            _node = TryFindNode();
-            RegisterOutputEvents();
+            if ((_node = TryFindNode()) == null)
+            {
+                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
+                enabled = false;
+                return;
+            }
+
+            node.onStateChanged += HandleStateChange;
+
+            ForceTransitionUpdate();
         }
+        protected virtual void OnDisable()
+        {
+            node.onStateChanged -= HandleStateChange;
+        }
+
         protected virtual void Update()
         {
-            if (isDirty)
-            {
-                // someone marked this dirty, check for new state
-                var newState = GetState();
-                if (newState == -1)
-                {
-                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
-                    return;
-                }
-                if (newState != pendingState)
-                {
-                    // add delay to change time
-                    var delay = node.reference.GetDelay(activeState);
-                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
-                    // don't trigger change if moving back to current state
-                    pendingState = newState != activeState ? newState : -1;
-                }
-                isDirty = false;
-            }
-
-            // change to next state (delay is accounted for already)
-            if (nextStateChangeTime <= Time.time && pendingState != -1)
-            {
-                activeState = pendingState;
-                pendingState = -1;
-                stateChangeTime = Time.time;
-                HandleStateChange();
-            }
-
             transitionState = transitionStrategy.GetTransition(transitionState,
-                activeState, Time.time - stateChangeTime, out transitionChanged);
+                node.activeState, Time.time - node.stateChangeTime, out transitionChanged);
 
             if (forceTransitionChangeFrames > 0)
             {
@@ -153,15 +119,18 @@ namespace OneHamsa.Dexterity.Visual
         Node TryFindNode()
         {
             Node current = _node;
-            if (current == null)
-                current = GetComponentInParent<Node>();
+            Transform parent = transform;
+            while (current == null && parent != null)
+            {
+                // include inactive if we're inactive
+                if (!gameObject.activeInHierarchy || parent.gameObject.activeInHierarchy)
+                    current = parent.GetComponent<Node>();
+
+                parent = parent.parent;
+            }
 
             return current;
         }
-
-        float stateChangeTime, nextStateChangeTime;
-        int pendingState = -1;
-        bool isDirty = true;
 
         bool EnsureValidState()
         {
@@ -175,24 +144,6 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogError("Node is disabled", this);
                 return false;
             }
-            if (stateFunction == null)
-            {
-                Debug.LogError("No state function assigned", this);
-                return false;
-            }
-            
-            activeStateFunction = Manager.instance.GetActiveStateFunction(stateFunction);
-            if (activeStateFunction == null)
-            {
-                Debug.LogError($"stateFunction {stateFunction.name} not found in Manager", this);
-                return false;
-            }
-
-            if (activeStateFunction.GetStateIDs().Count() != propertiesCache.Count)
-            {
-                Debug.LogError($"properties count != stateFunction states count", this);
-                return false;
-            }
 
             if (transitionStrategy == null)
             {
@@ -200,62 +151,20 @@ namespace OneHamsa.Dexterity.Visual
                 return false;
             }
 
+            if (node.reference.stateFunction.GetStateIDs().Count() != propertiesCache.Count)
+            {
+                Debug.LogError($"properties count != stateFunction states count", this);
+                return false;
+            }
+
             return true;
         }
-
-        List<Node.OutputField> outputFields = new List<Node.OutputField>();
-
-        private void RegisterOutputEvents()
-        {
-            isDirty = true;
-            outputFields.Clear();
-            foreach (var f in activeStateFunction.GetFieldIDs())
-            {
-                outputFields.Add(node.GetOutputField(f));
-            }
-            foreach (var field in outputFields)
-            {
-                field.onValueChanged += MarkStateDirty;
-            }
-        }
-
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => isDirty = true;
-        protected virtual void OnDisable()
-        {
-            isDirty = true;
-            foreach (var field in outputFields)
-            {
-                field.onValueChanged -= MarkStateDirty;
-            }
-        }
-
-        protected bool transitionChanged;
-        protected int forceTransitionChangeFrames;
-        private FieldsState fieldsState = new FieldsState(32);
 
         /// <summary>
         /// Force updating this modifier's transition (even if the transition function reports it's not needed)
         /// </summary>
         /// <param name="frames">How many frames should the update be forced for</param>
         public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
-
-        private FieldsState GetFields()
-        {
-            fieldsState.Clear();
-
-            foreach (var field in outputFields)
-            {
-                var value = field.GetValue();
-                // if this field isn't provided just assume default
-                if (value == Node.emptyFieldValue)
-                {
-                    value = Node.defaultFieldValue;
-                }
-                fieldsState.Add((field.definitionId, value));
-            }
-            return fieldsState;
-        }
-        protected int GetState() => activeStateFunction.Evaluate(GetFields());
     }
 
 }

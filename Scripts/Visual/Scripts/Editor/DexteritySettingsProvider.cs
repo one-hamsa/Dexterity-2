@@ -66,13 +66,5 @@ namespace OneHamsa.Dexterity.Visual
 
             return default;
         }
-
-        /**
-        * returns state function by name - slow.
-        */
-        public static StateFunctionGraph GetStateFunctionByName(string name) => settings.stateFunctions
-            .Where(sf => sf?.name == name)
-            .First();
-
     }
 }

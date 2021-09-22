@@ -22,8 +22,11 @@ namespace OneHamsa.Dexterity.Visual
 		[SerializeField, HideInInspector]
 		protected FieldDefinition definition;
 
+		[NonSerialized]
 		protected int definitionId = -1;
 		public int processIndex { get; private set; } = -1;
+
+		[NonSerialized]
 		private List<SerializableEdge> cachedOutputEdges;
 
         protected override void EnableRuntime() 

@@ -79,32 +79,6 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldDefinitionsList.DoLayoutList(); // Have the ReorderableList do its work
 
-            var sf = serializedObject.FindProperty(nameof(DexteritySettings.stateFunctions));
-            var validated = 0;
-            var errors = 0;
-            EditorGUILayout.PropertyField(sf);
-            for (var i = 0; i < sf.arraySize; ++i) {
-                var current = (StateFunctionGraph)sf.GetArrayElementAtIndex(i).objectReferenceValue;
-                if (current == null)
-                    continue;
-                if (!current.Validate())
-                {
-                    EditorGUILayout.HelpBox($"{current.name}: {current.errorString}", MessageType.Error);
-                    errors++;
-                }
-                else
-                {
-                    validated++;
-                }
-            }
-            if (errors == 0 && validated > 0)
-            {
-                var origColor = GUI.backgroundColor;
-                GUI.backgroundColor = Color.green;
-                EditorGUILayout.HelpBox($"{validated} function(s) validated", MessageType.Info);
-                GUI.backgroundColor = origColor;
-            }
-
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.globalFloatValues)));
 
             serializedObject.ApplyModifiedProperties();

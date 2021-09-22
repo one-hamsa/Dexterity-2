@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Visual
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class Node : MonoBehaviour
     {
+        #region Static Functions
         // mainly for debugging graph problems
         private static ListMap<BaseField, Node> fieldsToNodes = new ListMap<BaseField, Node>();
         internal static Node ByField(BaseField f)
@@ -19,8 +20,9 @@ namespace OneHamsa.Dexterity.Visual
             fieldsToNodes.TryGetValue(f, out var node);
             return node;
         }
+        #endregion Static Functions
 
-
+        #region Data Definitions
         [Serializable]
         public class OutputOverride
         {
@@ -44,31 +46,63 @@ namespace OneHamsa.Dexterity.Visual
                 return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
             }
         }
+        #endregion Data Definitions
 
+        #region Serialized Fields
         public NodeReference referenceAsset;
-        [NonSerialized]
-        public NodeReference reference;
         
         [State]
         public string initialState;
 
-        public List<Gate> gates => reference.gates;
-
         [SerializeField]
         public List<OutputOverride> overrides;
 
+        #endregion Serialized Fields
+
+        #region Public Properties
+        [NonSerialized]
+        public NodeReference reference;
+
+        public List<Gate> gates => reference.gates;
+
         // output fields of this node
         public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
+        public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
+        
+        public int activeState { get; private set; } = -1;
+        public float stateChangeTime { get; private set; }
+
+        public event Action<int, int> onStateChanged;
+        #endregion Public Properties
+
+        #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
         int dirtyIncrement;
+        int overridesIncrement;
 
+        bool stateDirty;
+        FieldsState fieldsState = new FieldsState(32);
+        int[] stateFieldIds;
+        float nextStateChangeTime;
+        int pendingState = -1;
+        #endregion Private Properties
+
+        #region Unity Events
         protected void OnEnable()
         {
+            if (!EnsureValidState())
+            {
+                enabled = false;
+                return;
+            }
+
             reference = Instantiate(referenceAsset);
             reference.name = $"{name} (Reference)";
             reference.owner = this;
 
             reference.Initialize();
+
+            stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
             // subscribe to more changes
             reference.onGateAdded += RestartFields;
@@ -81,6 +115,7 @@ namespace OneHamsa.Dexterity.Visual
 
         protected void OnDisable()
         {
+            // cleanup gates
             foreach (var gate in gates.ToArray())
             {
                 FinalizeGate(gate);
@@ -104,6 +139,71 @@ namespace OneHamsa.Dexterity.Visual
             outputFields.Clear();
         }
 
+        protected virtual void Start()
+        {
+            var defaultStateId = Manager.instance.GetStateID(initialState);
+            if (defaultStateId == -1)
+            {
+                defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
+                Debug.LogWarning($"no default state selected, selecting arbitrary", this);
+            }
+
+            activeState = defaultStateId;
+        }
+
+        protected virtual void Update()
+        {
+            if (stateDirty)
+            {
+                // someone marked this dirty, check for new state
+                var newState = GetState();
+                if (newState == -1)
+                {
+                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
+                    return;
+                }
+                if (newState != pendingState)
+                {
+                    // add delay to change time
+                    var delay = reference.GetDelay(activeState);
+                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
+                    // don't trigger change if moving back to current state
+                    pendingState = newState != activeState ? newState : -1;
+                }
+                stateDirty = false;
+            }
+            // change to next state (delay is accounted for already)
+            if (nextStateChangeTime <= Time.time && pendingState != -1)
+            {
+                var oldState = activeState;
+
+                activeState = pendingState;
+                pendingState = -1;
+                stateChangeTime = Time.time;
+
+                onStateChanged?.Invoke(oldState, activeState);
+            }
+        }
+
+        private bool EnsureValidState()
+        {
+            if (referenceAsset == null)
+            {
+                Debug.LogError("No reference assigned", this);
+                return false;
+            }
+
+            if (referenceAsset.stateFunctionAsset == null)
+            {
+                Debug.LogError("No state function assigned", this);
+                return false;
+            }
+            return true;
+        }
+
+        #endregion Unity Events
+
+        #region Fields & Gates
         void RestartFields(Gate g) => RestartFields();
 
         void RestartFields()
@@ -198,8 +298,10 @@ namespace OneHamsa.Dexterity.Visual
             {
                 output = new OutputField();
                 output.Initialize(this, fieldId);
+                output.onValueChanged += MarkStateDirty;
 
                 AuditField(output);
+                stateDirty = true;
             }
 
             return output;
@@ -231,10 +333,30 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldsToNodes.Remove(field);
         }
+        #endregion Fields & Gates
 
-        int overridesIncrement;
-        public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
+        #region State Reduction
+        private FieldsState FillFieldsState()
+        {
+            fieldsState.Clear();
 
+            foreach (var fieldId in stateFieldIds)
+            {
+                var value = GetOutputField(fieldId).GetValue();
+                // if this field isn't provided just assume default
+                if (value == emptyFieldValue)
+                {
+                    value = defaultFieldValue;
+                }
+                fieldsState.Add((fieldId, value));
+            }
+            return fieldsState;
+        }
+        protected int GetState() => reference.stateFunction.Evaluate(FillFieldsState());
+        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        #endregion State Reduction
+
+        #region Overrides
         /// <summary>
         /// Sets a boolean override value
         /// </summary>
@@ -325,5 +447,6 @@ namespace OneHamsa.Dexterity.Visual
             CacheOverrides();
         }
 #endif
+        #endregion Overrides
     }
 }

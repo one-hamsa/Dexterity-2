@@ -37,10 +37,17 @@ namespace OneHamsa.Dexterity.Visual
                         break;
                     case nameof(Modifier._node):
                         EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
-                        EditorGUI.indentLevel++;
-                        EditorGUILayout.LabelField($"Automatically selecting parent ({modifier?.node?.name})", 
-                            EditorStyles.miniLabel);
-                        EditorGUI.indentLevel--;
+                        if (modifier._node == null)
+                        {
+                            if (modifier.node == null)
+                            {
+                                EditorGUILayout.HelpBox($"Could not find parent node, select manually or fix hierarchy",
+                                    MessageType.Error);
+                            }
+                            else
+                                EditorGUILayout.HelpBox($"Automatically selecting parent ({modifier.node.name})",
+                                    MessageType.Info);
+                        }
                         break;
                     case nameof(Modifier.properties):
                         // show later
@@ -74,16 +81,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            // show state function button (play time)
-            if (Application.isPlaying)
-            {
-                if (GUILayout.Button("State Function Live View"))
-                {
-                    EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(modifier.activeStateFunction);
-                }
-            }
-
-            var stateFunction = modifier?.node?.referenceAsset?.stateFunction;
+            var stateFunction = modifier?.node?.referenceAsset?.stateFunctionAsset;
             if (stateFunction != null)
             {
                 EditorGUILayout.Space();
@@ -92,19 +90,13 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // warnings
-            if (modifier?.node?.referenceAsset == null)
+            if (modifier.node != null && modifier.node.referenceAsset == null)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.yellow;
-                EditorGUILayout.LabelField("Must select Node Reference for node", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.HelpBox("Must select Node Reference for node", MessageType.Error);
             }
             if (!strategyDefined)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.red;
-                EditorGUILayout.LabelField("Must select Transition Strategy", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -153,7 +145,7 @@ namespace OneHamsa.Dexterity.Visual
                     foldedStates[state] = true;
             }
 
-            var activeState = (target as Modifier).activeState;
+            var activeState = (target as Modifier).node.activeState;
 
             // draw the editor for each value in property
             for (var i = 0; i < properties.arraySize; ++i)

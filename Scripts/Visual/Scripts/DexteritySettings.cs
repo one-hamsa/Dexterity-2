@@ -15,7 +15,6 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public FieldDefinition[] fieldDefinitions;
-        public List<StateFunctionGraph> stateFunctions;
         public GlobalFloatValue[] globalFloatValues;
 
         public float GetGlobalFloat(string name, float defaultValue = default)

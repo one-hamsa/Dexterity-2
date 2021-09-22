@@ -17,7 +17,8 @@ namespace OneHamsa.Dexterity.Visual
         public StateFunctionGraph[] activeStateFunctions { get; private set; }
 
         private string[] fieldNames;
-        private ListSet<string> stateNames;
+        private ListSet<string> stateNames = new ListSet<string>(32);
+        private ListSet<StateFunctionGraph> stateFunctions = new ListSet<StateFunctionGraph>(4);
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -39,14 +40,6 @@ namespace OneHamsa.Dexterity.Visual
         public int GetStateID(string name)
         {
             return stateNames.IndexOf(name);
-        }
-
-        internal StateFunctionGraph GetActiveStateFunction(StateFunctionGraph stateFunction)
-        {
-            var index = settings.stateFunctions.IndexOf(stateFunction);
-            if (index == -1)
-                return null;
-            return activeStateFunctions[index];
         }
 
         /// <summary>
@@ -100,34 +93,30 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="field">BaseField to mark as dirty</param>
         public void SetDirty(BaseField field) => graph.SetDirty(field);
 
+        /// <summary>
+        /// Registers a state function, useful for managing global state IDs
+        /// </summary>
+        /// <param name="stateFunction">State Function to register</param>
+        public void RegisterStateFunction(StateFunctionGraph stateFunction)
+        {
+            if (stateFunctions.Add(stateFunction))
+            {
+                foreach (var state in stateFunction.GetStates())
+                    stateNames.Add(state);
+            }
+        }
+
         private void BuildCache()
         {
             fieldNames = new string[settings.fieldDefinitions.Length];
             for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
                 fieldNames[i] = settings.fieldDefinitions[i].name;
-
-            stateNames = new ListSet<string>(32);
-            foreach (var fn in settings.stateFunctions)
-            {
-                if (fn == null)
-                    continue;
-
-                foreach (var state in fn.GetStates())
-                    stateNames.Add(state);
-            }
         }
 
         protected void Awake()
         {
             // build cache first - important, builds runtime data structures
             BuildCache();
-
-            // clone all state functions
-            activeStateFunctions = new StateFunctionGraph[settings.stateFunctions.Count];
-            for (var i = 0; i < settings.stateFunctions.Count; ++i)
-            {
-                activeStateFunctions[i] = Instantiate(settings.stateFunctions[i]);
-            }
 
             // create graph instance
             graph = gameObject.AddComponent<Graph>();
