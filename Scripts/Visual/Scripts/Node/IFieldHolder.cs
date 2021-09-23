@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual
 
         void AddGate(Gate gate);
         void RemoveGate(Gate gate);
+        void NotifyGatesUpdate();
         Gate GetGateAtIndex(int i);
     }
 }

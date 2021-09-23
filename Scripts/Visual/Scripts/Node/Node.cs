@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour
+    public partial class Node : MonoBehaviour, IFieldHolder
     {
         #region Static Functions
         // mainly for debugging graph problems
@@ -55,14 +55,15 @@ namespace OneHamsa.Dexterity.Visual
         public string initialState;
 
         [SerializeField]
+        public List<Gate> customGates;
+
+        [SerializeField]
         public List<OutputOverride> overrides;
 
         #endregion Serialized Fields
 
         #region Public Properties
         public NodeReference reference { get; private set; }
-
-        public List<Gate> gates => reference.gates;
 
         // output fields of this node
         public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
@@ -71,6 +72,9 @@ namespace OneHamsa.Dexterity.Visual
         public int activeState { get; private set; } = -1;
         public float stateChangeTime { get; private set; }
 
+        public event Action<Gate> onGateAdded;
+        public event Action<Gate> onGateRemoved;
+        public event Action onGatesUpdated;
         public event Action<int, int> onStateChanged;
         #endregion Public Properties
 
@@ -84,6 +88,18 @@ namespace OneHamsa.Dexterity.Visual
         int[] stateFieldIds;
         float nextStateChangeTime;
         int pendingState = -1;
+
+        public IEnumerable<Gate> allGates
+        {
+            get
+            {
+                foreach (var gate in referenceAsset?.gates)
+                    yield return gate;
+
+                foreach (var gate in customGates)
+                    yield return gate;
+            }
+        }
         #endregion Private Properties
 
         #region Unity Events
@@ -104,6 +120,10 @@ namespace OneHamsa.Dexterity.Visual
             stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
             // subscribe to more changes
+            onGateAdded += RestartFields;
+            onGateRemoved += RestartFields;
+            onGatesUpdated += RestartFields;
+
             reference.onGateAdded += RestartFields;
             reference.onGateRemoved += RestartFields;
             reference.onGatesUpdated += RestartFields;
@@ -115,12 +135,16 @@ namespace OneHamsa.Dexterity.Visual
         protected void OnDisable()
         {
             // cleanup gates
-            foreach (var gate in gates.ToArray())
+            foreach (var gate in allGates.ToArray())
             {
                 FinalizeGate(gate);
             }
 
             // unsubscribe
+            onGateAdded -= RestartFields;
+            onGateRemoved -= RestartFields;
+            onGatesUpdated -= RestartFields;
+
             reference.onGateAdded -= RestartFields;
             reference.onGateRemoved -= RestartFields;
             reference.onGatesUpdated -= RestartFields;
@@ -211,7 +235,7 @@ namespace OneHamsa.Dexterity.Visual
             //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
             FinalizeFields(nonOutputFields.ToArray());
             // re-register all gates
-            foreach (var gate in gates.ToArray())  // might manipulate gates within the loop
+            foreach (var gate in allGates.ToArray())  // might manipulate gates within the loop
                 InitializeGate(gate);
         }
 
@@ -332,6 +356,26 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldsToNodes.Remove(field);
         }
+        public void AddGate(Gate gate)
+        {
+            customGates.Add(gate);
+            onGateAdded?.Invoke(gate);
+        }
+
+        public void RemoveGate(Gate gate)
+        {
+            customGates.Remove(gate);
+            onGateRemoved?.Invoke(gate);
+        }
+        public void NotifyGatesUpdate()
+        {
+            onGatesUpdated?.Invoke();
+        }
+
+        public Gate GetGateAtIndex(int i)
+        {
+            return customGates[i];
+        }
         #endregion Fields & Gates
 
         #region State Reduction
@@ -447,5 +491,10 @@ namespace OneHamsa.Dexterity.Visual
         }
 #endif
         #endregion Overrides
+
+        #region Interface Implementation (Editor)
+        public StateFunctionGraph fieldsStateFunction => referenceAsset?.fieldsStateFunction;
+        public Node node => this;
+        #endregion Interface Implementation (Editor)
     }
 }

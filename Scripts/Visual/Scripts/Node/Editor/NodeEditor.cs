@@ -26,10 +26,16 @@ namespace OneHamsa.Dexterity.Visual
 
             ShowChooseReference();
             ShowChooseInitialState();
+            var gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
+                node);
             ShowOverrides();
             ShowDebug();
             ShowWarnings();
             serializedObject.ApplyModifiedProperties();
+
+            // do this after ApplyModifiedProperties() to ensure integrity
+            if (gatesUpdated)
+                node.NotifyGatesUpdate();
         }
 
         private void ShowChooseInitialState()

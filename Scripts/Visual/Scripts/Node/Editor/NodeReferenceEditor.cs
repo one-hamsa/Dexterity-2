@@ -13,17 +13,13 @@ namespace OneHamsa.Dexterity.Visual
     public class NodeReferenceEditor : Editor
     {
         NodeReference reference;
-        bool gatesUpdated;
-
         public override void OnInspectorGUI()
         {
             reference = target as NodeReference;
-            gatesUpdated = false;
-
             serializedObject.Update();
 
             ShowFunction();
-            gatesUpdated |= ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
+            var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference);
             ShowDelays();
             ShowDefaultStrategy();
@@ -102,6 +98,8 @@ namespace OneHamsa.Dexterity.Visual
             if (fieldHolder.fieldsStateFunction == null)
                 return false;
 
+
+            var updated = false;
             var gatesByField = new Dictionary<string, List<(int, SerializedProperty)>>();
             for (var i = 0; i < gatesProp.arraySize; ++i)
             {
@@ -276,12 +274,14 @@ namespace OneHamsa.Dexterity.Visual
             {
                 Undo.RecordObject(gatesProp.serializedObject.targetObject, "Add gate");
                 fieldHolder.AddGate(new Gate());
+                updated = true;
             }
 
             if (deleteIndex != -1)
             {
                 Undo.RecordObject(gatesProp.serializedObject.targetObject, "Remove gate");
                 fieldHolder.RemoveGate(fieldHolder.GetGateAtIndex(deleteIndex));
+                updated = true;
             }
 
             if (moveIndex != (-1, -1))
@@ -301,9 +301,12 @@ namespace OneHamsa.Dexterity.Visual
 
                 p1.FindPropertyRelative(nameof(Gate.outputFieldName)).stringValue = g2.outputFieldName;
                 p1.FindPropertyRelative(nameof(Gate.field)).managedReferenceValue = g2.field;
-            }
 
-            return updateIndex != -1;
+                updated = true;
+            }
+            updated |= updateIndex != -1;
+
+            return updated;
         }
 
         static bool ShowReference(string fieldName, SerializedProperty property)
