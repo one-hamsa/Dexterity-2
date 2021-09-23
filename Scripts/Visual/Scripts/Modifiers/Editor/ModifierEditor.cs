@@ -37,6 +37,9 @@ namespace OneHamsa.Dexterity.Visual
                         break;
                     case nameof(Modifier._node):
                         EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
+                        var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
+                        helpboxStyle.richText = true;
+
                         if (modifier._node == null)
                         {
                             if (modifier.node == null)
@@ -45,8 +48,11 @@ namespace OneHamsa.Dexterity.Visual
                                     MessageType.Error);
                             }
                             else
-                                EditorGUILayout.HelpBox($"Automatically selecting parent ({modifier.node.name})",
-                                    MessageType.Info);
+                                if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
+                                    helpboxStyle))
+                                {
+                                    EditorGUIUtility.PingObject(modifier.node);
+                                }
                         }
                         break;
                     case nameof(Modifier.properties):
