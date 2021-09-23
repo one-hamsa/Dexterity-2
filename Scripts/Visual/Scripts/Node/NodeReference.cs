@@ -63,8 +63,7 @@ namespace OneHamsa.Dexterity.Visual
         [NonSerialized]
         public Node owner;
 
-        [NonSerialized]
-        public StateFunctionGraph stateFunction;
+        public StateFunctionGraph stateFunction { get; private set; }
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;

@@ -60,8 +60,7 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Serialized Fields
 
         #region Public Properties
-        [NonSerialized]
-        public NodeReference reference;
+        public NodeReference reference { get; private set; }
 
         public List<Gate> gates => reference.gates;
 

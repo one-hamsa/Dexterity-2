@@ -50,11 +50,19 @@ namespace OneHamsa.Dexterity.Visual
 
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
-            var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.ToArray());
+            var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.Append("New...").ToArray());
             if (EditorGUI.EndChangeCheck())
             {
-                EditorGUIUtility.PingObject(references[newIdx]);
-                prop.objectReferenceValue = references[newIdx];
+                if (newIdx == names.Count())
+                {
+                    // selected new
+                    CreateNewAsset();
+                }
+                else
+                {
+                    EditorGUIUtility.PingObject(references[newIdx]);
+                    prop.objectReferenceValue = references[newIdx];
+                }
             }
             
 
@@ -83,13 +91,15 @@ namespace OneHamsa.Dexterity.Visual
         static bool debugOpen;
         void ShowDebug()
         {
-            // show state function button (play time)
-            if (Application.isPlaying)
+            if (!Application.isPlaying)
             {
-                if (GUILayout.Button("State Function Live View"))
-                {
-                    EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(node.reference.stateFunction);
-                }
+                return;
+            }
+
+            // show state function button (play time)
+            if (GUILayout.Button("State Function Live View"))
+            {
+                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(node.reference.stateFunction);
             }
 
             debugOpen = EditorGUILayout.Foldout(debugOpen, "Debug", true, EditorStyles.foldoutHeader);
@@ -99,13 +109,11 @@ namespace OneHamsa.Dexterity.Visual
             var outputFields = node.outputFields;
             var overrides = node.cachedOverrides;
             var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
-            var origColor = GUI.color;
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
-
+            var origColor = GUI.color;
             {                
-                GUI.color = outputFields.Count == 0 ? Color.yellow : Color.grey;
-                EditorGUILayout.LabelField($"{outputFields.Count} output fields{overridesStr}", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.HelpBox($"{outputFields.Count} output fields{overridesStr}",
+                    outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
             foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
@@ -154,10 +162,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (node.referenceAsset == null)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.red;
-                EditorGUILayout.LabelField("Must select Node Reference", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.HelpBox("Must select Node Reference", MessageType.Error);
             }
         }
 
@@ -179,6 +184,19 @@ namespace OneHamsa.Dexterity.Visual
             Handles.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.width + 15, rect.y));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
+        }
+
+        private void CreateNewAsset()
+        {
+            string path = EditorUtility.SaveFilePanelInProject("Asset Path", $"Node Reference ({node.name})",
+                "asset", "Choose new node reference asset location");
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            var asset = ScriptableObject.CreateInstance<NodeReference>();
+            AssetDatabase.CreateAsset(asset, path.Substring(path.IndexOf("Assets/")));
+            node.referenceAsset = asset;
+            EditorUtility.SetDirty(node);
         }
     }
 }
