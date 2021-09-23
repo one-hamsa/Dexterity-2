@@ -23,7 +23,8 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             ShowFunction();
-            ShowGates();
+            gatesUpdated |= ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
+                reference);
             ShowDelays();
             ShowDefaultStrategy();
             ShowWarnings();
@@ -96,12 +97,11 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        void ShowGates()
+        internal static bool ShowGates(SerializedProperty gatesProp, IFieldHolder fieldHolder)
         {
-            if (reference.stateFunctionAsset == null)
-                return;
+            if (fieldHolder.fieldsStateFunction == null)
+                return false;
 
-            var gatesProp = serializedObject.FindProperty(nameof(NodeReference.gates));
             var gatesByField = new Dictionary<string, List<(int, SerializedProperty)>>();
             for (var i = 0; i < gatesProp.arraySize; ++i)
             {
@@ -123,7 +123,7 @@ namespace OneHamsa.Dexterity.Visual
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                bool fieldExistsInFunction = reference.stateFunctionAsset.GetFieldNames()
+                bool fieldExistsInFunction = fieldHolder.fieldsStateFunction.GetFieldNames()
                     .ToList().IndexOf(kv.Key) != -1;
 
                 if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
@@ -139,11 +139,11 @@ namespace OneHamsa.Dexterity.Visual
 
                     if (definition.name != null)
                     {
-                        var liveInstance = Application.isPlaying && reference.owner != null;
+                        var liveInstance = Application.isPlaying && fieldHolder.node != null;
 
                         // get value
                         var value = liveInstance
-                            ? reference.owner.GetOutputField(kv.Key).GetValue()
+                            ? fieldHolder.node.GetOutputField(kv.Key).GetValue()
                             : Node.defaultFieldValue;
                         string valueName = "";
 
@@ -217,7 +217,7 @@ namespace OneHamsa.Dexterity.Visual
                     var outputProp = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName));
                     var output = outputProp.stringValue;
                     // TODO check if manager exists!
-                    var fields = reference.stateFunctionAsset.GetFieldNames().ToArray();
+                    var fields = fieldHolder.fieldsStateFunction.GetFieldNames().ToArray();
 
                     EditorGUILayout.BeginHorizontal();
                     if (!string.IsNullOrEmpty(kv.Key))
@@ -230,6 +230,7 @@ namespace OneHamsa.Dexterity.Visual
                         Array.IndexOf(fields, output), fields);
                     if (EditorGUI.EndChangeCheck())
                     {
+                        Undo.RecordObject(gatesProp.serializedObject.targetObject, "Change output field");
                         outputProp.stringValue = fields[outputIdx];
                         updateIndex = i;
                     }
@@ -273,20 +274,24 @@ namespace OneHamsa.Dexterity.Visual
 
             if (GUILayout.Button("+", EditorStyles.miniButton))
             {
-                reference.AddGate(new Gate());
+                Undo.RecordObject(gatesProp.serializedObject.targetObject, "Add gate");
+                fieldHolder.AddGate(new Gate());
             }
 
             if (deleteIndex != -1)
             {
-                reference.RemoveGate(reference.gates[deleteIndex]);
+                Undo.RecordObject(gatesProp.serializedObject.targetObject, "Remove gate");
+                fieldHolder.RemoveGate(fieldHolder.GetGateAtIndex(deleteIndex));
             }
 
             if (moveIndex != (-1, -1))
             {
+                Undo.RecordObject(gatesProp.serializedObject.targetObject, "Move gates");
+
                 // MoveArrayElement just makes unity crash, and since Gate is a Serializable 
                 //. it looks like that's the most straightforward way around...
-                var g1 = reference.gates[moveIndex.Item1];
-                var g2 = reference.gates[moveIndex.Item2];
+                var g1 = fieldHolder.GetGateAtIndex(moveIndex.Item1);
+                var g2 = fieldHolder.GetGateAtIndex(moveIndex.Item2);
 
                 var p1 = gatesProp.GetArrayElementAtIndex(moveIndex.Item1);
                 var p2 = gatesProp.GetArrayElementAtIndex(moveIndex.Item2);
@@ -298,13 +303,10 @@ namespace OneHamsa.Dexterity.Visual
                 p1.FindPropertyRelative(nameof(Gate.field)).managedReferenceValue = g2.field;
             }
 
-            if (updateIndex != -1)
-            {
-                gatesUpdated = true;
-            }
+            return updateIndex != -1;
         }
 
-        bool ShowReference(string fieldName, SerializedProperty property)
+        static bool ShowReference(string fieldName, SerializedProperty property)
         {
             bool updated = false;
 
@@ -324,6 +326,7 @@ namespace OneHamsa.Dexterity.Visual
 
             if (EditorGUI.EndChangeCheck())
             {
+                Undo.RecordObject(property.serializedObject.targetObject, "Change field type");
                 var type = types[fieldIdx];
                 property.managedReferenceValue = Activator.CreateInstance(type);
                 updated = true;

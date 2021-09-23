@@ -88,7 +88,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 ClearUpstreamFields();
                 allUpstreamFieldsAreOutputOrProxy = true;
-                foreach (var gate in node.gates)
+                foreach (var gate in node.allGates)
                 {
                     if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;

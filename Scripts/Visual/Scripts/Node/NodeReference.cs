@@ -7,7 +7,7 @@ using OneHumus.Data;
 namespace OneHamsa.Dexterity.Visual
 {
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
-    public class NodeReference : ScriptableObject
+    public class NodeReference : ScriptableObject, IFieldHolder
     {
         // stores the coupling between input fields and their output name
         [Serializable]
@@ -105,5 +105,13 @@ namespace OneHamsa.Dexterity.Visual
         {
             onGatesUpdated?.Invoke();
         }
+
+        // interface implementations
+        public Gate GetGateAtIndex(int i)
+        {
+            return gates[i];
+        }
+        public StateFunctionGraph fieldsStateFunction => stateFunctionAsset;
+        public Node node => owner;
     }
 }
