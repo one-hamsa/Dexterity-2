@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowChooseInitialState()
         {
-            if (node.reference == null)
+            if (node.referenceAsset == null)
                 return;
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
@@ -78,6 +78,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 Selection.activeObject = node.referenceAsset;
             }
+
+            // runtime
             GUI.enabled = node.reference != null;
             if (GUILayout.Button(EditorGUIUtility.IconContent("ScaleTool"),
                 EditorStyles.miniButton, GUILayout.Width(24)))
