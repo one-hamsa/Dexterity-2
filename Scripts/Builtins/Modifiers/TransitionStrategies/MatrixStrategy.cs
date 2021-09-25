@@ -21,13 +21,61 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public int fromId, toId;
         }
 
+        [Serializable]
+        public class MatrixStrategyData
+        {
+            public MatrixStrategyRow[] rows;
+
+            public void Initialize()
+            {
+                foreach (var transition in rows)
+                {
+                    transition.fromId = Manager.instance.GetStateID(transition.from);
+                    transition.toId = Manager.instance.GetStateID(transition.to);
+                }
+            }
+
+            public float GetTime(string fromState, string toState)
+            {
+                foreach (var transition in rows)
+                {
+                    if (transition.from == fromState && transition.to == toState)
+                        return transition.time;
+                }
+                return default;
+            }
+
+            public float GetTime(int fromState, int toState)
+            {
+                foreach (var transition in rows)
+                {
+                    if (transition.fromId == fromState && transition.toId == toState)
+                        return transition.time;
+                }
+                return default;
+            }
+
+            public void SetTime(string fromState, string toState, float time)
+            {
+                foreach (var transition in rows)
+                {
+                    if (transition.from == fromState && transition.to == toState)
+                    {
+                        transition.time = time;
+                        break;
+                    }
+                }
+            }
+        }
+
         public enum EasingStyle
         {
             EaseInOut,
             Linear,
         }
 
-        public MatrixStrategyRow[] transitions;
+        public MatrixStrategyData transitions;
+
         public EasingStyle easing;
         private float estimatedTime;
         private AnimationCurve easingCurve;
@@ -36,11 +84,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public override IDictionary<int, float> Initialize(int[] states, int currentState)
         {
-            foreach (var transition in transitions)
-            {
-                transition.fromId = Manager.instance.GetStateID(transition.from);
-                transition.toId = Manager.instance.GetStateID(transition.to);
-            }
+            transitions.Initialize();
 
             switch (easing)
             {
@@ -68,15 +112,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             {
                 var state = kv.Key;
                 var value = actualValues[state];
-                foreach (var transition in transitions)
-                {
-                    if (transition.fromId == state && transition.toId == currentState)
-                    {
-                        estimatedTime += Mathf.Lerp(0, 
-                            Mathf.Max(0, transition.time - stateChangeDeltaTime), 
-                            state == currentState ? 1 - value : value);
-                    }
-                }
+                var time = transitions.GetTime(state, currentState);
+                
+                estimatedTime += Mathf.Lerp(0, 
+                    Mathf.Max(0, time - stateChangeDeltaTime), 
+                    state == currentState ? 1 - value : value);
             }
 
             return base.GetTransition(prevState, currentState, stateChangeDeltaTime, out changed);

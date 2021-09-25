@@ -26,35 +26,14 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var unityObject = property.serializedObject.targetObject;
-            StateFunctionGraph sf;
-            List<string> states = new List<string>();
-
-            switch (unityObject)
-            {
-                case Modifier modifier:
-                    sf = modifier.node?.referenceAsset?.stateFunctionAsset;
-                    break;
-
-                case Node node:
-                    sf = node.referenceAsset?.stateFunctionAsset;
-                    break;
-
-                case NodeReference reference:
-                    sf = reference.stateFunctionAsset;
-                    break;
-                default:
-                    EditorGUI.LabelField(position, label.text, 
-                        $"Unsupported object type {unityObject.GetType()} for attribute [State]");
-                    return;
-            }
+            var sf = Utils.GetStateFunctionFromObject(property.serializedObject.targetObject);
 
             if (sf == null)
             {
                 EditorGUI.LabelField(position, label.text,
                         $"State function not found for attribute [State]");
             }
-            states.AddRange(sf.GetStates());
+            var states = sf.GetStates().ToList();
 
             var index = EditorGUI.Popup(position, label.text, states.IndexOf(property.stringValue), states.ToArray());
             if (index >= 0 && index < states.Count)

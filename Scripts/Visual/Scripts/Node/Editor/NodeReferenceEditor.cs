@@ -274,14 +274,12 @@ namespace OneHamsa.Dexterity.Visual
             {
                 Undo.RecordObject(gatesProp.serializedObject.targetObject, "Add gate");
                 fieldHolder.AddGate(new Gate());
-                updated = true;
             }
 
             if (deleteIndex != -1)
             {
                 Undo.RecordObject(gatesProp.serializedObject.targetObject, "Remove gate");
                 fieldHolder.RemoveGate(fieldHolder.GetGateAtIndex(deleteIndex));
-                updated = true;
             }
 
             if (moveIndex != (-1, -1))

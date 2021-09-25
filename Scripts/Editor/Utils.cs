@@ -88,5 +88,31 @@ namespace OneHamsa.Dexterity.Visual
                 return lastPart;
             });
         }
+
+        public static StateFunctionGraph GetStateFunctionFromObject(UnityEngine.Object unityObject)
+        {
+            StateFunctionGraph sf;
+            List<string> states = new List<string>();
+
+            switch (unityObject)
+            {
+                case Modifier modifier:
+                    sf = modifier.node?.referenceAsset?.stateFunctionAsset;
+                    break;
+
+                case Node node:
+                    sf = node.referenceAsset?.stateFunctionAsset;
+                    break;
+
+                case NodeReference reference:
+                    sf = reference.stateFunctionAsset;
+                    break;
+                default:
+                    Debug.LogError($"Unsupported object type {unityObject.GetType()} - cannot locate state function");
+                    return null;
+            }
+
+            return sf;
+        }
     }
 }

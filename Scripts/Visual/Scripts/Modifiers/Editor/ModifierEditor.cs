@@ -246,8 +246,9 @@ namespace OneHamsa.Dexterity.Visual
             var currentIdx = Array.IndexOf(typesNames, className);
             if (currentIdx == -1)
             {
-                currentIdx = Array.IndexOf(typesNames, modifier.node.referenceAsset.defaultStrategy);
-                saveStrategy = true;
+                currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
+                if (currentIdx != -1)
+                    saveStrategy = true;
             }
             var fieldIdx = currentIdx;
 
