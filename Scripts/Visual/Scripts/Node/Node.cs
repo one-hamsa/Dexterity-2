@@ -93,7 +93,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             get
             {
-                foreach (var gate in referenceAsset?.gates)
+                foreach (var gate in reference?.gates)
                     yield return gate;
 
                 foreach (var gate in customGates)
