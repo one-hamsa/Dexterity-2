@@ -93,8 +93,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             get
             {
-                foreach (var gate in reference?.gates)
-                    yield return gate;
+                if (reference != null)
+                    foreach (var gate in reference.gates)
+                        yield return gate;
 
                 foreach (var gate in customGates)
                     yield return gate;
@@ -145,9 +146,12 @@ namespace OneHamsa.Dexterity.Visual
             onGateRemoved -= RestartFields;
             onGatesUpdated -= RestartFields;
 
-            reference.onGateAdded -= RestartFields;
-            reference.onGateRemoved -= RestartFields;
-            reference.onGatesUpdated -= RestartFields;
+            if (reference != null)
+            {
+                reference.onGateAdded -= RestartFields;
+                reference.onGateRemoved -= RestartFields;
+                reference.onGatesUpdated -= RestartFields;
+            }
 
             Destroy(reference);
         }
