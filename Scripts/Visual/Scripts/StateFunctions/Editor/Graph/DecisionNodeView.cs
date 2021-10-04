@@ -22,8 +22,8 @@ namespace OneHamsa.Dexterity.Visual
 			node = nodeTarget as DecisionNode;
 
 			owner.onAfterGraphChanged += HandleGraphChanges;
-			contentContainer.Q<PropertyField>(nameof(DecisionNode.stateName))
-				.RegisterValueChangeCallback(HandleStateChange);
+			contentContainer.Q<TextField>(nameof(DecisionNode.stateName))
+				.RegisterCallback<ChangeEvent<string>>(HandleStateChange);
 			HandleGraphChanges(null);
 
 			// runtime
@@ -36,8 +36,8 @@ namespace OneHamsa.Dexterity.Visual
 			base.Disable();
 
 			owner.onAfterGraphChanged -= HandleGraphChanges;
-			contentContainer.Q<PropertyField>(nameof(DecisionNode.stateName))
-				.UnregisterCallback<SerializedPropertyChangeEvent>(HandleStateChange);
+			contentContainer.Q<TextField>(nameof(DecisionNode.stateName))
+				.UnregisterCallback<ChangeEvent<string>>(HandleStateChange);
 
 			node.onProcessed -= HandleNodeProcessed;
 		}
@@ -57,7 +57,7 @@ namespace OneHamsa.Dexterity.Visual
 				AddMessageView(kNoInputMessage, NodeMessageType.Warning);
 		}
 
-		private void HandleStateChange(SerializedPropertyChangeEvent evt)
+		private void HandleStateChange(ChangeEvent<string> evt)
         {
 			UpdateTitle();
 
