@@ -60,6 +60,9 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeField]
         public List<OutputOverride> overrides;
 
+        [State(allowEmpty: true)]
+        public string overrideState;
+
         #endregion Serialized Fields
 
         #region Public Properties
@@ -70,6 +73,7 @@ namespace OneHamsa.Dexterity.Visual
         public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
         
         public int activeState { get; private set; } = -1;
+        public int overrideStateId { get; private set; } = -1;
         public float stateChangeTime { get; private set; }
 
         public event Action<Gate> onGateAdded;
@@ -131,6 +135,7 @@ namespace OneHamsa.Dexterity.Visual
 
             RestartFields();
             CacheOverrides();
+            CacheOverrideState();
         }
 
         protected void OnDisable()
@@ -399,7 +404,14 @@ namespace OneHamsa.Dexterity.Visual
             }
             return fieldsState;
         }
-        protected int GetState() => reference.stateFunction.Evaluate(FillFieldsState());
+        protected int GetState()
+        {
+            if (overrideStateId != -1)
+                return overrideStateId;
+
+            return reference.stateFunction.Evaluate(FillFieldsState());
+        }
+
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
         #endregion State Reduction
 
@@ -476,6 +488,29 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        /// <summary>
+        /// Overrides state to manual value
+        /// </summary>
+        /// <param name="fieldId">State ID (from Manager)</param>
+        public void SetStateOverride(int state)
+        {
+            overrideStateId = state;
+            stateDirty = true;
+
+#if UNITY_EDITOR
+            // in editor, write the overrideState string back
+            overrideState = Manager.instance.GetStateAsString(state);
+#else
+            // in runtime, clear the string (to avoid re-caching)
+            overrideState = null;
+#endif
+        }
+        /// <summary>
+        /// Overrides state to manual value
+        /// </summary>
+        /// <param name="fieldId">State ID (from Manager)</param>
+        public void ClearStateOverride() => SetStateOverride(-1);
+
         void CacheOverrides()
         {
             cachedOverrides.Clear();
@@ -487,6 +522,12 @@ namespace OneHamsa.Dexterity.Visual
             overridesIncrement++;
         }
 
+        private void CacheOverrideState()
+        {
+            if (!string.IsNullOrEmpty(overrideState))
+                SetStateOverride(Manager.instance.GetStateID(overrideState));
+        }
+
 #if UNITY_EDITOR
         // update overrides every frame to allow setting overrides from editor
         void LateUpdate()
@@ -494,11 +535,11 @@ namespace OneHamsa.Dexterity.Visual
             CacheOverrides();
         }
 #endif
-        #endregion Overrides
+#endregion Overrides
 
-        #region Interface Implementation (Editor)
+#region Interface Implementation (Editor)
         public StateFunctionGraph fieldsStateFunction => referenceAsset?.fieldsStateFunction;
         public Node node => this;
-        #endregion Interface Implementation (Editor)
+#endregion Interface Implementation (Editor)
     }
 }

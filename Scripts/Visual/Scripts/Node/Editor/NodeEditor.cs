@@ -94,6 +94,14 @@ namespace OneHamsa.Dexterity.Visual
         {
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp);
+
+            var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(overrideStateProp);
+            if (EditorGUI.EndChangeCheck())
+            {
+                node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
+            }
         }
 
         static bool debugOpen;
