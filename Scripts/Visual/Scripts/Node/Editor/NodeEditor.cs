@@ -103,11 +103,23 @@ namespace OneHamsa.Dexterity.Visual
             {
                 return;
             }
+            var origColor = GUI.color;
 
             // show state function button (play time)
             if (GUILayout.Button("State Function Live View"))
             {
                 EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(node.reference.stateFunction);
+            }
+
+            if (node.activeState != -1)
+            {
+                var style = new GUIStyle(EditorStyles.helpBox);
+                style.alignment = TextAnchor.MiddleCenter;
+                style.fontSize = 14;
+
+                GUI.color = Color.green;
+                GUILayout.Label(Manager.instance.GetStateAsString(node.activeState), style);
+                GUI.color = origColor;
             }
 
             debugOpen = EditorGUILayout.Foldout(debugOpen, "Debug", true, EditorStyles.foldoutHeader);
@@ -118,7 +130,6 @@ namespace OneHamsa.Dexterity.Visual
             var overrides = node.cachedOverrides;
             var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
-            var origColor = GUI.color;
             {                
                 EditorGUILayout.HelpBox($"{outputFields.Count} output fields{overridesStr}",
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);

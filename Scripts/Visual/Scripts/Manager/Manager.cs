@@ -55,7 +55,17 @@ namespace OneHamsa.Dexterity.Visual
                 return default;
             }
             return settings.fieldDefinitions[id];
-        }        
+        }
+
+        /// <summary>
+        /// returns the state string from an ID (runtime).
+        /// </summary>
+        /// <param name="name">State ID</param>
+        /// <returns>State name</returns>
+        public string GetStateAsString(int id)
+        {
+            return stateNames[id];
+        }
 
         // TODO improve singleton implementation (spawn first, die last)
         private static Manager inst;
