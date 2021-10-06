@@ -14,6 +14,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public bool Click { get;  private set; }
             public void OnPointerDown(PointerEventData eventData) => Click = true;
             public void OnPointerUp(PointerEventData eventData) => Click = false;
+
+            private void OnEnable() {
+                InputManager.instance.OnUp += Instance_OnUp;
+            }
+
+            private void Instance_OnUp() {
+                Click = false;
+            }
+
+            private void OnDisable() {
+                InputManager.instance.OnUp += Instance_OnUp;
+            }
         }
 
         public override void Initialize(Node context)

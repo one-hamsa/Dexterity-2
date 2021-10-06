@@ -1,7 +1,9 @@
 {
     "name": "Dexterity",
     "rootNamespace": "OneHamsa.Dexterity.Visual",
-    "references": [],
+    "references": [
+        "GUID:5e0e2e0ef374f434ca5446123b545f2a"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
