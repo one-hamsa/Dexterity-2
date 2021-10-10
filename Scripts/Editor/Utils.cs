@@ -108,7 +108,6 @@ namespace OneHamsa.Dexterity.Visual
                     sf = reference.stateFunctionAsset;
                     break;
                 default:
-                    Debug.LogError($"Unsupported object type {unityObject.GetType()} - cannot locate state function");
                     return null;
             }
 

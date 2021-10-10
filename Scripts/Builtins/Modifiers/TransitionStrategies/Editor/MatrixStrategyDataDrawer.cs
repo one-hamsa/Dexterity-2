@@ -20,6 +20,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             var sf = Utils.GetStateFunctionFromObject(property.serializedObject.targetObject);
+            if (sf == null)
+            {
+                EditorGUI.LabelField(position, label.text, $"Unsupported object type - cannot locate state function.");
+                return;
+            }
+
             var allStates = sf.GetStates().ToList();
             var rows = property.FindPropertyRelative(nameof(MatrixStrategy.MatrixStrategyData.rows));
             var stateToProp = new ListMap<(string from, string to), SerializedProperty>();
@@ -140,6 +146,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             var sf = Utils.GetStateFunctionFromObject(property.serializedObject.targetObject);
+            if (sf == null)
+                return base.GetPropertyHeight(property, label);
 
             return rotationHeightOffset
                 + EditorGUIUtility.singleLineHeight * (sf.GetStates().Count() + 1);
