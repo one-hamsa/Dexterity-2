@@ -1,4 +1,5 @@
 using GraphProcessor;
+using OneHumus.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +9,10 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : BaseGraph
     {
+        private static ListMap<StateFunctionGraph, StateFunctionGraph> prefabToRuntime
+            = new ListMap<StateFunctionGraph, StateFunctionGraph>();
+
+        public bool isRuntime { get; private set; }
         internal FieldsState fieldsState { get; private set; }
         internal int evaluationResult { get; set; } = -1;
 
@@ -62,8 +67,28 @@ namespace OneHamsa.Dexterity.Visual
                 yield return Manager.instance.GetStateID(stateName);
         }
 
+        public StateFunctionGraph GetRuntimeInstance()
+        {
+            if (isRuntime)
+            {
+                Debug.LogWarning("asking for runtime but we're already a runtime instance", this);
+                return this;
+            }
 
+            if (!prefabToRuntime.TryGetValue(this, out var runtime))
+            {
+                prefabToRuntime[this] = runtime = Instantiate(this);
+                runtime.isRuntime = true;
+            }
 
+            return runtime;
+        }
+
+        private void OnDestroy()
+        {
+            if (isRuntime)
+                prefabToRuntime.Remove(this);
+        }
 
         public string errorString;
 

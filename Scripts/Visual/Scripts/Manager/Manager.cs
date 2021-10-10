@@ -14,8 +14,6 @@ namespace OneHamsa.Dexterity.Visual
 
         public DexteritySettings settings;
 
-        public StateFunctionGraph[] activeStateFunctions { get; private set; }
-
         private string[] fieldNames;
         private ListSet<string> stateNames = new ListSet<string>(32);
         private ListSet<StateFunctionGraph> stateFunctions = new ListSet<StateFunctionGraph>(4);

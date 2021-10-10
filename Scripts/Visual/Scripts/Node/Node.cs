@@ -116,49 +116,12 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            reference = Instantiate(referenceAsset);
-            reference.name = $"{name} (Reference)";
-            reference.owner = this;
-
-            reference.Initialize();
-
-            stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
-
-            // subscribe to more changes
-            onGateAdded += RestartFields;
-            onGateRemoved += RestartFields;
-            onGatesUpdated += RestartFields;
-
-            reference.onGateAdded += RestartFields;
-            reference.onGateRemoved += RestartFields;
-            reference.onGatesUpdated += RestartFields;
-
-            RestartFields();
-            CacheOverrides();
-            CacheOverrideState();
+            Initialize(referenceAsset);
         }
 
         protected void OnDisable()
         {
-            // cleanup gates
-            foreach (var gate in allGates.ToArray())
-            {
-                FinalizeGate(gate);
-            }
-
-            // unsubscribe
-            onGateAdded -= RestartFields;
-            onGateRemoved -= RestartFields;
-            onGatesUpdated -= RestartFields;
-
-            if (reference != null)
-            {
-                reference.onGateAdded -= RestartFields;
-                reference.onGateRemoved -= RestartFields;
-                reference.onGatesUpdated -= RestartFields;
-            }
-
-            Destroy(reference);
+            Uninitialize();
         }
 
         protected void OnDestroy()
@@ -169,6 +132,10 @@ namespace OneHamsa.Dexterity.Visual
                 output.Finalize(this);
             }
             outputFields.Clear();
+
+            // only destroy if it's my reference (debug)
+            if (reference.owner == this)
+                Destroy(reference);
         }
 
         protected virtual void Start()
@@ -217,6 +184,9 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        #endregion Unity Events
+
+        #region General Methods
         private bool EnsureValidState()
         {
             if (referenceAsset == null)
@@ -233,7 +203,46 @@ namespace OneHamsa.Dexterity.Visual
             return true;
         }
 
-        #endregion Unity Events
+        public void Initialize(NodeReference referenceAsset)
+        {
+            reference = referenceAsset.GetRuntimeInstance();
+            stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
+
+            // subscribe to more changes
+            onGateAdded += RestartFields;
+            onGateRemoved += RestartFields;
+            onGatesUpdated += RestartFields;
+
+            reference.onGateAdded += RestartFields;
+            reference.onGateRemoved += RestartFields;
+            reference.onGatesUpdated += RestartFields;
+
+            RestartFields();
+            CacheOverrides();
+            CacheOverrideState();
+        }
+
+        public void Uninitialize()
+        {
+            // cleanup gates
+            foreach (var gate in allGates.ToArray())
+            {
+                FinalizeGate(gate);
+            }
+
+            // unsubscribe
+            onGateAdded -= RestartFields;
+            onGateRemoved -= RestartFields;
+            onGatesUpdated -= RestartFields;
+
+            if (reference != null)
+            {
+                reference.onGateAdded -= RestartFields;
+                reference.onGateRemoved -= RestartFields;
+                reference.onGatesUpdated -= RestartFields;
+            }
+        }
+        #endregion General Methods
 
         #region Fields & Gates
         void RestartFields(Gate g) => RestartFields();

@@ -9,6 +9,9 @@ namespace OneHamsa.Dexterity.Visual
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
     public class NodeReference : ScriptableObject, IFieldHolder
     {
+        private static ListMap<NodeReference, NodeReference> prefabToRuntime
+            = new ListMap<NodeReference, NodeReference>();
+
         // stores the coupling between input fields and their output name
         [Serializable]
         public class Gate
@@ -64,6 +67,7 @@ namespace OneHamsa.Dexterity.Visual
         public Node owner;
 
         public StateFunctionGraph stateFunction { get; private set; }
+        public bool isRuntime { get; private set; }
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
@@ -71,7 +75,7 @@ namespace OneHamsa.Dexterity.Visual
 
         ListMap<int, TransitionDelay> cachedDelays;
 
-        public void Initialize()
+        private void Initialize()
         {
             Manager.instance.RegisterStateFunction(stateFunctionAsset);
 
@@ -80,7 +84,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var delay in delays)
                 cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
 
-            stateFunction = Instantiate(stateFunctionAsset);
+            stateFunction = stateFunctionAsset.GetRuntimeInstance();
         }
 
         public TransitionDelay GetDelay(int state)
@@ -113,5 +117,23 @@ namespace OneHamsa.Dexterity.Visual
         }
         public StateFunctionGraph fieldsStateFunction => stateFunctionAsset;
         public Node node => owner;
+
+        public NodeReference GetRuntimeInstance()
+        {
+            if (isRuntime)
+            {
+                Debug.LogWarning("asking for runtime but we're already a runtime instance", this);
+                return this;
+            }
+
+            if (!prefabToRuntime.TryGetValue(this, out var runtime))
+            {
+                prefabToRuntime[this] = runtime = Instantiate(this);
+                runtime.isRuntime = true;
+                runtime.Initialize();
+            }
+
+            return runtime;
+        }
     }
 }

@@ -84,6 +84,15 @@ namespace OneHamsa.Dexterity.Visual
             if (GUILayout.Button(EditorGUIUtility.IconContent("ScaleTool"),
                 EditorStyles.miniButton, GUILayout.Width(24)))
             {
+                if (node.reference.owner == null)
+                {
+                    Debug.Log("Creating runtime reference for debug view");
+                    node.Uninitialize();
+                    node.Initialize(Instantiate(node.reference));
+
+                    node.reference.name = $"{name} (Reference)";
+                    node.reference.owner = node;
+                }
                 NodeReferenceEditorWindow.Open(node.reference); 
             }
             EditorGUILayout.EndHorizontal();
