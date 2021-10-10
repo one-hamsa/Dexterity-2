@@ -7,13 +7,10 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
-    public abstract class Modifier : MonoBehaviour
+    public abstract class Modifier : TransitionBehaviour
     {
         [SerializeField]
         public Node _node;
-
-        [SerializeReference]
-        public ITransitionStrategy transitionStrategy;
 
         [SerializeReference]
         public List<PropertyBase> properties = new List<PropertyBase>();
@@ -21,9 +18,6 @@ namespace OneHamsa.Dexterity.Visual
         public Node node => TryFindNode();
 
         ListMap<int, PropertyBase> propertiesCache = null;
-
-        protected bool transitionChanged;
-        protected int forceTransitionChangeFrames;
 
         public PropertyBase GetProperty(int stateId)
         {
@@ -45,13 +39,18 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void HandleStateChange(int oldState, int newState) { }
 
+        private int[] _states;
+
+        protected override int[] states => _states;
+        protected override float stateChangeTime => node.stateChangeTime;
+        protected override int activeState => node.activeState;
+
+
         [Serializable]
         public abstract class PropertyBase
         {
             public string state;
         }
-
-        protected IDictionary<int, float> transitionState;
 
         private void Awake()
         {
@@ -68,19 +67,19 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        protected virtual void Start()
+        protected override void Start()
         {
             HandleStateChange(node.activeState, node.activeState);
 
-            var states = new int[propertiesCache.Count];
+            _states = new int[propertiesCache.Count];
             var keys = propertiesCache.Keys.GetEnumerator();
             var i = 0;
             while (keys.MoveNext())
                 states[i++] = keys.Current;
 
-            transitionState = transitionStrategy.Initialize(states, node.activeState);
+            base.Start();
         }
-        protected virtual void OnEnable()
+        protected override void OnEnable()
         {
             if (!EnsureValidState())
             {
@@ -97,23 +96,13 @@ namespace OneHamsa.Dexterity.Visual
 
             node.onStateChanged += HandleStateChange;
 
-            ForceTransitionUpdate();
+            base.OnEnable();
         }
-        protected virtual void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
+
             node.onStateChanged -= HandleStateChange;
-        }
-
-        protected virtual void Update()
-        {
-            transitionState = transitionStrategy.GetTransition(transitionState,
-                node.activeState, Time.time - node.stateChangeTime, out transitionChanged);
-
-            if (forceTransitionChangeFrames > 0)
-            {
-                forceTransitionChangeFrames--;
-                transitionChanged = true;
-            }
         }
 
         Node TryFindNode()
@@ -132,13 +121,14 @@ namespace OneHamsa.Dexterity.Visual
             return current;
         }
 
-        bool EnsureValidState()
+        protected bool EnsureValidState()
         {
             if (node == null)
             {
                 Debug.LogError("Node is null", this);
                 return false;
             }
+
             if (!node.enabled)
             {
                 Debug.LogError("Node is disabled", this);
@@ -159,12 +149,6 @@ namespace OneHamsa.Dexterity.Visual
 
             return true;
         }
-
-        /// <summary>
-        /// Force updating this modifier's transition (even if the transition function reports it's not needed)
-        /// </summary>
-        /// <param name="frames">How many frames should the update be forced for</param>
-        public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
     }
 
 }

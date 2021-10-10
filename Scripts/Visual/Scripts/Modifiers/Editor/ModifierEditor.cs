@@ -8,16 +8,15 @@ using System.Reflection;
 namespace OneHamsa.Dexterity.Visual
 {
     [CustomEditor(typeof(Modifier), true)]
-    public class ModifierEditor : Editor
+    public class ModifierEditor : TransitionBehaviourEditor
     {
         static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
-        bool strategyDefined;
-        Modifier modifier;
+        bool strategyExists { get; set; }
+        Modifier modifier { get; set; }
         List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
-        private bool advancedFoldout;
-        private bool propertiesUpdated;
+        private bool propertiesUpdated { get; set; } 
 
-        private void OnEnable()
+        private void OnEnable() 
         {
             modifier = target as Modifier;
         }
@@ -27,6 +26,9 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             propertiesUpdated = false;
+
+            ShowNode();
+
             var customProps = new List<SerializedProperty>();
             var parent = serializedObject.GetIterator();
             foreach (var prop in Utils.GetVisibleChildren(parent))
@@ -36,30 +38,13 @@ namespace OneHamsa.Dexterity.Visual
                     case "m_Script":
                         break;
                     case nameof(Modifier._node):
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
-                        var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
-                        helpboxStyle.richText = true;
-
-                        if (modifier._node == null)
-                        {
-                            if (modifier.node == null)
-                            {
-                                EditorGUILayout.HelpBox($"Could not find parent node, select manually or fix hierarchy",
-                                    MessageType.Error);
-                            }
-                            else
-                                if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
-                                    helpboxStyle))
-                                {
-                                    EditorGUIUtility.PingObject(modifier.node);
-                                }
-                        }
+                        // separate
                         break;
                     case nameof(Modifier.properties):
                         // show later
                         break;
                     case nameof(Modifier.transitionStrategy):
-                        strategyDefined = ShowStrategy();
+                        strategyExists = ShowStrategy();
                         break;
 
                     default:
@@ -100,8 +85,22 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox("Must select Node Reference for node", MessageType.Error);
             }
-            if (!strategyDefined)
+            if (!strategyExists)
             {
+                var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
+                var className = Utils.GetClassName(strategyProp);
+                var types = Utils.GetSubtypes<ITransitionStrategy>();
+                var typesNames = types
+                    .Select(t => t.ToString())
+                    .ToArray();
+
+                if (string.IsNullOrEmpty(className))
+                {
+                    var currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
+                    if (currentIdx != -1)
+                        strategyProp.managedReferenceValue = Activator.CreateInstance(types[currentIdx]);
+                }
+
                 EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }
 
@@ -110,7 +109,29 @@ namespace OneHamsa.Dexterity.Visual
             if (propertiesUpdated)
                 modifier.ForceTransitionUpdate();
         }
-        
+
+        private void ShowNode()
+        {
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
+            var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
+            helpboxStyle.richText = true;
+
+            if (modifier._node == null)
+            {
+                if (modifier.node == null)
+                {
+                    EditorGUILayout.HelpBox($"Could not find parent node, select manually or fix hierarchy",
+                        MessageType.Error);
+                }
+                else
+                    if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
+                        helpboxStyle))
+                {
+                    EditorGUIUtility.PingObject(modifier.node);
+                }
+            }
+        }
+
         bool ShowProperties(StateFunctionGraph sf)
         {
             var updated = false;
@@ -184,6 +205,17 @@ namespace OneHamsa.Dexterity.Visual
                     suffix = " (current)";
                 }
 
+                void PlayButton()
+                {
+                    /*
+                    if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
+                        GUILayout.Width(25)))
+                    {
+
+                    }
+                    */
+                }
+
                 if (stateProps.Count > 1)
                 {
                     // multiple - fold
@@ -191,6 +223,9 @@ namespace OneHamsa.Dexterity.Visual
                     foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState],
                         $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
                     GUI.contentColor = origColor;
+
+                    PlayButton();
+
                     EditorGUILayout.EndHorizontal();
 
                     // show fields
@@ -212,6 +247,8 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
                     updated |= EditorGUI.EndChangeCheck();
 
+                    PlayButton();
+
                     EditorGUILayout.EndHorizontal();
                 }
             }
@@ -221,55 +258,6 @@ namespace OneHamsa.Dexterity.Visual
                 Repaint();
 
             return updated;
-        }
-
-        bool ShowStrategy()
-        {
-            var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
-            var className = Utils.GetClassName(strategyProp);
-
-            if (!string.IsNullOrEmpty(className))
-            {
-                foreach (var field in Utils.GetChildren(strategyProp))
-                {
-                    EditorGUILayout.PropertyField(field);
-                }
-            }
-
-
-            var saveStrategy = false;
-            var types = Utils.GetSubtypes<ITransitionStrategy>();
-            var typesNames = types
-                .Select(t => t.ToString())
-                .ToArray();
-
-            var currentIdx = Array.IndexOf(typesNames, className);
-            if (currentIdx == -1)
-            {
-                currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
-                if (currentIdx != -1)
-                    saveStrategy = true;
-            }
-            var fieldIdx = currentIdx;
-
-            if (advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced"))
-            {
-                EditorGUI.BeginChangeCheck();
-                fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,
-                    Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    saveStrategy = true;
-                }
-            }
-            if (saveStrategy)
-            {
-                var type = types[fieldIdx];
-                strategyProp.managedReferenceValue = Activator.CreateInstance(type);
-            }
-
-            return !string.IsNullOrEmpty(className);
         }
 
         static void DrawSeparator()
