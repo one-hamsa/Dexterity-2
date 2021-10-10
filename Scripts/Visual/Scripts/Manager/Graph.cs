@@ -25,6 +25,7 @@ namespace OneHamsa.Dexterity.Visual
         public bool updating { get; private set; }
 
         public ListSet<BaseField> nodes { get; } = new ListSet<BaseField>();
+        public ListSet<BaseField> nodesForCurrentSortIteration { get; } = new ListSet<BaseField>();
         
         public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
             = new ListMap<BaseField, IEnumerable<BaseField>>();
@@ -208,6 +209,11 @@ namespace OneHamsa.Dexterity.Visual
         //. https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         IEnumerator<BaseField> TopologicalSort()
         {
+            // first copy all nodes
+            nodesForCurrentSortIteration.Clear();
+            foreach (var node in nodes)
+                nodesForCurrentSortIteration.Add(node);
+
             updateOperations = 0;
             var currentColor = -1;
 
@@ -217,7 +223,7 @@ namespace OneHamsa.Dexterity.Visual
             nextNodeToColor.Clear();
             nextColorToColorMap.Clear();
 
-            foreach (var node in nodes)
+            foreach (var node in nodesForCurrentSortIteration)
             {
                 // skip nodes with non-dirty colors
                 if (!IsDirty(node))

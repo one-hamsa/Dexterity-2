@@ -31,6 +31,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUI.LabelField(position, label.text,
                         $"State function not found for attribute [State]");
+                return;
             }
             var states = sf.GetStates().ToList();
             var stateNames = states.ToList();
