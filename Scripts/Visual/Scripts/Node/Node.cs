@@ -132,10 +132,6 @@ namespace OneHamsa.Dexterity.Visual
                 output.Finalize(this);
             }
             outputFields.Clear();
-
-            // only destroy if it's my reference (debug)
-            if (reference.owner == this)
-                Destroy(reference);
         }
 
         protected virtual void Start()
@@ -206,6 +202,9 @@ namespace OneHamsa.Dexterity.Visual
         public void Initialize(NodeReference referenceAsset)
         {
             reference = referenceAsset.GetRuntimeInstance();
+            reference.owner = this;
+            reference.name = $"{name} (Reference)";
+
             stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
             // subscribe to more changes

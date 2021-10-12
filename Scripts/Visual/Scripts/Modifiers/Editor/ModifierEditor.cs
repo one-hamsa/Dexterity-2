@@ -66,9 +66,9 @@ namespace OneHamsa.Dexterity.Visual
                     propertiesUpdated |= EditorGUI.EndChangeCheck();
                 }
 
-                if (modifier.supportsFreezeValues && GUILayout.Button("Freeze Values"))
+                if (modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
                 {
-                    modifier.FreezeValues();
+                    valueFreeze.FreezeValue();
                 }
             }
 
@@ -205,8 +205,15 @@ namespace OneHamsa.Dexterity.Visual
                     suffix = " (current)";
                 }
 
-                void PlayButton()
+                void UtilityButtons()
                 {
+                    if (modifier is ISupportPropertyFreeze propFreeze
+                        && GUILayout.Button(EditorGUIUtility.IconContent("RotateTool On", "Freeze"), GUILayout.Width(25)))
+                    {
+                        Undo.RecordObject(modifier, "Freeze value");
+                        propFreeze.FreezeProperty(modifier.properties[i]);
+                    }
+
                     /*
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
@@ -224,7 +231,7 @@ namespace OneHamsa.Dexterity.Visual
                         $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
                     GUI.contentColor = origColor;
 
-                    PlayButton();
+                    UtilityButtons();
 
                     EditorGUILayout.EndHorizontal();
 
@@ -247,7 +254,7 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
                     updated |= EditorGUI.EndChangeCheck();
 
-                    PlayButton();
+                    UtilityButtons();
 
                     EditorGUILayout.EndHorizontal();
                 }

@@ -126,12 +126,13 @@ namespace OneHamsa.Dexterity.Visual
                 return this;
             }
 
-            if (!prefabToRuntime.TryGetValue(this, out var runtime))
-            {
-                prefabToRuntime[this] = runtime = Instantiate(this);
+            // TODO without deep-copying gates, this is buggy because nodes share internal data structures
+            //if (!prefabToRuntime.TryGetValue(this, out var runtime))
+            //{
+                /*prefabToRuntime[this] = */var runtime = Instantiate(this);
                 runtime.isRuntime = true;
                 runtime.Initialize();
-            }
+            //}
 
             return runtime;
         }

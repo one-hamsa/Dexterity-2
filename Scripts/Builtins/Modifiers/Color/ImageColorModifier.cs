@@ -6,7 +6,8 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class ImageColorModifier : ColorModifier
+    [RequireComponent(typeof(Image))]
+    public class ImageColorModifier : ColorModifier, ISupportPropertyFreeze
     {
         Image image;
         protected override void Start()
@@ -17,5 +18,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         protected override void SetColor(Color color) => image.color = color;
+
+
+        public void FreezeProperty(PropertyBase property)
+        {
+            var prop = property as Property;
+            var image = GetComponent<Image>();
+            prop.color = image.color;
+        }
     }
 }

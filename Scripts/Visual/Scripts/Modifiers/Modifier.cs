@@ -34,9 +34,6 @@ namespace OneHamsa.Dexterity.Visual
         }
         public PropertyBase activeProperty => GetProperty(node.activeState);
 
-        public virtual bool supportsFreezeValues => false;
-        public virtual void FreezeValues() { }
-
         protected virtual void HandleStateChange(int oldState, int newState) { }
 
         private int[] _states;

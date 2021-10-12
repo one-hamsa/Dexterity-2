@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class ScaleModifier : Modifier
+    public class ScaleModifier : Modifier, ISupportValueFreeze, ISupportPropertyFreeze
     {
         public float baseScale = 1f;
 
@@ -36,10 +36,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             transform.localScale = scale;
         }
 
-        public override bool supportsFreezeValues => true;
-        public override void FreezeValues()
+        public void FreezeValue()
         {
             baseScale = transform.localScale.x;
+        }
+        public void FreezeProperty(PropertyBase property)
+        {
+            var prop = property as Property;
+            prop.scale = transform.localScale.x;
         }
     }
 }

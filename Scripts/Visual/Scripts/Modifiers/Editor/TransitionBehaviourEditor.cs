@@ -11,12 +11,12 @@ namespace OneHamsa.Dexterity.Visual
     public class TransitionBehaviourEditor : Editor
     {
         bool strategyDefined { get; set; }
-        TransitionBehaviour modifier { get; set; }
+        TransitionBehaviour transitionBehaviour { get; set; }
         private bool advancedFoldout { get; set; }
 
         private void OnEnable() 
         {
-            modifier = target as TransitionBehaviour;
+            transitionBehaviour = target as TransitionBehaviour;
         }
 
         public override void OnInspectorGUI()
