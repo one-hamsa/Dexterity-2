@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private string[] fieldNames;
         private ListSet<string> stateNames = new ListSet<string>(32);
-        private ListSet<StateFunctionGraph> stateFunctions = new ListSet<StateFunctionGraph>(4);
+        private HashSet<StateFunctionGraph> stateFunctions = new HashSet<StateFunctionGraph>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.

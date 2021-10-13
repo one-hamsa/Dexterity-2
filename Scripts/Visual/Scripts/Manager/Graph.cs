@@ -24,26 +24,27 @@ namespace OneHamsa.Dexterity.Visual
         public bool started { get; set; }
         public bool updating { get; private set; }
 
-        public ListSet<BaseField> nodes { get; } = new ListSet<BaseField>();
-        public ListSet<BaseField> nodesForCurrentSortIteration { get; } = new ListSet<BaseField>();
+        public HashSet<BaseField> nodes { get; } = new HashSet<BaseField>();
+        public HashSet<BaseField> nodesForCurrentSortIteration { get; } = new HashSet<BaseField>();
         
-        public ListMap<BaseField, IEnumerable<BaseField>> edges { get; } 
-            = new ListMap<BaseField, IEnumerable<BaseField>>();
+        public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } 
+            = new Dictionary<BaseField, IEnumerable<BaseField>>();
 
         public event Action<int> onGraphColorUpdated;
 
         // keeps track of visits in topological sort
-        ListSet<BaseField> visited = new ListSet<BaseField>();
+        HashSet<BaseField> visited = new HashSet<BaseField>();
         // dfs stack for topological sort
         Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
         // helper map for tracking which node is still on stack to avoid loops
-        ListMap<BaseField, bool> onStack = new ListMap<BaseField, bool>();
+        Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
         // "color" map (of islands within the graph) - used for only updating relevant nodes
-        ListMap<BaseField, int> nodeToColor = new ListMap<BaseField, int>();
-        ListMap<BaseField, int> nextNodeToColor = new ListMap<BaseField, int>();
-        ListMap<int, int> colorToColorMap = new ListMap<int, int>();
-        ListMap<int, int> nextColorToColorMap = new ListMap<int, int>();
-        ListMap<int, bool> dirtyColors = new ListMap<int, bool>();
+        Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
+        Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
+        Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
+        Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
+        Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
+        List<int> colorsToReset = new List<int>(8);
         // cached graph data
         protected ListSet<BaseField> sortedNodes = new ListSet<BaseField>();
 
@@ -303,13 +304,16 @@ namespace OneHamsa.Dexterity.Visual
             (nodeToColor, nextNodeToColor) = (nextNodeToColor, nodeToColor);
             (colorToColorMap, nextColorToColorMap) = (nextColorToColorMap, colorToColorMap);
             // reset dirty colors
-            foreach (var kv in dirtyColors)
+            colorsToReset.Clear();
+            foreach (var color in dirtyColors.Keys)
             {
-                if (kv.Value == true)
-                {
-                    onGraphColorUpdated?.Invoke(kv.Key);
-                    dirtyColors[kv.Key] = false;
-                }
+                if (dirtyColors[color])
+                    colorsToReset.Add(color);
+            }
+            foreach (var color in colorsToReset)
+            {
+                onGraphColorUpdated?.Invoke(color);
+                dirtyColors[color] = false;
             }
 
             lastSortResult = true;

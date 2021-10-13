@@ -9,8 +9,8 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : BaseGraph
     {
-        private static ListMap<StateFunctionGraph, StateFunctionGraph> prefabToRuntime
-            = new ListMap<StateFunctionGraph, StateFunctionGraph>();
+        private static Dictionary<StateFunctionGraph, StateFunctionGraph> prefabToRuntime
+            = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
 
         public bool isRuntime { get; private set; }
         internal FieldsState fieldsState { get; private set; }

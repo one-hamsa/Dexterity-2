@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual
     {
         #region Static Functions
         // mainly for debugging graph problems
-        private static ListMap<BaseField, Node> fieldsToNodes = new ListMap<BaseField, Node>();
+        private static Dictionary<BaseField, Node> fieldsToNodes = new Dictionary<BaseField, Node>();
         internal static Node ByField(BaseField f)
         {
             fieldsToNodes.TryGetValue(f, out var node);

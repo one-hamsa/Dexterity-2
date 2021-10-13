@@ -9,8 +9,8 @@ namespace OneHamsa.Dexterity.Visual
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
     public class NodeReference : ScriptableObject, IFieldHolder
     {
-        private static ListMap<NodeReference, NodeReference> prefabToRuntime
-            = new ListMap<NodeReference, NodeReference>();
+        private static Dictionary<NodeReference, NodeReference> prefabToRuntime
+            = new Dictionary<NodeReference, NodeReference>();
 
         // stores the coupling between input fields and their output name
         [Serializable]
