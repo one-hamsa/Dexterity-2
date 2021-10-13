@@ -46,7 +46,8 @@ namespace OneHamsa.Dexterity.Visual
         Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
         List<int> colorsToReset = new List<int>(8);
         // cached graph data
-        protected ListSet<BaseField> sortedNodes = new ListSet<BaseField>();
+        protected List<BaseField> sortedNodes = new ListSet<BaseField>();
+        protected List<BaseField> sortedNodesCache = new List<BaseField>();
 
         public void AddNode(BaseField node)
         {
@@ -154,10 +155,13 @@ namespace OneHamsa.Dexterity.Visual
 
         void RefreshNodeValues()
         {
+            // cache - the foreach clause might invoke changes to collection
+            sortedNodesCache.Clear();
             foreach (var node in sortedNodes)
-            {
+                sortedNodesCache.Add(node);
+
+            foreach (var node in sortedNodesCache)
                 node.CacheValue();
-            }
         }
 
         public IEnumerable<BaseField> GetByColor(int color)
