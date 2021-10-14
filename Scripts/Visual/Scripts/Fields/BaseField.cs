@@ -52,11 +52,19 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// field definition, set on runtime
         /// </summary>
-        public FieldDefinition definition { get; private set; }
+        [NonSerialized]
+        public FieldDefinition definition;
         /// <summary>
         /// field definition id, set on runtime
         /// </summary>
-        public int definitionId { get; private set; }
+        [NonSerialized]
+        public int definitionId = -1;
+
+        /// <summary>
+        /// true if the field is initialized
+        /// </summary>
+        [NonSerialized]
+        public bool initialized;
 
         /// <summary>
         /// is the field a dependency itself, or is it only reflecting another node's outputs?
@@ -86,6 +94,7 @@ namespace OneHamsa.Dexterity.Visual
                 throw new FieldInitializationException();
 
             Initialize(context);
+            initialized = true;
         }
         /// <summary>
         /// override for custom initialization

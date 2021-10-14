@@ -137,53 +137,14 @@ namespace OneHamsa.Dexterity.Visual
 
                     if (definition.name != null)
                     {
-                        var liveInstance = Application.isPlaying && fieldHolder.node != null;
-
                         // get value
+                        var liveInstance = Application.isPlaying && fieldHolder.node != null;
                         var value = liveInstance
                             ? fieldHolder.node.GetOutputField(kv.Key).GetValue()
                             : Node.defaultFieldValue;
-                        string valueName = "";
-
-                        if (liveInstance)
-                        {
-                            switch (definition.type)
-                            {
-                                case Node.FieldType.Boolean when value == 0:
-                                case Node.FieldType.Boolean when value == Node.defaultFieldValue:
-                                    GUI.color = Color.red;
-                                    valueName = "false";
-                                    break;
-                                case Node.FieldType.Boolean when value == 1:
-                                    GUI.color = Color.green;
-                                    valueName = "true";
-                                    break;
-                                case Node.FieldType.Enum:
-                                    GUI.color = new Color(1, .5f, 0);
-                                    valueName = definition.enumValues[value];
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            GUI.color = Color.gray;
-                            switch (definition.type)
-                            {
-                                case Node.FieldType.Boolean:
-                                    valueName = "Boolean";
-                                    break;
-                                case Node.FieldType.Enum:
-                                    valueName = "Enum";
-                                    break;
-                            }
-                        }
 
                         GUILayout.FlexibleSpace();
-
-                        var style = new GUIStyle(EditorStyles.helpBox);
-                        style.alignment = TextAnchor.MiddleLeft;
-
-                        GUILayout.Label(valueName, style);
+                        DrawFieldValue(definition, value, liveInstance);
                     }
                     GUI.color = Color.green;
 
@@ -322,8 +283,16 @@ namespace OneHamsa.Dexterity.Visual
             var currentIdx = Array.IndexOf(fieldTypesNames, className);
 
             EditorGUI.BeginChangeCheck();
+            EditorGUILayout.BeginHorizontal();
             var fieldIdx = EditorGUILayout.Popup("Field", currentIdx,
                 Utils.GetNiceName(fieldTypesNames, suffix: "Field").ToArray());
+
+            var field = (BaseField)Utils.GetTargetObjectOfProperty(property);
+            if (field != null && field.initialized)
+            {
+                DrawFieldValue(field.definition, field.GetValue(), true);
+            }
+            EditorGUILayout.EndHorizontal();
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -355,6 +324,52 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel--;
 
             return updated;
+        }
+
+        static void DrawFieldValue(FieldDefinition definition, int value, bool liveInstance)
+        {
+            // get value
+            string valueName = "";
+            var origColor = GUI.color;
+
+            if (liveInstance)
+            {
+                switch (definition.type)
+                {
+                    case Node.FieldType.Boolean when value == 0:
+                    case Node.FieldType.Boolean when value == Node.defaultFieldValue:
+                        GUI.color = Color.red;
+                        valueName = "false";
+                        break;
+                    case Node.FieldType.Boolean when value == 1:
+                        GUI.color = Color.green;
+                        valueName = "true";
+                        break;
+                    case Node.FieldType.Enum:
+                        GUI.color = new Color(1, .5f, 0);
+                        valueName = definition.enumValues[value];
+                        break;
+                }
+            }
+            else
+            {
+                GUI.color = Color.gray;
+                switch (definition.type)
+                {
+                    case Node.FieldType.Boolean:
+                        valueName = "Boolean";
+                        break;
+                    case Node.FieldType.Enum:
+                        valueName = "Enum";
+                        break;
+                }
+            }
+
+            var style = new GUIStyle(EditorStyles.helpBox);
+            style.alignment = TextAnchor.MiddleCenter;
+
+            GUILayout.Label(valueName, style, GUILayout.Width(60));
+            GUI.color = origColor;
         }
 
 
