@@ -8,23 +8,26 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class NodeField : BaseField
     {
         public Node targetNode;
-        public string fieldName;        
+        [Field]
+        public string fieldName;
+        public bool negate;
 
         Node.OutputField outputField;
-        bool isNegated = false;
 
-        public override bool isProxy => true;
-        public override int GetValue() => isNegated ? (outputField.GetValue() + 1) % 2 : outputField.GetValue();
+        // we always report about someone else's field, so mark as proxy
+        public override bool proxy => true;
+        public override int GetValue() => negate ? (outputField.GetValue() + 1) % 2 : outputField.GetValue();
 
-        public override void Initialize(Node context)
+        protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
-            string fieldName = this.fieldName;
-            isNegated = this.fieldName[0] == '!';
-            if (isNegated) {
-                fieldName = fieldName.Substring(1);
+            if (targetNode == null)
+            {
+                Debug.LogError($"target node == null", context);
+                throw new FieldInitializationException();
             }
+
             outputField = targetNode.GetOutputField(fieldName);
             
             ClearUpstreamFields();

@@ -2,335 +2,492 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Node")]
+    using Gate = NodeReference.Gate;
+
+    [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class Node : MonoBehaviour
+    public partial class Node : MonoBehaviour, IFieldHolder
     {
-        public const int EMPTY_FIELD_VALUE = -1;
-        public const int DEFAULT_FIELD_VALUE = 0;
-
-        // differentiates between field types. the underlying data is always int, but the way
-        //. the system treats this data can vary.
-        public enum FieldType
+        #region Static Functions
+        // mainly for debugging graph problems
+        private static Dictionary<BaseField, Node> fieldsToNodes = new Dictionary<BaseField, Node>();
+        internal static Node ByField(BaseField f)
         {
-            Boolean = 1,
-            Enum = 2,
+            fieldsToNodes.TryGetValue(f, out var node);
+            return node;
         }
+        #endregion Static Functions
 
-        // stores outputs for the current node
-        public class OutputField : BaseField
-        {
-            // hide
-            public static new bool showInInspector = false;
-
-            Node node;
-            public readonly string name;
-            protected int cachedValue = EMPTY_FIELD_VALUE;
-            protected int cachedValueWithoutOverride = EMPTY_FIELD_VALUE;
-            protected Manager.FieldDefinition definition;
-
-            // optimizations
-            int gateIncrement = -1;
-            bool allUpstreamFieldsAreOutputFields;
-            bool areUpstreamOutputFieldsDirty;
-            protected List<Gate> cachedGates = new List<Gate>();
-            OutputOverride cachedOverride = null;
-            int overridesIncrement = -1;
-
-            /// register to events like that:
-            /// <code>node.GetOutputField("fieldName").OnValueChanged += HandleValueChanged;</code>
-            public event Action<OutputField, int, int> onValueChanged;
-
-            protected OutputOverride fieldOverride
-            {
-                get 
-                {
-                    if (overridesIncrement == node.overridesIncrement)
-                        return cachedOverride;
-
-                    if (!node.cachedOverrides.TryGetValue(name, out cachedOverride))
-                        cachedOverride = null;
-                    overridesIncrement = node.overridesIncrement;
-                    return cachedOverride;
-                }
-            }
-
-            public OutputField(string name)
-            {
-                this.name = name;
-            }
-            public override void Initialize(Node context)
-            {
-                base.Initialize(context);
-                node = context;
-                Manager.Instance.RegisterField(this);
-                definition = Manager.Instance.GetFieldDefinition(name).Value;                
-            }
-            public override void Finalize(Node context)
-            {
-                base.Finalize(context);
-                Manager.Instance?.UnregisterField(this);
-            }
-
-            public override void RefreshReferences()
-            {
-                if (gateIncrement == node.gateIncrement)
-                    return;
-
-                cachedGates.Clear();
-
-                if (allUpstreamFieldsAreOutputFields)
-                {
-                    // clear update subscriptions
-                    foreach (var field in GetUpstreamFields())
-                    {
-                        UnregisterUpstreamOutput(field);
-                    }
-                }
-
-                ClearUpstreamFields();
-                allUpstreamFieldsAreOutputFields = true;
-                foreach (var gate in node.gates)
-                {
-                    if (gate.OutputFieldName != name)
-                        continue;
-
-                    // XXX could possibly cache each gate field independently
-                    allUpstreamFieldsAreOutputFields &= IsAllUpstreamProxyOrOutput(gate.Field);
-
-                    cachedGates.Add(gate);
-                    AddUpstreamField(gate.Field);
-                }
-                gateIncrement = node.gateIncrement;
-
-                if (allUpstreamFieldsAreOutputFields)
-                {
-                    areUpstreamOutputFieldsDirty = true;
-                    // we can just register to the output fields changes
-                    foreach (var field in GetUpstreamFields())
-                    {
-                        RegisterUpstreamOutput(field);
-                    }
-                }
-            }
-
-            private bool IsAllUpstreamProxyOrOutput(BaseField field)
-            {
-                if (!(field is OutputField) && !field.isProxy)
-                    return false;
-
-                bool proxyOrOutput = true;
-                if (field.isProxy)
-                    foreach (var f in field.GetUpstreamFields())
-                        proxyOrOutput &= IsAllUpstreamProxyOrOutput(f);
-                return proxyOrOutput;
-            }
-            private void RegisterUpstreamOutput(BaseField field)
-            {
-                if (field is OutputField)
-                    (field as OutputField).onValueChanged += UpstreamOutputChanged;
-                else if (field.isProxy)
-                    foreach (var f in field.GetUpstreamFields())
-                        RegisterUpstreamOutput(f);
-            }
-            private void UnregisterUpstreamOutput(BaseField field)
-            {
-                if (field is OutputField)
-                    (field as OutputField).onValueChanged -= UpstreamOutputChanged;
-                else if (field.isProxy)
-                    foreach (var f in field.GetUpstreamFields())
-                        UnregisterUpstreamOutput(f);
-            }
-
-            private void UpstreamOutputChanged(OutputField field, int oldValue, int newValue)
-            {
-                // whatever the new value is, just mark as dirty
-                areUpstreamOutputFieldsDirty = true;
-            }
-
-            public override int GetValue()
-            {
-                return cachedValue;
-            }
-
-            public override void CacheValue()
-            {
-                var originalValue = cachedValue;
-                if (!allUpstreamFieldsAreOutputFields || areUpstreamOutputFieldsDirty)
-                {
-                    // merge it with the other gate according to the field's type
-                    if (definition.type == FieldType.Boolean)
-                    {
-                        // additive: 1 if any is 1, 0 otherwise
-                        var result = false;
-                        foreach (var field in GetUpstreamFields())
-                        {
-                            result |= field.GetValue() == 1;
-                            if (result)
-                                break;
-                        }
-
-                        cachedValueWithoutOverride = result ? 1 : 0;
-                    }
-                    else if (definition.type == FieldType.Enum)
-                    { 
-                        // override: take last one
-                        cachedValueWithoutOverride = cachedGates.Last().Field.GetValue();
-                    }
-                }
-                else
-                {
-                    // all fields are output fields and no upstream field changed - no need to update
-                }
-
-                // if there's an override, just use it
-                var outputOverride = this.fieldOverride;
-                if (outputOverride != null) 
-                {
-                    cachedValue = outputOverride.Value;
-                }
-                else
-                {
-                    cachedValue = cachedValueWithoutOverride;
-                }
-
-                if (allUpstreamFieldsAreOutputFields)
-                    areUpstreamOutputFieldsDirty = false;
-
-                // notify if value changed
-                if (cachedValue != originalValue)
-                    onValueChanged?.Invoke(this, originalValue, cachedValue);
-            }
-
-            // for debug purposes only, mostly for editor view (to avoid masking the original field value)
-            public int GetValueWithoutOverride()
-            {
-                return cachedValueWithoutOverride;
-            }
-
-            public override string ToString()
-            {
-                if (!node)
-                    return base.ToString();
-
-                return $"OutputNode {node.name}::{name} -> {GetValue()}";
-            }
-        }
-
-        // stores the coupling between input fields and their output name
-        [Serializable]
-        public class Gate
-        {
-            public string OutputFieldName;
-
-            [SerializeReference]
-            public BaseField Field;
-        }
-
-        [SerializeField]
-        protected List<Gate> gates;
-
+        #region Data Definitions
         [Serializable]
         public class OutputOverride
         {
-            public string OutputFieldName;
-            public int Value;
+            [Field]
+            public string outputFieldName;
+            [FieldValue(nameof(outputFieldName), proxy = true)]
+            public int value;
+
+            public int outputFieldDefinitionId { get; private set; } = -1;
+
+            public bool Initialize(int fieldId = -1)
+            {
+                if (fieldId != -1)
+                {
+                    outputFieldDefinitionId = fieldId;
+                    return true;
+                }
+                if (string.IsNullOrEmpty(outputFieldName))
+                    return false;
+
+                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
+            }
         }
+        #endregion Data Definitions
+
+        #region Serialized Fields
+        public NodeReference referenceAsset;
+        
+        [State]
+        public string initialState;
 
         [SerializeField]
-        protected List<OutputOverride> overrides;
+        public List<Gate> customGates;
 
+        [SerializeField]
+        public List<OutputOverride> overrides;
+
+        [State(allowEmpty: true)]
+        public string overrideState;
+
+        #endregion Serialized Fields
+
+        #region Public Properties
+        public NodeReference reference { get; private set; }
+
+        // output fields of this node
+        public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
+        public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
+        
+        public int activeState { get; private set; } = -1;
+        public int overrideStateId { get; private set; } = -1;
+        public float stateChangeTime { get; private set; }
+
+        public event Action<Gate> onGateAdded;
+        public event Action<Gate> onGateRemoved;
+        public event Action onGatesUpdated;
+        public event Action<int, int> onStateChanged;
+        #endregion Public Properties
+
+        #region Private Properties
+        private List<BaseField> nonOutputFields = new List<BaseField>(10);
+        int dirtyIncrement;
+        int overridesIncrement;
+
+        bool stateDirty;
+        FieldsState fieldsState = new FieldsState(32);
+        int[] stateFieldIds;
+        float nextStateChangeTime;
+        int pendingState = -1;
+
+        public IEnumerable<Gate> allGates
+        {
+            get
+            {
+                if (reference != null)
+                    foreach (var gate in reference.gates)
+                        yield return gate;
+
+                foreach (var gate in customGates)
+                    yield return gate;
+            }
+        }
+        #endregion Private Properties
+
+        #region Unity Events
         protected void OnEnable()
         {
-            InitializeFields(gates.Select(g => g.Field));
-            CacheOverrides();
-        }
-        protected void OnDisable()
-        {
-            FinalizeFields(gates.Select(g => g.Field));
+            if (!EnsureValidState())
+            {
+                enabled = false;
+                return;
+            }
+
+            Initialize(referenceAsset);
         }
 
-        void InitializeFields(IEnumerable<BaseField> fields)
+        protected void OnDisable()
+        {
+            Uninitialize();
+        }
+
+        protected void OnDestroy()
+        {
+            // only now it's ok to remove output fields
+            foreach (var output in outputFields.Values.ToArray())
+            {
+                output.Finalize(this);
+            }
+            outputFields.Clear();
+        }
+
+        protected virtual void Start()
+        {
+            var defaultStateId = Manager.instance.GetStateID(initialState);
+            if (defaultStateId == -1)
+            {
+                defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
+                Debug.LogWarning($"no default state selected, selecting arbitrary", this);
+            }
+
+            activeState = defaultStateId;
+        }
+
+        protected virtual void Update()
+        {
+            if (stateDirty)
+            {
+                // someone marked this dirty, check for new state
+                var newState = GetState();
+                if (newState == -1)
+                {
+                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
+                    return;
+                }
+                if (newState != pendingState)
+                {
+                    // add delay to change time
+                    var delay = reference.GetDelay(activeState);
+                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
+                    // don't trigger change if moving back to current state
+                    pendingState = newState != activeState ? newState : -1;
+                }
+                stateDirty = false;
+            }
+            // change to next state (delay is accounted for already)
+            if (nextStateChangeTime <= Time.time && pendingState != -1)
+            {
+                var oldState = activeState;
+
+                activeState = pendingState;
+                pendingState = -1;
+                stateChangeTime = Time.time;
+
+                onStateChanged?.Invoke(oldState, activeState);
+            }
+        }
+
+        #endregion Unity Events
+
+        #region General Methods
+        private bool EnsureValidState()
+        {
+            if (referenceAsset == null)
+            {
+                Debug.LogError("No reference assigned", this);
+                return false;
+            }
+
+            if (referenceAsset.stateFunctionAsset == null)
+            {
+                Debug.LogError("No state function assigned", this);
+                return false;
+            }
+            return true;
+        }
+
+        public void Initialize(NodeReference referenceAsset)
+        {
+            reference = referenceAsset.GetRuntimeInstance();
+            reference.owner = this;
+            reference.name = $"{name} (Reference)";
+
+            stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
+
+            // subscribe to more changes
+            onGateAdded += RestartFields;
+            onGateRemoved += RestartFields;
+            onGatesUpdated += RestartFields;
+
+            reference.onGateAdded += RestartFields;
+            reference.onGateRemoved += RestartFields;
+            reference.onGatesUpdated += RestartFields;
+
+            RestartFields();
+            CacheOverrides();
+            CacheOverrideState();
+        }
+
+        public void Uninitialize()
+        {
+            // cleanup gates
+            foreach (var gate in allGates.ToArray())
+            {
+                FinalizeGate(gate);
+            }
+
+            // unsubscribe
+            onGateAdded -= RestartFields;
+            onGateRemoved -= RestartFields;
+            onGatesUpdated -= RestartFields;
+
+            if (reference != null)
+            {
+                reference.onGateAdded -= RestartFields;
+                reference.onGateRemoved -= RestartFields;
+                reference.onGatesUpdated -= RestartFields;
+            }
+        }
+        #endregion General Methods
+
+        #region Fields & Gates
+        void RestartFields(Gate g) => RestartFields();
+
+        void RestartFields()
+        {
+            // unregister all fields. this might be triggered by editor, so go through this list
+            //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
+            FinalizeFields(nonOutputFields.ToArray());
+            // re-register all gates
+            foreach (var gate in allGates.ToArray())  // might manipulate gates within the loop
+                InitializeGate(gate);
+        }
+
+        void InitializeFields(int definitionId, IEnumerable<BaseField> fields)
         {
             // initialize all fields
             fields.ToList().ForEach(f =>
             {
-                if (f is OutputField)
+                if (f == null || f is OutputField)  // OutputFields are self-initialized 
                     return;
 
-                Manager.Instance.RegisterField(f);
-                f.Initialize(this);
-                InitializeFields(f.GetUpstreamFields());
+                Manager.instance.RegisterField(f);
+
+                f.Initialize(this, definitionId);
+                InitializeFields(definitionId, f.GetUpstreamFields());
+
+                AuditField(f);
             });
         }
 
         void FinalizeFields(IEnumerable<BaseField> fields)
         {
             // finalize all gate fields and output fields
-            fields.Concat(outputFields.Values).ToList().ForEach(f =>
+            fields.ToList().ForEach(f =>
             {
-                if (f is OutputField)
+                if (f == null || f is OutputField)  // OutputFields are never removed
                     return;
 
                 f.Finalize(this);
-                Manager.Instance?.UnregisterField(f);
+                Manager.instance?.UnregisterField(f);
                 FinalizeFields(f.GetUpstreamFields());
+
+                RemoveAudit(f);
             });
         }
 
-        public List<Gate> Gates => gates;
-        int gateIncrement;
-        public void AddGate(Gate gate)
+        private void InitializeGate(Gate gate)
         {
-            gateIncrement++;
-            gates.Add(gate);
-            InitializeFields(new[] { gate.Field });
+            if (Application.isPlaying && !gate.Initialize())
+                // invalid gate, don't add
+                return;
+
+            SetDirty();
+
+            // make sure output field for gate is initialized
+            GetOutputField(gate.outputFieldDefinitionId);
+
+            try
+            {
+                InitializeFields(gate.outputFieldDefinitionId, new[] { gate.field });
+            }
+            catch (BaseField.FieldInitializationException)
+            {
+                Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
+                FinalizeGate(gate);
+            }
         }
-        public void RemoveGate(Gate gate)
+        private void FinalizeGate(Gate gate)
         {
-            gateIncrement++;
-            gates.Remove(gate);
-            FinalizeFields(new[] { gate.Field });
+            SetDirty();
+
+            FinalizeFields(new[] { gate.field });
         }
 
-        // output fields of this node
-        protected Dictionary<string, OutputField> outputFields = new Dictionary<string, OutputField>();
-        public Dictionary<string, OutputField> GetOutputFields() => outputFields;
-        public OutputField GetOutputField(string name)
+        /// <summary>
+        /// Returns the node's output field. Slower than GetOutputField(int fieldId)
+        /// </summary>
+        /// <param name="name">Field name</param>
+        /// <returns></returns>
+        public OutputField GetOutputField(string name) 
+            => GetOutputField(Manager.instance.GetFieldID(name));
+
+        /// <summary>
+        /// Returns the node's output field. Faster than GetOutputField(string name)
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <returns></returns>
+        public OutputField GetOutputField(int fieldId)
         {
             // lazy initialization
             OutputField output;
-            if (!outputFields.TryGetValue(name, out output))
+            if (!outputFields.TryGetValue(fieldId, out output))
             {
-                output = new OutputField(name);
-                output.Initialize(this);
-                outputFields[name] = output;
+                output = new OutputField();
+                output.Initialize(this, fieldId);
+                output.onValueChanged += MarkStateDirty;
+
+                AuditField(output);
+                stateDirty = true;
             }
 
             return output;
         }
 
-        int overridesIncrement;
-        Dictionary<string, OutputOverride> cachedOverrides = new Dictionary<string, OutputOverride>();
-        public Dictionary<string, OutputOverride> GetOverrides() => cachedOverrides;
-        public void SetOverride(string name, int value)
+        /// <summary>
+        /// Sets the node as dirty. Forces output fields update
+        /// </summary>
+        public void SetDirty() => dirtyIncrement++;
+
+        private void AuditField(BaseField field)
         {
-            if (!cachedOverrides.ContainsKey(name))
+            if (!(field is OutputField o))
+                nonOutputFields.Add(field);
+            else
+                outputFields.Add(o.definitionId, o);
+
+            fieldsToNodes[field] = this;
+        }
+        private void RemoveAudit(BaseField field)
+        {
+            if (!(field is OutputField o))
+                nonOutputFields.Remove(field);
+            else
             {
-                overrides.Add(new OutputOverride { OutputFieldName = name });
+                Debug.LogWarning("OutputFields cannot be removed", this);
+                return;
+            }
+
+            fieldsToNodes.Remove(field);
+        }
+        public void AddGate(Gate gate)
+        {
+            customGates.Add(gate);
+            onGateAdded?.Invoke(gate);
+        }
+
+        public void RemoveGate(Gate gate)
+        {
+            customGates.Remove(gate);
+            onGateRemoved?.Invoke(gate);
+        }
+        public void NotifyGatesUpdate()
+        {
+            onGatesUpdated?.Invoke();
+        }
+
+        public Gate GetGateAtIndex(int i)
+        {
+            return customGates[i];
+        }
+        #endregion Fields & Gates
+
+        #region State Reduction
+        private FieldsState FillFieldsState()
+        {
+            fieldsState.Clear();
+
+            foreach (var fieldId in stateFieldIds)
+            {
+                var value = GetOutputField(fieldId).GetValue();
+                // if this field isn't provided just assume default
+                if (value == emptyFieldValue)
+                {
+                    value = defaultFieldValue;
+                }
+                fieldsState.Add((fieldId, value));
+            }
+            return fieldsState;
+        }
+        protected int GetState()
+        {
+            if (overrideStateId != -1)
+                return overrideStateId;
+
+            return reference.stateFunction.Evaluate(FillFieldsState());
+        }
+
+        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        #endregion State Reduction
+
+        #region Overrides
+        /// <summary>
+        /// Sets a boolean override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Bool value for field</param>
+        public void SetOverride(int fieldId, bool value)
+        {
+            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            if (definition.type != FieldType.Boolean)
+                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.name}", this);
+
+            SetOverrideRaw(fieldId, value ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Sets an enum override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Enum value for field (should appear in field definition)</param>
+        public void SetOverride(int fieldId, string value)
+        {
+            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            if (definition.type != FieldType.Enum)
+                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.name}", this);
+
+            int index;
+            if ((index = Array.IndexOf(definition.enumValues, value)) == -1)
+            {
+                Debug.LogError($"trying to set enum {definition.name} value to {value}, " +
+                    $"but it is not a valid enum value", this);
+                return;
+            }
+
+            SetOverrideRaw(fieldId, index);
+        }
+
+        /// <summary>
+        /// Sets raw override value
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
+        public void SetOverrideRaw(int fieldId, int value)
+        {
+            if (!cachedOverrides.ContainsKey(fieldId))
+            {
+                var newOverride = new OutputOverride();
+                newOverride.Initialize(fieldId);
+
+                overrides.Add(newOverride);
                 CacheOverrides();
             }
-            var overrideOutput = cachedOverrides[name];
-            overrideOutput.Value = value;
+            var overrideOutput = cachedOverrides[fieldId];
+            overrideOutput.value = value;
         }
-        public void ClearOverride(string name)
+
+        /// <summary>
+        /// Clears an existing override from a specific output field
+        /// </summary>
+        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        public void ClearOverride(int fieldId)
         {
-            if (cachedOverrides.ContainsKey(name))
+            if (cachedOverrides.ContainsKey(fieldId))
             {
-                overrides.Remove(cachedOverrides[name]);
+                overrides.Remove(cachedOverrides[fieldId]);
                 CacheOverrides();
             }
             else
@@ -339,14 +496,44 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        /// <summary>
+        /// Overrides state to manual value
+        /// </summary>
+        /// <param name="fieldId">State ID (from Manager)</param>
+        public void SetStateOverride(int state)
+        {
+            overrideStateId = state;
+            stateDirty = true;
+
+#if UNITY_EDITOR
+            // in editor, write the overrideState string back
+            overrideState = Manager.instance.GetStateAsString(state);
+#else
+            // in runtime, clear the string (to avoid re-caching)
+            overrideState = null;
+#endif
+        }
+        /// <summary>
+        /// Overrides state to manual value
+        /// </summary>
+        /// <param name="fieldId">State ID (from Manager)</param>
+        public void ClearStateOverride() => SetStateOverride(-1);
+
         void CacheOverrides()
         {
             cachedOverrides.Clear();
             foreach (var o in overrides)
             {
-                cachedOverrides[o.OutputFieldName] = o;
+                o.Initialize();
+                cachedOverrides[o.outputFieldDefinitionId] = o;
             }
             overridesIncrement++;
+        }
+
+        private void CacheOverrideState()
+        {
+            if (!string.IsNullOrEmpty(overrideState))
+                SetStateOverride(Manager.instance.GetStateID(overrideState));
         }
 
 #if UNITY_EDITOR
@@ -356,5 +543,11 @@ namespace OneHamsa.Dexterity.Visual
             CacheOverrides();
         }
 #endif
+#endregion Overrides
+
+#region Interface Implementation (Editor)
+        public StateFunctionGraph fieldsStateFunction => referenceAsset?.fieldsStateFunction;
+        public Node node => this;
+#endregion Interface Implementation (Editor)
     }
 }

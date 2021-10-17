@@ -1,101 +1,138 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using OneHumus.Data;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [AddComponentMenu("Dexterity/Visual/Dexterity Visual - Manager")]
+    [AddComponentMenu("Dexterity/Dexterity Manager")]
     public class Manager : MonoBehaviour
     {
-        internal const int nodeExecutionPriority = 10;
-        internal const int modifierExecutionPriority = 15;
+        internal const int nodeExecutionPriority = -15;
+        internal const int modifierExecutionPriority = -10;
 
-        [Serializable]
-        public struct FieldDefinition
+        public DexteritySettings settings;
+
+        private string[] fieldNames;
+        private ListSet<string> stateNames = new ListSet<string>(32);
+        private HashSet<StateFunctionGraph> stateFunctions = new HashSet<StateFunctionGraph>();
+
+        /// <summary>
+        /// returns the field ID, useful for quickly getting the field definition.
+        /// only use on Awake, never on Update.
+        /// </summary>
+        /// <param name="name">Field name</param>
+        /// <returns>Field Definition ID (runtime, may vary from run to run)</returns>
+        public int GetFieldID(string name)
         {
-            public string name;
-            public Node.FieldType type;
-            public string[] enumValues;
+            return Array.IndexOf(fieldNames, name);
         }
 
-        [SerializeField]
-        private FieldDefinition[] fieldDefinitions;
-        public List<StateFunction> stateFunctions;
-
-        public FieldDefinition[] FieldDefinitions => fieldDefinitions;
-        Dictionary<string, FieldDefinition> cachedFieldDefs = null;
-        public FieldDefinition? GetFieldDefinition(string name)
+        /// <summary>
+        /// returns the state ID, this is the state reference throughout the code.
+        /// only use on Awake, never on Update.
+        /// </summary>
+        /// <param name="name">State name</param>
+        /// <returns>State ID (runtime, may vary from run to run)</returns>
+        public int GetStateID(string name)
         {
-            if (cachedFieldDefs != null)
-            {
-                // runtime
-                if (cachedFieldDefs.TryGetValue(name, out var value))
-                    return value;
-            }
-            else
-            {
-                // editor realtime data
-                foreach (var df in fieldDefinitions)
-                    if (df.name == name)
-                        return df;
-            }
-
-            Debug.LogWarning($"No field definition for {name}");
-            return null;
+            return stateNames.IndexOf(name);
         }
-        public StateFunction GetStateFunction(string name) => stateFunctions
-            .Where(sf => sf != null && sf.name == name)
-            .First();
+
+        /// <summary>
+        /// returns field definition by ID - fast.
+        /// </summary>
+        /// <param name="id">Field Definition ID</param>
+        /// <returns>corresponding Field Definition</returns>
+        public FieldDefinition GetFieldDefinition(int id)
+        {
+            if (id == -1)
+            {
+                Debug.LogError("asked for field id == -1", this);
+                return default;
+            }
+            return settings.fieldDefinitions[id];
+        }
+
+        /// <summary>
+        /// returns the state string from an ID (runtime).
+        /// </summary>
+        /// <param name="name">State ID</param>
+        /// <returns>State name</returns>
+        public string GetStateAsString(int id)
+        {
+            return stateNames[id];
+        }
 
         // TODO improve singleton implementation (spawn first, die last)
-        private static Manager instance;
-        public static Manager Instance
+        private static Manager inst;
+        public static Manager instance
         {
             get
             {
-                if (instance == null)
+                if (inst == null)
                 {
-                    instance = FindObjectOfType<Manager>();
-                    if (instance == null)
+                    inst = FindObjectOfType<Manager>();
+                    if (inst == null)
                     {
                         // manager is already dead
                         return null;
                     }
                 }
-                return instance;
+                return inst;
             }
-        }
+        }  
 
-        protected Graph graph = new Graph();
+        public Graph graph { get; private set; }
+        /// <summary>
+        /// Registers a field to the graph.
+        /// </summary>
+        /// <param name="field">BaseField to register to the graph</param>
         public void RegisterField(BaseField field) => graph.AddNode(field);
+        /// <summary>
+        /// Removes a registered field from the graph.
+        /// </summary>
+        /// <param name="field">BaseField remove from the graph</param>
         public void UnregisterField(BaseField field) => graph.RemoveNode(field);
-        public void SetDirty() => graph.SetDirty();
+        /// <summary>
+        /// Marks a field as dirty (forces re-sorting).
+        /// </summary>
+        /// <param name="field">BaseField to mark as dirty</param>
+        public void SetDirty(BaseField field) => graph.SetDirty(field);
 
-        public void Awake()
+        /// <summary>
+        /// Registers a state function, useful for managing global state IDs
+        /// </summary>
+        /// <param name="stateFunction">State Function to register</param>
+        public void RegisterStateFunction(StateFunctionGraph stateFunction)
         {
-            foreach (var sf in stateFunctions.ToArray()) // clone to modify original
+            if (stateFunctions.Add(stateFunction))
             {
-                sf.Initialize();
-                if (!sf.Validate())
-                {
-                    Debug.LogError($"State function {sf.name} couldn't be validated, disabling. " +
-                        $"This might cause unwanted effects");
-                    stateFunctions.Remove(sf);
-                }
+                foreach (var state in stateFunction.GetStates())
+                    stateNames.Add(state);
             }
+        }
 
+        private void BuildCache()
+        {
+            fieldNames = new string[settings.fieldDefinitions.Length];
+            for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
+                fieldNames[i] = settings.fieldDefinitions[i].name;
+        }
+
+        protected void Awake()
+        {
+            // build cache first - important, builds runtime data structures
             BuildCache();
-        }
 
-        void Update()
-        {
-            graph.Run();
+            // create graph instance
+            graph = gameObject.AddComponent<Graph>();
         }
-
-        void BuildCache()
+        protected void Start()
         {
-            cachedFieldDefs = fieldDefinitions.ToDictionary(fd => fd.name);
+            // enable on start to let all nodes register to graph during OnEnable
+            graph.started = true;
         }
     }
 }

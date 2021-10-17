@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class Scale3DModifier : Modifier
+    public class Scale3DModifier : Modifier, ISupportValueFreeze, ISupportPropertyFreeze
     {
         public Vector3 baseScale = Vector3.one;
 
@@ -37,6 +37,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             scale.x *= baseScale.z;
 
             transform.localScale = scale;
+        }
+
+        public void FreezeValue()
+        {
+            baseScale = transform.localScale;
+        }
+        public void FreezeProperty(PropertyBase property)
+        {
+            var prop = property as Property;
+            prop.scale = transform.localScale;
         }
     }
 }

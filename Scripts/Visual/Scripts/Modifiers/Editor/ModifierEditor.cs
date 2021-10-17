@@ -8,19 +8,26 @@ using System.Reflection;
 namespace OneHamsa.Dexterity.Visual
 {
     [CustomEditor(typeof(Modifier), true)]
-    public class ModifierEditor : Editor
+    public class ModifierEditor : TransitionBehaviourEditor
     {
-        StateFunction stateFunctionObj = null;
-        int stateFunctionIdx;
         static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
-        bool strategyDefined;
+        bool strategyExists { get; set; }
+        Modifier modifier { get; set; }
+        List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
+        private bool propertiesUpdated { get; set; } 
+
+        private void OnEnable() 
+        {
+            modifier = target as Modifier;
+        }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            var functions = Manager.Instance.stateFunctions.Where(f => f != null).Select(f => f.name).ToArray();
-            var stateFunctionProperty = serializedObject.FindProperty("stateFunction");
+            propertiesUpdated = false;
+
+            ShowNode();
 
             var customProps = new List<SerializedProperty>();
             var parent = serializedObject.GetIterator();
@@ -30,25 +37,14 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     case "m_Script":
                         break;
-                    case "node":
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty("node"));
-                        EditorGUI.indentLevel++;
-                        EditorGUILayout.LabelField("Leave empty for parent", EditorStyles.miniLabel);
-                        EditorGUI.indentLevel--;
+                    case nameof(Modifier._node):
+                        // separate
                         break;
-
-                    case "stateFunction":
-                        stateFunctionObj = (StateFunction)stateFunctionProperty.objectReferenceValue;
-
-                        
-                        stateFunctionIdx = EditorGUILayout.Popup("State Function",
-                            Array.IndexOf(functions, stateFunctionObj?.name), functions);
-                        break;
-                    case "properties":
+                    case nameof(Modifier.properties):
                         // show later
                         break;
-                    case "transitionStrategy":
-                        strategyDefined = ShowStrategy();
+                    case nameof(Modifier.transitionStrategy):
+                        strategyExists = ShowStrategy();
                         break;
 
                     default:
@@ -64,45 +60,81 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Modifier Parameters", EditorStyles.whiteLargeLabel);
                 foreach (var prop in customProps)
-                    EditorGUILayout.PropertyField(prop, true);
-            }
-
-            // finally show states
-            if (stateFunctionIdx >= 0)
-            {
-                var stateFunction = Manager.Instance.GetStateFunction(functions[stateFunctionIdx]);
-                stateFunctionProperty.objectReferenceValue = stateFunction;
-
-                if (stateFunction != null)
                 {
-                    EditorGUILayout.Space();
-                    EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                    ShowProperties(stateFunction);
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(prop, true);
+                    propertiesUpdated |= EditorGUI.EndChangeCheck();
+                }
+
+                if (modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
+                {
+                    valueFreeze.FreezeValue();
                 }
             }
 
-            // warnings
-            if (stateFunctionObj == null)
+            var stateFunction = modifier?.node?.referenceAsset?.stateFunctionAsset;
+            if (stateFunction != null)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.red;
-                EditorGUILayout.LabelField("Must select State Function", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
+                propertiesUpdated |= ShowProperties(stateFunction);
             }
-            if (!strategyDefined)
+
+            // warnings
+            if (modifier.node != null && modifier.node.referenceAsset == null)
             {
-                var origColor = GUI.color;
-                GUI.color = Color.red;
-                EditorGUILayout.LabelField("Must select Transition Strategy", EditorStyles.helpBox);
-                GUI.color = origColor;
+                EditorGUILayout.HelpBox("Must select Node Reference for node", MessageType.Error);
+            }
+            if (!strategyExists)
+            {
+                var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
+                var className = Utils.GetClassName(strategyProp);
+                var types = Utils.GetSubtypes<ITransitionStrategy>();
+                var typesNames = types
+                    .Select(t => t.ToString())
+                    .ToArray();
+
+                if (string.IsNullOrEmpty(className))
+                {
+                    var currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
+                    if (currentIdx != -1)
+                        strategyProp.managedReferenceValue = Activator.CreateInstance(types[currentIdx]);
+                }
+
+                EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }
 
             serializedObject.ApplyModifiedProperties();
+
+            if (propertiesUpdated)
+                modifier.ForceTransitionUpdate();
         }
 
-        void ShowProperties(StateFunction sf)
+        private void ShowNode()
         {
-            sf.InvalidateCache();
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
+            var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
+            helpboxStyle.richText = true;
+
+            if (modifier._node == null)
+            {
+                if (modifier.node == null)
+                {
+                    EditorGUILayout.HelpBox($"Could not find parent node, select manually or fix hierarchy",
+                        MessageType.Error);
+                }
+                else
+                    if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
+                        helpboxStyle))
+                {
+                    EditorGUIUtility.PingObject(modifier.node);
+                }
+            }
+        }
+
+        bool ShowProperties(StateFunctionGraph sf)
+        {
+            var updated = false;
 
             // get property info, iterate through parent classes to support inheritance
             Type propType = null;
@@ -113,8 +145,7 @@ namespace OneHamsa.Dexterity.Visual
                 objType = objType.BaseType;
             }
 
-            var properties = serializedObject.FindProperty("properties");
-            var defaultState = serializedObject.FindProperty("defaultState");
+            var properties = serializedObject.FindProperty(nameof(Modifier.properties));
             var states = sf.GetStates();
 
             // find all existing references to properties by state name, add more entries if needed
@@ -122,7 +153,7 @@ namespace OneHamsa.Dexterity.Visual
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
-                var propState = property?.FindPropertyRelative("State")?.stringValue;
+                var propState = property?.FindPropertyRelative(nameof(Modifier.PropertyBase.state))?.stringValue;
                 currentPropStates.Add(propState);
             }
 
@@ -134,86 +165,106 @@ namespace OneHamsa.Dexterity.Visual
                     properties.arraySize++;
                     var newElement = properties.GetArrayElementAtIndex(last);
                     newElement.managedReferenceValue = Activator.CreateInstance(propType);
-                    newElement.FindPropertyRelative("State").stringValue = state;
+                    newElement.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue = state;
                 }
 
                 if (!foldedStates.ContainsKey(state))
                     foldedStates[state] = true;
             }
 
-            var activeState = (target as Modifier).activeState;
+            var activeState = (target as Modifier).node.activeState;
 
             // draw the editor for each value in property
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
-                var propState = property.FindPropertyRelative("State").stringValue;
+                var propState = property.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue;
 
                 if (!states.Contains(propState))
                     continue;
 
                 DrawSeparator();
 
-                EditorGUILayout.BeginHorizontal();
+                stateProps.Clear();
+
+                // fields
+                foreach (var field in Utils.GetChildren(property))
+                {
+                    if (field.name == nameof(Modifier.PropertyBase.state))
+                        continue;
+
+                    stateProps.Add(field.Copy());
+                }
+
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
-                if (activeState == propState)
+                if (Application.isPlaying && activeState == Manager.instance.GetStateID(propState))
                 {
                     GUI.contentColor = Color.green;
                     suffix = " (current)";
                 }
-                foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState], 
-                    $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
-                GUI.contentColor = origColor;
-                GUILayout.FlexibleSpace();
 
-                // default?
-                if (GUILayout.Toggle(propState == defaultState.stringValue, 
-                    new GUIContent("", $"default ({propState})?"))) {
-                    defaultState.stringValue = propState;
-                }
-                EditorGUILayout.EndHorizontal();
-
-                // fields
-                if (foldedStates[propState]) 
-                    foreach (var field in Utils.GetChildren(property))
+                void UtilityButtons()
+                {
+                    if (modifier is ISupportPropertyFreeze propFreeze
+                        && GUILayout.Button(EditorGUIUtility.IconContent("RotateTool On", "Freeze"), GUILayout.Width(25)))
                     {
-                        if (field.name == "State")
-                            continue;
-                        EditorGUILayout.PropertyField(field);
+                        Undo.RecordObject(modifier, "Freeze value");
+                        propFreeze.FreezeProperty(modifier.properties[i]);
                     }
+
+                    /*
+                    if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
+                        GUILayout.Width(25)))
+                    {
+
+                    }
+                    */
+                }
+
+                if (stateProps.Count > 1)
+                {
+                    // multiple - fold
+                    EditorGUILayout.BeginHorizontal();
+                    foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState],
+                        $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
+                    GUI.contentColor = origColor;
+
+                    UtilityButtons();
+
+                    EditorGUILayout.EndHorizontal();
+
+                    // show fields
+                    if (foldedStates[propState])
+                        foreach (var field in stateProps)
+                        {
+                            EditorGUI.BeginChangeCheck();
+                            EditorGUILayout.PropertyField(field);
+                            updated |= EditorGUI.EndChangeCheck();
+                        }
+                }
+                else if (stateProps.Count == 1)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"{propState}{suffix}");
+                    GUI.contentColor = origColor;
+
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
+                    updated |= EditorGUI.EndChangeCheck();
+
+                    UtilityButtons();
+
+                    EditorGUILayout.EndHorizontal();
+                }
             }
             DrawSeparator();
 
-            // XXX only call when some debug menu is open?
-            Repaint();
-        }
+            if (Application.isPlaying) // debug view
+                Repaint();
 
-        bool ShowStrategy()
-        {
-            var strategyProp = serializedObject.FindProperty("transitionStrategy");
-            var className = Utils.GetClassName(strategyProp);
-
-            var types = Utils.GetSubtypes<ITransitionStrategy>();
-            var typesNames = types
-                .Select(t => t.ToString())
-                .ToArray();
-
-            var currentIdx = Array.IndexOf(typesNames, className);
-            var fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,
-                Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
-
-            if (fieldIdx >= 0 && currentIdx != fieldIdx)
-            {
-                var type = types[fieldIdx];
-                strategyProp.managedReferenceValue = Activator.CreateInstance(type);
-            }
-
-            if (!string.IsNullOrEmpty(className))
-                EditorGUILayout.PropertyField(strategyProp, new GUIContent("Strategy Parameters"), true);
-
-            return !string.IsNullOrEmpty(className);
+            return updated;
         }
 
         static void DrawSeparator()

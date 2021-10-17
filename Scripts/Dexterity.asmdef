@@ -1,7 +1,11 @@
 {
     "name": "Dexterity",
     "rootNamespace": "OneHamsa.Dexterity.Visual",
-    "references": [],
+    "references": [
+        "Unity.InputSystem",
+        "com.alelievr.NodeGraphProcessor.Runtime",
+        "OneHumus"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

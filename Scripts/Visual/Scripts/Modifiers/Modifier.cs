@@ -1,51 +1,47 @@
+using OneHumus.Data;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
-    public abstract class Modifier : MonoBehaviour
+    public abstract class Modifier : TransitionBehaviour
     {
         [SerializeField]
-        protected Node node;
-
-        [SerializeField]
-        protected StateFunction stateFunction;
+        public Node _node;
 
         [SerializeReference]
-        protected ITransitionStrategy transitionStrategy;
+        public List<PropertyBase> properties = new List<PropertyBase>();
 
-        // TODO validate this is marked!
-        [SerializeField]
-        [HideInInspector]
-        protected string defaultState;
-        protected string lastState { get; private set; }
-        public string activeState => lastState;
+        public Node node => TryFindNode();
 
-        [SerializeReference]
-        protected List<PropertyBase> properties = new List<PropertyBase>();
-        public IEnumerable<PropertyBase> Properties => properties.ToArray();
+        ListMap<int, PropertyBase> propertiesCache = null;
 
-        Dictionary<string, PropertyBase> propertiesCache = null;
-        public PropertyBase GetProperty(string state)
+        public PropertyBase GetProperty(int stateId)
         {
             // runtime
             if (propertiesCache != null)
-                return propertiesCache[state];
+                return propertiesCache[stateId];
 
             // editor
             foreach (var prop in properties)
-                if (prop.state == state)
+                if (Manager.instance.GetStateID(prop.state) == stateId)
                     return prop;
 
             return null;
         }
-        public PropertyBase ActiveProperty => GetProperty(activeState);
-        protected virtual void HandleStateChange() { }
+        public PropertyBase activeProperty => GetProperty(node.activeState);
+
+        protected virtual void HandleStateChange(int oldState, int newState) { }
+
+        private int[] _states;
+
+        protected override int[] states => _states;
+        protected override float stateChangeTime => node.stateChangeTime;
+        protected override int activeState => node.activeState;
+
 
         [Serializable]
         public abstract class PropertyBase
@@ -53,132 +49,103 @@ namespace OneHamsa.Dexterity.Visual
             public string state;
         }
 
-        protected Dictionary<string, float> transitionState;
-
         private void Awake()
         {
-            propertiesCache = properties.ToDictionary(p => p.state);
+            propertiesCache = new ListMap<int, PropertyBase>();
+            foreach (var prop in properties)
+            {
+                var id = Manager.instance.GetStateID(prop.state);
+                if (id == -1)
+                {
+                    // those properties are kept serialized in order to maintain history, no biggie
+                    continue;
+                }
+                propertiesCache.Add(id, prop);
+            }
         }
 
-        protected virtual void Start()
+        protected override void Start()
         {
-            TryFindNode();
+            HandleStateChange(node.activeState, node.activeState);
 
-            if (string.IsNullOrEmpty(defaultState))
+            _states = new int[propertiesCache.Count];
+            var keys = propertiesCache.Keys.GetEnumerator();
+            var i = 0;
+            while (keys.MoveNext())
+                states[i++] = keys.Current;
+
+            base.Start();
+        }
+        protected override void OnEnable()
+        {
+            if (!EnsureValidState())
             {
-                defaultState = properties[0].state;
-                Debug.LogWarning($"no default state selected, selecting first ({defaultState})");
+                enabled = false;
+                return;
             }
 
-            lastState = defaultState;
-            HandleStateChange();
-
-            transitionState = transitionStrategy.Initialize(properties.Select(p => p.state).ToArray(), lastState);
-            ForceTransitionUpdate();
-
-            RegisterOutputEvents();
-        }
-
-        void TryFindNode()
-        {
-            if (!node)
-                node = GetComponentInParent<Node>();
-
-            if (!node)
+            if ((_node = TryFindNode()) == null)
             {
                 Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
                 enabled = false;
+                return;
             }
+
+            node.onStateChanged += HandleStateChange;
+
+            base.OnEnable();
         }
-
-        float stateChangeTime;
-        bool isDirty = true;
-
-        List<Node.OutputField> outputFields;
-        protected virtual void OnEnable()
+        protected override void OnDisable()
         {
-            TryFindNode();
-            RegisterOutputEvents();
+            base.OnDisable();
+
+            node.onStateChanged -= HandleStateChange;
         }
 
-        private void RegisterOutputEvents()
+        Node TryFindNode()
         {
-            isDirty = true;
-            outputFields = new List<Node.OutputField>();
-            foreach (var f in stateFunction.GetFields())
+            Node current = _node;
+            Transform parent = transform;
+            while (current == null && parent != null)
             {
-                outputFields.Add(node.GetOutputField(f));
+                // include inactive if we're inactive
+                if (!gameObject.activeInHierarchy || parent.gameObject.activeInHierarchy)
+                    current = parent.GetComponent<Node>();
+
+                parent = parent.parent;
             }
-            foreach (var field in outputFields)
-            {
-                field.onValueChanged += MarkStateDirty;
-            }
+
+            return current;
         }
 
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => isDirty = true;
-        protected virtual void OnDisable()
+        protected bool EnsureValidState()
         {
-            isDirty = true;
-            foreach (var field in outputFields)
+            if (node == null)
             {
-                field.onValueChanged -= MarkStateDirty;
+                Debug.LogError("Node is null", this);
+                return false;
             }
+
+            if (!node.enabled)
+            {
+                Debug.LogError("Node is disabled", this);
+                return false;
+            }
+
+            if (transitionStrategy == null)
+            {
+                Debug.LogError("No transition strategy assigned", this);
+                return false;
+            }
+
+            if (node.reference.stateFunction.GetStateIDs().Count() != propertiesCache.Count)
+            {
+                Debug.LogError($"properties count != stateFunction states count", this);
+                return false;
+            }
+
+            return true;
         }
-
-        protected bool transitionChanged;
-        protected int forceTransitionChangeFrames;
-        public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
-
-        protected virtual void Update()
-        {
-            string newState;
-            if (isDirty)
-            {
-                newState = GetState();
-                if (newState == null)
-                {
-                    Debug.LogWarning($"{name}: got null for new state, not updating");
-                    return;
-                }
-                if (newState != lastState)
-                {
-                    stateChangeTime = Time.time;
-                    lastState = newState;
-                    HandleStateChange();
-                }
-                isDirty = false;
-            }
-            else
-            {
-                newState = lastState;
-            }
-            transitionState = transitionStrategy.GetTransition(transitionState,
-                newState, Time.time - stateChangeTime, out transitionChanged);
-
-            if (forceTransitionChangeFrames > 0)
-            {
-                forceTransitionChangeFrames--;
-                transitionChanged = true;
-            }
-        }
-
-        Dictionary<string, int> fields = new Dictionary<string, int>();
-        private Dictionary<string, int> GetFields()
-        {
-            fields.Clear();
-            foreach (var field in outputFields)
-            {
-                var value = field.GetValue();
-                // if this field isn't provided just assume default
-                if (value == Node.EMPTY_FIELD_VALUE)
-                {
-                    value = Node.DEFAULT_FIELD_VALUE;
-                }
-                fields[field.name] = value;
-            }
-            return fields;
-        }
-        protected string GetState() => stateFunction.Evaluate(GetFields());
     }
 
 }
