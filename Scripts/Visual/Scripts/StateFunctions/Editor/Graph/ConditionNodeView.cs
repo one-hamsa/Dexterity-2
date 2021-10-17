@@ -14,8 +14,6 @@ namespace OneHamsa.Dexterity.Visual
 
 		ConditionNode node;
 
-		protected override bool legacyPropertyFields => true;
-
         public override void Enable()
 		{
 			base.Enable();
