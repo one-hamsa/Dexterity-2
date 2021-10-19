@@ -21,10 +21,7 @@ namespace OneHamsa.Dexterity.Visual
 			node = nodeTarget as ConditionNode;
 
 			owner.onAfterGraphChanged += HandleGraphChanges;
-			contentContainer.Q<PropertyField>(nameof(ConditionNode.fieldName))
-				.RegisterValueChangeCallback(HandleFieldChange);
 			HandleGraphChanges(null);
-			RefreshField();
 
 			// runtime
 			node.onProcessed += HandleNodeProcessed;
@@ -36,8 +33,6 @@ namespace OneHamsa.Dexterity.Visual
 			base.Disable();
 
 			owner.onAfterGraphChanged -= HandleGraphChanges;
-			contentContainer.Q<PropertyField>(nameof(ConditionNode.fieldName))
-				.UnregisterCallback<SerializedPropertyChangeEvent>(HandleFieldChange);
 
 			node.onProcessed -= HandleNodeProcessed;
 			owner.initialized -= HandleNodeProcessed;
@@ -59,6 +54,8 @@ namespace OneHamsa.Dexterity.Visual
 
 		private void HandleGraphChanges(GraphChanges changes)
 		{
+			RefreshField();
+
 			RemoveMessageView(kNotAllOutputsConnectedMessage);
 			if (nodeTarget.outputPorts
 				.Where(p => p.fieldName == nameof(ConditionNode.outputs))
