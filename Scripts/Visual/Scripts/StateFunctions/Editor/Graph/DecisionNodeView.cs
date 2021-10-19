@@ -22,8 +22,6 @@ namespace OneHamsa.Dexterity.Visual
 			node = nodeTarget as DecisionNode;
 
 			owner.onAfterGraphChanged += HandleGraphChanges;
-			contentContainer.Q<TextField>(nameof(DecisionNode.stateName))
-				.RegisterCallback<ChangeEvent<string>>(HandleStateChange);
 			HandleGraphChanges(null);
 
 			// runtime
@@ -36,9 +34,6 @@ namespace OneHamsa.Dexterity.Visual
 			base.Disable();
 
 			owner.onAfterGraphChanged -= HandleGraphChanges;
-			contentContainer.Q<TextField>(nameof(DecisionNode.stateName))
-				.UnregisterCallback<ChangeEvent<string>>(HandleStateChange);
-
 			node.onProcessed -= HandleNodeProcessed;
 		}
 
@@ -49,6 +44,8 @@ namespace OneHamsa.Dexterity.Visual
 
 		private void HandleGraphChanges(GraphChanges changes)
 		{
+			HandleStateChange();
+
 			RemoveMessageView(kNoInputMessage);
 
 			if (nodeTarget.inputPorts
@@ -57,7 +54,7 @@ namespace OneHamsa.Dexterity.Visual
 				AddMessageView(kNoInputMessage, NodeMessageType.Warning);
 		}
 
-		private void HandleStateChange(ChangeEvent<string> evt)
+		private void HandleStateChange()
         {
 			UpdateTitle();
 
