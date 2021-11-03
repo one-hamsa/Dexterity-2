@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
             public string state;
         }
 
-        private void Awake()
+        protected override void Awake()
         {
             propertiesCache = new ListMap<int, PropertyBase>();
             foreach (var prop in properties)
@@ -64,7 +64,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        protected override void Start()
+        private void HandleNodeEnabled()
         {
             HandleStateChange(node.activeState, node.activeState);
 
@@ -74,7 +74,7 @@ namespace OneHamsa.Dexterity.Visual
             while (keys.MoveNext())
                 states[i++] = keys.Current;
 
-            base.Start();
+            InitializeTransitionState();
         }
         protected override void OnEnable()
         {
@@ -91,6 +91,11 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
+            if (node.enabled)
+                HandleNodeEnabled();
+            else
+                node.onEnabled += HandleNodeEnabled;
+
             node.onStateChanged += HandleStateChange;
 
             base.OnEnable();
@@ -99,6 +104,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             base.OnDisable();
 
+            node.onEnabled -= HandleNodeEnabled;
             node.onStateChanged -= HandleStateChange;
         }
 

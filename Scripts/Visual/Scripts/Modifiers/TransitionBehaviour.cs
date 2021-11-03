@@ -20,9 +20,9 @@ namespace OneHamsa.Dexterity.Visual
         protected abstract float stateChangeTime { get; }
         protected abstract int[] states { get; }
 
-        protected virtual void Start()
+        protected virtual void Awake()
         {
-            transitionState = transitionStrategy.Initialize(states, activeState);
+            InitializeTransitionState();
         }
         protected virtual void OnEnable()
         {
@@ -43,6 +43,11 @@ namespace OneHamsa.Dexterity.Visual
                 forceTransitionChangeFrames--;
                 transitionChanged = true;
             }
+        }
+
+        protected void InitializeTransitionState()
+        {
+            transitionState = transitionStrategy.Initialize(states, activeState);
         }
 
         /// <summary>

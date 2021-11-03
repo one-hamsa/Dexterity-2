@@ -76,6 +76,7 @@ namespace OneHamsa.Dexterity.Visual
         public int overrideStateId { get; private set; } = -1;
         public float stateChangeTime { get; private set; }
 
+        public event Action onEnabled;
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
@@ -117,6 +118,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Initialize(referenceAsset);
+            onEnabled?.Invoke();
         }
 
         protected void OnDisable()

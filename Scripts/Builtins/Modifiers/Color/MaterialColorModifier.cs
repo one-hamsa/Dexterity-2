@@ -11,10 +11,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public string materialColorName = "_Color";
 
         Renderer rend;
-        protected override void Start()
+        protected void Start()
         {
-            base.Start();
-
             rend = GetComponent<Renderer>();
         }
 

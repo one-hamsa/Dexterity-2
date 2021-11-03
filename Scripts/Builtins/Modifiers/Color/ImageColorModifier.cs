@@ -10,10 +10,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class ImageColorModifier : ColorModifier, ISupportPropertyFreeze
     {
         Image image;
-        protected override void Start()
+        protected void Start()
         {
-            base.Start();
-
             image = GetComponent<Image>();
         }
 
