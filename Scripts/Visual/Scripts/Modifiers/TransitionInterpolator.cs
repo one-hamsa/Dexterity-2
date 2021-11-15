@@ -27,14 +27,29 @@ namespace OneHamsa.Dexterity.Visual
         public void SetTarget(float target)
         {
             previousValue = value;
-
-            target = Mathf.Clamp01(target);
-
-            transitionState[0] = 1;
-            transitionState[1] = 0;
+            Restart();
 
             _stateChangeTime = Time.time;
-            this.target = target;
+            this.target = Mathf.Clamp01(target);
+        }
+
+        /// <summary>
+        /// plays transition (makes it run between 0 and 1)
+        /// </summary>
+        public void Play() 
+        {
+            Restart();
+            previousValue = 0;
+            SetTarget(1f);
+        }
+
+        /// <summary>
+        /// restarts transition momentum
+        /// </summary>
+        public void Restart()
+        {
+            transitionState[0] = 1;
+            transitionState[1] = 0;
         }
     }
 

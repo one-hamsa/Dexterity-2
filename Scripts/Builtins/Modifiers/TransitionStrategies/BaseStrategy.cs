@@ -29,7 +29,20 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             changed = false;
             if (checkActivityThreshold && prevState[currentState] > activityThreshold)
+            {
+                // jump to final state
+                foreach (var kv in prevState)
+                {
+                    var state = kv.Key;
+
+                    if (state == currentState)
+                        prevState[state] = 1;
+                    else
+                        prevState[state] = 0;
+                }
+
                 return prevState;
+            }
 
             changed = true;
             // write to new pointer
