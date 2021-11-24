@@ -77,14 +77,12 @@ namespace OneHamsa.Dexterity.Visual
 
         private void Initialize()
         {
-            Manager.instance.RegisterStateFunction(stateFunctionAsset);
+            stateFunction = stateFunctionAsset.GetRuntimeInstance();
 
             // cache delays
             cachedDelays = new ListMap<int, TransitionDelay>();
             foreach (var delay in delays)
                 cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
-
-            stateFunction = stateFunctionAsset.GetRuntimeInstance();
         }
 
         public TransitionDelay GetDelay(int state)

@@ -9,10 +9,12 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : BaseGraph
     {
+        private static StateFunctionGraph lastPrefab;
         private static Dictionary<StateFunctionGraph, StateFunctionGraph> prefabToRuntime
             = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
 
-        public bool isRuntime { get; private set; }
+        public bool isRuntime => source != null;
+        public StateFunctionGraph source { get; private set; }
         internal FieldsState fieldsState { get; private set; }
         internal int evaluationResult { get; set; } = -1;
 
@@ -20,6 +22,14 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override void OnEnable()
         {
+            // HACK: save prefab
+            //. (see https://forum.unity.com/threads/prefab-with-reference-to-itself.412240/)
+            source = lastPrefab;
+            lastPrefab = null;
+
+            if (isRuntime)
+                Manager.instance.RegisterStateFunction(this);
+
             base.OnEnable();
             processor = new ProcessGraphProcessor(this);
         }
@@ -77,8 +87,8 @@ namespace OneHamsa.Dexterity.Visual
 
             if (!prefabToRuntime.TryGetValue(this, out var runtime))
             {
+                lastPrefab = this;
                 prefabToRuntime[this] = runtime = Instantiate(this);
-                runtime.isRuntime = true;
             }
 
             return runtime;
