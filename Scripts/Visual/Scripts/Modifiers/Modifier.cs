@@ -1,7 +1,5 @@
-using OneHumus.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -17,13 +15,22 @@ namespace OneHamsa.Dexterity.Visual
 
         public Node node => TryFindNode();
 
-        ListMap<int, PropertyBase> propertiesCache = null;
+        Dictionary<int, PropertyBase> propertiesCache = null;
 
         public PropertyBase GetProperty(int stateId)
         {
             // runtime
             if (propertiesCache != null)
+            {
+                if (!propertiesCache.ContainsKey(stateId))
+                {
+                    Debug.LogWarning($"property for state = {Manager.instance.GetStateAsString(stateId)} not found", this);
+                    // just return first
+                    foreach (var p in propertiesCache.Values)
+                        return p;
+                }
                 return propertiesCache[stateId];
+            }
 
             // editor
             foreach (var prop in properties)
@@ -51,7 +58,7 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override void Awake()
         {
-            propertiesCache = new ListMap<int, PropertyBase>();
+            propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
                 var id = Manager.instance.GetStateID(prop.state);
@@ -141,12 +148,6 @@ namespace OneHamsa.Dexterity.Visual
             if (transitionStrategy == null)
             {
                 Debug.LogError("No transition strategy assigned", this);
-                return false;
-            }
-
-            if (node.reference.stateFunction.GetStateIDs().Count() != propertiesCache.Count)
-            {
-                Debug.LogError($"properties count != stateFunction states count", this);
                 return false;
             }
 
