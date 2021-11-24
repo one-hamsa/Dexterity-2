@@ -51,6 +51,7 @@ namespace OneHamsa.Dexterity.Visual
             if (EditorGUI.EndChangeCheck())
             {
                 property.stringValue = states[index];
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
             }
         }
     }
