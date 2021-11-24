@@ -16,6 +16,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         Node.OutputField pressedField;
         Node.OutputField hoverField;
+        Node.OutputField disabledField;
 
         void Awake()
         {
@@ -35,6 +36,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             pressedField = node.GetOutputField("pressed");
             hoverField = node.GetOutputField("hover");
+            disabledField = node.GetOutputField("disabled");
 
             pressedField.onBooleanValueChanged += HandlePress;
         }
@@ -45,6 +47,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private void HandlePress(Node.OutputField field, bool oldValue, bool newValue)
         {
+            // don't handle if disabled
+            if (disabledField.GetBooleanValue())
+                return;
+
             // only handle if unpressed while on object
             if (oldValue && !newValue && hoverField.GetBooleanValue())
             {
