@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using OneHumus.Data;
 using UnityEngine;
 
@@ -26,6 +25,9 @@ namespace OneHamsa.Dexterity.Visual
         /// <returns>Field Definition ID (runtime, may vary from run to run)</returns>
         public int GetFieldID(string name)
         {
+            if (fieldNames.Length == 0)
+                Debug.LogWarning($"tried to get field id of {name} but fieldNames is empty");
+
             return Array.IndexOf(fieldNames, name);
         }
 
@@ -37,6 +39,9 @@ namespace OneHamsa.Dexterity.Visual
         /// <returns>State ID (runtime, may vary from run to run)</returns>
         public int GetStateID(string name)
         {
+            if (stateNames.Count == 0)
+                Debug.LogWarning($"tried to get state id of {name} but stateNames is empty");
+
             return stateNames.IndexOf(name);
         }
 
