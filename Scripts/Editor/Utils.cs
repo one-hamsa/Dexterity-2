@@ -107,6 +107,14 @@ namespace OneHamsa.Dexterity.Visual
                 case NodeReference reference:
                     sf = reference.stateFunctionAsset;
                     break;
+
+                case MonoBehaviour monoBehaviour:
+                    var potentialNode = monoBehaviour.GetComponent<Node>();
+                    if (potentialNode == null)
+                        goto default;
+
+                    return GetStateFunctionFromObject(potentialNode);
+
                 default:
                     return null;
             }
