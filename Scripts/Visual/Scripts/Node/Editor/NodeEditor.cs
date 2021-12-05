@@ -50,7 +50,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             var prop = serializedObject.FindProperty(nameof(Node.referenceAsset));
 
-            var references = Utils.FindAssetsByType<NodeReference>();
+            var references = Utils.FindAssetsByType<NodeReference>().ToList();
             var names = references.Select(r => r.name);
             var currentIdx = references.IndexOf(prop.objectReferenceValue as NodeReference);
 

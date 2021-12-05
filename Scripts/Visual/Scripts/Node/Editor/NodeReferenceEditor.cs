@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowFunction()
         {
-            var functions = Utils.FindAssetsByType<StateFunctionGraph>();
+            var functions = Utils.FindAssetsByType<StateFunctionGraph>().ToList();
             var funcNames = functions.Select(f => f.name).ToArray();
 
             var stateFunctionProperty = serializedObject.FindProperty(nameof(reference.stateFunctionAsset));
