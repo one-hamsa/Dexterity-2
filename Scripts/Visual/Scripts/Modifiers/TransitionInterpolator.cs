@@ -26,6 +26,9 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="target">normalized target</param>
         public void SetTarget(float target)
         {
+            if (float.IsNaN(target))
+                return;
+                
             previousValue = value;
             Restart();
 
