@@ -11,6 +11,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public UnityEngine.Object targetObject;
         [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(bool))]
         public string targetProperty;
+        public bool negate;
 
         ObjectValueAttribute cachedAttribute;
 
@@ -21,6 +22,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             cachedAttribute = ObjectValueAttribute.Initialize(this, nameof(targetProperty));
         }
 
-        public override int GetValue() => cachedAttribute.GetValue<bool>() ? 1 : 0;
+        public override int GetValue() 
+        {
+            var value = cachedAttribute.GetValue<bool>() ? 1 : 0;
+            return negate ? (value + 1) % 2 : value;
+        }
     }
 }
