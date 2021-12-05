@@ -231,6 +231,19 @@ namespace OneHamsa.Dexterity.Visual
 
                 return $"OutputNode {node.name}::{Manager.instance.GetFieldDefinition(definitionId).name} -> {GetValue()}";
             }
+
+            public void SetOverride(bool value) {
+                node.SetOverride(definitionId, value);
+            }
+            public void SetOverride(string value) {
+                node.SetOverride(definitionId, value);
+            }
+            public void SetOverrideRaw(int value) {
+                node.SetOverrideRaw(definitionId, value);
+            }
+            public void ClearOverride() {
+                node.ClearOverride(definitionId);
+            }
         }
     }
 }
