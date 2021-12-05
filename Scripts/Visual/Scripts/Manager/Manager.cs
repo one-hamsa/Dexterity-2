@@ -6,8 +6,10 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [AddComponentMenu("Dexterity/Dexterity Manager")]
+    [DefaultExecutionOrder(Manager.managerExecutionPriority)]
     public class Manager : MonoBehaviour
     {
+        internal const int managerExecutionPriority = -20;
         internal const int nodeExecutionPriority = -15;
         internal const int modifierExecutionPriority = -10;
 
