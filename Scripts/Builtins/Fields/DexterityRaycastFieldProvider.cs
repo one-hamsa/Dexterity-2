@@ -5,7 +5,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     internal class DexterityRaycastFieldProvider : MonoBehaviour, IRaycastReceiver
     {
-        List<IRaycastController> controllers = new List<IRaycastController>(2);
+        HashSet<IRaycastController> controllers = new HashSet<IRaycastController>();
         public bool hover => controllers.Count > 0;
         public bool press
         {
@@ -20,8 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public void ReceiveHit(IRaycastController controller, RaycastHit hit)
         {
-            if (!controllers.Contains(controller))
-                controllers.Add(controller);
+            controllers.Add(controller);
         }
 
         public void ClearHit(IRaycastController controller)

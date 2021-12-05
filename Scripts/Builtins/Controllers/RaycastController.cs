@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
@@ -15,13 +14,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public LayerMask layerMask = int.MaxValue;
 		public InputAction pressed;
 
+		[Header("Debug")]
+		public Color debugColliderColor = new Color(1f, .5f, 0f);
+		public Color debugHitColor = new Color(1f, .25f, 0f);
+
 		public Ray ray { get; private set; }
 		public bool didHit { get; private set; }
 		public RaycastHit hit { get; private set; }
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
-		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4);
-		List<IRaycastReceiver> receivers = new List<IRaycastReceiver>(4);
+		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
+		potentialReceiversA = new List<IRaycastReceiver>(4), 
+		potentialReceiversB = new List<IRaycastReceiver>(4);
 
         private void Awake()
         {
@@ -46,12 +50,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
 			for (int i = 0; i < numHits; ++i)
 			{
-				hits[i].collider.gameObject.GetComponents(receivers);
-				if (receivers.Count != 0 && hits[i].distance < minDist)
+				hits[i].collider.gameObject.GetComponents(potentialReceiversA);
+				if (potentialReceiversA.Count != 0 && hits[i].distance < minDist)
 				{
-					closestReceivers = receivers;
+					// save hit
 					hit = hits[i];
 					minDist = hits[i].distance;
+					closestReceivers = potentialReceiversA;
+					// swap pointers
+					(potentialReceiversA, potentialReceiversB) = (potentialReceiversB, potentialReceiversA);
 				}
 			}
 
@@ -73,6 +80,31 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			}
 		}
 
-		public bool isPressed => pressed.phase == InputActionPhase.Started;
+		private void OnDrawGizmos() {
+			if (!didHit)
+				return;
+
+			Gizmos.color = debugHitColor;
+			Gizmos.DrawWireSphere(hit.point, .025f);
+
+			if (hit.collider == null)
+				return;
+
+			Gizmos.matrix = hit.collider.transform.localToWorldMatrix;
+			Gizmos.color = debugColliderColor;
+			DrawCollider(hit.collider);
+		}
+
+        private void DrawCollider(Collider collider)
+        {
+            if (collider is BoxCollider box)
+				Gizmos.DrawWireCube(box.center, box.size);
+			else if (collider is SphereCollider sphere)
+				Gizmos.DrawWireSphere(sphere.center, sphere.radius);
+
+			// TODO more, maybe with collider.bounds, just need to understand in what space
+        }
+
+        public bool isPressed => pressed.phase == InputActionPhase.Started;
     }
 }
