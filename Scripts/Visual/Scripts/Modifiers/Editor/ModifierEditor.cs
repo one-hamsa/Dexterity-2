@@ -89,7 +89,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
                 var className = Utils.GetClassName(strategyProp);
-                var types = Utils.GetSubtypes<ITransitionStrategy>();
+                var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>();
                 var typesNames = types
                     .Select(t => t.ToString())
                     .ToArray();

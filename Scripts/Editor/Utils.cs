@@ -22,15 +22,6 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        public static IList<Type> GetSubtypes<T>()
-        {
-            return Assembly
-                .GetAssembly(typeof(T)).GetTypes()
-                .Where(myType => myType.IsClass && !myType.IsAbstract 
-                    && (myType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(myType)))
-                .ToList();
-        }
-
         public static IEnumerable<SerializedProperty> GetChildren(SerializedProperty serializedProperty)
         {
             SerializedProperty currentProperty = serializedProperty.Copy();

@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             var prop = serializedObject.FindProperty(nameof(reference.defaultStrategy));
 
-            var types = Utils.GetSubtypes<ITransitionStrategy>();
+            var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>();
             var typesNames = types
                 .Select(t => t.ToString())
                 .ToArray();
@@ -273,7 +273,7 @@ namespace OneHamsa.Dexterity.Visual
             bool updated = false;
 
             string className = Utils.GetClassName(property);
-            var types = Utils.GetSubtypes<BaseField>()
+            var types = TypeCache.GetTypesDerivedFrom<BaseField>()
                 .Where(t => (bool)t.GetField(nameof(BaseField.showInInspector), 
                     BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy).GetValue(null))
                 .ToArray();
