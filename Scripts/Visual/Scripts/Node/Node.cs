@@ -136,18 +136,6 @@ namespace OneHamsa.Dexterity.Visual
             outputFields.Clear();
         }
 
-        protected virtual void Start()
-        {
-            var defaultStateId = Manager.instance.GetStateID(initialState);
-            if (defaultStateId == -1)
-            {
-                defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
-                Debug.LogWarning($"no default state selected, selecting arbitrary", this);
-            }
-
-            activeState = defaultStateId;
-        }
-
         protected virtual void Update()
         {
             if (stateDirty)
@@ -221,6 +209,15 @@ namespace OneHamsa.Dexterity.Visual
             RestartFields();
             CacheOverrides();
             CacheOverrideState();
+
+            var defaultStateId = Manager.instance.GetStateID(initialState);
+            if (defaultStateId == -1)
+            {
+                defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
+                Debug.LogWarning($"no default state selected, selecting arbitrary", this);
+            }
+
+            activeState = defaultStateId;
         }
 
         public void Uninitialize()

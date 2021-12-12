@@ -17,10 +17,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             activityThreshold = Manager.instance.settings.GetGlobalFloat("activityThreshold", .999f);
 
             result.Clear();
+            var foundState = false;
             foreach (var state in states)
             {
                 result[state] = state == currentState ? 1 : 0;
+                foundState |= state == currentState;
             }
+
+            if (!foundState)
+                Debug.LogError($"BaseStrategy.Initialize: did not find state {currentState} in states");
             
             return result;
         }
