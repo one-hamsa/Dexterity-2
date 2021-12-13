@@ -73,7 +73,6 @@ namespace OneHamsa.Dexterity.Visual
 
         /// <summary>
         /// returns the field this provider relies on. 
-        /// returned set should be treated as read-only (XXX maybe this should be in enforced)
         /// </summary>
         public IEnumerable<BaseField> GetUpstreamFields() => upstreamFields;
 

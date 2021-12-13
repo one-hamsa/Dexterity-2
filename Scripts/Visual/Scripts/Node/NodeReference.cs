@@ -1,13 +1,11 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual
 {
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
-    public class NodeReference : ScriptableObject, IFieldHolder
+    public class NodeReference : ScriptableObject, IGateContainer
     {
         private static Dictionary<NodeReference, NodeReference> prefabToRuntime
             = new Dictionary<NodeReference, NodeReference>();
@@ -16,8 +14,15 @@ namespace OneHamsa.Dexterity.Visual
         [Serializable]
         public class Gate
         {
+            public enum OverrideType {
+                Additive = 1,
+                Subtractive = 2,
+                All = Additive | Subtractive,
+            }
+
             [Field]
             public string outputFieldName;
+            public OverrideType overrideType = OverrideType.Additive;
 
             [SerializeReference]
             public BaseField field;
@@ -55,34 +60,64 @@ namespace OneHamsa.Dexterity.Visual
         public StateFunctionGraph stateFunctionAsset;
 
         [SerializeField]
-        public List<Gate> gates;
+        public List<NodeReference> extends = new List<NodeReference>();
 
         [SerializeField]
-        public List<TransitionDelay> delays;
+        public List<Gate> gates = new List<Gate>();
 
-        [HideInInspector]
-        public string defaultStrategy;
+        [SerializeField]
+        public List<TransitionDelay> delays = new List<TransitionDelay>();
 
         [NonSerialized]
         public Node owner;
 
         public StateFunctionGraph stateFunction { get; private set; }
-        public bool isRuntime { get; private set; }
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        ListMap<int, TransitionDelay> cachedDelays;
+        Dictionary<int, TransitionDelay> cachedDelays;
 
-        private void Initialize()
+        public void Initialize(IEnumerable<Gate> gates)
         {
             stateFunction = stateFunctionAsset.GetRuntimeInstance();
 
+            // copy from parents
+            foreach (var parent in extends)
+            {
+                // deep clone before iterating gates to make sure we point to new instances
+                var newParent = Instantiate(parent);
+
+                // make sure it's recursive
+                newParent.Initialize(new Gate[] { });
+                
+                var i = 0;
+                foreach (var gate in newParent.gates)
+                {
+                    this.gates.Insert(i++, gate);
+                }
+
+                i = 0;
+                foreach (var delay in newParent.delays)
+                {
+                    delays.Insert(i++, delay);
+                }
+
+                // c'est tout
+                Destroy(newParent);
+            }
+
+            // add new gates
+            foreach (var gate in gates)
+            {
+                this.gates.Add(gate);
+            }
+
             // cache delays
-            cachedDelays = new ListMap<int, TransitionDelay>();
+            cachedDelays = new Dictionary<int, TransitionDelay>();
             foreach (var delay in delays)
-                cachedDelays.Add(Manager.instance.GetStateID(delay.state), delay);
+                cachedDelays[Manager.instance.GetStateID(delay.state)] = delay;
         }
 
         public TransitionDelay GetDelay(int state)
@@ -113,26 +148,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             return gates[i];
         }
-        public StateFunctionGraph fieldsStateFunction => stateFunctionAsset;
-        public Node node => owner;
-
-        public NodeReference GetRuntimeInstance()
-        {
-            if (isRuntime)
-            {
-                Debug.LogWarning("asking for runtime but we're already a runtime instance", this);
-                return this;
-            }
-
-            // TODO without deep-copying gates, this is buggy because nodes share internal data structures
-            //if (!prefabToRuntime.TryGetValue(this, out var runtime))
-            //{
-                /*prefabToRuntime[this] = */var runtime = Instantiate(this);
-                runtime.isRuntime = true;
-                runtime.Initialize();
-            //}
-
-            return runtime;
-        }
+        StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;
+        Node IGateContainer.node => owner;
     }
 }

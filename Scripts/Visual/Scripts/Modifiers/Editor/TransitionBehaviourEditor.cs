@@ -69,13 +69,14 @@ namespace OneHamsa.Dexterity.Visual
             var saveStrategy = false;
             var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>();
             var typesNames = types
+                .Where(t => !t.IsAbstract)
                 .Select(t => t.ToString())
                 .ToArray();
 
             var currentIdx = Array.IndexOf(typesNames, className);
             var fieldIdx = currentIdx;
 
-            if (advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced"))
+            if (currentIdx == -1 || (advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced")))
             {
                 EditorGUI.BeginChangeCheck(); 
                 fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,

@@ -2,9 +2,9 @@ namespace OneHamsa.Dexterity.Visual
 {
     using Gate = NodeReference.Gate;
 
-    public interface IFieldHolder
+    public interface IGateContainer
     {
-        StateFunctionGraph fieldsStateFunction { get; }
+        StateFunctionGraph stateFunctionAsset { get; }
         Node node { get; }
 
         void AddGate(Gate gate);

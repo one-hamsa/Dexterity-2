@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IFieldHolder
+    public partial class Node : MonoBehaviour, IGateContainer
     {
         #region Static Functions
         // mainly for debugging graph problems
@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Data Definitions
 
         #region Serialized Fields
-        public NodeReference referenceAsset;
+        public NodeReference[] referenceAssets;
         
         [State]
         public string initialState;
@@ -101,9 +101,6 @@ namespace OneHamsa.Dexterity.Visual
                 if (reference != null)
                     foreach (var gate in reference.gates)
                         yield return gate;
-
-                foreach (var gate in customGates)
-                    yield return gate;
             }
         }
         #endregion Private Properties
@@ -117,7 +114,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            Initialize(referenceAsset);
+            Initialize();
             onEnabled?.Invoke();
         }
 
@@ -175,13 +172,13 @@ namespace OneHamsa.Dexterity.Visual
         #region General Methods
         private bool EnsureValidState()
         {
-            if (referenceAsset == null)
+            if (referenceAssets.Count(a => a != null) == 0)
             {
-                Debug.LogError("No reference assigned", this);
+                Debug.LogError("No references assigned", this);
                 return false;
             }
 
-            if (referenceAsset.stateFunctionAsset == null)
+            if (stateFunctionAsset == null)
             {
                 Debug.LogError("No state function assigned", this);
                 return false;
@@ -189,11 +186,14 @@ namespace OneHamsa.Dexterity.Visual
             return true;
         }
 
-        public void Initialize(NodeReference referenceAsset)
+        public void Initialize()
         {
-            reference = referenceAsset.GetRuntimeInstance();
+            reference = ScriptableObject.CreateInstance<NodeReference>();
             reference.owner = this;
-            reference.name = $"{name} (Reference)";
+            reference.name = $"{name} (Live Reference)";
+            reference.stateFunctionAsset = stateFunctionAsset;
+            reference.extends.AddRange(referenceAssets);
+            reference.Initialize(customGates);
 
             stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
@@ -545,8 +545,10 @@ namespace OneHamsa.Dexterity.Visual
 #endregion Overrides
 
 #region Interface Implementation (Editor)
-        public StateFunctionGraph fieldsStateFunction => referenceAsset?.fieldsStateFunction;
-        public Node node => this;
+        public StateFunctionGraph stateFunctionAsset => referenceAssets.Length > 0 
+            ? referenceAssets[0]?.stateFunctionAsset
+            : null;
+        Node IGateContainer.node => this;
 #endregion Interface Implementation (Editor)
     }
 }

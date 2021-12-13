@@ -72,7 +72,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            var stateFunction = modifier?.node?.referenceAsset?.stateFunctionAsset;
+            var stateFunction = modifier?.node?.stateFunctionAsset;
             if (stateFunction != null)
             {
                 EditorGUILayout.Space();
@@ -81,9 +81,9 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // warnings
-            if (modifier.node != null && modifier.node.referenceAsset == null)
+            if (modifier.node != null && modifier.node.referenceAssets.Count(a => a != null) == 0)
             {
-                EditorGUILayout.HelpBox("Must select Node Reference for node", MessageType.Error);
+                EditorGUILayout.HelpBox("Must select Node Reference(s) for node", MessageType.Error);
             }
             if (!strategyExists)
             {
@@ -94,12 +94,14 @@ namespace OneHamsa.Dexterity.Visual
                     .Select(t => t.ToString())
                     .ToArray();
 
+                /*
                 if (string.IsNullOrEmpty(className))
                 {
                     var currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
                     if (currentIdx != -1)
                         strategyProp.managedReferenceValue = Activator.CreateInstance(types[currentIdx]);
                 }
+                */
 
                 EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }

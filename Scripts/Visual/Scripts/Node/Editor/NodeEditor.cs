@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowChooseInitialState()
         {
-            if (node.referenceAsset == null)
+            if (node.referenceAssets.Count(a => a != null) == 0)
                 return;
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
@@ -48,55 +48,15 @@ namespace OneHamsa.Dexterity.Visual
 
         void ShowChooseReference()
         {
-            var prop = serializedObject.FindProperty(nameof(Node.referenceAsset));
-
-            var references = Utils.FindAssetsByType<NodeReference>().ToList();
-            var names = references.Select(r => r.name);
-            var currentIdx = references.IndexOf(prop.objectReferenceValue as NodeReference);
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUI.BeginChangeCheck();
-            var newIdx = EditorGUILayout.Popup("Reference", currentIdx, names.Append("New...").ToArray());
-            if (EditorGUI.EndChangeCheck())
-            {
-                if (newIdx == names.Count())
-                {
-                    // selected new
-                    CreateNewAsset();
-                }
-                else
-                {
-                    EditorGUIUtility.PingObject(references[newIdx]);
-                    prop.objectReferenceValue = references[newIdx];
-                }
-            }
-            
-
-            GUI.enabled = node.referenceAsset != null;
-            if (GUILayout.Button(EditorGUIUtility.IconContent("Animation.FilterBySelection"),
-                EditorStyles.miniButton, GUILayout.Width(24)))
-            {
-                Selection.activeObject = node.referenceAsset;
-            }
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
 
             // runtime
-            GUI.enabled = node.reference != null;
-            if (GUILayout.Button(EditorGUIUtility.IconContent("ScaleTool"),
-                EditorStyles.miniButton, GUILayout.Width(24)))
-            {
-                if (node.reference.owner == null)
+            if (node.reference != null) {
+                if (GUILayout.Button("Open Live Reference"))
                 {
-                    Debug.Log("Creating runtime reference for debug view");
-                    node.Uninitialize();
-                    node.Initialize(Instantiate(node.reference));
-
-                    node.reference.name = $"{name} (Reference)";
-                    node.reference.owner = node;
+                    NodeReferenceEditorWindow.Open(node.reference); 
                 }
-                NodeReferenceEditorWindow.Open(node.reference); 
             }
-            EditorGUILayout.EndHorizontal();
-            GUI.enabled = true;
         }
 
         void ShowOverrides()
@@ -196,9 +156,9 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowWarnings()
         {
-            if (node.referenceAsset == null)
+            if (node.referenceAssets.Count(a => a != null) == 0)
             {
-                EditorGUILayout.HelpBox("Must select Node Reference", MessageType.Error);
+                EditorGUILayout.HelpBox("Must select Node Reference(s)", MessageType.Error);
             }
         }
 
@@ -220,19 +180,6 @@ namespace OneHamsa.Dexterity.Visual
             Handles.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.width + 15, rect.y));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
-        }
-
-        private void CreateNewAsset()
-        {
-            string path = EditorUtility.SaveFilePanelInProject("Asset Path", $"Node Reference ({node.name})",
-                "asset", "Choose new node reference asset location");
-            if (string.IsNullOrEmpty(path))
-                return;
-
-            var asset = ScriptableObject.CreateInstance<NodeReference>();
-            AssetDatabase.CreateAsset(asset, path.Substring(path.IndexOf("Assets/")));
-            node.referenceAsset = asset;
-            EditorUtility.SetDirty(node);
         }
     }
 }

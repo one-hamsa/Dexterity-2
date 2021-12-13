@@ -175,11 +175,21 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         // additive: 1 if any is 1, 0 otherwise
                         var result = false;
-                        foreach (var field in GetUpstreamFields())
+                        foreach (var gate in cachedGates)
                         {
-                            result |= field.GetBooleanValue();
-                            if (result)
-                                break;
+                            var found = false;
+
+                            if (gate.overrideType.HasFlag(Gate.OverrideType.Additive)) {
+                                result |= gate.field.GetBooleanValue();
+                                found = true;
+                            }
+                            if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive)) {
+                                result &= gate.field.GetBooleanValue();
+                                found = true;
+                            }
+
+                            if (!found)
+                                Debug.LogError($"Unknown override type {gate.overrideType} for field {gate.field.definition.name}", node);
                         }
 
                         cachedValueWithoutOverride = result ? 1 : 0;

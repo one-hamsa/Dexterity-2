@@ -84,11 +84,11 @@ namespace OneHamsa.Dexterity.Visual
             switch (unityObject)
             {
                 case Modifier modifier:
-                    sf = modifier.node?.referenceAsset?.stateFunctionAsset;
+                    sf = modifier.node?.stateFunctionAsset;
                     break;
 
                 case Node node:
-                    sf = node.referenceAsset?.stateFunctionAsset;
+                    sf = node.stateFunctionAsset;
                     break;
 
                 case NodeReference reference:

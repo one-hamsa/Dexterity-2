@@ -14,6 +14,7 @@ namespace OneHamsa.Dexterity.Visual
         public static NodeReferenceEditorWindow Open(NodeReference reference)
         {
             var win = GetWindow<NodeReferenceEditorWindow>(reference.name);
+            win.autoRepaintOnSceneChange = true;
             win.reference = reference;
             return win;
         }
