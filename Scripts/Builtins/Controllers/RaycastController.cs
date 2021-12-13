@@ -27,9 +27,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		potentialReceiversA = new List<IRaycastReceiver>(4), 
 		potentialReceiversB = new List<IRaycastReceiver>(4);
 
-        private void Awake()
+        private void OnEnable()
         {
 			pressed.Enable();
+		}
+		private void OnDisable()
+        {
+			pressed.Disable();
 		}
 
         void Update()

@@ -13,18 +13,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public string targetProperty;
         public bool negate;
 
-        ObjectValueAttribute cachedAttribute;
+        ObjectValueAttribute.Context objectCtx;
 
         protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
-            cachedAttribute = ObjectValueAttribute.Initialize(this, nameof(targetProperty));
+            objectCtx = ObjectValueAttribute.CreateContext(this, nameof(targetProperty));
         }
 
         public override int GetValue() 
         {
-            var value = cachedAttribute.GetValue<bool>() ? 1 : 0;
+            var value = objectCtx.GetValue<bool>() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;
         }
     }
