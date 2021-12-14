@@ -232,6 +232,8 @@ namespace OneHamsa.Dexterity.Visual
                             EditorGUILayout.HelpBox("This gate will override everything above it.", MessageType.Warning);
                         }
                     }
+                    GUI.backgroundColor = origColor;
+                    GUI.contentColor = origColor;
 
                     // show field (create new reference if doesnt exist)
                     var fieldProp = gateProp.FindPropertyRelative(nameof(Gate.field));
