@@ -29,9 +29,14 @@ namespace OneHamsa.Dexterity.Visual
             string actualFieldName;
             if (attr.proxy)
             {
-                var parentPath = property.propertyPath.Substring(0, property.propertyPath.LastIndexOf('.'));
-                var parent = property.serializedObject.FindProperty(parentPath);
-                actualFieldName = parent.FindPropertyRelative(attr.fieldName).stringValue;
+                var path = attr.fieldName;
+                var dotPos = property.propertyPath.LastIndexOf('.');
+                if (dotPos != -1)
+                {
+                    var parentPath = property.propertyPath.Substring(0, dotPos);
+                    path = $"{parentPath}.{path}";
+                }
+                actualFieldName = property.serializedObject.FindProperty(path).stringValue;
             }
             else
             {
