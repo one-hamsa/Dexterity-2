@@ -109,6 +109,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			// TODO more, maybe with collider.bounds, just need to understand in what space
         }
 
-        public bool isPressed => pressed.phase == InputActionPhase.Started;
+        bool IRaycastController.isPressed => pressed.phase == InputActionPhase.Started;
+		Vector3 IRaycastController.position => transform.position;
+		Quaternion IRaycastController.rotation => transform.rotation;
     }
 }
