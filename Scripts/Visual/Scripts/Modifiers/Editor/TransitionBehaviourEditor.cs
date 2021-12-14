@@ -67,9 +67,10 @@ namespace OneHamsa.Dexterity.Visual
 
 
             var saveStrategy = false;
-            var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>();
-            var typesNames = types
+            var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>()
                 .Where(t => !t.IsAbstract)
+                .ToArray();
+            var typesNames = types
                 .Select(t => t.ToString())
                 .ToArray();
 
