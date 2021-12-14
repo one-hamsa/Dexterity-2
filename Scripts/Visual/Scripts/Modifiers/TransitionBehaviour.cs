@@ -15,9 +15,11 @@ namespace OneHamsa.Dexterity.Visual
         protected int forceTransitionChangeFrames;
 
         protected IDictionary<int, float> transitionState;
+        private double lastUpdateTime;
 
+        protected abstract double currentTime { get; }
         protected abstract int activeState { get; }
-        protected abstract float stateChangeTime { get; }
+        protected abstract double stateChangeTime { get; }
         protected abstract int[] states { get; }
 
         protected virtual void Awake()
@@ -36,7 +38,9 @@ namespace OneHamsa.Dexterity.Visual
         protected virtual void Update()
         {
             transitionState = transitionStrategy.GetTransition(transitionState,
-                activeState, Time.time - stateChangeTime, out transitionChanged);
+                activeState, currentTime - stateChangeTime, currentTime - lastUpdateTime, out transitionChanged);
+
+            lastUpdateTime = currentTime;
 
             if (forceTransitionChangeFrames > 0)
             {
@@ -48,6 +52,7 @@ namespace OneHamsa.Dexterity.Visual
         protected void InitializeTransitionState()
         {
             transitionState = transitionStrategy.Initialize(states, activeState);
+            lastUpdateTime = currentTime;
         }
 
         /// <summary>

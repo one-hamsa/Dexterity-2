@@ -176,7 +176,7 @@ namespace OneHamsa.Dexterity.Visual
             updating = true;
             try
             {
-                lastUpdateAttempt = Time.time;
+                lastUpdateAttempt = Time.unscaledTime;
 
                 updateOperations = 0;
                 updateFrames = 0;
@@ -198,7 +198,7 @@ namespace OneHamsa.Dexterity.Visual
                     yield break;
                 }
 
-                lastSuccessfulUpdate = Time.time;
+                lastSuccessfulUpdate = Time.unscaledTime;
 
                 // invoke general update
                 RefreshNodeValues();

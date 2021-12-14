@@ -46,7 +46,8 @@ namespace OneHamsa.Dexterity.Visual
         private int[] _states;
 
         protected override int[] states => _states;
-        protected override float stateChangeTime => node.stateChangeTime;
+        protected override double currentTime => node.currentTime;
+        protected override double stateChangeTime => node.stateChangeTime;
         protected override int activeState => node.activeState;
 
 

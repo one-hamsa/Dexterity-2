@@ -74,7 +74,8 @@ namespace OneHamsa.Dexterity.Visual
         
         public int activeState { get; private set; } = -1;
         public int overrideStateId { get; private set; } = -1;
-        public float stateChangeTime { get; private set; }
+        public double stateChangeTime { get; private set; }
+        public virtual double currentTime => Time.unscaledTimeAsDouble;
 
         public event Action onEnabled;
         public event Action<Gate> onGateAdded;
@@ -91,7 +92,7 @@ namespace OneHamsa.Dexterity.Visual
         bool stateDirty;
         FieldsState fieldsState = new FieldsState(32);
         int[] stateFieldIds;
-        float nextStateChangeTime;
+        double nextStateChangeTime;
         int pendingState = -1;
 
         public IEnumerable<Gate> allGates
@@ -148,20 +149,20 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     // add delay to change time
                     var delay = reference.GetDelay(activeState);
-                    nextStateChangeTime = Time.time + delay?.delay ?? 0;
+                    nextStateChangeTime = currentTime + delay?.delay ?? 0;
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
                 stateDirty = false;
             }
             // change to next state (delay is accounted for already)
-            if (nextStateChangeTime <= Time.time && pendingState != -1)
+            if (nextStateChangeTime <= currentTime && pendingState != -1)
             {
                 var oldState = activeState;
 
                 activeState = pendingState;
                 pendingState = -1;
-                stateChangeTime = Time.time;
+                stateChangeTime = currentTime;
 
                 onStateChanged?.Invoke(oldState, activeState);
             }

@@ -104,8 +104,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return base.Initialize(states, currentState);
         }
 
-        public override IDictionary<int, float> GetTransition(IDictionary<int, float> prevState,
-            int currentState, float stateChangeDeltaTime, out bool changed)
+        public override IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
+            int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             estimatedTime = 0f;
             foreach (var kv in prevState)
@@ -115,18 +115,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var time = transitions.GetTime(state, currentState);
                 
                 estimatedTime += Mathf.Lerp(0, 
-                    Mathf.Max(0, time - stateChangeDeltaTime), 
+                    Mathf.Max(0, (float)(time - timeSinceStateChange)),
                     state == currentState ? 1 - value : value);
             }
 
-            return base.GetTransition(prevState, currentState, stateChangeDeltaTime, out changed);
+            return base.GetTransition(prevState, currentState, timeSinceStateChange, deltaTime, out changed);
         }
 
-        protected override float GetStateValue(int state, int currentState, float currentValue)
+        protected override float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
-            
             var newValue = Mathf.Lerp(actualValues[state], state == currentState ? 1 : 0, 
-                Time.deltaTime / estimatedTime);
+                (float)(deltaTime / estimatedTime));
             actualValues[state] = newValue;
 
             return easingCurve.Evaluate(newValue);

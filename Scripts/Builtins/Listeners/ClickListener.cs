@@ -28,6 +28,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public Settings settings = new Settings {};
 
+        public event Action onPressDown;
+        public event Action onPressUp;
+
         Node.OutputField pressedField;
         Node.OutputField hoverField;
         Node.OutputField disabledField;
@@ -67,11 +70,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (!visibleField.GetBooleanValue() || disabledField.GetBooleanValue())
                 return;
 
+            // trigger generic events
+            if (newValue && !oldValue)
+                onPressDown?.Invoke();
+            else if (!newValue && oldValue)
+                onPressUp?.Invoke();
+
             // only handle if unpressed while on object
             if (oldValue && !newValue && hoverField.GetBooleanValue())
-            {
                 Click();
-            }
         }
 
         public void Click() => onClick?.Invoke();

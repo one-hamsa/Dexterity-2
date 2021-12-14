@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return result;
         }
         public virtual IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
-            int currentState, float stateChangeDeltaTime, out bool changed)
+            int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;
             if (checkActivityThreshold && prevState[currentState] > activityThreshold)
@@ -59,7 +59,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var value = kv.Value;
 
                 float current;
-                nextResult[state] = current = GetStateValue(state, currentState, value);
+                nextResult[state] = current = GetStateValue(state, currentState, value, deltaTime);
                 total += current;
             }
             // normalize (in case numbers != 1)
@@ -80,7 +80,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
          * currentState - the current active state (target state)
          * currentValue - the value of state prior to this update
          */
-        protected virtual float GetStateValue(int state, int currentState, float currentValue)
+        protected virtual float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
             return state == currentState ? 1 : 0;
         }

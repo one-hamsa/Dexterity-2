@@ -8,6 +8,6 @@ namespace OneHamsa.Dexterity.Visual
 
         // should be called each frame
         IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
-            int currentState, float stateChangeDeltaTime, out bool changed);
+            int currentState, double timeSinceStateChange, double deltaTime, out bool changed);
     }
 }

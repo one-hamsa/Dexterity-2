@@ -10,10 +10,12 @@ namespace OneHamsa.Dexterity.Visual
     public class TransitionInterpolator : TransitionBehaviour
     {
         private int[] _states = new int[2] { 0, 1 };
-        private float _stateChangeTime;
+        private double _stateChangeTime;
 
+        // time scale won't affect this
+        protected override double currentTime => Time.unscaledTimeAsDouble;
         protected override int[] states => _states;
-        protected override float stateChangeTime => _stateChangeTime;
+        protected override double stateChangeTime => _stateChangeTime;
         protected override int activeState => 1;
 
         public float target { get; private set; }
@@ -32,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
             previousValue = value;
             Restart();
 
-            _stateChangeTime = Time.time;
+            _stateChangeTime = currentTime;
             this.target = Mathf.Clamp01(target);
         }
 
