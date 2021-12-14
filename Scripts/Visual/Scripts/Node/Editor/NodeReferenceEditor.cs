@@ -13,15 +13,17 @@ namespace OneHamsa.Dexterity.Visual
     public class NodeReferenceEditor : Editor
     {
         NodeReference reference;
+        bool foldoutOpen = true;
         public override void OnInspectorGUI()
         {
             reference = target as NodeReference;
             serializedObject.Update();
 
-            ShowFunction();
+            if (ShowFunction(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAsset)), reference))
+                EditorUtility.SetDirty(reference);
             ShowExtends();
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
-                reference);
+                reference, ref foldoutOpen);
             ShowDelays();
             ShowWarnings();
 
@@ -62,13 +64,13 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(reference.delays)));
         }
 
-        private void ShowFunction()
+        internal static bool ShowFunction(SerializedProperty stateFunctionProp, IGateContainer gateContainer)
         {
+            var updated = false;
             var functions = Utils.FindAssetsByType<StateFunctionGraph>().ToList();
             var funcNames = functions.Select(f => f.name).ToArray();
 
-            var stateFunctionProperty = serializedObject.FindProperty(nameof(reference.stateFunctionAsset));
-            var stateFunctionObj = (StateFunctionGraph)stateFunctionProperty.objectReferenceValue;
+            var stateFunctionObj = (StateFunctionGraph)stateFunctionProp.objectReferenceValue;
 
             EditorGUI.BeginChangeCheck();
             var stateFunctionIdx = EditorGUILayout.Popup("State Function",
@@ -77,14 +79,15 @@ namespace OneHamsa.Dexterity.Visual
             if (EditorGUI.EndChangeCheck() && stateFunctionIdx >= 0)
             {
                 var stateFunction = functions[stateFunctionIdx];
-                stateFunctionProperty.objectReferenceValue = stateFunction;
-                EditorUtility.SetDirty(reference);
+                stateFunctionProp.objectReferenceValue = stateFunction;
+                updated = true;
             }
 
-            if (reference.stateFunctionAsset != null && GUILayout.Button("Open State Function Graph"))
+            if (gateContainer.stateFunctionAsset != null && GUILayout.Button("Open State Function Graph"))
             {
-                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(reference.stateFunctionAsset);
+                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(gateContainer.stateFunctionAsset);
             }
+            return updated;
         }
 
         private void ShowExtends()
@@ -93,12 +96,13 @@ namespace OneHamsa.Dexterity.Visual
         }
 
 
-        internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer)
+        internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer, ref bool foldoutOpen)
         {
             if (gateContainer.stateFunctionAsset == null)
                 return false;
 
-            GUILayout.Label("Gates", EditorStyles.boldLabel);
+            if (!(foldoutOpen = EditorGUILayout.Foldout(foldoutOpen, "Gates", EditorStyles.foldoutHeader)))
+                return false;
 
             var updated = false;
             var gatesByField = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();

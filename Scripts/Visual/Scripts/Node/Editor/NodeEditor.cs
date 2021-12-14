@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Visual
     public class NodeEditor : Editor
     {
         Node node;
+        bool foldoutOpen;
 
         private void OnEnable()
         {
@@ -25,9 +26,10 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             ShowChooseReference();
+            ShowChooseFunction();
             ShowChooseInitialState();
             var gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
-                node);
+                node, ref foldoutOpen);
             ShowOverrides();
             ShowDebug();
             ShowWarnings();
@@ -58,6 +60,24 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
         }
+
+        private void ShowChooseFunction()
+        {
+            if (NodeReferenceEditor.ShowFunction(serializedObject.FindProperty(nameof(Node.stateFunctionAsset)), node))
+                EditorUtility.SetDirty(node);
+
+            if (node.stateFunctionAsset == null) 
+            {
+                var functions = new HashSet<StateFunctionGraph>(node.referenceAssets
+                    .Where(a => a != null)
+                    .Select(a => a.stateFunctionAsset));
+                if (functions.Count == 1) {
+                    node.stateFunctionAsset = functions.First();
+                    EditorUtility.SetDirty(node);
+                }
+            }
+        }
+
 
         void ShowOverrides()
         {
@@ -159,6 +179,10 @@ namespace OneHamsa.Dexterity.Visual
             if (node.referenceAssets.Count(a => a != null) == 0)
             {
                 EditorGUILayout.HelpBox("Must select Node Reference(s)", MessageType.Error);
+            }
+            if (node.stateFunctionAsset == null) 
+            {
+                EditorGUILayout.HelpBox($"No state functions selected", MessageType.Error);
             }
         }
 

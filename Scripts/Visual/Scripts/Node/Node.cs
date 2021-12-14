@@ -50,6 +50,7 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
+        public StateFunctionGraph stateFunctionAsset;
         
         [State]
         public string initialState;
@@ -546,9 +547,7 @@ namespace OneHamsa.Dexterity.Visual
 #endregion Overrides
 
 #region Interface Implementation (Editor)
-        public StateFunctionGraph stateFunctionAsset => referenceAssets.Count > 0 
-            ? referenceAssets[0]?.stateFunctionAsset
-            : null;
+        StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;
         Node IGateContainer.node => this;
 #endregion Interface Implementation (Editor)
     }
