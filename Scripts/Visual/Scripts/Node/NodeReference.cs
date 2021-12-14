@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual
             public enum OverrideType {
                 Additive = 1,
                 Subtractive = 2,
-                All = Additive | Subtractive,
+                Always = Additive | Subtractive,
             }
 
             [Field]

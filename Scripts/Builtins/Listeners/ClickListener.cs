@@ -8,11 +8,25 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ClickListener : MonoBehaviour
     {
+        [Serializable]
+        public class Settings {
+            [Field]
+            public string pressedFieldName = "pressed";
+            [Field]
+            public string hoverFieldName = "hover";
+            [Field]
+            public string disabledFieldName = "disabled";
+            [Field]
+            public string visibleFieldName = "visible";
+        }
+
         [SerializeField]
         protected Node node;
 
         [SerializeField]
         public UnityEvent onClick;
+
+        public Settings settings = new Settings {};
 
         Node.OutputField pressedField;
         Node.OutputField hoverField;
@@ -35,10 +49,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         void OnEnable()
         {
-            pressedField = node.GetOutputField("pressed");
-            hoverField = node.GetOutputField("hover");
-            disabledField = node.GetOutputField("disabled");
-            visibleField = node.GetOutputField("visible");
+            pressedField = node.GetOutputField(settings.pressedFieldName);
+            hoverField = node.GetOutputField(settings.hoverFieldName);
+            disabledField = node.GetOutputField(settings.disabledFieldName);
+            visibleField = node.GetOutputField(settings.visibleFieldName);
 
             pressedField.onBooleanValueChanged += HandlePress;
         }

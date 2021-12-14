@@ -6,6 +6,11 @@ namespace OneHamsa.Dexterity.Visual
     {
         public static bool GetBooleanValue(this BaseField field)
         {
+            if (field.definition.type != Node.FieldType.Boolean)
+            {
+                Debug.LogError($"GetBooleanValue: {field.definition.name} is not of type boolean");
+                return default;
+            }
             return field.GetValue() == 1;
         }
         public static string GetEnumValue(this BaseField field)
