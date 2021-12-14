@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Data Definitions
 
         #region Serialized Fields
-        public NodeReference[] referenceAssets;
+        public List<NodeReference> referenceAssets = new List<NodeReference>();
         
         [State]
         public string initialState;
@@ -545,7 +545,7 @@ namespace OneHamsa.Dexterity.Visual
 #endregion Overrides
 
 #region Interface Implementation (Editor)
-        public StateFunctionGraph stateFunctionAsset => referenceAssets.Length > 0 
+        public StateFunctionGraph stateFunctionAsset => referenceAssets.Count > 0 
             ? referenceAssets[0]?.stateFunctionAsset
             : null;
         Node IGateContainer.node => this;
