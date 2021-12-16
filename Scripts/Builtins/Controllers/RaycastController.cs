@@ -21,6 +21,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public Ray ray { get; private set; }
 		public bool didHit { get; private set; }
 		public RaycastHit hit { get; private set; }
+		public bool isLocked => lockedOn != null;
+		private IRaycastReceiver lockedOn;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
 		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
@@ -78,6 +80,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 				didHit = true;
 				foreach (var receiver in closestReceivers)
 				{
+					if (isLocked && lockedOn != receiver)
+						continue;
+						
 					receiver.ReceiveHit(this, hit);
 					lastReceivers.Add(receiver);
 				}
@@ -109,8 +114,25 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			// TODO more, maybe with collider.bounds, just need to understand in what space
         }
 
+		public bool Lock(IRaycastReceiver receiver) 
+		{
+			if (lockedOn != null)
+				return false;
+
+			lockedOn = receiver;
+			return true;
+		}
+		public bool Unlock(IRaycastReceiver receiver)
+		{
+			if (lockedOn != receiver)
+				return false;
+
+			lockedOn = null;
+			return true;
+		}
+
         bool IRaycastController.isPressed => pressed.phase == InputActionPhase.Started;
 		Vector3 IRaycastController.position => transform.position;
-		Quaternion IRaycastController.rotation => transform.rotation;
+		Vector3 IRaycastController.forward => transform.forward;
     }
 }

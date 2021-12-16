@@ -12,21 +12,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         public event Action onDragStarted;
         public event Action onDragEnded;
-        public bool dragging { get; private set; }
-        public Vector3 dragPositionOffset {
-            get {
-                if (!dragging)
-                    return default;
-                return draggingController.position - controllerStartPosition;
-            }
-        }
+        public bool dragging => draggingController != null;
 
         private ClickListener clickListener;
         public readonly HashSet<IRaycastController> controllers = new HashSet<IRaycastController>();
+        public RaycastHit dragStartHit { get; private set; }
+        public IRaycastController draggingController { get; private set; }
         private RaycastHit lastHit;
-        private IRaycastController draggingController;
-        private Vector3 controllerStartPosition;
-        private Quaternion controllerStartRotation;
+        private Vector3 dragStartControllerPosition;
+        private Vector3 dragStartControllerForward;
 
         void Awake()
         {
@@ -35,30 +29,24 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private void OnEnable() {
             clickListener.onPressDown += HandlePressDown;
-            clickListener.onPressUp += HandlePressUp;
         }
 
         private void OnDisable() {
             clickListener.onPressDown -= HandlePressDown;
-            clickListener.onPressUp -= HandlePressUp;
         }
 
         private void HandlePressDown()
         {
             if (controllers.Count > 0) {
-                dragging = true;
-                draggingController = controllers.First();
-                controllerStartPosition = draggingController.position;
-                controllerStartRotation = draggingController.rotation;
-                onDragStarted?.Invoke();
-            }
-        }
-        
-        private void HandlePressUp()
-        {
-            if (dragging) {
-                dragging = false;
-                onDragEnded?.Invoke();
+                var controller = controllers.First();
+
+                if (controller.Lock(this)) {
+                    draggingController = controller;
+                    dragStartHit = lastHit;
+                    dragStartControllerPosition = draggingController.position;
+                    dragStartControllerForward = draggingController.forward;
+                    onDragStarted?.Invoke();
+                }
             }
         }
 
@@ -71,6 +59,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public void ClearHit(IRaycastController controller)
         {
             controllers.Remove(controller);
+        }
+
+        private void Update() {
+            if (dragging && !draggingController.isPressed) {
+                if (!draggingController.Unlock(this)) {
+                    Debug.LogError("Failed to unlock dragging controller");
+                }
+                
+                draggingController = null;
+                onDragEnded?.Invoke();
+            }
         }
     }
 }

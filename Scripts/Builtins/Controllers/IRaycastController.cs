@@ -10,6 +10,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         bool isPressed { get; }
         Vector3 position { get; }
-        Quaternion rotation { get; }
+        Vector3 forward { get; }
+
+        bool Lock(IRaycastReceiver receiver);
+        bool Unlock(IRaycastReceiver receiver);
+        bool isLocked { get; }
     }
 }
