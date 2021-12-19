@@ -101,7 +101,7 @@ namespace OneHamsa.Dexterity.Visual
             if (gateContainer.stateFunctionAsset == null)
                 return false;
 
-            if (!(foldoutOpen = EditorGUILayout.Foldout(foldoutOpen, "Gates", EditorStyles.foldoutHeader)))
+            if (!(foldoutOpen = EditorGUILayout.Foldout(foldoutOpen, $"Gates ({gateContainer.GetGateCount()})", EditorStyles.foldoutHeader)))
                 return false;
 
             var updated = false;

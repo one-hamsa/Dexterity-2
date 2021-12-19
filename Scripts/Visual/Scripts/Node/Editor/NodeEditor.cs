@@ -17,6 +17,8 @@ namespace OneHamsa.Dexterity.Visual
         private void OnEnable()
         {
             debugOpen = Application.isPlaying;
+            
+            foldoutOpen = (target as Node).customGates.Count > 0;
         }
 
         public override void OnInspectorGUI()

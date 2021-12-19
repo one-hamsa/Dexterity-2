@@ -390,6 +390,7 @@ namespace OneHamsa.Dexterity.Visual
             onGatesUpdated?.Invoke();
         }
 
+        public int GetGateCount() => customGates.Count;
         public Gate GetGateAtIndex(int i)
         {
             return customGates[i];

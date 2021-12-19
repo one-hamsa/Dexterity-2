@@ -144,6 +144,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // interface implementations
+        public int GetGateCount() => gates.Count;
         public Gate GetGateAtIndex(int i)
         {
             return gates[i];
