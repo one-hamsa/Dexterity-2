@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IGateContainer
+    public partial class Node : MonoBehaviour, IGateContainer, IProvidesStateFunction
     {
         #region Static Functions
         // mainly for debugging graph problems
@@ -548,6 +548,7 @@ namespace OneHamsa.Dexterity.Visual
 
 #region Interface Implementation (Editor)
         StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;
+        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => stateFunctionAsset;
         Node IGateContainer.node => this;
 #endregion Interface Implementation (Editor)
     }

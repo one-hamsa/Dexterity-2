@@ -5,7 +5,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
-    public abstract class Modifier : TransitionBehaviour
+    public abstract class Modifier : TransitionBehaviour, IProvidesStateFunction
     {
         [SerializeField]
         public Node _node;
@@ -50,6 +50,7 @@ namespace OneHamsa.Dexterity.Visual
         protected override double stateChangeTime => node.stateChangeTime;
         protected override int activeState => node.activeState;
 
+        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => node.stateFunctionAsset;
 
         [Serializable]
         public abstract class PropertyBase

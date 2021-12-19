@@ -5,7 +5,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
-    public class NodeReference : ScriptableObject, IGateContainer
+    public class NodeReference : ScriptableObject, IGateContainer, IProvidesStateFunction
     {
         private static Dictionary<NodeReference, NodeReference> prefabToRuntime
             = new Dictionary<NodeReference, NodeReference>();
@@ -149,6 +149,7 @@ namespace OneHamsa.Dexterity.Visual
             return gates[i];
         }
         StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;
+        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => stateFunctionAsset;
         Node IGateContainer.node => owner;
     }
 }

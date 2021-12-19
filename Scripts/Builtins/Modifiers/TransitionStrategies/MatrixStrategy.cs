@@ -5,6 +5,7 @@ using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
+    [RequiresStateFunction]
     public class MatrixStrategy : BaseStrategy
     {
         [Serializable]

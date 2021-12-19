@@ -78,35 +78,19 @@ namespace OneHamsa.Dexterity.Visual
 
         public static StateFunctionGraph GetStateFunctionFromObject(UnityEngine.Object unityObject)
         {
-            StateFunctionGraph sf;
-            List<string> states = new List<string>();
+            if (unityObject is StateFunctionGraph sf)
+                return sf;
 
-            switch (unityObject)
-            {
-                case Modifier modifier:
-                    sf = modifier.node?.stateFunctionAsset;
-                    break;
+            if (unityObject is IProvidesStateFunction providesSf)
+                return providesSf.stateFunctionAsset;
 
-                case Node node:
-                    sf = node.stateFunctionAsset;
-                    break;
-
-                case NodeReference reference:
-                    sf = reference.stateFunctionAsset;
-                    break;
-
-                case MonoBehaviour monoBehaviour:
-                    var potentialNode = monoBehaviour.GetComponent<Node>();
-                    if (potentialNode == null)
-                        goto default;
-
-                    return GetStateFunctionFromObject(potentialNode);
-
-                default:
-                    return null;
+            if (unityObject is MonoBehaviour monoBehaviour) {
+                    var potentialNode = monoBehaviour.GetComponent<IProvidesStateFunction>();
+                    if (potentialNode != null)
+                        return GetStateFunctionFromObject(potentialNode as UnityEngine.Object);
             }
 
-            return sf;
+            return null;
         }
 
 
