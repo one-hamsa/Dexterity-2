@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public interface IRaycastController
     {
         bool isPressed { get; }
+        bool wasPressedThisFrame { get; }
         Vector3 position { get; }
         Vector3 forward { get; }
 

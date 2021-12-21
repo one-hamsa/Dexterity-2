@@ -23,6 +23,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public RaycastHit hit { get; private set; }
 		public bool isLocked => lockedOn != null;
 		private IRaycastReceiver lockedOn;
+		private int pressStartFrame = -1;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
 		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
@@ -32,10 +33,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private void OnEnable()
         {
 			pressed.Enable();
+			pressed.performed += HandlePressed;
 		}
 		private void OnDisable()
         {
 			pressed.Disable();
+			pressed.performed -= HandlePressed;
+		}
+
+		private void HandlePressed(InputAction.CallbackContext context) 
+		{
+			pressStartFrame = Time.frameCount;
 		}
 
         void Update()
@@ -132,6 +140,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		}
 
         bool IRaycastController.isPressed => pressed.phase == InputActionPhase.Started;
+		bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
 		Vector3 IRaycastController.position => transform.position;
 		Vector3 IRaycastController.forward => transform.forward;
     }
