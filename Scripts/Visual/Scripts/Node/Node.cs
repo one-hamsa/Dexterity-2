@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity.Visual
         public string initialState;
 
         [SerializeField]
-        public List<Gate> customGates;
+        public List<Gate> customGates = new List<Gate>();
 
         [SerializeField]
         public List<OutputOverride> overrides;
