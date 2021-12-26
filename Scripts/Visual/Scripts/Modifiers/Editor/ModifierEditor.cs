@@ -69,6 +69,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
                 {
                     valueFreeze.FreezeValue();
+                    EditorUtility.SetDirty(target);
                 }
             }
 
