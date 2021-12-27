@@ -30,10 +30,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		potentialReceiversA = new List<IRaycastReceiver>(4), 
 		potentialReceiversB = new List<IRaycastReceiver>(4);
 
+		bool ignoreCurrentPress = false;
         private void OnEnable()
         {
-			pressed.Enable();
-			pressed.performed += HandlePressed;
+			pressed.Enable();			
+			pressed.performed += HandlePressed;					
+		}
+		public void IgnoreCurrentPress()
+		{
+			ignoreCurrentPress = true;
 		}
 		private void OnDisable()
         {
@@ -95,6 +100,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 					lastReceivers.Add(receiver);
 				}
 			}
+
+			if(ignoreCurrentPress && pressed.phase == InputActionPhase.Waiting){
+				ignoreCurrentPress = false;
+			}
 		}
 
 		private void OnDrawGizmos() {
@@ -139,8 +148,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			return true;
 		}
 
-        bool IRaycastController.isPressed => pressed.phase == InputActionPhase.Started;
-		bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
+        bool IRaycastController.isPressed => (pressed.phase == InputActionPhase.Started && !ignoreCurrentPress);
+		bool IRaycastController.wasPressedThisFrame => (pressStartFrame == Time.frameCount && !ignoreCurrentPress);
 		Vector3 IRaycastController.position => transform.position;
 		Vector3 IRaycastController.forward => transform.forward;
     }
