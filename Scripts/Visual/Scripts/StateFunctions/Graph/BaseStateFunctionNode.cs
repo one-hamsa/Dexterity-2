@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
 				Debug.LogError($"graph is not state function");
 			}
 
-			if (Application.isPlaying)
+			if (stateFunction.isRuntime)
 				EnableRuntime();
 			else
 				EnableEditor();
