@@ -121,6 +121,15 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        /// <summary>
+        /// Resets manager state (useful for editor)
+        /// </summary>
+        public void Reset() {
+            fieldNames = null;
+            stateNames.Clear();
+            stateFunctions.Clear();
+        }
+
         private void BuildCache()
         {
             fieldNames = new string[settings.fieldDefinitions.Length];

@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public Vector3 scale = Vector3.one;
         }
 
-        protected override void Update()
+        public override void Update()
         {
             base.Update();
 

@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public float scale = 1f;
         }
 
-        protected override void Update()
+        public override void Update()
         {
             base.Update();
 
@@ -44,6 +44,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             var prop = property as Property;
             prop.scale = transform.localScale.x;
-        }
+        } 
     }
 }

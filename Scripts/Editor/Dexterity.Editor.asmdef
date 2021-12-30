@@ -6,7 +6,8 @@
         "Unity.InputSystem",
         "com.alelievr.NodeGraphProcessor.Runtime",
         "com.alelievr.NodeGraphProcessor.Editor",
-        "OneHumus"
+        "OneHumus",
+        "Unity.EditorCoroutines.Editor"
     ],
     "includePlatforms": [
         "Editor"

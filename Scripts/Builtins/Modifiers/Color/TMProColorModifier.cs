@@ -6,19 +6,24 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     [RequireComponent(typeof(TMP_Text))]
     public class TMProColorModifier : ColorModifier, ISupportPropertyFreeze
     {
+        TMP_Text GetTMP_Text() {
+            if (_tmpro == null)
+                _tmpro = GetComponent<TMP_Text>();
+            return _tmpro;
+        }
         TMP_Text _tmpro;
         protected void Start()
         {
-            _tmpro = GetComponent<TMP_Text>();
+            // cache
+            GetTMP_Text();
         }
 
-        protected override void SetColor(Color color) => _tmpro.color = color;
+        protected override void SetColor(Color color) => GetTMP_Text().color = color;
 
         public void FreezeProperty(PropertyBase property)
         {
             var prop = property as Property;
-            var tmpro = GetComponent<TMP_Text>();
-            prop.color = tmpro.color;
+            prop.color = GetTMP_Text().color;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         protected abstract void SetColor(Color color);
 
-        protected override void Update()
+        public override void Update()
         {
             base.Update();
 

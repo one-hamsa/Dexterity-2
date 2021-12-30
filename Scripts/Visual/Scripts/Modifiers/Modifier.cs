@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity.Visual
             public string state;
         }
 
-        protected override void Awake()
+        public override void Awake()
         {
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
@@ -73,7 +73,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void HandleNodeEnabled()
+        public void HandleNodeEnabled()
         {
             HandleStateChange(node.activeState, node.activeState);
 

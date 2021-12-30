@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System;
+using Unity.EditorCoroutines.Editor;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -86,18 +87,25 @@ namespace OneHamsa.Dexterity.Visual
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp);
 
-            var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(overrideStateProp);
-            if (EditorGUI.EndChangeCheck())
-            {
-                node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
+            if (Application.isPlaying) {
+                var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(overrideStateProp);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
+                }
             }
         }
 
         static bool debugOpen;
+        private int speedIndex = -1;
+        private EditorCoroutine coro;
+
         void ShowDebug()
         {
+            ShowPreviewState();
+
             if (!Application.isPlaying)
             {
                 return;
@@ -174,6 +182,36 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
+        }
+
+        private void ShowPreviewState()
+        {
+            var states = node.stateFunctionAsset.GetStates().ToList();
+            var stateNames = states.ToList();
+            states.Insert(0, null);
+            stateNames.Insert(0, "<None>");
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUI.BeginChangeCheck();
+            GUILayout.Label("Preview");
+            var index = EditorGUILayout.Popup("", 0, stateNames.ToArray());
+            var didChange = EditorGUI.EndChangeCheck();
+
+            var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.5f, 2f };
+            var speedsNames = speeds.Select(s => $"x{s}").ToArray();
+            if (speedIndex == -1)
+                speedIndex = Array.IndexOf(speeds, 1f);
+            speedIndex = EditorGUILayout.Popup("", speedIndex, speedsNames, GUILayout.Width(50));
+
+            if (didChange && states[index] != null)
+            {
+                if (coro != null)
+                    EditorCoroutineUtility.StopCoroutine(coro);
+                coro = EditorCoroutineUtility.StartCoroutine(
+                    ModifierEditor.AnimateStateTransition(node, node.GetComponentsInChildren<Modifier>(), states[index]
+                    , speeds[speedIndex]), this);
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         private void ShowWarnings()

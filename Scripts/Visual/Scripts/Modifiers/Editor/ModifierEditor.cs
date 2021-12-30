@@ -4,6 +4,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
+using System.Collections;
+using Unity.EditorCoroutines.Editor;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -14,6 +16,8 @@ namespace OneHamsa.Dexterity.Visual
         bool strategyExists { get; set; }
         Modifier modifier { get; set; }
         List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
+        private EditorCoroutine coro;
+
         private bool propertiesUpdated { get; set; } 
 
         private void OnEnable() 
@@ -217,13 +221,14 @@ namespace OneHamsa.Dexterity.Visual
                         propFreeze.FreezeProperty(modifier.properties[i]);
                     }
 
-                    /*
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
                     {
-
+                        if (coro != null)
+                            EditorCoroutineUtility.StopCoroutine(coro);
+                        coro = EditorCoroutineUtility.StartCoroutine(
+                            AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState), this);
                     }
-                    */
                 }
 
                 if (stateProps.Count > 1)
@@ -268,6 +273,41 @@ namespace OneHamsa.Dexterity.Visual
                 Repaint();
 
             return updated;
+        }
+
+        public static IEnumerator AnimateStateTransition(Node node, Modifier[] modifiers, string state, float speed = 1f)
+        {
+            // setup
+            Manager.instance.RegisterStateFunction(node.stateFunctionAsset);
+            foreach (var modifier in modifiers)
+                modifier.Awake();
+
+            if (node.activeState == -1)
+                node.activeState = Manager.instance.GetStateID(state);
+
+            var startTime = EditorApplication.timeSinceStartup;
+            node.currentTime = startTime;
+            node.stateChangeTime = EditorApplication.timeSinceStartup;
+
+            foreach (var modifier in modifiers)
+                modifier.HandleNodeEnabled();
+
+            node.activeState = Manager.instance.GetStateID(state);
+
+            do {
+                // immitate a frame
+                yield return null;
+                node.currentTime = startTime + (EditorApplication.timeSinceStartup - startTime) * speed;
+
+                // transition
+                foreach (var modifier in modifiers) {
+                    modifier.Update();
+                    EditorUtility.SetDirty(modifier);
+                }
+            } while (modifiers.Any(m => m.IsChanged()));
+
+            // cleanup
+            Manager.instance.Reset();
         }
 
         static void DrawSeparator()

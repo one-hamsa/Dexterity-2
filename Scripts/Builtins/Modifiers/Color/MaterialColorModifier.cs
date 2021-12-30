@@ -10,10 +10,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         public string materialColorName = "_Color";
 
+        Renderer GetRenderer() {
+            if (rend == null)
+                rend = GetComponent<Renderer>();
+            return rend;
+        }
         Renderer rend;
         protected void Start()
         {
-            rend = GetComponent<Renderer>();
+            // cache
+            GetRenderer();
         }
 
         protected override void SetColor(Color color)
@@ -22,7 +28,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (string.IsNullOrEmpty(name))
                 name = "_Color";
 
-            rend.material.SetColor(name, color);
+            GetRenderer().material.SetColor(name, color);
         }
     }
 }

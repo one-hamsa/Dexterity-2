@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public bool IsChanged() => transitionChanged;
 
-        protected virtual void Awake()
+        public virtual void Awake()
         {
             InitializeTransitionState();
         }
@@ -37,7 +37,7 @@ namespace OneHamsa.Dexterity.Visual
 
         }
 
-        protected virtual void Update()
+        public virtual void Update()
         {
             transitionState = transitionStrategy.GetTransition(transitionState,
                 activeState, currentTime - stateChangeTime, currentTime - lastUpdateTime, out transitionChanged);
@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        protected void InitializeTransitionState()
+        public void InitializeTransitionState()
         {
             transitionState = transitionStrategy.Initialize(states, activeState);
             lastUpdateTime = currentTime;

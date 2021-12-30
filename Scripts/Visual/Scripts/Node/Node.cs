@@ -73,10 +73,14 @@ namespace OneHamsa.Dexterity.Visual
         public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
         public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
         
-        public int activeState { get; private set; } = -1;
-        public int overrideStateId { get; private set; } = -1;
-        public double stateChangeTime { get; private set; }
-        public virtual double currentTime => Time.unscaledTimeAsDouble;
+        // don't change this directly, use fields
+        public int activeState = -1;
+        // don't change this directly, use SetStateOverride
+        public int overrideStateId = -1;
+        // don't change this directly
+        public double stateChangeTime;
+        // don't change this directly
+        public double currentTime;
 
         public event Action onEnabled;
         public event Action<Gate> onGateAdded;
@@ -137,6 +141,8 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Update()
         {
+            currentTime = Time.unscaledTimeAsDouble;
+
             if (stateDirty)
             {
                 // someone marked this dirty, check for new state

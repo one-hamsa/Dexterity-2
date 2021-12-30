@@ -8,12 +8,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class SpriteColorModifier : ColorModifier
     {
+        SpriteRenderer GetRenderer() {
+            if (rend == null)
+                rend = GetComponent<SpriteRenderer>();
+            return rend;
+        }
         SpriteRenderer rend;
         protected void Start()
         {
-            rend = GetComponent<SpriteRenderer>();
+            // cache
+            GetRenderer();
         }
 
-        protected override void SetColor(Color color) => rend.color = color;
+        protected override void SetColor(Color color) => GetRenderer().color = color;
     }
 }
