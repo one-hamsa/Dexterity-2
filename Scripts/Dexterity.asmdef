@@ -4,7 +4,6 @@
     "references": [
         "Unity.InputSystem",
         "com.alelievr.NodeGraphProcessor.Runtime",
-        "OneHumus",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
