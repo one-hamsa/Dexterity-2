@@ -86,9 +86,9 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // warnings
-            if (modifier.node != null && modifier.node.referenceAssets.Count(a => a != null) == 0)
+            if (stateFunction == null)
             {
-                EditorGUILayout.HelpBox("Must select Node Reference(s) for node", MessageType.Error);
+                EditorGUILayout.HelpBox("Must select State Function for node", MessageType.Error);
             }
             if (!strategyExists)
             {

@@ -18,15 +18,17 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            if (Manager.instance == null)
+            if (DexteritySettingsProvider.settings == null)
             {
-                EditorGUI.LabelField(position, label.text, "Dexterity Manager not found.");
+                EditorGUI.LabelField(position, label.text, "Dexterity Settings not found.");
                 return;
             }
 
             var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name).ToArray();
 
             var prevIndex = Array.IndexOf(fields, property.stringValue);
+
+            EditorGUI.BeginProperty(position, GUIContent.none, property);
 
             var attr = attribute as FieldAttribute;
             int index;
@@ -45,8 +47,10 @@ namespace OneHamsa.Dexterity.Visual
                 index = EditorGUI.Popup(position, label.text, prevIndex, fields);
             }
 
-            if (index != prevIndex)
+            if (index != prevIndex) {
                 property.stringValue = fields[index];
+            }
+            EditorGUI.EndProperty();
         }
     }
 }

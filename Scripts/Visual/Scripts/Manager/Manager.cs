@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using OneHumus.Data;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -69,6 +68,10 @@ namespace OneHamsa.Dexterity.Visual
         /// <returns>State name</returns>
         public string GetStateAsString(int id)
         {
+            if (id == -1)
+                // special case for -1, which is the empty state
+                return null;
+
             return stateNames[id];
         }
 

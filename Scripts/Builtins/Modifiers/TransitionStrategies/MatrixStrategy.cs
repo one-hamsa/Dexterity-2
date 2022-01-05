@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -81,7 +80,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private float estimatedTime;
         private AnimationCurve easingCurve;
         protected override bool checkActivityThreshold => false;
-        private IDictionary<int, float> actualValues = new ListMap<int, float>();
+        private IDictionary<int, float> actualValues = new Dictionary<int, float>();
 
         public override IDictionary<int, float> Initialize(int[] states, int currentState)
         {

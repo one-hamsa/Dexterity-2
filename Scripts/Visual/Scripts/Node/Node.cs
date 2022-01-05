@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -70,16 +69,20 @@ namespace OneHamsa.Dexterity.Visual
         public NodeReference reference { get; private set; }
 
         // output fields of this node
-        public ListMap<int, OutputField> outputFields { get; private set; } = new ListMap<int, OutputField>();
-        public ListMap<int, OutputOverride> cachedOverrides { get; private set; } = new ListMap<int, OutputOverride>();
+        public Dictionary<int, OutputField> outputFields { get; private set; } = new Dictionary<int, OutputField>();
+        public Dictionary<int, OutputOverride> cachedOverrides { get; private set; } = new Dictionary<int, OutputOverride>();
         
         // don't change this directly, use fields
+        [NonSerialized]
         public int activeState = -1;
         // don't change this directly, use SetStateOverride
+        [NonSerialized]
         public int overrideStateId = -1;
         // don't change this directly
+        [NonSerialized]
         public double stateChangeTime;
         // don't change this directly
+        [NonSerialized]
         public double currentTime;
 
         public event Action onEnabled;
@@ -94,7 +97,7 @@ namespace OneHamsa.Dexterity.Visual
         int dirtyIncrement;
         int overridesIncrement;
 
-        bool stateDirty;
+        bool stateDirty = true;
         FieldsState fieldsState = new FieldsState(32);
         int[] stateFieldIds;
         double nextStateChangeTime;
@@ -141,7 +144,13 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Update()
         {
-            currentTime = Time.unscaledTimeAsDouble;
+            currentTime = 
+                #if UNITY_2020_1_OR_NEWER
+                Time.unscaledTimeAsDouble
+            #else
+                Time.unscaledTime
+            #endif
+            ;
 
             if (stateDirty)
             {
@@ -180,12 +189,6 @@ namespace OneHamsa.Dexterity.Visual
         #region General Methods
         private bool EnsureValidState()
         {
-            if (referenceAssets.Count(a => a != null) == 0)
-            {
-                Debug.LogError("No references assigned", this);
-                return false;
-            }
-
             if (stateFunctionAsset == null)
             {
                 Debug.LogError("No state function assigned", this);

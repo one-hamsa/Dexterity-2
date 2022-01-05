@@ -2,12 +2,13 @@
 using System;
 using System.Linq;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity.Visual
 {
 	[NodeCustomEditor(typeof(ConditionNode))]
-	public class ConditionNodeView : BaseNodeView
+	public class ConditionNodeView : BaseNodeView 
 	{
 		const string kNoInputMessage = "No input(s), node won't run";
 		const string kNotAllOutputsConnectedMessage = "Not all outputs are connected";
@@ -74,11 +75,6 @@ namespace OneHamsa.Dexterity.Visual
 				?.GetEdges()?.Count == 0)
 				AddMessageView(kNoInputMessage, NodeMessageType.Warning);
 		}
-
-		private void HandleFieldChange(SerializedPropertyChangeEvent evt)
-        {
-			RefreshField();
-		}
 		
 		private void RefreshField()
         {
@@ -86,8 +82,7 @@ namespace OneHamsa.Dexterity.Visual
 			owner.SaveGraphToDisk();
 
 			UpdateTitle();
-			nodeTarget.UpdateAllPorts();
-			RefreshPorts();
+			ForceUpdatePorts();
 		}
     }
 }

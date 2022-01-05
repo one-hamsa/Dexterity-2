@@ -1,7 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using System;
-using OneHumus.Data;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -10,8 +9,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected virtual bool checkActivityThreshold => true;
         protected float activityThreshold;
 
-        protected IDictionary<int, float> result = new ListMap<int, float>();
-        protected IDictionary<int, float> nextResult = new ListMap<int, float>();
+        protected IDictionary<int, float> result = new Dictionary<int, float>();
+        protected IDictionary<int, float> nextResult = new Dictionary<int, float>();
+
+        // before .NET 5.0, modifications will break the dictionary enumerator, so this hack is required.
+        // see https://github.com/dotnet/runtime/pull/34667
+        private List<(int key, float value)> changeList = new List<(int key, float value)>();
+
         public virtual IDictionary<int, float> Initialize(int[] states, int currentState) 
         {
             activityThreshold = Manager.instance.settings.GetGlobalFloat("activityThreshold", .999f);
@@ -36,15 +40,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (checkActivityThreshold && prevState[currentState] > activityThreshold)
             {
                 // jump to final state
-                foreach (var kv in prevState)
-                {
-                    var state = kv.Key;
-
+                changeList.Clear();
+                foreach (var state in prevState.Keys) {
                     if (state == currentState)
-                        prevState[state] = 1;
+                        changeList.Add((state, 1));
                     else
-                        prevState[state] = 0;
+                        changeList.Add((state, 0));
                 }
+                foreach (var (key, value) in changeList)
+                    nextResult[key] = value;
 
                 return prevState;
             }
@@ -63,10 +67,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 total += current;
             }
             // normalize (in case numbers != 1)
+            changeList.Clear();
             foreach (var kv in nextResult)
-            {
-                nextResult[kv.Key] = kv.Value / total;
-            }
+                changeList.Add((kv.Key, kv.Value / total));
+            foreach (var (key, value) in changeList)
+                    nextResult[key] = value;
 
             // swap pointers
             (result, nextResult) = (nextResult, result);

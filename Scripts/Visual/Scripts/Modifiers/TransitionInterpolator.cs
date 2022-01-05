@@ -1,4 +1,3 @@
-using OneHumus.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +12,14 @@ namespace OneHamsa.Dexterity.Visual
         private double _stateChangeTime;
 
         // time scale won't affect this
-        protected override double currentTime => Time.unscaledTimeAsDouble;
+        protected override double currentTime => 
+        #if UNITY_2020_1_OR_NEWER
+            Time.unscaledTimeAsDouble
+        #else
+            Time.unscaledTime
+        #endif
+        ;
+        
         protected override int[] states => _states;
         protected override double stateChangeTime => _stateChangeTime;
         protected override int activeState => 1;

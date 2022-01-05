@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using OneHumus.Data;
 using UnityEditor;
 using UnityEngine;
 
@@ -28,7 +27,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             var allStates = sf.GetStates().ToList();
             var rows = property.FindPropertyRelative(nameof(MatrixStrategy.MatrixStrategyData.rows));
-            var stateToProp = new ListMap<(string from, string to), SerializedProperty>();
+            var stateToProp = new Dictionary<(string from, string to), SerializedProperty>();
 
             // validate
             var foundTuples = new List<(string from, string to)>();

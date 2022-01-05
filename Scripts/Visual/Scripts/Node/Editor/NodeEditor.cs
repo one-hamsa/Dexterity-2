@@ -45,9 +45,6 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowChooseInitialState()
         {
-            if (node.referenceAssets.Count(a => a != null) == 0)
-                return;
-
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
         }
 
@@ -93,7 +90,10 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.PropertyField(overrideStateProp);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
+                    if (string.IsNullOrEmpty(overrideStateProp.stringValue))
+                        node.ClearStateOverride();
+                    else
+                        node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
                 }
             }
         }
@@ -186,6 +186,9 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowPreviewState()
         {
+            if (node.stateFunctionAsset == null)
+                return;
+
             var states = node.stateFunctionAsset.GetStates().ToList();
             var stateNames = states.ToList();
             states.Insert(0, null);
@@ -216,10 +219,6 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowWarnings()
         {
-            if (node.referenceAssets.Count(a => a != null) == 0)
-            {
-                EditorGUILayout.HelpBox("Must select Node Reference(s)", MessageType.Error);
-            }
             if (node.stateFunctionAsset == null) 
             {
                 EditorGUILayout.HelpBox($"No state functions selected", MessageType.Error);
