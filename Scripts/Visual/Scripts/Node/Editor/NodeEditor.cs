@@ -99,7 +99,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         static bool debugOpen;
-        private int speedIndex = -1;
+        private static int speedIndex = -1;
         private EditorCoroutine coro;
 
         void ShowDebug()
