@@ -6,29 +6,21 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class MaterialColorModifier : ColorModifier
+    public class MaterialColorModifier : ColorModifier<Renderer>, ISupportPropertyFreeze
     {
         public string materialColorName = "_Color";
-
-        Renderer GetRenderer() {
-            if (rend == null)
-                rend = GetComponent<Renderer>();
-            return rend;
-        }
-        Renderer rend;
-        protected void Start()
-        {
-            // cache
-            GetRenderer();
-        }
+        protected string colorNameOrDefault 
+        => !string.IsNullOrEmpty(materialColorName) ? materialColorName : "_Color";
 
         protected override void SetColor(Color color)
         {
-            var name = materialColorName;
-            if (string.IsNullOrEmpty(name))
-                name = "_Color";
+            component.material.SetColor(colorNameOrDefault, color);
+        }
 
-            GetRenderer().material.SetColor(name, color);
+        public void FreezeProperty(PropertyBase property)
+        {
+            var prop = property as ColorProperty;
+            prop.color = component.material.GetColor(colorNameOrDefault);
         }
     }
 }

@@ -6,21 +6,9 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class RectTransformModifier : Modifier, ISupportValueFreeze, ISupportPropertyFreeze
+    public class RectTransformModifier : ComponentModifier<RectTransform>, ISupportValueFreeze, ISupportPropertyFreeze
     {
         public Vector2 baseSize;
-
-        RectTransform rectTransform;
-
-        RectTransform GetRectTransform() {
-            if (rectTransform == null)
-                rectTransform = GetComponent<RectTransform>();
-            return rectTransform;
-        }
-
-        protected void Start() {
-            GetRectTransform();
-        }
 
         [Serializable]
         public class Property : PropertyBase
@@ -45,18 +33,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 sizeDelta += Vector2.Lerp(Vector2.zero, property.sizeDelta, value);
             }
 
-            GetRectTransform().sizeDelta = sizeDelta;
+            component.sizeDelta = sizeDelta;
         }
 
         public void FreezeProperty(PropertyBase property)
         {
             var prop = property as Property;
-            prop.sizeDelta = GetRectTransform().sizeDelta - baseSize;
+            prop.sizeDelta = component.sizeDelta - baseSize;
         }
 
         public void FreezeValue()
         {
-            baseSize = GetRectTransform().sizeDelta;
+            baseSize = component.sizeDelta;
         }
     }
 }

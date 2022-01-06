@@ -6,15 +6,9 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public abstract class ColorModifier : Modifier
+    [ModifierPropertyDefinition(typeof(ColorProperty))]
+    public abstract class ColorModifier<T> : ComponentModifier<T> where T : Component
     {
-        [Serializable]
-        public class Property : PropertyBase
-        {
-            // custom params
-            public Color color;
-        }
-
         protected abstract void SetColor(Color color);
 
         public override void Update()
@@ -27,7 +21,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             float r = 0, g = 0, b = 0, a = 0;
             foreach (var kv in transitionState)
             {
-                var property = GetProperty(kv.Key) as Property;
+                var property = GetProperty(kv.Key) as ColorProperty;
                 var value = kv.Value;
 
                 r += property.color.r * value;
@@ -38,5 +32,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             SetColor(new Color(r, g, b, a));
         }
+    }
+
+    [Serializable]
+    public class ColorProperty : Modifier.PropertyBase
+    {
+        // custom params
+        public Color color;
     }
 }

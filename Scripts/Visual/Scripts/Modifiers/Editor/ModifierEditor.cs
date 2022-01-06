@@ -148,7 +148,10 @@ namespace OneHamsa.Dexterity.Visual
             var objType = target.GetType();
             while (propType == null)
             {
-                propType = objType.GetNestedType("Property");
+                var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
+                propType = attr?.propertyType
+                    ?? (!string.IsNullOrEmpty(attr.propertyName) ? objType.GetNestedType(attr.propertyName) : null);
+                    
                 objType = objType.BaseType;
             }
 

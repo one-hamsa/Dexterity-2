@@ -5,6 +5,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
+    [ModifierPropertyDefinition("Property")]
     public abstract class Modifier : TransitionBehaviour, IProvidesStateFunction
     {
         [SerializeField]
