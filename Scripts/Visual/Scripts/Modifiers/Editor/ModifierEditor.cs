@@ -280,6 +280,12 @@ namespace OneHamsa.Dexterity.Visual
 
         public static IEnumerator AnimateStateTransition(Node node, Modifier[] modifiers, string state, float speed = 1f)
         {
+            // record all components on modifiers for undo
+            foreach (var modifier in modifiers) {
+                Undo.RegisterCompleteObjectUndo(modifier.GetComponents<Component>().ToArray(), "Editor Transition");
+            }
+            Undo.FlushUndoRecordObjects();
+
             // setup
             Manager.instance.RegisterStateFunction(node.stateFunctionAsset);
             foreach (var modifier in modifiers)
