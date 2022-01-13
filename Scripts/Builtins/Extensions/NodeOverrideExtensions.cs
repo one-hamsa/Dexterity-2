@@ -3,18 +3,6 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    /// <summary>
-    /// helper class that saves node override state and allows to easily clear it
-    /// </summary>
-    public class NodeFieldOverride {
-        public Node node;
-        public NodeReference.Gate gate;
-
-        public void Clear() {
-            node.RemoveGate(gate);
-        }
-    }
-
     public static class NodeOverrideExtensions
     {
         /// <summary>
@@ -22,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         /// </summary>
         /// <param name="fieldId">Field definition ID (from Manager)</param>
         /// <param name="value">Bool value for field</param>
-        public static NodeFieldOverride SetOverride(this Node node, int fieldId, bool value)
+        public static NodeReference.Gate SetOverride(this Node node, int fieldId, bool value)
         {
             var definition = Manager.instance.GetFieldDefinition(fieldId);
             if (definition.type != Node.FieldType.Boolean)
@@ -36,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         /// </summary>
         /// <param name="fieldId">Field definition ID (from Manager)</param>
         /// <param name="value">Enum value for field (should appear in field definition)</param>
-        public static NodeFieldOverride SetOverride(this Node node, int fieldId, string value)
+        public static NodeReference.Gate SetOverride(this Node node, int fieldId, string value)
         {
             var definition = Manager.instance.GetFieldDefinition(fieldId);
             if (definition.type != Node.FieldType.Enum)
@@ -58,7 +46,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         /// </summary>
         /// <param name="fieldId">Field definition ID (from Manager)</param>
         /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
-        public static NodeFieldOverride SetOverrideRaw(this Node node, int fieldId, int value)
+        public static NodeReference.Gate SetOverrideRaw(this Node node, int fieldId, int value)
         {
             var gate = new NodeReference.Gate {
                 outputFieldName = Manager.instance.GetFieldDefinition(fieldId).name,
@@ -67,23 +55,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     constant = value,
                 },
             };
-            
             node.AddGate(gate);
-
-            return new NodeFieldOverride {
-                node = node,
-                gate = gate,
-            };
+            return gate;
         }
 
-        public static NodeFieldOverride SetOverride(this Node.OutputField field, bool value) {
-            return field.node.SetOverride(field.definitionId, value);
+        public static void SetOverride(this Node.OutputField field, bool value) {
+            field.node.SetOverride(field.definitionId, value);
         }
-        public static NodeFieldOverride SetOverride(this Node.OutputField field, string value) {
-            return field.node.SetOverride(field.definitionId, value);
+        public static void SetOverride(this Node.OutputField field, string value) {
+            field.node.SetOverride(field.definitionId, value);
         }
-        public static NodeFieldOverride SetOverrideRaw(this Node.OutputField field, int value) {
-            return field.node.SetOverrideRaw(field.definitionId, value);
+        public static void SetOverrideRaw(this Node.OutputField field, int value) {
+            field.node.SetOverrideRaw(field.definitionId, value);
         }
     }
 }
