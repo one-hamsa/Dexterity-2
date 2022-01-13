@@ -21,32 +21,6 @@ namespace OneHamsa.Dexterity.Visual
         }
         #endregion Static Functions
 
-        #region Data Definitions
-        [Serializable]
-        public class OutputOverride
-        {
-            [Field]
-            public string outputFieldName;
-            [FieldValue(nameof(outputFieldName), proxy = true)]
-            public int value;
-
-            public int outputFieldDefinitionId { get; private set; } = -1;
-
-            public bool Initialize(int fieldId = -1)
-            {
-                if (fieldId != -1)
-                {
-                    outputFieldDefinitionId = fieldId;
-                    return true;
-                }
-                if (string.IsNullOrEmpty(outputFieldName))
-                    return false;
-
-                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
-            }
-        }
-        #endregion Data Definitions
-
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
         public StateFunctionGraph stateFunctionAsset;
@@ -56,9 +30,6 @@ namespace OneHamsa.Dexterity.Visual
 
         [SerializeField]
         public List<Gate> customGates = new List<Gate>();
-
-        [SerializeField]
-        public List<OutputOverride> overrides;
 
         [State(allowEmpty: true)]
         public string overrideState;
@@ -70,7 +41,6 @@ namespace OneHamsa.Dexterity.Visual
 
         // output fields of this node
         public Dictionary<int, OutputField> outputFields { get; private set; } = new Dictionary<int, OutputField>();
-        public Dictionary<int, OutputOverride> cachedOverrides { get; private set; } = new Dictionary<int, OutputOverride>();
         
         // don't change this directly, use fields
         [NonSerialized]
@@ -218,7 +188,6 @@ namespace OneHamsa.Dexterity.Visual
             reference.onGatesUpdated += RestartFields;
 
             RestartFields();
-            CacheOverrides();
             CacheOverrideState();
 
             var defaultStateId = Manager.instance.GetStateID(initialState);
@@ -436,78 +405,6 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Overrides
         /// <summary>
-        /// Sets a boolean override value
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        /// <param name="value">Bool value for field</param>
-        public void SetOverride(int fieldId, bool value)
-        {
-            var definition = Manager.instance.GetFieldDefinition(fieldId);
-            if (definition.type != FieldType.Boolean)
-                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.name}", this);
-
-            SetOverrideRaw(fieldId, value ? 1 : 0);
-        }
-
-        /// <summary>
-        /// Sets an enum override value
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        /// <param name="value">Enum value for field (should appear in field definition)</param>
-        public void SetOverride(int fieldId, string value)
-        {
-            var definition = Manager.instance.GetFieldDefinition(fieldId);
-            if (definition.type != FieldType.Enum)
-                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.name}", this);
-
-            int index;
-            if ((index = Array.IndexOf(definition.enumValues, value)) == -1)
-            {
-                Debug.LogError($"trying to set enum {definition.name} value to {value}, " +
-                    $"but it is not a valid enum value", this);
-                return;
-            }
-
-            SetOverrideRaw(fieldId, index);
-        }
-
-        /// <summary>
-        /// Sets raw override value
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
-        public void SetOverrideRaw(int fieldId, int value)
-        {
-            if (!cachedOverrides.ContainsKey(fieldId))
-            {
-                var newOverride = new OutputOverride();
-                newOverride.Initialize(fieldId);
-
-                overrides.Add(newOverride);
-                CacheOverrides();
-            }
-            var overrideOutput = cachedOverrides[fieldId];
-            overrideOutput.value = value;
-        }
-
-        /// <summary>
-        /// Clears an existing override from a specific output field
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        public void ClearOverride(int fieldId)
-        {
-            if (cachedOverrides.ContainsKey(fieldId))
-            {
-                overrides.Remove(cachedOverrides[fieldId]);
-                CacheOverrides();
-            }
-            else
-            {
-                Debug.LogWarning($"clearing undefined override {name}");
-            }
-        }
-
-        /// <summary>
         /// Overrides state to manual value
         /// </summary>
         /// <param name="fieldId">State ID (from Manager)</param>
@@ -530,31 +427,12 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="fieldId">State ID (from Manager)</param>
         public void ClearStateOverride() => SetStateOverride(-1);
 
-        void CacheOverrides()
-        {
-            cachedOverrides.Clear();
-            foreach (var o in overrides)
-            {
-                o.Initialize();
-                cachedOverrides[o.outputFieldDefinitionId] = o;
-            }
-            overridesIncrement++;
-        }
-
         private void CacheOverrideState()
         {
             if (!string.IsNullOrEmpty(overrideState))
                 SetStateOverride(Manager.instance.GetStateID(overrideState));
         }
-
-#if UNITY_EDITOR
-        // update overrides every frame to allow setting overrides from editor
-        void LateUpdate()
-        {
-            CacheOverrides();
-        }
-#endif
-#endregion Overrides
+        #endregion Overrides
 
 #region Interface Implementation (Editor)
         StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;

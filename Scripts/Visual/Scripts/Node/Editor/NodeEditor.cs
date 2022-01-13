@@ -19,7 +19,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             debugOpen = Application.isPlaying;
             
-            foldoutOpen = (target as Node).customGates.Count > 0;
+            foldoutOpen = true;
         }
 
         public override void OnInspectorGUI()
@@ -30,10 +30,18 @@ namespace OneHamsa.Dexterity.Visual
 
             ShowChooseReference();
             ShowChooseFunction();
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
+
             ShowChooseInitialState();
+            ShowOverrideState();
             var gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
                 node, ref foldoutOpen);
-            ShowOverrides();
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
+            
             ShowDebug();
             ShowWarnings();
             serializedObject.ApplyModifiedProperties();
@@ -79,23 +87,22 @@ namespace OneHamsa.Dexterity.Visual
         }
 
 
-        void ShowOverrides()
+        void ShowOverrideState()
         {
-            var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
-            EditorGUILayout.PropertyField(overridesProp);
+            GUI.enabled = Application.isPlaying;
 
-            if (Application.isPlaying) {
-                var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(overrideStateProp);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (string.IsNullOrEmpty(overrideStateProp.stringValue))
-                        node.ClearStateOverride();
-                    else
-                        node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
-                }
+            var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(overrideStateProp);
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (string.IsNullOrEmpty(overrideStateProp.stringValue))
+                    node.ClearStateOverride();
+                else
+                    node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
             }
+
+            GUI.enabled = true;
         }
 
         static bool debugOpen;
@@ -134,48 +141,23 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             var outputFields = node.outputFields;
-            var overrides = node.cachedOverrides;
-            var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
-            var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
-            {                
-                EditorGUILayout.HelpBox($"{outputFields.Count} output fields{overridesStr}",
-                    outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
-            }
+            EditorGUILayout.HelpBox($"{outputFields.Count} output fields",
+                outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
 
             foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
             {
-                var value = field.GetValueWithoutOverride();
+                var value = field.GetValue();
                 string strValue = value.ToString();
                 if (value == Node.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.definitionId))
-                {
-                    var outputOverride = overrides[field.definitionId];
-                    GUI.color = Color.magenta;
-                    strValue = $"{outputOverride.value} ({StrikeThrough(strValue)})";
-                    unusedOverrides.Remove(outputOverride);
-                }
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(Manager.instance.GetFieldDefinition(field.definitionId).name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
-                EditorGUILayout.EndHorizontal();
-
-                GUI.color = origColor;
-            }
-
-            foreach (var outputOverride in unusedOverrides)
-            {
-                GUI.color = Color.magenta;
-                    
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(outputOverride.outputFieldName);
-                GUILayout.FlexibleSpace();
-                EditorGUILayout.LabelField(outputOverride.value.ToString());
                 EditorGUILayout.EndHorizontal();
 
                 GUI.color = origColor;
@@ -222,6 +204,10 @@ namespace OneHamsa.Dexterity.Visual
             if (node.stateFunctionAsset == null) 
             {
                 EditorGUILayout.HelpBox($"No state functions selected", MessageType.Error);
+            }
+            if (string.IsNullOrEmpty(node.initialState))
+            {
+                EditorGUILayout.HelpBox($"Initial State should be selected", MessageType.Warning);
             }
         }
 
