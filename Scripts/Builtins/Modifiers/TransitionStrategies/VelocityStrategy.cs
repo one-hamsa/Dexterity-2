@@ -20,7 +20,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected override float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
             var targetValue = state == currentState ? 1 : 0;
-            Debug.Log($"smoothtime = {(float)smoothTime} deltatime = {(float)deltaTime}");
             return Mathf.SmoothDamp(currentValue, targetValue, ref currentVelocities[state], (float)smoothTime, maxSpeed,
                 (float)deltaTime);
         }
