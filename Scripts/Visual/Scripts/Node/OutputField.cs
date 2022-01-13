@@ -28,12 +28,15 @@ namespace OneHamsa.Dexterity.Visual
             public Node node { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
+            protected int cachedValueWithoutOverride = emptyFieldValue;
 
             // optimizations
             int dirtyIncrement = -1;
             bool allUpstreamFieldsAreOutputOrProxy;
             bool areUpstreamOutputOrProxyFieldsDirty;
             protected List<Gate> cachedGates = new List<Gate>();
+            OutputOverride cachedOverride = null;
+            int overridesIncrement = -1;
 
             /// register to events like that:
             /// <code>node.GetOutputField("fieldName").OnValueChanged += HandleValueChanged;</code>
@@ -41,6 +44,19 @@ namespace OneHamsa.Dexterity.Visual
             public event Action<OutputField, bool, bool> onBooleanValueChanged;
             public event Action<OutputField, string, string> onEnumValueChanged;
 
+            protected OutputOverride fieldOverride
+            {
+                get 
+                {
+                    if (overridesIncrement == node.overridesIncrement)
+                        return cachedOverride;
+
+                    if (!node.cachedOverrides.TryGetValue(definitionId, out cachedOverride))
+                        cachedOverride = null;
+                    overridesIncrement = node.overridesIncrement;
+                    return cachedOverride;
+                }
+            }
             protected override void Initialize(Node context)
             {
                 base.Initialize(context);
@@ -176,21 +192,32 @@ namespace OneHamsa.Dexterity.Visual
                                 Debug.LogError($"Unknown override type {gate.overrideType} for field {gate.field.definition.name}", node);
                         }
 
-                        cachedValue = result ? 1 : 0;
+                        cachedValueWithoutOverride = result ? 1 : 0;
                     }
                     else if (definition.type == FieldType.Enum)
                     {
                         if (cachedGates.Count > 0)
                             // override: take last one
-                            cachedValue = cachedGates[cachedGates.Count - 1].field.GetValue();
+                            cachedValueWithoutOverride = cachedGates[cachedGates.Count - 1].field.GetValue();
                         else
                             // default enum value is first value
-                            cachedValue = 0;
+                            cachedValueWithoutOverride = 0;
                     }
                 }
                 else
                 {
                     // all fields are output fields and no upstream field changed - no need to update
+                }
+
+                // if there's an override, just use it
+                var outputOverride = fieldOverride;
+                if (outputOverride != null) 
+                {
+                    cachedValue = outputOverride.value;
+                }
+                else
+                {
+                    cachedValue = cachedValueWithoutOverride;
                 }
 
                 if (allUpstreamFieldsAreOutputOrProxy)
@@ -201,12 +228,31 @@ namespace OneHamsa.Dexterity.Visual
                     InvokeEvents(originalValue, cachedValue);
             }
 
+            // for debug purposes only, mostly for editor view (to avoid masking the original field value)
+            public int GetValueWithoutOverride()
+            {
+                return cachedValueWithoutOverride;
+            }
+
             public override string ToString()
             {
                 if (!node)
                     return base.ToString();
 
                 return $"OutputNode {node.name}::{Manager.instance.GetFieldDefinition(definitionId).name} -> {GetValue()}";
+            }
+
+            public void SetOverride(bool value) {
+                node.SetOverride(definitionId, value);
+            }
+            public void SetOverride(string value) {
+                node.SetOverride(definitionId, value);
+            }
+            public void SetOverrideRaw(int value) {
+                node.SetOverrideRaw(definitionId, value);
+            }
+            public void ClearOverride() {
+                node.ClearOverride(definitionId);
             }
         }
     }
