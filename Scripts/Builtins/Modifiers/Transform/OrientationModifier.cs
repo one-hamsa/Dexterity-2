@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // custom params
             public Vector3 position;
             [EulerAngles]
-            public Quaternion rotation;
+            public Quaternion rotation = Quaternion.identity;
         }
 
         public override void Update()
@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var value = kv.Value;
 
                 positionOffset += Vector3.Lerp(Vector3.zero, property.position, value);
-                rotationOffset = Quaternion.Lerp(rotationOffset, property.rotation, value);
+                rotationOffset = Quaternion.Slerp(rotationOffset, property.rotation, value);
             }
 
             transform.localPosition = positionOffset;
