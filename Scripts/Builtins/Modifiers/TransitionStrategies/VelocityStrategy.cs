@@ -9,19 +9,24 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public float smoothTime = 0.167f;
         public float maxSpeed = Mathf.Infinity;
 
-        private float[] currentVelocities; 
+        private Dictionary<int, float> currentVelocities = new Dictionary<int, float>(); 
 
         public override IDictionary<int, float> Initialize(int[] states, int currentState)  
         {
-            currentVelocities = new float[states.Length];
+            foreach (var state in states)
+                currentVelocities[state] = 0f;
+
             return base.Initialize(states, currentState);
         }
 
         protected override float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
             var targetValue = state == currentState ? 1 : 0;
-            return Mathf.SmoothDamp(currentValue, targetValue, ref currentVelocities[state], (float)smoothTime, maxSpeed,
+            var velocity = currentVelocities[state];
+            var result = Mathf.SmoothDamp(currentValue, targetValue, ref velocity, (float)smoothTime, maxSpeed,
                 (float)deltaTime);
+            currentVelocities[state] = velocity;
+            return result;
         }
     }
 }
