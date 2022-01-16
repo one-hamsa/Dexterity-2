@@ -14,9 +14,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public LayerMask layerMask = int.MaxValue;
 		public InputAction pressed;
 
+		public RaycastController[] otherControllers;
+		public bool defaultController;
+
+
 		[Header("Debug")]
 		public Color debugColliderColor = new Color(1f, .5f, 0f);
 		public Color debugHitColor = new Color(1f, .25f, 0f);
+
+		public bool current => (lastControllerPressed == null && defaultController) || lastControllerPressed == this;
 
 		public Ray ray { get; private set; }
 		public bool didHit { get; private set; }
@@ -24,6 +30,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public bool isLocked => lockedOn != null;
 		private IRaycastReceiver lockedOn;
 		private int pressStartFrame = -1;
+		private RaycastController lastControllerPressed;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
 		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
@@ -34,7 +41,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private void OnEnable()
         {
 			pressed.Enable();			
-			pressed.performed += HandlePressed;					
+			pressed.performed += HandlePressed;
 		}
 		public void IgnoreCurrentPress()
 		{
@@ -49,14 +56,32 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		private void HandlePressed(InputAction.CallbackContext context) 
 		{
 			pressStartFrame = Time.frameCount;
+			
+			lastControllerPressed = this;
+			foreach (var other in otherControllers)
+			{
+				other.HandleOtherPressed(this);
+			}
+		}
+
+		private void HandleOtherPressed(RaycastController controller) 
+		{
+			lastControllerPressed = controller;
+			foreach (var receiver in lastReceivers)
+            {
+				receiver?.ClearHit(this);
+			}
 		}
 
         void Update()
         {
+			didHit = false;
+
+			if (!current)
+				return;
+
 			Vector3 origin = transform.position;
 			Vector3 direction = transform.forward;
-
-			didHit = false;
 
 			ray = new Ray(origin, direction);
 			Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);

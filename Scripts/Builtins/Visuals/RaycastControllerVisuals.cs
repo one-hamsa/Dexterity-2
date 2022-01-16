@@ -19,6 +19,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         // Update is called once per frame
         void Update()
         {
+            lineRenderer.enabled = controller.current;
+            
             Vector3 origin = controller.ray.origin;
             lineRenderer.SetPosition(0, origin);
             if (controller.didHit)
