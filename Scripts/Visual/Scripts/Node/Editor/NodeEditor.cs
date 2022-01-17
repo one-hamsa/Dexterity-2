@@ -218,8 +218,15 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (coro != null)
                     EditorCoroutineUtility.StopCoroutine(coro);
+
+                // collect all children modifiers
+                var modifiers = new List<Modifier>();
+                foreach (var modifier in FindObjectsOfType<Modifier>()) {
+                    if (modifier.node == node)
+                        modifiers.Add(modifier);
+                }
                 coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(node, node.GetComponentsInChildren<Modifier>(), states[index]
+                    ModifierEditor.AnimateStateTransition(node, modifiers, states[index]
                     , speeds[speedIndex]), this);
             }
             EditorGUILayout.EndHorizontal();

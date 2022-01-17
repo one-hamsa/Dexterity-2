@@ -278,7 +278,8 @@ namespace OneHamsa.Dexterity.Visual
             return updated;
         }
 
-        public static IEnumerator AnimateStateTransition(Node node, Modifier[] modifiers, string state, float speed = 1f)
+        public static IEnumerator AnimateStateTransition(Node node, IEnumerable<Modifier> modifiers, 
+        string state, float speed = 1f)
         {
             // record all components on modifiers for undo
             foreach (var modifier in modifiers) {
