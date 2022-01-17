@@ -16,9 +16,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         // see https://github.com/dotnet/runtime/pull/34667
         private List<(int key, float value)> changeList = new List<(int key, float value)>();
 
+        private bool jumpedToFinalState;
+
         public virtual IDictionary<int, float> Initialize(int[] states, int currentState) 
         {
             activityThreshold = Manager.instance.settings.GetGlobalFloat("activityThreshold", .999f);
+            jumpedToFinalState = false;
 
             result.Clear();
             var foundState = false;
@@ -40,6 +43,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (checkActivityThreshold && prevState[currentState] > activityThreshold)
             {
                 // jump to final state
+                changed = !jumpedToFinalState;
+                jumpedToFinalState = true;
+
                 changeList.Clear();
                 foreach (var state in prevState.Keys) {
                     if (state == currentState)
@@ -50,10 +56,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 foreach (var (key, value) in changeList)
                     nextResult[key] = value;
 
-                return prevState;
+                // swap pointers
+                (result, nextResult) = (nextResult, result);
+
+                return result;
             }
 
+            jumpedToFinalState = false;
             changed = true;
+
             // write to new pointer
             nextResult.Clear();
             var total = 0f;
