@@ -8,35 +8,26 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "Dexterity/Matrix Definition", order = 100)]
     public class MatrixDefinition : ScriptableObject, IProvidesStateFunction {
         [Serializable]
-        public struct State {
-            [State]
-            public string name;
-
-            public override string ToString() => name;
-        }
-
-        [Serializable]
         public class Row
         {
             [HideInInspector]
             public string name;
-            
-            public State[] from;
-            public State[] to;
+
+            [State]
+            public string[] from;
+            [State]
+            public string[] to;
 
             public float time = .2f;
             public AnimationCurve easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
             [NonSerialized]
             public int[] fromIds, toIds;
-            
-            [NonSerialized]
-            public bool isDefault;
 
             public override string ToString()
             {
-                var fromStr = from.Length == 0 ? "(Any)" : string.Join(" / ", from.Select(f => f.ToString()).ToArray());
-                var toStr = to.Length == 0 ? "(Any)" : string.Join(" / ", to.Select(f => f.ToString()).ToArray());
+                var fromStr = from.Length == 0 ? "(Any)" : string.Join(" / ", from);
+                var toStr = to.Length == 0 ? "(Any)" : string.Join(" / ", to);
                 return $"{fromStr} -> {toStr}";
             }
 
@@ -59,19 +50,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public void Initialize()
         {
-            // add default row in the end
             defaultRow = new Row {
                 fromIds = new int[0],
                 toIds = new int[0],
                 time = defaultTime,
                 easingCurve = defaultEasingCurve,
-                isDefault = true,
             };
 
             foreach (var row in rows)
             {
-                row.fromIds = row.from.Select(s => Manager.instance.GetStateID(s.name)).ToArray();
-                row.toIds = row.to.Select(s => Manager.instance.GetStateID(s.name)).ToArray();
+                row.fromIds = row.from.Select(s => Manager.instance.GetStateID(s)).ToArray();
+                row.toIds = row.to.Select(s => Manager.instance.GetStateID(s)).ToArray();
             }
         }
 
