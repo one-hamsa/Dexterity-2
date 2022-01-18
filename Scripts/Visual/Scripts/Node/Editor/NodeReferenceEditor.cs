@@ -19,8 +19,8 @@ namespace OneHamsa.Dexterity.Visual
             reference = target as NodeReference;
             serializedObject.Update();
 
-            if (ShowFunction(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAsset)), reference))
-                EditorUtility.SetDirty(reference);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAsset)));
+            
             ShowExtends();
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
@@ -62,32 +62,6 @@ namespace OneHamsa.Dexterity.Visual
         private void ShowDelays()
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(reference.delays)));
-        }
-
-        internal static bool ShowFunction(SerializedProperty stateFunctionProp, IGateContainer gateContainer)
-        {
-            var updated = false;
-            var functions = Utils.FindAssetsByType<StateFunctionGraph>().ToList();
-            var funcNames = functions.Select(f => f.name).ToArray();
-
-            var stateFunctionObj = (StateFunctionGraph)stateFunctionProp.objectReferenceValue;
-
-            EditorGUI.BeginChangeCheck();
-            var stateFunctionIdx = EditorGUILayout.Popup("State Function",
-                Array.IndexOf(funcNames, stateFunctionObj?.name), funcNames);
-
-            if (EditorGUI.EndChangeCheck() && stateFunctionIdx >= 0)
-            {
-                var stateFunction = functions[stateFunctionIdx];
-                stateFunctionProp.objectReferenceValue = stateFunction;
-                updated = true;
-            }
-
-            if (gateContainer.stateFunctionAsset != null && GUILayout.Button("Open State Function Graph"))
-            {
-                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(gateContainer.stateFunctionAsset);
-            }
-            return updated;
         }
 
         private void ShowExtends()

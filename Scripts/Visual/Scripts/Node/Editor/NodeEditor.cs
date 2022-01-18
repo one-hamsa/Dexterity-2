@@ -29,7 +29,7 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             ShowChooseReference();
-            ShowChooseFunction();
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAsset)));
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
@@ -68,24 +68,6 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
         }
-
-        private void ShowChooseFunction()
-        {
-            if (NodeReferenceEditor.ShowFunction(serializedObject.FindProperty(nameof(Node.stateFunctionAsset)), node))
-                EditorUtility.SetDirty(node);
-
-            if (node.stateFunctionAsset == null) 
-            {
-                var functions = new HashSet<StateFunctionGraph>(node.referenceAssets
-                    .Where(a => a != null)
-                    .Select(a => a.stateFunctionAsset));
-                if (functions.Count == 1) {
-                    node.stateFunctionAsset = functions.First();
-                    EditorUtility.SetDirty(node);
-                }
-            }
-        }
-
 
         void ShowOverrides()
         {
