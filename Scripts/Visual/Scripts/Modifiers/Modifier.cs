@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity.Visual
         protected override double stateChangeTime => node.stateChangeTime;
         protected override int activeState => node.activeState;
 
-        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => node.stateFunctionAsset;
+        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => node?.stateFunctionAsset;
 
         [Serializable]
         public abstract class PropertyBase
