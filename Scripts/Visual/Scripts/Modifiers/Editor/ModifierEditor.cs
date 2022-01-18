@@ -9,7 +9,7 @@ using Unity.EditorCoroutines.Editor;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [CustomEditor(typeof(Modifier), true)]
+    [CustomEditor(typeof(Modifier), true), CanEditMultipleObjects]
     public class ModifierEditor : TransitionBehaviourEditor
     {
         static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
@@ -27,6 +27,14 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
+            var functions = targets.Select(t => (t as IProvidesStateFunction).stateFunctionAsset).Distinct();
+            if (functions.Count() > 1)
+            {
+                EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state functions.", MessageType.Error);
+                return;
+            }
+            var function = functions.First();
+
             serializedObject.Update();
 
             propertiesUpdated = false;
@@ -70,23 +78,23 @@ namespace OneHamsa.Dexterity.Visual
                     propertiesUpdated |= EditorGUI.EndChangeCheck();
                 }
 
-                if (modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
+                if (targets.Count() == 1 &&
+                    modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
                 {
                     valueFreeze.FreezeValue();
                     EditorUtility.SetDirty(target);
                 }
             }
 
-            var stateFunction = modifier?.node?.stateFunctionAsset;
-            if (stateFunction != null)
+            if (function != null)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                propertiesUpdated |= ShowProperties(stateFunction);
+                propertiesUpdated |= ShowProperties(function);
             }
 
             // warnings
-            if (stateFunction == null)
+            if (function == null)
             {
                 EditorGUILayout.HelpBox("Must select State Function for node", MessageType.Error);
             }
@@ -99,22 +107,20 @@ namespace OneHamsa.Dexterity.Visual
                     .Select(t => t.ToString())
                     .ToArray();
 
-                /*
-                if (string.IsNullOrEmpty(className))
-                {
-                    var currentIdx = Array.IndexOf(typesNames, modifier.node?.referenceAsset?.defaultStrategy);
-                    if (currentIdx != -1)
-                        strategyProp.managedReferenceValue = Activator.CreateInstance(types[currentIdx]);
-                }
-                */
-
                 EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
+            }
+            
+            if (targets.Count() > 1) 
+            {
+                EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
             }
 
             serializedObject.ApplyModifiedProperties();
 
-            if (propertiesUpdated)
-                modifier.ForceTransitionUpdate();
+            if (propertiesUpdated) {
+                foreach (var target in targets)
+                    (target as Modifier).ForceTransitionUpdate();
+            }
         }
 
         private void ShowNode()
@@ -122,6 +128,9 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
             var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
             helpboxStyle.richText = true;
+
+            if (targets.Count() > 1)
+                return;
 
             if (modifier._node == null)
             {
@@ -217,6 +226,9 @@ namespace OneHamsa.Dexterity.Visual
 
                 void UtilityButtons()
                 {
+                    if (targets.Count() > 1)
+                        return; 
+
                     if (modifier is ISupportPropertyFreeze propFreeze
                         && GUILayout.Button(EditorGUIUtility.IconContent("RotateTool On", "Freeze"), GUILayout.Width(25)))
                     {
@@ -292,6 +304,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var modifier in modifiers)
                 modifier.Awake();
 
+            // if it's the first run (didn't run an editor transition before), reset to same state (won't show animation)
             if (node.activeState == -1)
                 node.activeState = Manager.instance.GetStateID(state);
 

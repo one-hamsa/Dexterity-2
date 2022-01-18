@@ -9,7 +9,7 @@ using Unity.EditorCoroutines.Editor;
 namespace OneHamsa.Dexterity.Visual
 {
 
-    [CustomEditor(typeof(Node))]
+    [CustomEditor(typeof(Node)), CanEditMultipleObjects]
     public class NodeEditor : Editor
     {
         Node node;
@@ -24,6 +24,12 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
+            if (targets.Select(t => (t as Node).stateFunctionAsset).Distinct().Count() > 1)
+            {
+                EditorGUILayout.HelpBox("Can't multi-edit nodes with different state functions.", MessageType.Error);
+                return;
+            }
+
             node = target as Node;
 
             serializedObject.Update();
@@ -35,14 +41,20 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
 
             ShowChooseInitialState();
-            var gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
-                node, ref foldoutOpen);
+
+            var gatesUpdated = false;
+            if (targets.Count() <= 1)
+                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
+                    node, ref foldoutOpen);
+
             ShowOverrides();
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
             
-            ShowDebug();
+            if (targets.Count() <= 1)
+                ShowDebug();
+
             ShowWarnings();
             serializedObject.ApplyModifiedProperties();
 
@@ -74,8 +86,12 @@ namespace OneHamsa.Dexterity.Visual
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
 
+            if (targets.Count() > 1)
+                return;
+
             GUI.enabled = Application.isPlaying;
             var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
+
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField(overrideStateProp, new GUIContent("State Override"));
             if (EditorGUI.EndChangeCheck())
@@ -91,6 +107,8 @@ namespace OneHamsa.Dexterity.Visual
         static bool debugOpen;
         private static int speedIndex = -1;
         private EditorCoroutine coro;
+
+        private int previewStateIndex;
 
         void ShowDebug()
         {
@@ -187,7 +205,10 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             GUILayout.Label("Preview");
-            var index = EditorGUILayout.Popup("", 0, stateNames.ToArray());
+            var newIndex = EditorGUILayout.Popup("", previewStateIndex, stateNames.ToArray());
+            if (newIndex != 0)
+                previewStateIndex = newIndex;
+
             var didChange = EditorGUI.EndChangeCheck();
 
             var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.5f, 2f };
@@ -196,7 +217,7 @@ namespace OneHamsa.Dexterity.Visual
                 speedIndex = Array.IndexOf(speeds, 1f);
             speedIndex = EditorGUILayout.Popup("", speedIndex, speedsNames, GUILayout.Width(50));
 
-            if (didChange && states[index] != null)
+            if (didChange && states[previewStateIndex] != null)
             {
                 if (coro != null)
                     EditorCoroutineUtility.StopCoroutine(coro);
@@ -208,7 +229,7 @@ namespace OneHamsa.Dexterity.Visual
                         modifiers.Add(modifier);
                 }
                 coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(node, modifiers, states[index]
+                    ModifierEditor.AnimateStateTransition(node, modifiers, states[previewStateIndex]
                     , speeds[speedIndex]), this);
             }
             EditorGUILayout.EndHorizontal();
@@ -223,6 +244,10 @@ namespace OneHamsa.Dexterity.Visual
             if (string.IsNullOrEmpty(node.initialState))
             {
                 EditorGUILayout.HelpBox($"Initial State should be selected", MessageType.Warning);
+            }
+            if (targets.Count() > 1) 
+            {
+                EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
             }
         }
 
