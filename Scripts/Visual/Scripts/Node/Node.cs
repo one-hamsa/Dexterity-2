@@ -308,7 +308,7 @@ namespace OneHamsa.Dexterity.Visual
             SetDirty();
 
             // make sure output field for gate is initialized
-            GetOutputField(gate.outputFieldDefinitionId);
+            var output = GetOutputField(gate.outputFieldDefinitionId);
 
             try
             {
@@ -319,6 +319,10 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
                 FinalizeGate(gate);
             }
+
+            // cache output field after initializing recursively
+            output.RefreshReferences();
+            output.CacheValue();
         }
         private void FinalizeGate(Gate gate)
         {
@@ -407,7 +411,7 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Fields & Gates
 
         #region State Reduction
-        private FieldsState FillFieldsState()
+        private FieldsState GenerateFieldsState()
         {
             fieldsState.Clear();
 
@@ -428,7 +432,7 @@ namespace OneHamsa.Dexterity.Visual
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return reference.stateFunction.Evaluate(FillFieldsState());
+            return reference.stateFunction.Evaluate(GenerateFieldsState());
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
