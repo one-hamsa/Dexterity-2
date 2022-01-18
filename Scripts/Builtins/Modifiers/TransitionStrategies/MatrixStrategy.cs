@@ -7,98 +7,27 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     [RequiresStateFunction]
     public class MatrixStrategy : BaseStrategy
     {
-        [Serializable]
-        public class MatrixStrategyRow
-        {
-            [State]
-            public string from;
-            [State]
-            public string to;
+        public MatrixDefinition definition;
 
-            public float time;
-
-            [NonSerialized]
-            public int fromId, toId;
-        }
-
-        [Serializable]
-        public class MatrixStrategyData
-        {
-            public MatrixStrategyRow[] rows;
-
-            public void Initialize()
-            {
-                foreach (var transition in rows)
-                {
-                    transition.fromId = Manager.instance.GetStateID(transition.from);
-                    transition.toId = Manager.instance.GetStateID(transition.to);
-                }
-            }
-
-            public float GetTime(string fromState, string toState)
-            {
-                foreach (var transition in rows)
-                {
-                    if (transition.from == fromState && transition.to == toState)
-                        return transition.time;
-                }
-                return default;
-            }
-
-            public float GetTime(int fromState, int toState)
-            {
-                foreach (var transition in rows)
-                {
-                    if (transition.fromId == fromState && transition.toId == toState)
-                        return transition.time;
-                }
-                return default;
-            }
-
-            public void SetTime(string fromState, string toState, float time)
-            {
-                foreach (var transition in rows)
-                {
-                    if (transition.from == fromState && transition.to == toState)
-                    {
-                        transition.time = time;
-                        break;
-                    }
-                }
-            }
-        }
-
-        public enum EasingStyle
-        {
-            EaseInOut,
-            Linear,
-        }
-
-        public MatrixStrategyData transitions;
-
-        public EasingStyle easing;
-        private float estimatedTime;
-        private AnimationCurve easingCurve;
+        private int lastState = -1;
+        private MatrixDefinition.Row lastMatrixRow;
+        private AnimationCurve lastEasingCurve;
+        private float lastTotalTransitionTime;
+        private double timeSinceRowChange;
         protected override bool checkActivityThreshold => false;
-        private IDictionary<int, float> actualValues = new Dictionary<int, float>();
+        private IDictionary<int, float> transitionStartValues = new Dictionary<int, float>();
 
         public override IDictionary<int, float> Initialize(int[] states, int currentState)
         {
-            transitions.Initialize();
-
-            switch (easing)
-            {
-                case EasingStyle.EaseInOut:
-                    easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-                    break;
-                case EasingStyle.Linear:
-                    easingCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-                    break;
-            }
+            definition.Initialize();
+            lastMatrixRow = definition.GetRow(lastState, currentState);
+            lastEasingCurve = lastMatrixRow.easingCurve;
+            lastTotalTransitionTime = lastMatrixRow.time;
+            lastState = currentState;
 
             foreach (var state in states)
             {
-                actualValues[state] = state == currentState ? 1 : 0;
+                transitionStartValues[state] = state == currentState ? 1 : 0;
             }
 
             return base.Initialize(states, currentState);
@@ -107,28 +36,47 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
-            estimatedTime = 0f;
-            foreach (var kv in prevState)
+            // manually track state changes
+            if (currentState != lastState)
             {
-                var state = kv.Key;
-                var value = actualValues[state];
-                var time = transitions.GetTime(state, currentState);
-                
-                estimatedTime += Mathf.Lerp(0, 
-                    Mathf.Max(0, (float)(time - timeSinceStateChange)),
-                    state == currentState ? 1 - value : value);
-            }
+                var newRow = definition.GetRow(lastState, currentState);
+                // compare to matrix "row" - if it's the same row, don't restart transition
+                if (newRow != lastMatrixRow) {
+                    // manually save time since transition started
+                    timeSinceRowChange = timeSinceStateChange;
 
-            return base.GetTransition(prevState, currentState, timeSinceStateChange, deltaTime, out changed);
+                    // update values according to new row
+                    lastEasingCurve = newRow.easingCurve;
+                    var time = newRow.time;
+                    // calculate how much time needed for this row's transition, maybe we're already in the middle of it
+                    var timeDiff = Mathf.Max(0, (float)(time - timeSinceStateChange));
+                    lastTotalTransitionTime = timeDiff * (1 - prevState[currentState]);
+
+                    // save start values for all states to allow transitioning in the middle
+                    foreach (var kv in prevState)
+                    {
+                        transitionStartValues[kv.Key] = kv.Value;
+                    }
+
+                    lastMatrixRow = newRow;
+                    lastState = currentState;
+                }
+            }
+            // manually progress clock
+            timeSinceRowChange += deltaTime;
+
+            // note: send lastState and timeSinceRowChange instead of currentState and timeSinceStateChange
+            return base.GetTransition(prevState, lastState, timeSinceRowChange, deltaTime, out changed);
         }
 
         protected override float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
-            var newValue = Mathf.Lerp(actualValues[state], state == currentState ? 1 : 0, 
-                (float)(deltaTime / estimatedTime));
-            actualValues[state] = newValue;
-
-            return easingCurve.Evaluate(newValue);
+            // calculate the fraction of time elapsed since the row had changed (use InverseLerp to avoid NaNs)
+            var timeFraction = Mathf.InverseLerp(0, lastTotalTransitionTime, (float)timeSinceRowChange);
+            // now lerp between the start value and 0/1 depending on the easing curve
+            return Mathf.Lerp(transitionStartValues[state], 
+                state == currentState ? 1 : 0, 
+                lastEasingCurve.Evaluate(timeFraction));
         }
     }
 }

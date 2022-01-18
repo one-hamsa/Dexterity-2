@@ -80,7 +80,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // normalize (in case numbers != 1)
             changeList.Clear();
             foreach (var kv in nextResult)
-                changeList.Add((kv.Key, kv.Value / total));
+                changeList.Add((kv.Key, Mathf.InverseLerp(0, total, kv.Value)));
             foreach (var (key, value) in changeList)
                     nextResult[key] = value;
 
