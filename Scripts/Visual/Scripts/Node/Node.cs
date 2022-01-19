@@ -69,8 +69,8 @@ namespace OneHamsa.Dexterity.Visual
         public NodeReference reference { get; private set; }
 
         // output fields of this node
-        public Dictionary<int, OutputField> outputFields { get; private set; } = new Dictionary<int, OutputField>();
-        public Dictionary<int, OutputOverride> cachedOverrides { get; private set; } = new Dictionary<int, OutputOverride>();
+        public Dictionary<int, OutputField> outputFields = new Dictionary<int, OutputField>();
+        public Dictionary<int, OutputOverride> cachedOverrides = new Dictionary<int, OutputOverride>();
         
         // don't change this directly, use fields
         [NonSerialized]
@@ -140,6 +140,9 @@ namespace OneHamsa.Dexterity.Visual
                 output.Finalize(this);
             }
             outputFields.Clear();
+
+            if (reference != null)
+                Destroy(reference);
         }
 
         protected virtual void Update()
@@ -199,12 +202,14 @@ namespace OneHamsa.Dexterity.Visual
 
         public void Initialize()
         {
-            reference = ScriptableObject.CreateInstance<NodeReference>();
-            reference.owner = this;
-            reference.name = $"{name} (Live Reference)";
-            reference.stateFunctionAsset = stateFunctionAsset;
-            reference.extends.AddRange(referenceAssets);
-            reference.Initialize(customGates);
+            if (reference == null) {
+                reference = ScriptableObject.CreateInstance<NodeReference>();
+                reference.owner = this;
+                reference.name = $"{name} (Live Reference)";
+                reference.stateFunctionAsset = stateFunctionAsset;
+                reference.extends.AddRange(referenceAssets);
+                reference.Initialize(customGates);
+            }
 
             stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
@@ -229,6 +234,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             activeState = defaultStateId;
+            stateDirty = true;
         }
 
         public void Uninitialize()
@@ -264,6 +270,11 @@ namespace OneHamsa.Dexterity.Visual
             // re-register all gates
             foreach (var gate in allGates.ToArray())  // might manipulate gates within the loop
                 InitializeGate(gate);
+            // cache all outputs
+            foreach (var output in outputFields.Values) {
+                output.RefreshReferences();
+                output.CacheValue();
+            }
         }
 
         void InitializeFields(int definitionId, IEnumerable<BaseField> fields)
@@ -301,14 +312,16 @@ namespace OneHamsa.Dexterity.Visual
 
         private void InitializeGate(Gate gate)
         {
-            if (Application.isPlaying && !gate.Initialize())
+            if (Application.isPlaying && !gate.Initialize()) {
                 // invalid gate, don't add
+                Debug.LogWarning($"{name}: {gate} is invalid, not adding", this);
                 return;
+            }
 
             SetDirty();
 
             // make sure output field for gate is initialized
-            var output = GetOutputField(gate.outputFieldDefinitionId);
+            GetOutputField(gate.outputFieldDefinitionId);
 
             try
             {
@@ -319,10 +332,6 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
                 FinalizeGate(gate);
             }
-
-            // cache output field after initializing recursively
-            output.RefreshReferences();
-            output.CacheValue();
         }
         private void FinalizeGate(Gate gate)
         {

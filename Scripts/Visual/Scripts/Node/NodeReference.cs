@@ -29,13 +29,8 @@ namespace OneHamsa.Dexterity.Visual
 
             public int outputFieldDefinitionId { get; private set; } = -1;
 
-            public bool Initialize(int fieldId = -1)
+            public bool Initialize()
             {
-                if (fieldId != -1)
-                {
-                    outputFieldDefinitionId = fieldId;
-                    return true;
-                }
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
