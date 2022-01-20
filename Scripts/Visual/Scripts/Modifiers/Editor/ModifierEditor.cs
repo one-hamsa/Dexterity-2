@@ -300,6 +300,7 @@ namespace OneHamsa.Dexterity.Visual
             Undo.FlushUndoRecordObjects();
 
             // setup
+            Manager.instance.Initialize();
             Manager.instance.RegisterStateFunction(node.stateFunctionAsset);
             foreach (var modifier in modifiers)
                 modifier.Awake();
@@ -333,7 +334,7 @@ namespace OneHamsa.Dexterity.Visual
             } while (modifiers.Any(m => m.IsChanged()));
 
             // cleanup
-            Manager.instance.Reset();
+            Manager.instance.Uninitialize();
         }
 
         static void DrawSeparator()

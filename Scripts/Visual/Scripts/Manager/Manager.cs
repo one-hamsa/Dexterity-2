@@ -134,28 +134,36 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
-        /// Resets manager state (useful for editor)
+        /// Initializes the manager. Builds cache for runtime uses
         /// </summary>
-        public void Reset() {
-            fieldNames = null;
-            stateNames.Clear();
-            
-            foreach (var sf in stateFunctions.Values)
-                Destroy(sf);
-            stateFunctions.Clear();
-        }
-
-        private void BuildCache()
+        public void Initialize()
         {
             fieldNames = new string[settings.fieldDefinitions.Length];
             for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
                 fieldNames[i] = settings.fieldDefinitions[i].name;
         }
 
+        /// <summary>
+        /// Uninitializes manager state (useful for editor)
+        /// </summary>
+        public void Uninitialize() {
+            fieldNames = null;
+            stateNames.Clear();
+            
+            foreach (var sf in stateFunctions.Values) {
+                // call DestroyImmediate if in edit mode
+                if (!Application.isPlaying)
+                    DestroyImmediate(sf);
+                else
+                    Destroy(sf);
+            }
+            stateFunctions.Clear();
+        }
+
         protected void Awake()
         {
-            // build cache first - important, builds runtime data structures
-            BuildCache();
+            // initialize first - important, builds runtime data structures
+            Initialize();
 
             // create graph instance
             graph = gameObject.AddComponent<Graph>();
@@ -164,6 +172,10 @@ namespace OneHamsa.Dexterity.Visual
         {
             // enable on start to let all nodes register to graph during OnEnable
             graph.started = true;
+        }
+
+        protected void OnDestroy() {
+            Uninitialize();
         }
     }
 }
