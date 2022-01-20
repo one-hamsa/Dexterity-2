@@ -141,8 +141,10 @@ namespace OneHamsa.Dexterity.Visual
             }
             outputFields.Clear();
 
-            if (reference != null)
+            if (reference != null) {
                 Destroy(reference);
+                reference = null;
+            }
         }
 
         protected virtual void Update()

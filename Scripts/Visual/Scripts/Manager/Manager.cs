@@ -14,9 +14,11 @@ namespace OneHamsa.Dexterity.Visual
 
         public DexteritySettings settings;
 
-        private string[] fieldNames;
-        private ListSet<string> stateNames = new ListSet<string>(32);
-        private HashSet<StateFunctionGraph> stateFunctions = new HashSet<StateFunctionGraph>();
+        public ListSet<string> stateNames = new ListSet<string>(32);
+        [NonSerialized]
+        public string[] fieldNames;
+        private Dictionary<StateFunctionGraph, StateFunctionGraph> stateFunctions
+            = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -112,16 +114,23 @@ namespace OneHamsa.Dexterity.Visual
         public void SetDirty(BaseField field) => graph.SetDirty(field);
 
         /// <summary>
-        /// Registers a state function, useful for managing global state IDs
+        /// Registers a state function, adding global state IDs
         /// </summary>
-        /// <param name="stateFunction">State Function to register</param>
-        public void RegisterStateFunction(StateFunctionGraph stateFunction)
+        /// <param name="stateFunction">State Function asset to register</param>
+        /// <returns>State Function runtime instance</returns>
+        public StateFunctionGraph RegisterStateFunction(StateFunctionGraph asset)
         {
-            if (stateFunctions.Add(stateFunction))
-            {
-                foreach (var state in stateFunction.GetStates())
+            if (!stateFunctions.TryGetValue(asset, out var runtime)) {
+                stateFunctions[asset] = runtime = Instantiate(asset);
+
+                // first add the states so Initialize() can use them
+                foreach (var state in runtime.GetStates())
                     stateNames.Add(state);
+
+                // then initialize all nodes
+                runtime.Initialize();
             }
+            return runtime;
         }
 
         /// <summary>
@@ -130,6 +139,9 @@ namespace OneHamsa.Dexterity.Visual
         public void Reset() {
             fieldNames = null;
             stateNames.Clear();
+            
+            foreach (var sf in stateFunctions.Values)
+                Destroy(sf);
             stateFunctions.Clear();
         }
 

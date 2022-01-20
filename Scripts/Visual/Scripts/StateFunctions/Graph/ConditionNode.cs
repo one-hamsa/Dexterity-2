@@ -29,7 +29,7 @@ namespace OneHamsa.Dexterity.Visual
 		[NonSerialized]
 		private List<SerializableEdge> cachedOutputEdges;
 
-        protected override void EnableRuntime() 
+        public override void Initialize() 
 		{
 			definitionId = Manager.instance.GetFieldID(fieldName);
 			if (definitionId == -1)

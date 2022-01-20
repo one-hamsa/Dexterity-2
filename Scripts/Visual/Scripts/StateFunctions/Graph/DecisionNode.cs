@@ -15,15 +15,11 @@ namespace OneHamsa.Dexterity.Visual
 
 		private int stateId = -1;
 
-        protected override void EnableRuntime()
+        public override void Initialize()
 		{ 
-			base.EnableRuntime();
-
 			stateId = Manager.instance.GetStateID(stateName);
 			if (stateId == -1)
-			{
 				Debug.LogError($"state id == -1 (state {stateName})"); 
-			}
 		}
 
 		protected override void ProcessWhenTrue()

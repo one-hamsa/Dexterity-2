@@ -8,12 +8,7 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : BaseGraph
     {
-        private static StateFunctionGraph lastPrefab;
-        private static Dictionary<StateFunctionGraph, StateFunctionGraph> prefabToRuntime
-            = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
-
-        public bool isRuntime => source != null;
-        public StateFunctionGraph source { get; private set; }
+        public bool initialized { get; private set; }
         internal FieldsState fieldsState { get; private set; }
         internal int evaluationResult { get; set; } = -1;
 
@@ -21,18 +16,27 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override void OnEnable()
         {
-            // HACK: save prefab
-            //. (see https://forum.unity.com/threads/prefab-with-reference-to-itself.412240/)
-            source = lastPrefab;
-            lastPrefab = null;
-
-            if (isRuntime)
-                Manager.instance.RegisterStateFunction(this);
-
             base.OnEnable();
             processor = new ProcessGraphProcessor(this);
         }
 
+        /// <summary>
+        /// Initializes runtime data for nodes (IDs etc.)
+        /// </summary>
+        public void Initialize() {
+            if (initialized) {
+                Debug.LogWarning($"State Function {name} already initialized", this);
+                return;
+            }
+            foreach (var node in nodes)
+            {
+                if (!(node is BaseStateFunctionNode nodeBase))
+                    continue;
+
+                nodeBase.Initialize();
+            }
+            initialized = true;
+        }
 
         public IEnumerable<int> GetFieldIDs()
         {
@@ -74,29 +78,6 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var stateName in GetStates())
                 yield return Manager.instance.GetStateID(stateName);
-        }
-
-        public StateFunctionGraph GetRuntimeInstance()
-        {
-            if (isRuntime)
-            {
-                Debug.LogWarning("asking for runtime but we're already a runtime instance", this);
-                return this;
-            }
-
-            if (!prefabToRuntime.TryGetValue(this, out var runtime))
-            {
-                lastPrefab = this;
-                prefabToRuntime[this] = runtime = Instantiate(this);
-            }
-
-            return runtime;
-        }
-
-        private void OnDestroy()
-        {
-            if (isRuntime)
-                prefabToRuntime.Remove(this);
         }
 
         public string errorString;

@@ -96,7 +96,7 @@ namespace OneHamsa.Dexterity.Visual
 
             if ((_node = TryFindNode()) == null)
             {
-                Debug.LogWarning($"Node not found for modifier ({gameObject.name})");
+                Debug.LogError($"Node not found for modifier ({gameObject.name})");
                 enabled = false;
                 return;
             }

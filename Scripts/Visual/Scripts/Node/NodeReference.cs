@@ -76,7 +76,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public void Initialize(IEnumerable<Gate> gates)
         {
-            stateFunction = stateFunctionAsset.GetRuntimeInstance();
+            stateFunction = Manager.instance.RegisterStateFunction(stateFunctionAsset);
 
             // copy from parents
             foreach (var parent in extends)

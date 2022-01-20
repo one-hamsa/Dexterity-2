@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual
 		protected StateFunctionGraph stateFunction { get; private set; }
 		public bool shouldExecute { get; private set; }
 
-        protected sealed override void Enable()
+        protected override void Enable()
 		{
 			base.Enable();
 
@@ -23,12 +23,9 @@ namespace OneHamsa.Dexterity.Visual
 			{
 				Debug.LogError($"graph is not state function");
 			}
-
-			if (stateFunction.isRuntime)
-				EnableRuntime();
-			else
-				EnableEditor();
 		}
+
+		public abstract void Initialize();
 
 		protected sealed override void Process()
 		{
@@ -38,9 +35,6 @@ namespace OneHamsa.Dexterity.Visual
 				ProcessWhenTrue();
             }
 		}
-
-		protected virtual void EnableRuntime() { }
-		protected virtual void EnableEditor() { }
 		 
 		protected virtual void ProcessAlways() { }
 		protected abstract void ProcessWhenTrue();
