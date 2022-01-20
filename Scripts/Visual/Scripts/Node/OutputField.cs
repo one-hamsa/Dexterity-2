@@ -98,6 +98,11 @@ namespace OneHamsa.Dexterity.Visual
             /// for instance, if the output field is dependent only on other output fields,
             /// this will be marked by this method so that we can avoid recalculating the output value
             /// every graph update cycle (and instead track the changes using output field events).
+            ///
+            /// NOTE: unfortunately this optimization cannot be (easily) implemented on any field, 
+            /// since fields can have recursive references to other fields, so tracking the changes
+            /// of those fields might be very tricky. instead, we ask for the field's GetValue()
+            /// on our CacheValue() (if the optimization is not possible).
             /// </summary>
             public override void RefreshReferences()
             {
