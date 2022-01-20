@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public Color debugColliderColor = new Color(1f, .5f, 0f);
 		public Color debugHitColor = new Color(1f, .25f, 0f);
 
-		public bool current => (lastControllerPressed == null && defaultController) || lastControllerPressed == this;
+		public bool current => enabled && ((lastControllerPressed == null && defaultController) || lastControllerPressed == this);
 
 		public Ray ray { get; private set; }
 		public bool didHit { get; private set; }
