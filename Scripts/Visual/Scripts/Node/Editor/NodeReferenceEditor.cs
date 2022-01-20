@@ -75,8 +75,17 @@ namespace OneHamsa.Dexterity.Visual
             if (gateContainer.stateFunctionAsset == null)
                 return false;
 
-            if (!(foldoutOpen = EditorGUILayout.Foldout(foldoutOpen, $"Gates ({gateContainer.GetGateCount()})", EditorStyles.foldoutHeader)))
+            var rect = EditorGUILayout.BeginVertical();
+            EditorGUI.BeginProperty(rect, GUIContent.none, gatesProp);
+
+            foldoutOpen = EditorGUILayout.Foldout(foldoutOpen, $"Gates ({gateContainer.GetGateCount()})", EditorStyles.foldoutHeader);
+
+            EditorGUI.EndProperty();
+            EditorGUILayout.EndVertical();
+
+            if (!foldoutOpen) {
                 return false;
+            }
 
             var updated = false;
             var gatesByField = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
@@ -158,7 +167,9 @@ namespace OneHamsa.Dexterity.Visual
                     // TODO check if manager exists!
                     var fields = gateContainer.stateFunctionAsset.GetFieldNames().ToArray();
 
-                    EditorGUILayout.BeginHorizontal();
+                    rect = EditorGUILayout.BeginHorizontal();
+                    EditorGUI.BeginProperty(rect, GUIContent.none, outputProp);
+                    
                     if (!string.IsNullOrEmpty(kv.Key))
                     {
                         GUI.backgroundColor = Color.clear;
@@ -195,6 +206,7 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         deleteIndex = i;
                     }
+                    EditorGUI.EndProperty();
                     EditorGUILayout.EndHorizontal();
 
                     if (definition.type == Node.FieldType.Boolean) {
@@ -213,9 +225,9 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.backgroundColor = origColor;
                     GUI.contentColor = origColor;
 
-                    // show field (create new reference if doesnt exist)
                     var fieldProp = gateProp.FindPropertyRelative(nameof(Gate.field));
                     var fieldName = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName)).stringValue;
+
                     if (ShowReference(fieldName, fieldProp))
                         updateIndex = i;
 
@@ -268,10 +280,12 @@ namespace OneHamsa.Dexterity.Visual
         {
             bool updated = false;
 
+            var rect = EditorGUILayout.BeginVertical();
+            EditorGUI.BeginProperty(rect, GUIContent.none, property);
+
             string className = Utils.GetClassName(property);
             var types = TypeCache.GetTypesDerivedFrom<BaseField>()
-                .Where(t => (bool)t.GetField(nameof(BaseField.showInInspector), 
-                    BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy).GetValue(null))
+                .Where(t => t != typeof(Node.OutputField))
                 .ToArray();
             var fieldTypesNames = types
                 .Select(t => t.ToString())
@@ -289,6 +303,9 @@ namespace OneHamsa.Dexterity.Visual
                 DrawFieldValue(field.definition, field.GetValue(), true);
             }
             EditorGUILayout.EndHorizontal();
+
+            EditorGUI.EndProperty();
+            EditorGUILayout.EndVertical();
 
             if (EditorGUI.EndChangeCheck())
             {
