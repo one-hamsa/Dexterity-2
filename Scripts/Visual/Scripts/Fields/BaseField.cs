@@ -116,11 +116,6 @@ namespace OneHamsa.Dexterity.Visual
         public virtual void CacheValue() { }
 
         /// <summary>
-        /// should the node field show in the list of available node fields?
-        /// </summary>
-        public static bool showInInspector = true;
-
-        /// <summary>
         /// special exception that is used to handle initialization problems 
         /// (missing references, invalid parameters etc.)
         /// </summary>

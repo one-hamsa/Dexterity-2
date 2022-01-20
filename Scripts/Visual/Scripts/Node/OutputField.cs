@@ -19,67 +19,97 @@ namespace OneHamsa.Dexterity.Visual
             Enum = 2,
         }
 
-        // stores outputs for the current node
+        /// <summary>
+        /// Output Field stores field outputs for nodes and allows easy API access to the field status.
+        /// </summary>
         public class OutputField : BaseField
         {
-            // hide
-            public static new bool showInInspector = false;
-
             public Node node { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
             protected int cachedValueWithoutOverride = emptyFieldValue;
 
-            // optimizations
-            int dirtyIncrement = -1;
+            #region Optimization Fields
+            // tracks the last gates dirty increment from the node, if it's different we need to update
+            int gatesDirtyIncrement = -1;
+            // marks if the output node is dependent only on other output nodes (or proxies for outputs)
             bool allUpstreamFieldsAreOutputOrProxy;
+            // in case the output node is dependent only on other output nodes, tracks if those are dirty
             bool areUpstreamOutputOrProxyFieldsDirty;
+            // saves a list of all gates of this output field
             protected List<Gate> cachedGates = new List<Gate>();
+            // saves a reference to an override to avoid unnecessary lookup
             OutputOverride cachedOverride = null;
-            int overridesIncrement = -1;
+            // tracks the last overrides dirty increment from the node, if it's different we need to update
+            int overridesDirtyIncrement = -1;
+            #endregion
 
-            /// register to events like that:
+            /// <summary>
+            /// Invoked when output's value is changed.
+            /// Register to events like that:
             /// <code>node.GetOutputField("fieldName").OnValueChanged += HandleValueChanged;</code>
+            /// </summary>
             public event Action<OutputField, int, int> onValueChanged;
+
+            /// <summary>
+            /// Invoked when output's value is changed, only fired for boolean types.
+            /// </summary>
             public event Action<OutputField, bool, bool> onBooleanValueChanged;
+
+            /// <summary>
+            /// Invoked when output's value is changed, only fired for enum types.
+            /// </summary>
             public event Action<OutputField, string, string> onEnumValueChanged;
 
             protected OutputOverride fieldOverride
             {
                 get 
                 {
-                    if (overridesIncrement == node.overridesIncrement)
+                    if (overridesDirtyIncrement == node.overridesDirtyIncrement)
                         return cachedOverride;
 
                     if (!node.cachedOverrides.TryGetValue(definitionId, out cachedOverride))
                         cachedOverride = null;
-                    overridesIncrement = node.overridesIncrement;
+                    overridesDirtyIncrement = node.overridesDirtyIncrement;
                     return cachedOverride;
                 }
             }
             protected override void Initialize(Node context)
             {
                 base.Initialize(context);
+
+                // save reference to node
                 node = context;
+                // register this field in manager to get updates from graph
                 Manager.instance.RegisterField(this);
             }
             public override void Finalize(Node context)
             {
                 base.Finalize(context);
+
+                // notify that the output field's value is no longer used
                 InvokeEvents(cachedValue, defaultFieldValue);
+                // unregister this field from manager
                 Manager.instance?.UnregisterField(this);
             }
 
+            /// <summary>
+            /// refreshes the list of gates of this output field, and marks for optimizations.
+            /// for instance, if the output field is dependent only on other output fields,
+            /// this will be marked by this method so that we can avoid recalculating the output value
+            /// every graph update cycle (and instead track the changes using output field events).
+            /// </summary>
             public override void RefreshReferences()
             {
-                if (dirtyIncrement == node.dirtyIncrement)
+                // only update if something changed in the node's gates
+                if (gatesDirtyIncrement == node.gatesDirtyIncrement)
                     return;
 
                 cachedGates.Clear();
 
+                // clear previous update subscriptions if needed
                 if (allUpstreamFieldsAreOutputOrProxy)
                 {
-                    // clear update subscriptions
                     foreach (var field in GetUpstreamFields())
                     {
                         UnregisterUpstreamOutput(field);
@@ -87,6 +117,8 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 ClearUpstreamFields();
+
+                // find whether this output field is dependent only on other output fields
                 allUpstreamFieldsAreOutputOrProxy = true;
                 foreach (var gate in node.allGates)
                 {
@@ -99,12 +131,13 @@ namespace OneHamsa.Dexterity.Visual
                     cachedGates.Add(gate);
                     AddUpstreamField(gate.field);
                 }
-                dirtyIncrement = node.dirtyIncrement;
+                // we just finished refreshing our references, update the tracked dirty increment
+                gatesDirtyIncrement = node.gatesDirtyIncrement;
 
+                // subscribe to changes in output fields if needed
                 if (allUpstreamFieldsAreOutputOrProxy)
                 {
                     areUpstreamOutputOrProxyFieldsDirty = true;
-                    // we can just register to the output fields changes
                     foreach (var field in GetUpstreamFields())
                     {
                         RegisterUpstreamOutput(field);

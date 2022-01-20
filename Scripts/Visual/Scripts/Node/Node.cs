@@ -94,8 +94,8 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
-        int dirtyIncrement;
-        int overridesIncrement;
+        int gatesDirtyIncrement;
+        int overridesDirtyIncrement;
 
         bool stateDirty = true;
         FieldsState fieldsState = new FieldsState(32);
@@ -202,15 +202,21 @@ namespace OneHamsa.Dexterity.Visual
 
         public void Initialize()
         {
+            // only needed once
             if (reference == null) {
+                // create a runtime instance of this scriptable object to allow changing it
                 reference = ScriptableObject.CreateInstance<NodeReference>();
+                // define this node as its owner
                 reference.owner = this;
                 reference.name = $"{name} (Live Reference)";
+                // copy all references from this node to the runtime instance
                 reference.stateFunctionAsset = stateFunctionAsset;
                 reference.extends.AddRange(referenceAssets);
+                // initialize reference (this will create the runtime version with all the inherited gates)
                 reference.Initialize(customGates);
             }
 
+            // find all fields that are used by this node's state function
             stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
 
             // subscribe to more changes
@@ -218,22 +224,27 @@ namespace OneHamsa.Dexterity.Visual
             onGateRemoved += RestartFields;
             onGatesUpdated += RestartFields;
 
+            // same for reference (gates can be modified either on the node or on its reference)
             reference.onGateAdded += RestartFields;
             reference.onGateRemoved += RestartFields;
             reference.onGatesUpdated += RestartFields;
 
+            // go through all the fields. initialize them, register them to manager and add them to internal structure
             RestartFields();
-            CacheOverrides();
-            CacheOverrideState();
+            // cache overrides to allow quick access internally
+            CacheFieldOverrides();
+            CacheStateOverride();
 
+            // find default state and define initial state
             var defaultStateId = Manager.instance.GetStateID(initialState);
             if (defaultStateId == -1)
             {
                 defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
                 Debug.LogWarning($"no default state selected, selecting arbitrary", this);
             }
-
             activeState = defaultStateId;
+
+            // mark state as dirty - important if node was re-enabled
             stateDirty = true;
         }
 
@@ -371,9 +382,9 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
-        /// Sets the node as dirty. Forces output fields update
+        /// Sets the node as dirty. Forces gates update
         /// </summary>
-        public void SetDirty() => dirtyIncrement++;
+        public void SetDirty() => gatesDirtyIncrement++;
 
         private void AuditField(BaseField field)
         {
@@ -396,13 +407,13 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldsToNodes.Remove(field);
         }
-        public void AddGate(Gate gate)
+        void IGateContainer.AddGate(Gate gate)
         {
             customGates.Add(gate);
             onGateAdded?.Invoke(gate);
         }
 
-        public void RemoveGate(Gate gate)
+        void IGateContainer.RemoveGate(Gate gate)
         {
             customGates.Remove(gate);
             onGateRemoved?.Invoke(gate);
@@ -412,8 +423,8 @@ namespace OneHamsa.Dexterity.Visual
             onGatesUpdated?.Invoke();
         }
 
-        public int GetGateCount() => customGates.Count;
-        public Gate GetGateAtIndex(int i)
+        int IGateContainer.GetGateCount() => customGates.Count;
+        Gate IGateContainer.GetGateAtIndex(int i)
         {
             return customGates[i];
         }
@@ -497,7 +508,7 @@ namespace OneHamsa.Dexterity.Visual
                 newOverride.Initialize(fieldId);
 
                 overrides.Add(newOverride);
-                CacheOverrides();
+                CacheFieldOverrides();
             }
             var overrideOutput = cachedOverrides[fieldId];
             overrideOutput.value = value;
@@ -512,7 +523,7 @@ namespace OneHamsa.Dexterity.Visual
             if (cachedOverrides.ContainsKey(fieldId))
             {
                 overrides.Remove(cachedOverrides[fieldId]);
-                CacheOverrides();
+                CacheFieldOverrides();
             }
             else
             {
@@ -530,10 +541,10 @@ namespace OneHamsa.Dexterity.Visual
             stateDirty = true;
 
 #if UNITY_EDITOR
-            // in editor, write the overrideState string back
+            // in editor, write to the overrideState string (this can be called in edit time)
             overrideState = Manager.instance.GetStateAsString(state);
 #else
-            // in runtime, clear the string (to avoid re-caching)
+            // in runtime, clear the string
             overrideState = null;
 #endif
         }
@@ -543,7 +554,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="fieldId">State ID (from Manager)</param>
         public void ClearStateOverride() => SetStateOverride(-1);
 
-        void CacheOverrides()
+        void CacheFieldOverrides()
         {
             cachedOverrides.Clear();
             foreach (var o in overrides)
@@ -551,10 +562,10 @@ namespace OneHamsa.Dexterity.Visual
                 o.Initialize();
                 cachedOverrides[o.outputFieldDefinitionId] = o;
             }
-            overridesIncrement++;
+            overridesDirtyIncrement++;
         }
 
-        private void CacheOverrideState()
+        private void CacheStateOverride()
         {
             if (!string.IsNullOrEmpty(overrideState))
                 SetStateOverride(Manager.instance.GetStateID(overrideState));
@@ -564,7 +575,7 @@ namespace OneHamsa.Dexterity.Visual
         // update overrides every frame to allow setting overrides from editor
         void LateUpdate()
         {
-            CacheOverrides();
+            CacheFieldOverrides();
         }
 #endif
 #endregion Overrides
