@@ -38,6 +38,8 @@ namespace OneHamsa.Dexterity.Visual
             bool areUpstreamOutputOrProxyFieldsDirty;
             // saves a list of all gates of this output field
             protected List<Gate> cachedGates = new List<Gate>();
+            // saves a list of all gates of last reference update
+            protected List<Gate> prevCachedGates = new List<Gate>();
             // saves a reference to an override to avoid unnecessary lookup
             OutputOverride cachedOverride = null;
             // tracks the last overrides dirty increment from the node, if it's different we need to update
@@ -110,6 +112,8 @@ namespace OneHamsa.Dexterity.Visual
                 if (gatesDirtyIncrement == node.gatesDirtyIncrement)
                     return;
 
+                prevCachedGates.Clear();
+                prevCachedGates.AddRange(cachedGates);
                 cachedGates.Clear();
 
                 // clear previous update subscriptions if needed
@@ -120,8 +124,6 @@ namespace OneHamsa.Dexterity.Visual
                         UnregisterUpstreamOutput(field);
                     }
                 }
-
-                ClearUpstreamFields();
 
                 // find whether this output field is dependent only on other output fields
                 allUpstreamFieldsAreOutputOrProxy = true;
@@ -134,8 +136,29 @@ namespace OneHamsa.Dexterity.Visual
                     allUpstreamFieldsAreOutputOrProxy &= IsAllUpstreamProxyOrOutput(gate.field);
 
                     cachedGates.Add(gate);
-                    AddUpstreamField(gate.field);
                 }
+
+                // compare and change upstream if needed
+                var needsUpdate = true;
+                if (cachedGates.Count == prevCachedGates.Count) {
+                    needsUpdate = false;
+                    for (var i = 0; i < cachedGates.Count; i++)
+                    {
+                        if (cachedGates[i] != prevCachedGates[i])
+                        {
+                            needsUpdate = true;
+                            break;
+                        }
+                    }
+                }
+                if (needsUpdate) {
+                    ClearUpstreamFields();
+                    foreach (var gate in cachedGates)
+                    {
+                        AddUpstreamField(gate.field);
+                    }
+                }
+
                 // we just finished refreshing our references, update the tracked dirty increment
                 gatesDirtyIncrement = node.gatesDirtyIncrement;
 
@@ -271,13 +294,12 @@ namespace OneHamsa.Dexterity.Visual
             {
                 return cachedValueWithoutOverride;
             }
-
-            public override string ToString()
-            {
+            
+            public override string ToShortString() {
                 if (!node)
-                    return base.ToString();
+                    return "(Uninitialized)";
 
-                return $"OutputNode {node.name}::{Manager.instance.GetFieldDefinition(definitionId).name} -> {GetValue()}";
+                return $"{node.name}::{Manager.instance.GetFieldDefinition(definitionId).name}";
             }
 
             public void SetOverride(bool value) {
