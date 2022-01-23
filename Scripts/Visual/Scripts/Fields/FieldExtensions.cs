@@ -22,5 +22,16 @@ namespace OneHamsa.Dexterity.Visual
             }
             return field.definition.enumValues[field.GetValue()];
         }
+
+        public static string GetValueAsString(this BaseField field) {
+            switch (field.definition.type) {
+                case Node.FieldType.Boolean:
+                    return field.GetBooleanValue().ToString();
+                case Node.FieldType.Enum:
+                    return field.GetEnumValue().ToString();
+                default:
+                    return field.GetValue().ToString();
+            }
+        }
     }
 }

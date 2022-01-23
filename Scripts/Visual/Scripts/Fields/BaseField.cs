@@ -115,6 +115,15 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         public virtual void CacheValue() { }
 
+        public override string ToString()
+        {
+            return $"{ToShortString()} -> {this.GetValueAsString()}";
+        }
+
+        public virtual string ToShortString() {
+            return $"{GetType().Name}";
+        }
+
         /// <summary>
         /// special exception that is used to handle initialization problems 
         /// (missing references, invalid parameters etc.)
