@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -11,13 +12,14 @@ namespace OneHamsa.Dexterity.Visual
     //. Don't confuse the nodes mentioned here with Dexterity.Visual.Node.
     public class Graph : MonoBehaviour
     {
-        const int throttleOperationsPerFrame = 3000;
+        public const int throttleOperationsPerFrame = 3000;
 
         // debug info
         public bool lastSortResult { get; private set; }
         public float lastUpdateAttempt { get; private set; }
         public float lastSuccessfulUpdate { get; private set; }
         public int updateOperations { get; private set; }
+        public int updatedNodes { get; private set; }
         public int updateFrames { get; private set; }
 
         public bool started { get; set; }
@@ -32,21 +34,21 @@ namespace OneHamsa.Dexterity.Visual
         public event Action<int> onGraphColorUpdated;
 
         // keeps track of visits in topological sort
-        HashSet<BaseField> visited = new HashSet<BaseField>();
+        private HashSet<BaseField> visited = new HashSet<BaseField>();
         // dfs stack for topological sort
-        Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
+        private Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
         // helper map for tracking which node is still on stack to avoid loops
-        Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
+        private Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
         // "color" map (of islands within the graph) - used for only updating relevant nodes
-        Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
-        Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
-        Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
-        Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
-        Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
-        List<int> colorsToReset = new List<int>(8);
+        public Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
+        private Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
+        public Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
+        private Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
+        private Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
+        private List<int> colorsToReset = new List<int>(8);
         // cached graph data
-        protected List<BaseField> sortedNodes = new ListSet<BaseField>();
-        protected List<BaseField> sortedNodesCache = new List<BaseField>();
+        public List<BaseField> sortedNodes = new ListSet<BaseField>();
+        private List<BaseField> sortedNodesCache = new List<BaseField>();
 
         public void AddNode(BaseField node)
         {
@@ -117,6 +119,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // disjointed-set-style search
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsDirty(BaseField node)
         {
             if (!nodeToColor.TryGetValue(node, out var color))
@@ -178,7 +181,8 @@ namespace OneHamsa.Dexterity.Visual
                 lastUpdateAttempt = Time.unscaledTime;
 
                 updateOperations = 0;
-                updateFrames = 0;
+                updatedNodes = 0;
+                updateFrames = 1;
                 var topSort = TopologicalSort();
 
                 while (topSort.MoveNext())
@@ -232,6 +236,9 @@ namespace OneHamsa.Dexterity.Visual
                 // skip nodes with non-dirty colors
                 if (!IsDirty(node))
                     continue;
+
+                // keep track of how many nodes we've updated
+                updatedNodes++;
 
                 // only add nodes we hadn't visted yet
                 if (!visited.Contains(node))
