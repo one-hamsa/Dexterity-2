@@ -24,6 +24,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public override int GetValue() 
         {
+            if (objectCtx == null)
+                return Node.defaultFieldValue;
+
             var value = objectCtx.GetValue<bool>() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;
         }
