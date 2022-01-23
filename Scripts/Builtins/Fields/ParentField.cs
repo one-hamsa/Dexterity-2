@@ -31,6 +31,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         List<Transform> parentsTransform = new List<Transform>();
         public override void RefreshReferences()
         {
+            var lastParent = parent;
+
             if (parent == null || updateParentReference)
             {
                 {
@@ -68,9 +70,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 }
             }
 
-            ClearUpstreamFields();
-            if (parent != null)
-                AddUpstreamField(parent.GetOutputField(fieldId));
+            if (lastParent != parent) {
+                ClearUpstreamFields();
+                if (parent != null)
+                    AddUpstreamField(parent.GetOutputField(fieldId));
+            }
 
             // proxy might have changed - re-calculate node's outputs
             context.SetDirty();
