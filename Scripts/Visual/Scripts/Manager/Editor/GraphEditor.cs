@@ -59,7 +59,8 @@ namespace OneHamsa.Dexterity.Visual
         {
             var graph = target as Graph;
 
-            if (!(sortedFoldout = EditorGUILayout.Foldout(sortedFoldout, $"{graph.sortedNodes.Count} Fields")))
+            if (!(sortedFoldout = EditorGUILayout.Foldout(sortedFoldout, 
+                $"{graph.sortedNodes.Count} Fields, {graph.edges.SelectMany(kv => kv.Value).Count()} Connections")))
                 return;
 
             EditorGUILayout.HelpBox("Showing topologically-sorted list of fields.", MessageType.Info);
@@ -68,6 +69,9 @@ namespace OneHamsa.Dexterity.Visual
 
             foreach (var field in graph.sortedNodes)
             {
+                if (graph.edges.TryGetValue(field, out var edges) && edges.Count() == 0)
+                        GUILayout.Space(10);
+
                 ShowField(field);
             }
 
@@ -97,7 +101,7 @@ namespace OneHamsa.Dexterity.Visual
             ShowClusters(clusters);
         }
 
-        private static void ShowNodes(HashSet<Node> nodes)
+        private void ShowNodes(HashSet<Node> nodes)
         {
             if (!(nodesFoldout = EditorGUILayout.Foldout(nodesFoldout, $"{nodes.Count} Nodes")))
                 return;
@@ -117,7 +121,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel--;
         }
 
-        private static void ShowClusters(Dictionary<int, List<BaseField>> clusters)
+        private void ShowClusters(Dictionary<int, List<BaseField>> clusters)
         {
             if (!(clustersFoldout = EditorGUILayout.Foldout(clustersFoldout, $"{clusters.Count} Clusters")))
                 return;
