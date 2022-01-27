@@ -29,8 +29,15 @@ namespace OneHamsa.Dexterity.Visual
 
             EditorGUI.indentLevel++;
             var graph = target as Graph;
+            
+            var startupTime = DateTime.Now.AddSeconds(-
+#if UNITY_2020_1_OR_NEWER
+            Time.realtimeSinceStartupAsDouble
+#else            
+            Time.realtimeSinceStartup
+#endif
+            );
 
-            var startupTime = DateTime.Now.AddSeconds(-Time.realtimeSinceStartupAsDouble);
             var lastSuccessful = startupTime.AddSeconds(graph.lastSuccessfulUpdate);
             var lastAttempt = startupTime.AddSeconds(graph.lastUpdateAttempt);
 
