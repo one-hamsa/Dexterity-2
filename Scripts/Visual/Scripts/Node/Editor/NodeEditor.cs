@@ -109,6 +109,8 @@ namespace OneHamsa.Dexterity.Visual
         private EditorCoroutine coro;
 
         private int previewStateIndex;
+        private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
+        private List<Modifier> modifiers = new List<Modifier>();
 
         void ShowDebug()
         {
@@ -143,7 +145,10 @@ namespace OneHamsa.Dexterity.Visual
 
             var outputFields = node.outputFields;
             var overrides = node.cachedOverrides;
-            var unusedOverrides = new HashSet<Node.OutputOverride>(overrides.Values);
+            unusedOverrides.Clear();
+            foreach (var value in overrides.Values)
+                unusedOverrides.Add(value);
+
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
             {                
                 EditorGUILayout.HelpBox($"{outputFields.Count} output fields{overridesStr}",
@@ -223,7 +228,7 @@ namespace OneHamsa.Dexterity.Visual
                     EditorCoroutineUtility.StopCoroutine(coro);
 
                 // collect all children modifiers
-                var modifiers = new List<Modifier>();
+                modifiers.Clear();
                 foreach (var modifier in FindObjectsOfType<Modifier>()) {
                     if (modifier.node == node)
                         modifiers.Add(modifier);

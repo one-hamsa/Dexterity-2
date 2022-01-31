@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -9,6 +10,10 @@ namespace OneHamsa.Dexterity.Visual
     [CustomPropertyDrawer(typeof(StateFunctionGraph))]
     public class StateFunctionGraphDrawer : PropertyDrawer
     {
+        private List<StateFunctionGraph> functions = new List<StateFunctionGraph>();
+        private double lastRefresh = double.NegativeInfinity;
+        private string[] funcNames;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return base.GetPropertyHeight(property, label) + EditorGUIUtility.singleLineHeight;
@@ -22,9 +27,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var functions = Utils.FindAssetsByType<StateFunctionGraph>().ToList();
-            var funcNames = functions.Select(f => f.name).ToArray();
-
+            RefreshStateFunctionList();
             var stateFunctionObj = (StateFunctionGraph)property.objectReferenceValue;
 
             var r = position;
@@ -49,6 +52,25 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(stateFunctionObj);
             }
+        }
+
+        private void RefreshStateFunctionList()
+        {
+            if (EditorApplication.timeSinceStartup - lastRefresh < 3f)
+                return;
+
+            lastRefresh = EditorApplication.timeSinceStartup;
+
+            functions.Clear();
+            foreach (var asset in Utils.FindAssetsByType<StateFunctionGraph>())
+            {
+                functions.Add(asset);
+            }
+            if (funcNames?.Length != functions.Count)
+                funcNames = new string[functions.Count];
+
+            for (int i = 0; i < functions.Count; i++)
+                funcNames[i] = functions[i].name;
         }
     }
 }

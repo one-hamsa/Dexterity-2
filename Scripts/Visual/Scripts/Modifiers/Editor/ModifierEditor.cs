@@ -17,6 +17,8 @@ namespace OneHamsa.Dexterity.Visual
         Modifier modifier { get; set; }
         List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
         private EditorCoroutine coro;
+        private List<SerializedProperty> customProps = new List<SerializedProperty>();
+        private HashSet<string> currentPropStates = new HashSet<string>();
 
         private bool propertiesUpdated { get; set; } 
 
@@ -41,7 +43,7 @@ namespace OneHamsa.Dexterity.Visual
 
             ShowNode();
 
-            var customProps = new List<SerializedProperty>();
+            customProps.Clear();
             var parent = serializedObject.GetIterator();
             foreach (var prop in Utils.GetVisibleChildren(parent))
             {
@@ -168,7 +170,7 @@ namespace OneHamsa.Dexterity.Visual
             var states = sf.GetStates();
 
             // find all existing references to properties by state name, add more entries if needed
-            var currentPropStates = new HashSet<string>();
+            currentPropStates.Clear();
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);

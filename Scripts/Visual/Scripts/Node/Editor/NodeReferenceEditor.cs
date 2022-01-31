@@ -14,6 +14,10 @@ namespace OneHamsa.Dexterity.Visual
     {
         NodeReference reference;
         bool foldoutOpen = true;
+        private HashSet<StateFunctionGraph> functions;
+        private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField
+        = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
+
         public override void OnInspectorGUI()
         {
             reference = target as NodeReference;
@@ -50,8 +54,15 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.HelpBox($"{sf.name}: {sf.errorString}", MessageType.Error);
             }
 
-            var functions = new HashSet<StateFunctionGraph>(new [] { reference.stateFunctionAsset }
-                .Concat(reference.extends.Where(e => e != null).Select(e => e.stateFunctionAsset)));
+            functions.Clear();
+            functions.Add(reference.stateFunctionAsset);
+            foreach (var extended in reference.extends) {
+                if (extended == null)
+                    continue;
+
+                functions.Add(extended.stateFunctionAsset);
+            }
+            
             if (functions.Count > 1)
             {
                 var names = string.Join(", ", functions.Select(f => f.name));
@@ -88,7 +99,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var updated = false;
-            var gatesByField = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
+            gatesByField.Clear();
             for (var i = 0; i < gatesProp.arraySize; ++i)
             {
                 var gateProp = gatesProp.GetArrayElementAtIndex(i);
@@ -276,6 +287,10 @@ namespace OneHamsa.Dexterity.Visual
             return updated;
         }
 
+        static double lastReferenceRefreshTime = double.NegativeInfinity;
+        private static Type[] referencesTypes;
+        private static string[] referencesTypesNames;
+
         static bool ShowReference(string fieldName, SerializedProperty property)
         {
             bool updated = false;
@@ -284,18 +299,13 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.BeginProperty(rect, GUIContent.none, property);
 
             string className = Utils.GetClassName(property);
-            var types = TypeCache.GetTypesDerivedFrom<BaseField>()
-                .Where(t => t != typeof(Node.OutputField))
-                .ToArray();
-            var fieldTypesNames = types
-                .Select(t => t.ToString())
-                .ToArray();
-            var currentIdx = Array.IndexOf(fieldTypesNames, className);
+            RefreshReferenceTypes();
+            var currentIdx = Array.IndexOf(referencesTypesNames, className);
 
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.BeginHorizontal();
             var fieldIdx = EditorGUILayout.Popup("Field", currentIdx,
-                Utils.GetNiceName(fieldTypesNames, suffix: "Field").ToArray());
+                Utils.GetNiceName(referencesTypesNames, suffix: "Field").ToArray());
 
             var field = (BaseField)Utils.GetTargetObjectOfProperty(property);
             if (field != null && field.initialized)
@@ -310,7 +320,7 @@ namespace OneHamsa.Dexterity.Visual
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(property.serializedObject.targetObject, "Change field type");
-                var type = types[fieldIdx];
+                var type = referencesTypes[fieldIdx];
                 property.managedReferenceValue = Activator.CreateInstance(type);
                 updated = true;
             }
@@ -337,6 +347,19 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel--;
 
             return updated;
+        }
+
+        private static void RefreshReferenceTypes()
+        {
+            if (EditorApplication.timeSinceStartup - lastReferenceRefreshTime < 3)
+                return;
+
+            referencesTypes = TypeCache.GetTypesDerivedFrom<BaseField>()
+                            .Where(t => t != typeof(Node.OutputField))
+                            .ToArray();
+            referencesTypesNames = referencesTypes
+                .Select(t => t.ToString())
+                .ToArray();
         }
 
         static void DrawFieldValue(FieldDefinition definition, int value, bool liveInstance)
