@@ -40,7 +40,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;
-            if (checkActivityThreshold && prevState[currentState] > activityThreshold)
+            prevState.TryGetValue(currentState, out var prevValue);
+            if (checkActivityThreshold && prevValue > activityThreshold)
             {
                 // jump to final state
                 changed = !jumpedToFinalState;

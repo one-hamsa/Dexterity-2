@@ -7,16 +7,25 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         HashSet<IRaycastController> controllers = new HashSet<IRaycastController>();
         HashSet<IRaycastController> receivedPressStart = new HashSet<IRaycastController>();
-        public bool hover => controllers.Count > 0;
-        public bool press
+        public bool GetHover(string castTag = null) 
         {
-            get
-            {
-                foreach (var ctrl in controllers)
+            foreach (var ctrl in controllers) {
+                if (!string.IsNullOrEmpty(castTag) && ctrl.tag != castTag)
+                    continue;
+                return true;
+            }
+            return false;
+        }
+        public bool GetPress(string castTag = null)
+        {
+                foreach (var ctrl in controllers) {
+                    if (!string.IsNullOrEmpty(castTag) && ctrl.tag != castTag)
+                        continue;
+
                     if (ctrl.isPressed && receivedPressStart.Contains(ctrl))
                         return true;
+                }
                 return false;
-            }
         }
 
         public void ReceiveHit(IRaycastController controller, RaycastHit hit)
