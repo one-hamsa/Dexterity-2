@@ -269,7 +269,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox($"No state functions or references assigned to node", MessageType.Error);
             }
-            if (string.IsNullOrEmpty(node.initialState))
+            if (!sfStates.Contains(node.initialState))
             {
                 EditorGUILayout.HelpBox($"Initial State should be selected", MessageType.Warning);
             }
