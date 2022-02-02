@@ -46,13 +46,18 @@ namespace OneHamsa.Dexterity.Visual
             ShowChooseReference();
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAssets)));
 
+            if (targets.Length <= 1) {
+                EditorGUILayout.HelpBox($"State Functions exection order: \n"
+                + string.Join(" -> ", node.GetStateFunctionAssetsIncludingReferences().Select(r => r.name)), MessageType.Info);
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
 
             ShowChooseInitialState();
 
             var gatesUpdated = false;
-            if (targets.Count() <= 1)
+            if (targets.Length <= 1)
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
                     node, ref foldoutOpen);
 
@@ -61,7 +66,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
             
-            if (targets.Count() <= 1)
+            if (targets.Length <= 1)
                 ShowDebug();
 
             ShowWarnings();
@@ -95,7 +100,7 @@ namespace OneHamsa.Dexterity.Visual
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
 
-            if (targets.Count() > 1)
+            if (targets.Length > 1)
                 return;
 
             GUI.enabled = Application.isPlaying;
@@ -268,7 +273,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox($"Initial State should be selected", MessageType.Warning);
             }
-            if (targets.Count() > 1) 
+            if (targets.Length > 1) 
             {
                 EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
             }

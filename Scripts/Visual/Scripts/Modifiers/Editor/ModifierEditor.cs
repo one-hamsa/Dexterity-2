@@ -85,7 +85,7 @@ namespace OneHamsa.Dexterity.Visual
                     propertiesUpdated |= EditorGUI.EndChangeCheck();
                 }
 
-                if (targets.Count() == 1 &&
+                if (targets.Length == 1 &&
                     modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
                 {
                     valueFreeze.FreezeValue();
@@ -117,7 +117,7 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }
             
-            if (targets.Count() > 1) 
+            if (targets.Length > 1) 
             {
                 EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
             }
@@ -136,7 +136,7 @@ namespace OneHamsa.Dexterity.Visual
             var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
             helpboxStyle.richText = true;
 
-            if (targets.Count() > 1)
+            if (targets.Length > 1)
                 return;
 
             if (modifier._node == null)
@@ -232,7 +232,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 void UtilityButtons()
                 {
-                    if (targets.Count() > 1)
+                    if (targets.Length > 1)
                         return; 
 
                     if (modifier is ISupportPropertyFreeze propFreeze
@@ -309,7 +309,7 @@ namespace OneHamsa.Dexterity.Visual
             Manager.instance.Initialize();
             foreach (var asset in node.GetStateFunctionAssetsIncludingReferences())
                 Manager.instance.RegisterStateFunction(asset);
-                
+
             foreach (var modifier in modifiers)
                 modifier.Awake();
 
