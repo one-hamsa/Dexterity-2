@@ -17,7 +17,10 @@ States define priorities and disambiguate field. For instance, if a subject is n
 These are just some random example to express how fields can be translated to different states. In the end of the day, when using Dexterity - users will define their own rules based on the developer/designer's decision.
 
 ## Nodes
-Nodes are components that hold an animtion *state* for other components.
+**Nodes are components that hold an animation *state* for other components.**
+
+![Node](./Documentation~/Node.png)
+
 They have *fields* that represent their logical state, and define how to take those fields and turn them into a final *state*.
 
 By default, everything under the hierarchy of a node will be considered a child of this node. For instance, node can be a parent of both a UI Image and a Text object - controlling their animation states as a single unit.
@@ -31,8 +34,9 @@ There are many gate types, such as a `Parent` gate (takes a field value from a p
 Gate types are easy to add, more on that later.
 
 ## Modifiers
+**Modifiers are components that specialize in transitioning between animation *states*.**
+
 ![Color Modifier](./Documentation~/ColorModifier.png)
-Modifiers are components that specialize in perfoming transitions between animation *states*. 
 
 Each modifier is assigned to a *node* (either automatically by hierarchy, or manually using a reference). This node will determine all the possible states this modifier can be at. The modifier will then define how each state looks like - and how would states transition between each other.
 
