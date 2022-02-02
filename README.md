@@ -20,7 +20,6 @@ These are just some random example to express how fields can be translated to di
 **Nodes are components that hold an animation *state* for other components.**
 
 ![Node](./Documentation~/Node.png)
-![Node - Runtime](./Documentation~/NodeRuntime.png)
 
 They have *fields* that represent their logical state, and define how to take those fields and turn them into a final *state*.
 
@@ -53,6 +52,8 @@ TBD
 ## State Functions
 TBD
 # Editor
+## Node Editor
+![Node - Runtime](./Documentation~/NodeRuntime.png)
 
 TBD
 
