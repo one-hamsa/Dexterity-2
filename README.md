@@ -31,6 +31,7 @@ There are many gate types, such as a `Parent` gate (takes a field value from a p
 Gate types are easy to add, more on that later.
 
 ## Modifiers
+![Color Modifier](./Documentation~/ColorModifier.png)
 Modifiers are components that specialize in perfoming transitions between animation *states*. 
 
 Each modifier is assigned to a *node* (either automatically by hierarchy, or manually using a reference). This node will determine all the possible states this modifier can be at. The modifier will then define how each state looks like - and how would states transition between each other.
