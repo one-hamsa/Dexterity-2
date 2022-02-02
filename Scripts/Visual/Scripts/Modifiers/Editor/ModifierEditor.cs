@@ -19,6 +19,7 @@ namespace OneHamsa.Dexterity.Visual
         private EditorCoroutine coro;
         private List<SerializedProperty> customProps = new List<SerializedProperty>();
         private HashSet<string> currentPropStates = new HashSet<string>();
+        private HashSet<string> sfStates = new HashSet<string>();
 
         private bool propertiesUpdated { get; set; } 
 
@@ -29,13 +30,17 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
-            var functions = targets.Select(t => (t as IProvidesStateFunction).stateFunctionAsset).Distinct();
-            if (functions.Count() > 1)
-            {
-                EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state functions.", MessageType.Error);
-                return;
+            sfStates.Clear();
+            var first = true;
+            foreach (var t in targets) {
+                foreach (var state in (t as IStatesProvider).GetStateNames()) {
+                    if (sfStates.Add(state) && !first) {
+                        EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
+                        return;
+                    }
+                }
+                first = false;
             }
-            var function = functions.First();
 
             serializedObject.Update();
 
@@ -88,17 +93,17 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            if (function != null)
+            if (sfStates.Count > 0)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                propertiesUpdated |= ShowProperties(function);
+                propertiesUpdated |= ShowProperties(sfStates);
             }
 
             // warnings
-            if (function == null)
+            if (sfStates.Count == 0)
             {
-                EditorGUILayout.HelpBox("Must select State Function for node", MessageType.Error);
+                EditorGUILayout.HelpBox("Node has no states", MessageType.Error);
             }
             if (!strategyExists)
             {
@@ -150,7 +155,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        bool ShowProperties(StateFunctionGraph sf)
+        bool ShowProperties(IEnumerable<string> states)
         {
             var updated = false;
 
@@ -167,7 +172,6 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var properties = serializedObject.FindProperty(nameof(Modifier.properties));
-            var states = sf.GetStates();
 
             // find all existing references to properties by state name, add more entries if needed
             currentPropStates.Clear();
@@ -303,7 +307,9 @@ namespace OneHamsa.Dexterity.Visual
 
             // setup
             Manager.instance.Initialize();
-            Manager.instance.RegisterStateFunction(node.stateFunctionAsset);
+            foreach (var asset in node.GetStateFunctionAssetsIncludingReferences())
+                Manager.instance.RegisterStateFunction(asset);
+                
             foreach (var modifier in modifiers)
                 modifier.Awake();
 

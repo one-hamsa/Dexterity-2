@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
 	[NodeCustomEditor(typeof(DecisionNode))]
 	public class DecisionNodeView : BaseNodeView
 	{
-		const string kStateNameEmptyMessage = "Empty state name";
+		const string kFallthroughMessage = "Empty state name - this will fall through";
 		const string kNoInputMessage = "No input(s), node won't run";
 
 		DecisionNode node;
@@ -58,10 +58,10 @@ namespace OneHamsa.Dexterity.Visual
         {
 			UpdateTitle();
 
-			RemoveMessageView(kStateNameEmptyMessage);
+			RemoveMessageView(kFallthroughMessage);
 
-			if (string.IsNullOrWhiteSpace(node.stateName))
-				AddMessageView(kStateNameEmptyMessage, NodeMessageType.Error);
+			if (node.fallthrough)
+				AddMessageView(kFallthroughMessage, NodeMessageType.Info);
 		}
     }
 }

@@ -10,6 +10,9 @@ namespace OneHamsa.Dexterity.Visual
     [CustomPropertyDrawer(typeof(StateAttribute))]
     public class StateDrawer : PropertyDrawer
     {
+        private List<string> states = new List<string>();
+        private List<string> stateNames = new List<string>();
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
 
@@ -25,21 +28,28 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var sf = Utils.GetStateFunctionFromObject(property.serializedObject.targetObject);
+            var statesSet = Utils.GetStatesFromObject(property.serializedObject.targetObject);
 
-            if (sf == null)
+            if (statesSet == null)
             {
                 EditorGUI.LabelField(position, label.text,
                         $"State function not found for attribute [State]");
                 return;
             }
-            var states = sf.GetStates().ToList();
-            var stateNames = states.ToList();
+
+            states.Clear();
+            stateNames.Clear();
+
             var allowEmpty = (attribute as StateAttribute).allowEmpty;
             if (allowEmpty)
             {
-                states.Insert(0, null);
-                stateNames.Insert(0, "<None>");
+                states.Add(null);
+                stateNames.Add("(None)");
+            }
+
+            foreach (var state in statesSet) {
+                states.Add(state);
+                stateNames.Add(state);
             }
 
             var value = property.stringValue;

@@ -23,9 +23,13 @@ namespace OneHamsa.Dexterity.Visual
             reference = target as NodeReference;
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAsset)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAssets)));
             
             ShowExtends();
+
+            EditorGUILayout.HelpBox($"State Functions exection order: \n"
+            + string.Join(" -> ", reference.GetStateFunctionAssetsIncludingParents().Select(r => r.name)), MessageType.Info);
+
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
             ShowDelays();
@@ -44,29 +48,10 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowWarnings()
         {
-            var sf = reference.stateFunctionAsset;
-            if (sf == null)
+            var sf = reference.GetStateFunctionAssetsIncludingParents();
+            if (sf.Count() == 0)
             {
-                EditorGUILayout.HelpBox($"No state function selected", MessageType.Error);
-            }
-            else if (!sf.Validate())
-            {
-                EditorGUILayout.HelpBox($"{sf.name}: {sf.errorString}", MessageType.Error);
-            }
-
-            functions.Clear();
-            functions.Add(reference.stateFunctionAsset);
-            foreach (var extended in reference.extends) {
-                if (extended == null)
-                    continue;
-
-                functions.Add(extended.stateFunctionAsset);
-            }
-            
-            if (functions.Count > 1)
-            {
-                var names = string.Join(", ", functions.Select(f => f.name));
-                EditorGUILayout.HelpBox($"Multiple state functions selected ({names})", MessageType.Error);
+                EditorGUILayout.HelpBox($"No state functions selected (either by reference or its parents)", MessageType.Error);
             }
         }
 
@@ -83,7 +68,7 @@ namespace OneHamsa.Dexterity.Visual
 
         internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer, ref bool foldoutOpen)
         {
-            if (gateContainer.stateFunctionAsset == null)
+            if (gateContainer.GetFieldNames() == null)
                 return false;
 
             var rect = EditorGUILayout.BeginVertical();
@@ -120,8 +105,7 @@ namespace OneHamsa.Dexterity.Visual
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                bool fieldExistsInFunction = gateContainer.stateFunctionAsset.GetFieldNames()
-                    .ToList().IndexOf(kv.Key) != -1;
+                bool fieldExistsInFunction = gateContainer.GetFieldNames().Contains(kv.Key);
 
                 if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
                     GUI.color = Color.yellow;
@@ -176,7 +160,7 @@ namespace OneHamsa.Dexterity.Visual
                     var outputProp = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName));
                     var output = outputProp.stringValue;
                     // TODO check if manager exists!
-                    var fields = gateContainer.stateFunctionAsset.GetFieldNames().ToArray();
+                    var fields = gateContainer.GetFieldNames().ToArray();
 
                     rect = EditorGUILayout.BeginHorizontal();
                     EditorGUI.BeginProperty(rect, GUIContent.none, outputProp);

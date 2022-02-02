@@ -14,6 +14,9 @@ namespace OneHamsa.Dexterity.Visual
     {
         Node node;
         bool foldoutOpen;
+        private HashSet<string> sfStates = new HashSet<string>();
+        private List<string> previewStates = new List<string>();
+        private List<string> previewStateNames = new List<string>();
 
         private void OnEnable()
         {
@@ -24,10 +27,16 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
-            if (targets.Select(t => (t as Node).stateFunctionAsset).Distinct().Count() > 1)
-            {
-                EditorGUILayout.HelpBox("Can't multi-edit nodes with different state functions.", MessageType.Error);
-                return;
+            sfStates.Clear();
+            var first = true;
+            foreach (var t in targets) {
+                foreach (var state in (t as IStatesProvider).GetStateNames()) {
+                    if (sfStates.Add(state) && !first) {
+                        EditorGUILayout.HelpBox("Can't multi-edit nodes with different state lists.", MessageType.Error);
+                        return;
+                    }
+                }
+                first = false;
             }
 
             node = target as Node;
@@ -35,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.Update();
 
             ShowChooseReference();
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAsset)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAssets)));
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
@@ -122,10 +131,15 @@ namespace OneHamsa.Dexterity.Visual
             }
             var origColor = GUI.color;
 
-            // show state function button (play time)
-            if (GUILayout.Button("State Function Live View"))
-            {
-                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(node.reference.stateFunction);
+            if (node.reference.stateFunctions.Length > 0) {
+                EditorGUILayout.LabelField("State Functions (Runtime)", EditorStyles.whiteLargeLabel);
+                foreach (var function in node.reference.stateFunctions) {
+                    // show state function button (play time)
+                    if (GUILayout.Button(function.name))
+                    {
+                        EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(function);
+                    }
+                }
             }
 
             if (node.activeState != -1)
@@ -199,18 +213,22 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowPreviewState()
         {
-            if (node.stateFunctionAsset == null)
-                return;
+            previewStates.Clear();
+            previewStateNames.Clear();
 
-            var states = node.stateFunctionAsset.GetStates().ToList();
-            var stateNames = states.ToList();
-            states.Insert(0, null);
-            stateNames.Insert(0, "<None>");
+            previewStates.Add(null);
+            previewStateNames.Add("(None)");
+
+            foreach (var state in sfStates) {
+                previewStates.Add(state);
+                previewStateNames.Add(state);
+            }
 
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
+            var propDrawer = new StateDrawer();
             GUILayout.Label("Preview");
-            var newIndex = EditorGUILayout.Popup("", previewStateIndex, stateNames.ToArray());
+            var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray());
             if (newIndex != 0)
                 previewStateIndex = newIndex;
 
@@ -222,7 +240,7 @@ namespace OneHamsa.Dexterity.Visual
                 speedIndex = Array.IndexOf(speeds, 1f);
             speedIndex = EditorGUILayout.Popup("", speedIndex, speedsNames, GUILayout.Width(50));
 
-            if (didChange && states[previewStateIndex] != null)
+            if (didChange && previewStates[previewStateIndex] != null)
             {
                 if (coro != null)
                     EditorCoroutineUtility.StopCoroutine(coro);
@@ -234,7 +252,7 @@ namespace OneHamsa.Dexterity.Visual
                         modifiers.Add(modifier);
                 }
                 coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(node, modifiers, states[previewStateIndex]
+                    ModifierEditor.AnimateStateTransition(node, modifiers, previewStates[previewStateIndex]
                     , speeds[speedIndex]), this);
             }
             EditorGUILayout.EndHorizontal();
@@ -242,9 +260,9 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowWarnings()
         {
-            if (node.stateFunctionAsset == null) 
+            if (node.stateFunctionAssets.Count == 0 && node.referenceAssets.Count == 0)
             {
-                EditorGUILayout.HelpBox($"No state functions selected", MessageType.Error);
+                EditorGUILayout.HelpBox($"No state functions or references assigned to node", MessageType.Error);
             }
             if (string.IsNullOrEmpty(node.initialState))
             {

@@ -1,10 +1,12 @@
 namespace OneHamsa.Dexterity.Visual
 {
+    using System.Collections.Generic;
     using Gate = NodeReference.Gate;
 
     public interface IGateContainer
     {
-        StateFunctionGraph stateFunctionAsset { get; }
+        IEnumerable<string> GetStateNames();
+        IEnumerable<string> GetFieldNames();
         Node node { get; }
 
         void AddGate(Gate gate);

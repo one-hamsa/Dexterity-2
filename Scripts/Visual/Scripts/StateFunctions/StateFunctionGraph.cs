@@ -8,6 +8,8 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class StateFunctionGraph : BaseGraph
     {
+        public const string kDefaultState = "<Default>";
+
         public bool initialized { get; private set; }
         internal FieldsState fieldsState { get; private set; }
         internal int evaluationResult { get; set; } = -1;
@@ -38,14 +40,6 @@ namespace OneHamsa.Dexterity.Visual
             initialized = true;
         }
 
-        public IEnumerable<int> GetFieldIDs()
-        {
-            foreach (var name in GetFieldNames())
-            {
-                yield return Manager.instance.GetFieldID(name);
-            }
-        }
-
         public IEnumerable<string> GetFieldNames()
         {
             foreach (var node in nodes)
@@ -68,16 +62,18 @@ namespace OneHamsa.Dexterity.Visual
 
         public IEnumerable<string> GetStates()
         {
+            // all state functions have a default state
+            yield return kDefaultState;
+
             foreach (var node in nodes)
             {
-                if (node is DecisionNode desc)
+                if (node is DecisionNode desc) {
+                    if (desc.fallthrough)
+                        continue;
+                    
                     yield return desc.stateName;
+                }
             }
-        }
-        public IEnumerable<int> GetStateIDs()
-        {
-            foreach (var stateName in GetStates())
-                yield return Manager.instance.GetStateID(stateName);
         }
 
         public string errorString;
@@ -86,6 +82,41 @@ namespace OneHamsa.Dexterity.Visual
         {
             // TODO
             return true;
+        }
+
+        private static HashSet<string> namesSet = new HashSet<string>();
+
+        public static IEnumerable<string> EnumerateStateNames(IEnumerable<StateFunctionGraph> assets)
+        {
+            if (assets == null)
+                yield break;
+
+            namesSet.Clear();
+            foreach (var asset in assets) {
+                if (asset == null)
+                    continue; 
+
+                foreach (var state in asset.GetStates()) {
+                    if (namesSet.Add(state))
+                        yield return state;
+                }
+            }
+        }
+        public static IEnumerable<string> EnumerateFieldNames(IEnumerable<StateFunctionGraph> assets)
+        {
+            if (assets == null)
+                yield break;
+
+            namesSet.Clear();
+            foreach (var asset in assets) {
+                if (asset == null)
+                    continue; 
+
+                foreach (var field in asset.GetFieldNames()) {
+                    if (namesSet.Add(field))
+                        yield return field;
+                }
+            }
         }
     }
 }

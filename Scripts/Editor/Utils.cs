@@ -76,18 +76,18 @@ namespace OneHamsa.Dexterity.Visual
             });
         }
 
-        public static StateFunctionGraph GetStateFunctionFromObject(UnityEngine.Object unityObject)
+        public static IEnumerable<string> GetStatesFromObject(UnityEngine.Object unityObject)
         {
             if (unityObject is StateFunctionGraph sf)
-                return sf;
+                return sf.GetStates();
 
-            if (unityObject is IProvidesStateFunction providesSf)
-                return providesSf.stateFunctionAsset;
+            if (unityObject is IStatesProvider statesProvider)
+                return statesProvider.GetStateNames();
 
             if (unityObject is MonoBehaviour monoBehaviour) {
-                    var potentialNode = monoBehaviour.GetComponent<IProvidesStateFunction>();
+                    var potentialNode = monoBehaviour.GetComponent<IStatesProvider>();
                     if (potentialNode != null)
-                        return GetStateFunctionFromObject(potentialNode as UnityEngine.Object);
+                        return GetStatesFromObject(potentialNode as UnityEngine.Object);
             }
 
             return null;

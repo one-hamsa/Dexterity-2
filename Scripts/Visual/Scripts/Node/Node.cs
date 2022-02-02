@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IGateContainer, IProvidesStateFunction
+    public partial class Node : MonoBehaviour, IGateContainer, IStatesProvider
     {
         #region Static Functions
         // mainly for debugging graph problems
@@ -49,10 +49,10 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
-        public StateFunctionGraph stateFunctionAsset;
+        public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
         
         [State]
-        public string initialState;
+        public string initialState = StateFunctionGraph.kDefaultState;
 
         [SerializeField]
         public List<Gate> customGates = new List<Gate>();
@@ -194,9 +194,9 @@ namespace OneHamsa.Dexterity.Visual
         #region General Methods
         private bool EnsureValidState()
         {
-            if (stateFunctionAsset == null)
+            if (stateFunctionAssets.Count == 0 && referenceAssets.Count == 0)
             {
-                Debug.LogError("No state function assigned", this);
+                Debug.LogError("No state functions or references assigned to node", this);
                 return false;
             }
             return true;
@@ -212,14 +212,14 @@ namespace OneHamsa.Dexterity.Visual
                 reference.owner = this;
                 reference.name = $"{name} (Live Reference)";
                 // copy all references from this node to the runtime instance
-                reference.stateFunctionAsset = stateFunctionAsset;
+                reference.stateFunctionAssets.AddRange(stateFunctionAssets);
                 reference.extends.AddRange(referenceAssets);
                 // initialize reference (this will create the runtime version with all the inherited gates)
                 reference.Initialize(customGates);
             }
 
             // find all fields that are used by this node's state function
-            stateFieldIds = reference.stateFunction.GetFieldIDs().ToArray();
+            stateFieldIds = reference.GetFieldIDs().ToArray();
 
             // subscribe to more changes
             onGateAdded += RestartFields;
@@ -238,13 +238,13 @@ namespace OneHamsa.Dexterity.Visual
             CacheStateOverride();
 
             // find default state and define initial state
-            var defaultStateId = Manager.instance.GetStateID(initialState);
-            if (defaultStateId == -1)
+            var initialStateId = Manager.instance.GetStateID(initialState);
+            if (initialStateId == -1)
             {
-                defaultStateId = reference.stateFunction.GetStateIDs().ElementAt(0);
-                Debug.LogWarning($"no default state selected, selecting arbitrary", this);
+                initialStateId = reference.GetStateIDs().ElementAt(0);
+                Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
             }
-            activeState = defaultStateId;
+            activeState = initialStateId;
 
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;
@@ -454,7 +454,7 @@ namespace OneHamsa.Dexterity.Visual
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return reference.stateFunction.Evaluate(GenerateFieldsState());
+            return reference.Evaluate(GenerateFieldsState());
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -583,8 +583,38 @@ namespace OneHamsa.Dexterity.Visual
 #endregion Overrides
 
 #region Interface Implementation (Editor)
-        StateFunctionGraph IGateContainer.stateFunctionAsset => stateFunctionAsset;
-        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => stateFunctionAsset;
+        HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
+        public IEnumerable<StateFunctionGraph> GetStateFunctionAssetsIncludingReferences() {
+            stateFunctionsSet.Clear();
+            foreach (var asset in stateFunctionAssets) {
+                if (asset == null)
+                    continue;
+
+                if (stateFunctionsSet.Add(asset)) {
+                    yield return asset;
+                }
+            }
+            foreach (var reference in referenceAssets) {
+                if (reference == null)
+                    continue;
+
+                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents()) {
+                    if (stateFunctionsSet.Add(asset)) {
+                        yield return asset;
+                    }
+                }
+            }
+        }
+
+        IEnumerable<string> IStatesProvider.GetStateNames()
+        => StateFunctionGraph.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences());
+
+        IEnumerable<string> IStatesProvider.GetFieldNames()
+        => StateFunctionGraph.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences());
+
+        IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
+        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
+
         Node IGateContainer.node => this;
 #endregion Interface Implementation (Editor)
     }

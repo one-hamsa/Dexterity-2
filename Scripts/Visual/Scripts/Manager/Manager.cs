@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity.Visual
         public int GetStateID(string name)
         {
             if (stateNames.Count == 0)
-                Debug.LogWarning($"tried to get state id of {name} but stateNames is empty");
+                Debug.LogError($"tried to get state id of {name} but stateNames is empty");
 
             return stateNames.IndexOf(name);
         }

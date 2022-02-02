@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IProvidesStateFunction
+    public abstract class Modifier : TransitionBehaviour, IStatesProvider
     {
         [SerializeField]
         public Node _node;
@@ -51,7 +51,19 @@ namespace OneHamsa.Dexterity.Visual
         protected override double stateChangeTime => node.stateChangeTime;
         protected override int activeState => node.activeState;
 
-        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => node?.stateFunctionAsset;
+        IEnumerable<string> IStatesProvider.GetStateNames() {
+            if (node == null)
+            yield break;
+            foreach (var state in (node as IStatesProvider).GetStateNames())
+                yield return state;
+        }
+
+        IEnumerable<string> IStatesProvider.GetFieldNames() {
+            if (node == null)
+            yield break;
+            foreach (var field in (node as IStatesProvider).GetFieldNames())
+                yield return field;
+        }
 
         [Serializable]
         public abstract class PropertyBase

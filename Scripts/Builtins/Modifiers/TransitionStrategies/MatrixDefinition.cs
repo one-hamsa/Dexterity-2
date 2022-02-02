@@ -6,7 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
     [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "Dexterity/Matrix Definition", order = 100)]
-    public class MatrixDefinition : ScriptableObject, IProvidesStateFunction {
+    public class MatrixDefinition : ScriptableObject, IStatesProvider {
         [Serializable]
         public class Row
         {
@@ -39,14 +39,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
         }
 
-        public StateFunctionGraph stateFunctionAsset;
+        public StateFunctionGraph[] stateFunctionAssets;
 
         public List<Row> rows;
         public float defaultTime = .2f;
         public AnimationCurve defaultEasingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         private Row defaultRow;
 
-        StateFunctionGraph IProvidesStateFunction.stateFunctionAsset => stateFunctionAsset;
+
+        IEnumerable<string> IStatesProvider.GetStateNames()
+        => StateFunctionGraph.EnumerateStateNames(stateFunctionAssets);
+
+        IEnumerable<string> IStatesProvider.GetFieldNames()
+        => StateFunctionGraph.EnumerateFieldNames(stateFunctionAssets);
 
         public void Initialize()
         {
