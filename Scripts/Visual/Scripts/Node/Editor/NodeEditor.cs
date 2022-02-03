@@ -136,7 +136,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             var origColor = GUI.color;
 
-            if (node.reference.stateFunctions.Length > 0) {
+            if (node.reference != null && node.reference.stateFunctions.Length > 0) {
                 EditorGUILayout.LabelField("State Functions (Runtime)", EditorStyles.whiteLargeLabel);
                 foreach (var function in node.reference.stateFunctions) {
                     // show state function button (play time)

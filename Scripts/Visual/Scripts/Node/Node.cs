@@ -573,13 +573,12 @@ namespace OneHamsa.Dexterity.Visual
                 SetStateOverride(Manager.instance.GetStateID(overrideState));
         }
 
-#if UNITY_EDITOR
-        // update overrides every frame to allow setting overrides from editor
-        void LateUpdate()
+        // update overrides when selected to allow setting overrides from editor
+        void OnValidate()
         {
-            CacheFieldOverrides();
+            if (Application.isPlaying)
+                CacheFieldOverrides();
         }
-#endif
 #endregion Overrides
 
 #region Interface Implementation (Editor)
