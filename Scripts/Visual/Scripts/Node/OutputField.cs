@@ -234,7 +234,6 @@ namespace OneHamsa.Dexterity.Visual
                     // merge it with the other gate according to the field's type
                     if (definition.type == FieldType.Boolean)
                     {
-                        // additive: 1 if any is 1, 0 otherwise
                         var result = false;
                         foreach (var gate in cachedGates)
                         {

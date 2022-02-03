@@ -100,8 +100,13 @@ namespace OneHamsa.Dexterity.Visual
                     clusters[actualColor] = list = new List<BaseField>();
 
                 list.Add(kv.Key);
-                if (kv.Key is Node.OutputField outputField)
-                    nodes.Add(outputField.node);
+                if (kv.Key is Node.OutputField outputField) {
+                    if (outputField.node == null) {
+                        Debug.LogError($"Output field {outputField} has node = null!", this);
+                    } else {
+                        nodes.Add(outputField.node);
+                    }
+                }
             }
 
             ShowNodes(nodes);
