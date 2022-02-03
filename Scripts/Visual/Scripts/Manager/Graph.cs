@@ -33,24 +33,37 @@ namespace OneHamsa.Dexterity.Visual
 
         public event Action<int> onGraphColorUpdated;
 
+        /// <summary>
+        /// list of topologically-sorted nodes, used for invoking updates in order. public visibility for editor.
+        /// CAUTION: don't read when updating, this might return stale values.
+        /// </summary>
+        public List<BaseField> sortedNodes = new ListSet<BaseField>();
+        private List<BaseField> sortedNodesCache = new List<BaseField>();
+
+        /// <summary>
+        /// "color" map (of islands within the graph) - used for updating only dirty nodes. public visibility for editor.
+        /// CAUTION: don't read when updating, this might return stale values.
+        /// </summary>
+        public Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
+        private Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
+
+        /// <summary>
+        /// map of color to color, used for clusters (disjointed set / union-find algo). public visibility for editor.
+        /// CAUTION: don't read when updating, this might return stale values.
+        /// </summary>
+        public Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
+        private Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
+
         // keeps track of visits in topological sort
         private HashSet<BaseField> visited = new HashSet<BaseField>();
         // dfs stack for topological sort
         private Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
         // helper map for tracking which node is still on stack to avoid loops
         private Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
-        // "color" map (of islands within the graph) - used for only updating relevant nodes
-        public Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
-        private Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
-        public Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
-        private Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
         private Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
         private List<int> colorsToReset = new List<int>(8);
         private int dirtyIncrement = 0;
         private int lastDirtyUpdate = -1;
-        // cached graph data
-        public List<BaseField> sortedNodes = new ListSet<BaseField>();
-        private List<BaseField> sortedNodesCache = new List<BaseField>();
 
         public void AddNode(BaseField node)
         {
