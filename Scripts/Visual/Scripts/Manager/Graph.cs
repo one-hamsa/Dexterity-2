@@ -46,6 +46,8 @@ namespace OneHamsa.Dexterity.Visual
         private Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
         private Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
         private List<int> colorsToReset = new List<int>(8);
+        private int dirtyIncrement = 0;
+        private int lastDirtyUpdate = -1;
         // cached graph data
         public List<BaseField> sortedNodes = new ListSet<BaseField>();
         private List<BaseField> sortedNodesCache = new List<BaseField>();
@@ -74,6 +76,7 @@ namespace OneHamsa.Dexterity.Visual
         }
         public void SetDirty(BaseField field)
         {
+            dirtyIncrement++;
             if (!nodeToColor.TryGetValue(field, out var color))
             {
                 nodeToColor[field] = color = -1;
@@ -98,7 +101,7 @@ namespace OneHamsa.Dexterity.Visual
             RefreshEdges();
 
 
-            if (IsDirty())
+            if (lastDirtyUpdate != dirtyIncrement)
             {
                 StartCoroutine(nameof(UpdateGraph));
                 return;
@@ -106,16 +109,6 @@ namespace OneHamsa.Dexterity.Visual
 
             // invoke update
             RefreshNodeValues();
-        }
-
-        // if any is dirty, return true
-        bool IsDirty()
-        {
-            foreach (var dirty in dirtyColors.Values)
-                if (dirty)
-                    return true;
-
-            return false;
         }
 
         // disjointed-set-style search
@@ -183,10 +176,17 @@ namespace OneHamsa.Dexterity.Visual
                 updateOperations = 0;
                 updatedNodes = 0;
                 updateFrames = 1;
+                var startDirtyIncrement = dirtyIncrement;
                 var topSort = TopologicalSort();
 
                 while (topSort.MoveNext())
                 {
+                    if (startDirtyIncrement != dirtyIncrement)
+                    {
+                        // dirty increment changed, restart topological sort (calculate cumulative update time)
+                        startDirtyIncrement = dirtyIncrement;
+                        topSort = TopologicalSort();
+                    }
                     if (++updateOperations % throttleOperationsPerFrame == 0)
                     {
                         // wait a frame
@@ -222,7 +222,6 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var node in nodes)
                 nodesForCurrentSortIteration.Add(node);
 
-            updateOperations = 0;
             var currentColor = -1;
 
             visited.Clear();
@@ -250,7 +249,6 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 while (dfs.Count > 0)
                 {
-                    updateOperations++;
                     var current = dfs.Pop();
 
                     yield return current.node;
@@ -327,6 +325,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             lastSortResult = true;
+            lastDirtyUpdate = dirtyIncrement;
         }
     }
 }

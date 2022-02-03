@@ -16,6 +16,8 @@ namespace OneHamsa.Dexterity.Visual
         private static bool clustersFoldout;
         private static bool nodesFoldout;
         private static bool sortedFoldout;
+        private Dictionary<int, List<BaseField>> clusters = new Dictionary<int, List<BaseField>>();
+        private HashSet<Node> nodes = new HashSet<Node>();
 
         public override void OnInspectorGUI()
         {
@@ -42,6 +44,11 @@ namespace OneHamsa.Dexterity.Visual
             var lastAttempt = startupTime.AddSeconds(graph.lastUpdateAttempt);
 
             var origColor = GUI.contentColor;
+
+            GUI.contentColor = graph.updating ? Color.blue : origColor;
+            EditorGUILayout.LabelField("Current status", graph.updating ? "Updating" : "Updated");
+            GUI.contentColor = origColor;
+
             GUI.contentColor = graph.lastSortResult ? Color.green : Color.red;
             EditorGUILayout.LabelField("Last sort result", graph.lastSortResult ? "Success" : "Failure");
             GUI.contentColor = origColor;
@@ -56,8 +63,12 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.LabelField("Max operations / frame", Graph.throttleOperationsPerFrame.ToString());
 
             EditorGUILayout.Space(20);
-            ShowClustersAndNodes();
-            ShowSortResult();
+            if (!graph.updating) {
+                ShowClustersAndNodes();
+                ShowSortResult();
+            } else {
+                EditorGUILayout.HelpBox("Updating...", MessageType.Info);
+            }
 
             EditorGUI.indentLevel--;
         }
@@ -89,9 +100,8 @@ namespace OneHamsa.Dexterity.Visual
         {
             var graph = target as Graph;
 
-            // clusters
-            var clusters = new Dictionary<int, List<BaseField>>();
-            var nodes = new HashSet<Node>();
+            clusters.Clear();
+            nodes.Clear();
             foreach (var kv in graph.nodeToColor)
             {
                 var actualColor = kv.Value;

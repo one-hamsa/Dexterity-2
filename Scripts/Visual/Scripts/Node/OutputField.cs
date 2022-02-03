@@ -25,6 +25,7 @@ namespace OneHamsa.Dexterity.Visual
         public class OutputField : BaseField
         {
             public Node node { get; private set; }
+            public string originalNodeName { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
             protected int cachedValueWithoutOverride = emptyFieldValue;
@@ -82,6 +83,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // save reference to node
                 node = context;
+                originalNodeName = node.name;
                 // register this field in manager to get updates from graph
                 Manager.instance.RegisterField(this);
             }
@@ -295,8 +297,12 @@ namespace OneHamsa.Dexterity.Visual
             }
             
             public override string ToShortString() {
-                if (!node)
+                if (node == null) {
+                    if (!string.IsNullOrEmpty(originalNodeName)) {
+                        return $"(Destroyed) {originalNodeName}::{Manager.instance.GetFieldDefinition(definitionId).name}";
+                    }
                     return "(Uninitialized)";
+                }
 
                 return $"{node.name}::{Manager.instance.GetFieldDefinition(definitionId).name}";
             }
