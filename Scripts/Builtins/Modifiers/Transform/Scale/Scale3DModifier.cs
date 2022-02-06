@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
             scale.x *= baseScale.x;
             scale.y *= baseScale.y;
-            scale.x *= baseScale.z;
+            scale.z *= baseScale.z;
 
             transform.localScale = scale;
         }
