@@ -88,8 +88,8 @@ namespace OneHamsa.Dexterity.Visual
                 if (targets.Length == 1 &&
                     modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
                 {
+                    Undo.RecordObject(modifier, "Freeze value");
                     valueFreeze.FreezeValue();
-                    EditorUtility.SetDirty(target);
                 }
             }
 
