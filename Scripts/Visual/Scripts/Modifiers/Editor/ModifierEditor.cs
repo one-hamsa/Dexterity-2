@@ -63,7 +63,8 @@ namespace OneHamsa.Dexterity.Visual
                         // show later
                         break;
                     case nameof(Modifier.transitionStrategy):
-                        strategyExists = ShowStrategy();
+                        var p = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
+                        strategyExists = ShowStrategy(target, p);
                         break;
 
                     default:

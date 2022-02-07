@@ -4,6 +4,7 @@ using System;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
+    [Serializable]
     public class SimpleStrategy : BaseStrategy
     {
         public enum TransitionStyle

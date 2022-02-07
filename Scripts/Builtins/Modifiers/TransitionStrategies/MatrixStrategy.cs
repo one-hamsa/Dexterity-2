@@ -4,7 +4,7 @@ using System;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    [RequiresStateFunction]
+    [Serializable, RequiresStateFunction]
     public class MatrixStrategy : BaseStrategy
     {
         public MatrixDefinition definition;

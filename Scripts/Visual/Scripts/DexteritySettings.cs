@@ -15,6 +15,10 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public FieldDefinition[] fieldDefinitions;
+
+        [SerializeReference]
+        public ITransitionStrategy defaultTransitionStrategy;
+
         public GlobalFloatValue[] globalFloatValues;
 
         public float GetGlobalFloat(string name, float defaultValue = default)

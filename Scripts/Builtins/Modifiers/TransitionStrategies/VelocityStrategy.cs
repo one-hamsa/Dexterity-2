@@ -4,6 +4,7 @@ using System;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
+    [Serializable]
     public class VelocityStrategy : BaseStrategy
     {
         public float smoothTime = 0.167f;

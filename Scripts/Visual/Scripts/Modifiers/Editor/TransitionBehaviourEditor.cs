@@ -4,6 +4,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -12,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual
     {
         bool strategyDefined { get; set; }
         TransitionBehaviour transitionBehaviour { get; set; }
-        private bool advancedFoldout { get; set; }
+        private static bool advancedFoldout { get; set; }
 
         private void OnEnable() 
         {
@@ -33,7 +35,8 @@ namespace OneHamsa.Dexterity.Visual
                         break;
 
                     case nameof(Modifier.transitionStrategy):
-                        strategyDefined = ShowStrategy();
+                        var p = serializedObject.FindProperty(nameof(TransitionBehaviour.transitionStrategy));
+                        strategyDefined = ShowStrategy(target, p);
                         break;
 
                     default:
@@ -52,9 +55,8 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.ApplyModifiedProperties();
         }
         
-        protected bool ShowStrategy()
+        public static bool ShowStrategy(UnityEngine.Object target, SerializedProperty strategyProp)
         {
-            var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
             var className = Utils.GetClassName(strategyProp);
 
             if (!string.IsNullOrEmpty(className))
@@ -81,7 +83,7 @@ namespace OneHamsa.Dexterity.Visual
             if (currentIdx == -1 || (advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced")))
             {
                 EditorGUI.BeginChangeCheck(); 
-                fieldIdx = EditorGUILayout.Popup("Transition Strategy", currentIdx,
+                fieldIdx = EditorGUILayout.Popup(strategyProp.displayName, currentIdx,
                     Utils.GetNiceName(typesNames, suffix: "Strategy").ToArray());
 
                 if (EditorGUI.EndChangeCheck())
@@ -93,9 +95,26 @@ namespace OneHamsa.Dexterity.Visual
             {
                 var type = types[fieldIdx];
                 strategyProp.managedReferenceValue = Activator.CreateInstance(type);
+            } else if (string.IsNullOrEmpty(strategyProp.managedReferenceFullTypename)) {
+                strategyProp.managedReferenceValue = DeepClone(DexteritySettingsProvider.settings.defaultTransitionStrategy);
             }
 
             return !string.IsNullOrEmpty(className);
+        }
+
+        // Return a deep clone of an object of type T.
+        private static T DeepClone<T>(T obj)
+        {
+            using (MemoryStream memory_stream = new MemoryStream())
+            {
+                // Serialize the object into the memory stream.
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(memory_stream, obj);
+
+                // Rewind the stream and use it to create a new object.
+                memory_stream.Position = 0;
+                return (T)formatter.Deserialize(memory_stream);
+            }
         }
     }
 }

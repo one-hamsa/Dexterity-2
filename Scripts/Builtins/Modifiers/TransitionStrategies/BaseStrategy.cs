@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
+    [Serializable]
     public abstract class BaseStrategy : ITransitionStrategy
     {
         protected virtual bool checkActivityThreshold => true;

@@ -79,6 +79,14 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldDefinitionsList.DoLayoutList(); // Have the ReorderableList do its work
 
+
+            GUILayout.Label("Defaults", EditorStyles.whiteLargeLabel);
+
+            var p = serializedObject.FindProperty(nameof(DexteritySettings.defaultTransitionStrategy));
+            var strategyDefined = TransitionBehaviourEditor.ShowStrategy(target, p);
+
+            EditorGUILayout.Space(15);
+
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.globalFloatValues)));
 
             serializedObject.ApplyModifiedProperties();
