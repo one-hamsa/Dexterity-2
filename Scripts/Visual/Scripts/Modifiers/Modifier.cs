@@ -168,6 +168,12 @@ namespace OneHamsa.Dexterity.Visual
 
             return true;
         }
+
+        protected virtual void Reset() {
+            if (this is ISupportValueFreeze supportValueFreeze) {
+                supportValueFreeze.FreezeValue();
+            }
+        }
     }
 
 }
