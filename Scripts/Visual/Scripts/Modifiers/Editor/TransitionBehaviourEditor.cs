@@ -95,7 +95,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 var type = types[fieldIdx];
                 strategyProp.managedReferenceValue = Activator.CreateInstance(type);
-            } else if (string.IsNullOrEmpty(strategyProp.managedReferenceFullTypename)) {
+            } else if (string.IsNullOrEmpty(strategyProp.managedReferenceFullTypename) 
+                && DexteritySettingsProvider.settings.defaultTransitionStrategy != null) {
                 strategyProp.managedReferenceValue = DeepClone(DexteritySettingsProvider.settings.defaultTransitionStrategy);
             }
 
