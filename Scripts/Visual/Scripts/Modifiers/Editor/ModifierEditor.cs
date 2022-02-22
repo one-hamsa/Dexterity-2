@@ -190,8 +190,14 @@ namespace OneHamsa.Dexterity.Visual
                     var last = properties.arraySize;
                     properties.arraySize++;
                     var newElement = properties.GetArrayElementAtIndex(last);
-                    newElement.managedReferenceValue = Activator.CreateInstance(propType);
-                    newElement.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue = state;
+                    
+                    var newProp = Activator.CreateInstance(propType) as Modifier.PropertyBase;
+                    newProp.state = state;
+                    if (modifier is ISupportPropertyFreeze supportPropertyFreeze) {
+                        supportPropertyFreeze.FreezeProperty(newProp);
+                    }
+
+                    newElement.managedReferenceValue = newProp;
                 }
 
                 if (!foldedStates.ContainsKey(state))
