@@ -72,6 +72,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (newValue && !oldValue)
                 onPressDown?.Invoke();
 
+            // manually refresh hover value - we might be in the middle of a cache update
+            hoverField.CacheValue();
+
             // only handle if unpressed while on object
             if (oldValue && !newValue && hoverField.GetBooleanValue())
                 Click();
