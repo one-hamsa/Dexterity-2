@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 using Unity.EditorCoroutines.Editor;
+using UnityEditor.SceneManagement;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -124,7 +125,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private int previewStateIndex;
         private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
-        private List<Modifier> modifiers = new List<Modifier>();
+        private HashSet<Modifier> modifiers = new HashSet<Modifier>();
 
         void ShowDebug()
         {
@@ -252,10 +253,12 @@ namespace OneHamsa.Dexterity.Visual
 
                 // collect all children modifiers
                 modifiers.Clear();
-                foreach (var modifier in FindObjectsOfType<Modifier>()) {
+                // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
+                foreach (var modifier in StageUtility.GetCurrentStageHandle().FindComponentsOfType<Modifier>()) {
                     if (modifier.node == node)
                         modifiers.Add(modifier);
                 }
+
                 coro = EditorCoroutineUtility.StartCoroutine(
                     ModifierEditor.AnimateStateTransition(node, modifiers, previewStates[previewStateIndex]
                     , speeds[speedIndex]), this);
