@@ -129,10 +129,9 @@ namespace OneHamsa.Dexterity.Visual
 
         void ShowDebug()
         {
-            ShowPreviewState();
-
             if (!Application.isPlaying)
             {
+                ShowPreviewState();
                 return;
             }
             var origColor = GUI.color;
