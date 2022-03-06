@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public void FreezeProperty(PropertyBase property)
         {
             var prop = property as Property;
-            prop.scale = transform.localScale.x;
+            prop.scale = transform.localScale.x / baseScale;
         } 
     }
 }
