@@ -50,6 +50,10 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var definition = DexteritySettingsProvider.GetFieldDefinitionByName(actualFieldName);
+            if (string.IsNullOrEmpty(definition.name)) {
+                EditorGUI.LabelField(position, label.text, $"Field {actualFieldName} not found.");
+                return;
+            }
 
             switch (definition.type)
             {
