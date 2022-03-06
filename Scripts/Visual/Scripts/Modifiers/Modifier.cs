@@ -126,8 +126,10 @@ namespace OneHamsa.Dexterity.Visual
         {
             base.OnDisable();
 
-            node.onEnabled -= HandleNodeEnabled;
-            node.onStateChanged -= HandleStateChange;
+            if (node != null) {
+                node.onEnabled -= HandleNodeEnabled;
+                node.onStateChanged -= HandleStateChange;
+            }
         }
 
         Node TryFindNode()
