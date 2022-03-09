@@ -51,6 +51,12 @@ namespace OneHamsa.Dexterity.Visual
 
             GUI.contentColor = graph.lastSortResult ? Color.green : Color.red;
             EditorGUILayout.LabelField("Last sort result", graph.lastSortResult ? "Success" : "Failure");
+            if (!graph.lastSortResult) { 
+                EditorGUILayout.LabelField("Cycle found at", graph.cyclePoint.ToShortString());
+                foreach (var field in graph.cyclePoint.GetUpstreamFields()) {
+                    EditorGUILayout.LabelField("-> Upstream", field.ToShortString());
+                }
+            }
             GUI.contentColor = origColor;
 
             EditorGUILayout.LabelField("Last successful update",

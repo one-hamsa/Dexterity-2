@@ -16,6 +16,7 @@ namespace OneHamsa.Dexterity.Visual
 
         // debug info
         public bool lastSortResult { get; private set; }
+        public BaseField cyclePoint { get; private set; }
         public float lastUpdateAttempt { get; private set; }
         public float lastSuccessfulUpdate { get; private set; }
         public int updateOperations { get; private set; }
@@ -208,9 +209,8 @@ namespace OneHamsa.Dexterity.Visual
                     }
                 }
 
-                if (!lastSortResult)
-                {
-                    Debug.LogError("Graph sort failed");
+                if (!lastSortResult) {
+                    Debug.LogError($"Graph sort failed (found cycle at [{cyclePoint.ToShortString()}])");
                     yield break;
                 }
 
@@ -311,6 +311,7 @@ namespace OneHamsa.Dexterity.Visual
                             {
                                 // this is already a dependency somewhere on the stack, it means we have a cycle
                                 lastSortResult = false;
+                                cyclePoint = son;
                                 yield break;
                             }
 

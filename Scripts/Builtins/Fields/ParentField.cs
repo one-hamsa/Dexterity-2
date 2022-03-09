@@ -12,7 +12,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public bool negate;
         public bool updateParentReference;
 
-        Node context = null;
         Node parent = null;
         int fieldId;
 
@@ -85,7 +84,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             base.Initialize(context);
 
             fieldId = Manager.instance.GetFieldID(fieldName);
-            this.context = context;
             RefreshReferences();
         }
     }

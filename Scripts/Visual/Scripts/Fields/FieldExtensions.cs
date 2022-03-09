@@ -20,7 +20,11 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogError($"GetEnumValue: {field.definition.name} is not of type enum");
                 return null;
             }
-            return field.definition.enumValues[field.GetValue()];
+            var value = field.GetValue();
+            if (value == Node.emptyFieldValue)
+                value = 0;
+
+            return field.definition.enumValues[value];
         }
 
         public static string GetValueAsString(this BaseField field) {

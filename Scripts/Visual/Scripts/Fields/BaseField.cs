@@ -17,6 +17,11 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         protected void AddUpstreamField(BaseField field)
         {
+            if (field == this) {
+                UnityEngine.Debug.LogError($"{ToShortString()}: Cannot add self as upstream field, this is probably a bug");
+                return;
+            }
+
             if (!upstreamFields.Contains(field))
                 upstreamFields.Add(field);
 
@@ -43,6 +48,12 @@ namespace OneHamsa.Dexterity.Visual
 
             Manager.instance.SetDirty(this);
         }
+
+        /// <summary>
+        /// context node
+        /// </summary>
+        [NonSerialized]
+        public Node context;
 
         /// <summary>
         /// related field name (null if not exist), should be set by editor
@@ -92,6 +103,7 @@ namespace OneHamsa.Dexterity.Visual
             if (definitionId == -1 || string.IsNullOrEmpty(definition.name))
                 throw new FieldInitializationException();
 
+            this.context = context;
             Initialize(context);
             initialized = true;
         }
