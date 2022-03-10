@@ -46,11 +46,7 @@ namespace OneHamsa.Dexterity.Visual
 
             ShowChooseReference();
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAssets)));
-
-            if (targets.Length <= 1) {
-                EditorGUILayout.HelpBox($"State Functions exection order: \n"
-                + string.Join(" -> ", node.GetStateFunctionAssetsIncludingReferences().Select(r => r.name)), MessageType.Info);
-            }
+            EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);

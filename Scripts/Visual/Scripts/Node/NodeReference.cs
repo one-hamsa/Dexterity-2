@@ -207,6 +207,20 @@ namespace OneHamsa.Dexterity.Visual
             return defaultStateId;
         }
 
+        private void OnValidate() {
+            // add all state functions from references
+            foreach (var reference in extends) {
+                if (reference == null)
+                    continue;
+
+                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents()) {
+                    if (!stateFunctionAssets.Contains(asset)) {
+                        stateFunctionAssets.Add(asset);
+                    }
+                }
+            }
+        }
+
         IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
         IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
 

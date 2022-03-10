@@ -576,6 +576,18 @@ namespace OneHamsa.Dexterity.Visual
         // update overrides when selected to allow setting overrides from editor
         void OnValidate()
         {
+            // add all state functions from references
+            foreach (var reference in referenceAssets) {
+                if (reference == null)
+                    continue;
+
+                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents()) {
+                    if (!stateFunctionAssets.Contains(asset)) {
+                        stateFunctionAssets.Add(asset);
+                    }
+                }
+            }
+
             if (Application.isPlaying)
                 CacheFieldOverrides();
         }

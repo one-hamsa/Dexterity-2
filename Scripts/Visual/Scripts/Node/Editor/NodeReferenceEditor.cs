@@ -23,12 +23,10 @@ namespace OneHamsa.Dexterity.Visual
             reference = target as NodeReference;
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAssets)));
-            
             ShowExtends();
 
-            EditorGUILayout.HelpBox($"State Functions exection order: \n"
-            + string.Join(" -> ", reference.GetStateFunctionAssetsIncludingParents().Select(r => r.name)), MessageType.Info);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NodeReference.stateFunctionAssets)));
+            EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
