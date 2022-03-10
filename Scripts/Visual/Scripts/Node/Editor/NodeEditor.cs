@@ -94,6 +94,13 @@ namespace OneHamsa.Dexterity.Visual
 
         void ShowOverrides()
         {
+            // add nice name for all overrides
+            foreach (var o in node.overrides)
+            {
+                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(o.outputFieldName);
+                o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
+            }
+
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
 
@@ -173,7 +180,8 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
             {
                 var value = field.GetValueWithoutOverride();
-                string strValue = value.ToString();
+                string strValue = Utils.ConvertFieldValueToText(value, field.definition);
+
                 if (value == Node.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
@@ -183,7 +191,7 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     var outputOverride = overrides[field.definitionId];
                     GUI.color = Color.magenta;
-                    strValue = $"{outputOverride.value} ({StrikeThrough(strValue)})";
+                    strValue = $"{Utils.ConvertFieldValueToText(outputOverride.value, field.definition)} ({StrikeThrough(strValue)})";
                     unusedOverrides.Remove(outputOverride);
                 }
 

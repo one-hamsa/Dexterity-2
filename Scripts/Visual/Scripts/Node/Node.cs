@@ -25,6 +25,9 @@ namespace OneHamsa.Dexterity.Visual
         [Serializable]
         public class OutputOverride
         {
+            [HideInInspector]
+            public string name;
+
             [Field]
             public string outputFieldName;
             [FieldValue(nameof(outputFieldName), proxy = true)]

@@ -76,6 +76,23 @@ namespace OneHamsa.Dexterity.Visual
             });
         }
 
+        public static string ConvertFieldValueToText(int value, FieldDefinition definition)
+        {
+            string strValue = value.ToString();
+            switch (definition.type)
+            {
+                case Node.FieldType.Boolean when value != Node.emptyFieldValue:
+                    strValue = value == 1 ? "True" : "False";
+                    break;
+
+                case Node.FieldType.Enum when value != Node.emptyFieldValue:
+                    strValue = definition.enumValues[(int)value];
+                    break;
+            }
+
+            return strValue;
+        }
+
         public static IEnumerable<string> GetStatesFromObject(UnityEngine.Object unityObject)
         {
             if (unityObject is StateFunctionGraph sf)
