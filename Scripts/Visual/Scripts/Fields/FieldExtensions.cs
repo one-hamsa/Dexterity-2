@@ -28,6 +28,9 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public static string GetValueAsString(this BaseField field) {
+            if (field.GetValue() == Node.emptyFieldValue)
+                return "(empty)";
+
             switch (field.definition.type) {
                 case Node.FieldType.Boolean:
                     return field.GetBooleanValue().ToString();
