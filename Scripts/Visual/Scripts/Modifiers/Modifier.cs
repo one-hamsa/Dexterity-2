@@ -8,6 +8,14 @@ namespace OneHamsa.Dexterity.Visual
     [ModifierPropertyDefinition("Property")]
     public abstract class Modifier : TransitionBehaviour, IStatesProvider
     {
+        private static Dictionary<Node, HashSet<Modifier>> nodesToModifiers = new Dictionary<Node, HashSet<Modifier>>();
+        public static IEnumerable<Modifier> GetModifiers(Node node)
+        {
+            if (nodesToModifiers.TryGetValue(node, out var modifiers))
+                return modifiers;
+            return new Modifier[0];
+        }
+
         [SerializeField]
         public Node _node;
 
@@ -112,6 +120,11 @@ namespace OneHamsa.Dexterity.Visual
                 enabled = false;
                 return;
             }
+            if (!nodesToModifiers.TryGetValue(node, out var modifiers))
+            {
+                modifiers = nodesToModifiers[node] = new HashSet<Modifier>();
+            }
+            modifiers.Add(this);
 
             if (node.enabled)
                 HandleNodeEnabled();
@@ -129,6 +142,8 @@ namespace OneHamsa.Dexterity.Visual
             if (node != null) {
                 node.onEnabled -= HandleNodeEnabled;
                 node.onStateChanged -= HandleStateChange;
+                if (nodesToModifiers.TryGetValue(node, out var modifiers))
+                    modifiers.Remove(this);
             }
         }
 

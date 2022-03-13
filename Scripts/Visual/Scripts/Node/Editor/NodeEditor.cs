@@ -124,6 +124,8 @@ namespace OneHamsa.Dexterity.Visual
             GUI.enabled = true;
         }
 
+        static bool modifiersDebugOpen;
+        static bool stateFunctionsRuntimeDebugOpen;
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
         private static int speedIndex = -1;
@@ -138,13 +140,44 @@ namespace OneHamsa.Dexterity.Visual
             if (!Application.isPlaying)
             {
                 ShowPreviewState();
-                return;
             }
-            var origColor = GUI.color;
+            else 
+            {
+                ShowActiveState();
+                ShowRuntimeStateFunctions();
+                ShowModifiers();
+                ShowFieldValues();
+            }
+        }
 
-            if (node.reference != null && node.reference.stateFunctions.Length > 0) {
-                EditorGUILayout.LabelField("State Functions (Runtime)", EditorStyles.whiteLargeLabel);
-                foreach (var function in node.reference.stateFunctions) {
+        private void ShowModifiers()
+        {
+            var modifiers = Modifier.GetModifiers(node);
+
+            if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
+                return;
+
+            foreach (var m in modifiers)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{m.name}: {m.GetType().Name}");
+                if (GUILayout.Button("Go"))
+                {
+                    Selection.activeObject = m;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        private void ShowRuntimeStateFunctions()
+        {
+            if (node.reference != null && node.reference.stateFunctions.Length > 0)
+            {
+                if (!(stateFunctionsRuntimeDebugOpen = EditorGUILayout.Foldout(stateFunctionsRuntimeDebugOpen, "State Functions (Runtime)", true, EditorStyles.foldoutHeader)))
+                    return;
+
+                foreach (var function in node.reference.stateFunctions)
+                {
                     // show state function button (play time)
                     if (GUILayout.Button(function.name))
                     {
@@ -152,20 +185,14 @@ namespace OneHamsa.Dexterity.Visual
                     }
                 }
             }
+        }
 
-            if (node.activeState != -1)
-            {
-                var style = new GUIStyle(EditorStyles.helpBox);
-                style.alignment = TextAnchor.MiddleCenter;
-                style.fontSize = 14;
-
-                GUI.color = Color.green;
-                GUILayout.Label(Manager.instance.GetStateAsString(node.activeState), style);
-                GUI.color = origColor;
-            }
-
+        private void ShowFieldValues()
+        {
             if (!(fieldValuesDebugOpen = EditorGUILayout.Foldout(fieldValuesDebugOpen, "Field values", true, EditorStyles.foldoutHeader)))
                 return;
+
+            var origColor = GUI.color;
 
             var outputFields = node.outputFields;
             var overrides = node.cachedOverrides;
@@ -174,7 +201,7 @@ namespace OneHamsa.Dexterity.Visual
                 unusedOverrides.Add(value);
 
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
-            {                
+            {
                 EditorGUILayout.HelpBox($"{outputFields.Count} output fields{overridesStr}",
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
@@ -209,7 +236,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var outputOverride in unusedOverrides)
             {
                 GUI.color = Color.magenta;
-                    
+
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(outputOverride.outputFieldName);
                 GUILayout.FlexibleSpace();
@@ -220,6 +247,22 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
+        }
+
+        private void ShowActiveState()
+        {
+            var origColor = GUI.color;
+            
+            if (node.activeState != -1)
+            {
+                var style = new GUIStyle(EditorStyles.helpBox);
+                style.alignment = TextAnchor.MiddleCenter;
+                style.fontSize = 14;
+
+                GUI.color = Color.green;
+                GUILayout.Label(Manager.instance.GetStateAsString(node.activeState), style);
+                GUI.color = origColor;
+            }
         }
 
         private void ShowAllTargetsDebug()
