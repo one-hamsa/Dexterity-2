@@ -76,8 +76,15 @@ namespace OneHamsa.Dexterity.Visual
         HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
         private int defaultStateId = -1;
 
-        public void Initialize(IEnumerable<Gate> gates)
+        private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
+
+        public void Initialize(IEnumerable<Gate> gates, HashSet<NodeReference> parentReferences = null)
         {
+            if (parentReferences == null) {
+                parentReferences = NodeReference.parentReferences;
+                parentReferences.Clear();
+            }
+
             // register and initialize all functions
             var assets = GetStateFunctionAssetsIncludingParents().ToList();
             stateFunctions = new StateFunctionGraph[assets.Count];
@@ -92,11 +99,15 @@ namespace OneHamsa.Dexterity.Visual
             // copy from parents
             foreach (var parent in extends)
             {
+                // skip if already added 
+                if (!parentReferences.Add(parent))
+                    continue;
+
                 // deep clone before iterating gates to make sure we point to new instances
                 var newParent = Instantiate(parent);
 
                 // make sure it's recursive
-                newParent.Initialize(new Gate[] { });
+                newParent.Initialize(new Gate[] { }, parentReferences);
                 
                 var i = 0;
                 foreach (var gate in newParent.gates)
