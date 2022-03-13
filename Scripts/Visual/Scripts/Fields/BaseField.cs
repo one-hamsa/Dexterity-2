@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
         /// </summary>
-        private readonly List<BaseField> upstreamFields = new List<BaseField>();
+        private readonly HashSet<BaseField> upstreamFields = new HashSet<BaseField>();
 
         /// <summary>
         /// adds an upstream field
@@ -22,22 +22,20 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            if (!upstreamFields.Contains(field))
-                upstreamFields.Add(field);
-
-            Manager.instance.SetDirty(field);
-            Manager.instance.SetDirty(this);
+            if (upstreamFields.Add(field)) {
+                Manager.instance.SetDirty(field);
+                Manager.instance.SetDirty(this);
+            }
         }
         /// <summary>
         /// removes an existing upstream field
         /// </summary>
         protected void RemoveUpstreamField(BaseField field)
         {
-            if (upstreamFields.Contains(field))
-                upstreamFields.Remove(field);
-
-            Manager.instance.SetDirty(field);
-            Manager.instance.SetDirty(this);
+            if (upstreamFields.Remove(field)) {
+                Manager.instance.SetDirty(field);
+                Manager.instance.SetDirty(this);
+            }
         }
         /// <summary>
         /// clears all upstream fields
