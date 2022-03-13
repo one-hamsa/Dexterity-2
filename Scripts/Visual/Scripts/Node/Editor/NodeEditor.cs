@@ -18,10 +18,11 @@ namespace OneHamsa.Dexterity.Visual
         private HashSet<string> sfStates = new HashSet<string>();
         private List<string> previewStates = new List<string>();
         private List<string> previewStateNames = new List<string>();
+        private static HashSet<BaseField> upstreams = new HashSet<BaseField>();
 
         private void OnEnable()
         {
-            debugOpen = Application.isPlaying;
+            fieldValuesDebugOpen = Application.isPlaying;
             
             foldoutOpen = true;
         }
@@ -64,7 +65,8 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
             
             if (targets.Length <= 1)
-                ShowDebug();
+                ShowSingleTargetDebug();
+            ShowAllTargetsDebug();
 
             ShowWarnings();
             serializedObject.ApplyModifiedProperties();
@@ -122,7 +124,8 @@ namespace OneHamsa.Dexterity.Visual
             GUI.enabled = true;
         }
 
-        static bool debugOpen;
+        static bool fieldValuesDebugOpen;
+        static bool upstreamDebugOpen;
         private static int speedIndex = -1;
         private EditorCoroutine coro;
 
@@ -130,7 +133,7 @@ namespace OneHamsa.Dexterity.Visual
         private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
         private HashSet<Modifier> modifiers = new HashSet<Modifier>();
 
-        void ShowDebug()
+        void ShowSingleTargetDebug()
         {
             if (!Application.isPlaying)
             {
@@ -161,8 +164,7 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.color = origColor;
             }
 
-            debugOpen = EditorGUILayout.Foldout(debugOpen, "Debug", true, EditorStyles.foldoutHeader);
-            if (!debugOpen)
+            if (!(fieldValuesDebugOpen = EditorGUILayout.Foldout(fieldValuesDebugOpen, "Field values", true, EditorStyles.foldoutHeader)))
                 return;
 
             var outputFields = node.outputFields;
@@ -218,6 +220,61 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
+        }
+
+        private void ShowAllTargetsDebug()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!(upstreamDebugOpen = EditorGUILayout.Foldout(upstreamDebugOpen, "Upstreams", true, EditorStyles.foldoutHeader)))
+                return;
+
+            foreach (var t in targets) {
+                if (targets.Length > 1)
+                    EditorGUILayout.LabelField(t.name, EditorStyles.whiteBoldLabel);
+
+                foreach (var output in (t as Node).outputFields.Values)
+                {
+                    GUILayout.Label(output.definition.name, EditorStyles.boldLabel);
+
+                    upstreams.Clear();
+                    ShowUpstreams(output, t as Node);
+
+                    GUILayout.Space(5);
+                }
+
+                GUILayout.Space(10);
+            }
+            
+        }
+
+        private static void ShowUpstreams(BaseField field, Node context)
+        {
+            upstreams.Add(field);
+
+            EditorGUI.indentLevel++;
+            foreach (var upstreamField in Manager.instance.graph.edges[field])
+            {
+                var upstreamFieldName = upstreamField.ToShortString();
+                var upstreamValue = upstreamField.GetValueAsString();
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
+                GUILayout.FlexibleSpace();
+                if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name)) {
+                    Selection.activeObject = upstreamField.context;
+                }
+                EditorGUILayout.EndHorizontal();
+
+                if (upstreams.Contains(upstreamField)) {
+                    EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
+                    continue;
+                }
+
+                ShowUpstreams(upstreamField, context);
+            }
+            EditorGUI.indentLevel--;
         }
 
         private void ShowPreviewState()
