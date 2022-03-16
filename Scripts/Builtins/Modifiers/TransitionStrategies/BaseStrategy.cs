@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public virtual IDictionary<int, float> Initialize(int[] states, int currentState) 
         {
-            activityThreshold = Manager.instance.settings.GetGlobalFloat("activityThreshold", .999f);
+            activityThreshold = Core.instance.settings.GetGlobalFloat("activityThreshold", .999f);
             jumpedToFinalState = false;
 
             result.Clear();

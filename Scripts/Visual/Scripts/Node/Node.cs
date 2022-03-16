@@ -45,7 +45,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
-                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
+                return (outputFieldDefinitionId = Core.instance.GetFieldID(outputFieldName)) != -1;
             }
         }
         #endregion Data Definitions
@@ -241,7 +241,7 @@ namespace OneHamsa.Dexterity.Visual
             CacheStateOverride();
 
             // find default state and define initial state
-            var initialStateId = Manager.instance.GetStateID(initialState);
+            var initialStateId = Core.instance.GetStateID(initialState);
             if (initialStateId == -1)
             {
                 initialStateId = reference.GetStateIDs().ElementAt(0);
@@ -319,7 +319,8 @@ namespace OneHamsa.Dexterity.Visual
                     return;
 
                 f.Finalize(this);
-                Manager.instance?.UnregisterField(f);
+                if (Manager.instance != null)
+                    Manager.instance.UnregisterField(f);
                 FinalizeFields(f.GetUpstreamFields());
 
                 RemoveAudit(f);
@@ -362,7 +363,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="name">Field name</param>
         /// <returns></returns>
         public OutputField GetOutputField(string name) 
-            => GetOutputField(Manager.instance.GetFieldID(name));
+            => GetOutputField(Core.instance.GetFieldID(name));
 
         /// <summary>
         /// Returns the node's output field. Faster than GetOutputField(string name)
@@ -471,7 +472,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="value">Bool value for field</param>
         public void SetOverride(int fieldId, bool value)
         {
-            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            var definition = Core.instance.GetFieldDefinition(fieldId);
             if (definition.type != FieldType.Boolean)
                 Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.name}", this);
 
@@ -485,7 +486,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="value">Enum value for field (should appear in field definition)</param>
         public void SetOverride(int fieldId, string value)
         {
-            var definition = Manager.instance.GetFieldDefinition(fieldId);
+            var definition = Core.instance.GetFieldDefinition(fieldId);
             if (definition.type != FieldType.Enum)
                 Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.name}", this);
 
@@ -547,7 +548,7 @@ namespace OneHamsa.Dexterity.Visual
 
 #if UNITY_EDITOR
             // in editor, write to the overrideState string (this can be called in edit time)
-            overrideState = Manager.instance.GetStateAsString(state);
+            overrideState = Core.instance.GetStateAsString(state);
 #else
             // in runtime, clear the string
             overrideState = null;
@@ -573,7 +574,7 @@ namespace OneHamsa.Dexterity.Visual
         private void CacheStateOverride()
         {
             if (!string.IsNullOrEmpty(overrideState))
-                SetStateOverride(Manager.instance.GetStateID(overrideState));
+                SetStateOverride(Core.instance.GetStateID(overrideState));
         }
 
         // update overrides when selected to allow setting overrides from editor

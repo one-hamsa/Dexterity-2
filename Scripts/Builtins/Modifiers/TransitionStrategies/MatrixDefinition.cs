@@ -64,8 +64,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             foreach (var row in rows)
             {
-                row.fromIds = row.from.Select(s => Manager.instance.GetStateID(s)).ToArray();
-                row.toIds = row.to.Select(s => Manager.instance.GetStateID(s)).ToArray();
+                row.fromIds = row.from.Select(s => Core.instance.GetStateID(s)).ToArray();
+                row.toIds = row.to.Select(s => Core.instance.GetStateID(s)).ToArray();
             }
         }
 

@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (!propertiesCache.ContainsKey(stateId))
                 {
-                    Debug.LogWarning($"property for state = {Manager.instance.GetStateAsString(stateId)} not found", this);
+                    Debug.LogWarning($"property for state = {Core.instance.GetStateAsString(stateId)} not found", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)
                         return p;
@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity.Visual
 
             // editor
             foreach (var prop in properties)
-                if (Manager.instance.GetStateID(prop.state) == stateId)
+                if (Core.instance.GetStateID(prop.state) == stateId)
                     return prop;
 
             return null;
@@ -84,7 +84,7 @@ namespace OneHamsa.Dexterity.Visual
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
-                var id = Manager.instance.GetStateID(prop.state);
+                var id = Core.instance.GetStateID(prop.state);
                 if (id == -1)
                 {
                     // those properties are kept serialized in order to maintain history, no biggie

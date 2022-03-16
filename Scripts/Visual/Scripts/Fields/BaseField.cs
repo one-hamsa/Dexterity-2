@@ -96,7 +96,7 @@ namespace OneHamsa.Dexterity.Visual
         public void Initialize(Node context, int definitionId)
         {
             this.definitionId = definitionId;
-            definition = Manager.instance.GetFieldDefinition(definitionId);
+            definition = Core.instance.GetFieldDefinition(definitionId);
 
             if (definitionId == -1 || string.IsNullOrEmpty(definition.name))
                 throw new FieldInitializationException();

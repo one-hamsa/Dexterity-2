@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
-                return (outputFieldDefinitionId = Manager.instance.GetFieldID(outputFieldName)) != -1;
+                return (outputFieldDefinitionId = Core.instance.GetFieldID(outputFieldName)) != -1;
             }
 
             public override string ToString()
@@ -90,11 +90,11 @@ namespace OneHamsa.Dexterity.Visual
             stateFunctions = new StateFunctionGraph[assets.Count];
             for (int i = 0; i < assets.Count; i++)
             {
-                stateFunctions[i] = Manager.instance.RegisterStateFunction(assets[i]);
+                stateFunctions[i] = Core.instance.RegisterStateFunction(assets[i]);
             }
 
             // cache default state
-            defaultStateId = Manager.instance.GetStateID(StateFunctionGraph.kDefaultState);
+            defaultStateId = Core.instance.GetStateID(StateFunctionGraph.kDefaultState);
 
             // copy from parents
             foreach (var parent in extends)
@@ -134,7 +134,7 @@ namespace OneHamsa.Dexterity.Visual
             // cache delays
             cachedDelays = new Dictionary<int, TransitionDelay>();
             foreach (var delay in delays)
-                cachedDelays[Manager.instance.GetStateID(delay.state)] = delay;
+                cachedDelays[Core.instance.GetStateID(delay.state)] = delay;
         }
 
         public TransitionDelay GetDelay(int state)
@@ -199,13 +199,13 @@ namespace OneHamsa.Dexterity.Visual
         {
             foreach (var name in GetFieldNames())
             {
-                yield return Manager.instance.GetFieldID(name);
+                yield return Core.instance.GetFieldID(name);
             }
         }
         public IEnumerable<int> GetStateIDs()
         {
             foreach (var stateName in GetStateNames())
-                yield return Manager.instance.GetStateID(stateName);
+                yield return Core.instance.GetStateID(stateName);
         }
 
         internal int Evaluate(FieldsState fieldsState)

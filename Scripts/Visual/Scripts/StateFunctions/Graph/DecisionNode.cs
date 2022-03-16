@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual
 			if (fallthrough)
 				return;
 				
-			stateId = Manager.instance.GetStateID(stateName);
+			stateId = Core.instance.GetStateID(stateName);
 			if (stateId == -1)
 				Debug.LogError($"state id == -1 (state {stateName})"); 
 		}

@@ -231,7 +231,7 @@ namespace OneHamsa.Dexterity.Visual
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
-                if (Application.isPlaying && activeState == Manager.instance.GetStateID(propState))
+                if (Application.isPlaying && activeState == Core.instance.GetStateID(propState))
                 {
                     GUI.contentColor = Color.green;
                     suffix = " (current)";
@@ -249,6 +249,7 @@ namespace OneHamsa.Dexterity.Visual
                         propFreeze.FreezeProperty(modifier.properties[i]);
                     }
 
+                    GUI.enabled = Application.isPlaying;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
                     {
@@ -257,6 +258,7 @@ namespace OneHamsa.Dexterity.Visual
                         coro = EditorCoroutineUtility.StartCoroutine(
                             AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState), this);
                     }
+                    GUI.enabled = true;
                 }
 
                 if (stateProps.Count > 1)
@@ -312,17 +314,21 @@ namespace OneHamsa.Dexterity.Visual
             }
             Undo.FlushUndoRecordObjects();
 
+            // destroy previous instance, it's ok because it's editor time
+            if (Core.instance != null)
+                Core.Destroy();
+            Core.Create(DexteritySettingsProvider.settings);
+
             // setup
-            Manager.instance.Initialize();
             foreach (var asset in node.GetStateFunctionAssetsIncludingReferences())
-                Manager.instance.RegisterStateFunction(asset);
+                Core.instance.RegisterStateFunction(asset);
 
             foreach (var modifier in modifiers)
                 modifier.Awake();
 
             // if it's the first run (didn't run an editor transition before), reset to same state (won't show animation)
             if (node.activeState == -1)
-                node.activeState = Manager.instance.GetStateID(state);
+                node.activeState = Core.instance.GetStateID(state);
 
             var startTime = EditorApplication.timeSinceStartup;
             node.currentTime = startTime;
@@ -334,7 +340,9 @@ namespace OneHamsa.Dexterity.Visual
                 modifier.ForceTransitionUpdate();
             }
 
-            node.activeState = Manager.instance.GetStateID(state);
+            node.activeState = Core.instance.GetStateID(state);
+
+            bool anyChanged;
 
             do {
                 // immitate a frame
@@ -342,14 +350,15 @@ namespace OneHamsa.Dexterity.Visual
                 node.currentTime = startTime + (EditorApplication.timeSinceStartup - startTime) * speed;
 
                 // transition
+                anyChanged = false;
                 foreach (var modifier in modifiers) {
                     modifier.Update();
                     EditorUtility.SetDirty(modifier);
+                    anyChanged |= modifier.IsChanged();
                 }
-            } while (modifiers.Any(m => m.IsChanged()));
+            } while (anyChanged);
 
-            // cleanup
-            Manager.instance.Uninitialize();
+            Core.Destroy();
         }
 
         static void DrawSeparator()

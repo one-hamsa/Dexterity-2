@@ -119,7 +119,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (string.IsNullOrEmpty(overrideStateProp.stringValue))
                     node.ClearStateOverride();
                 else
-                    node.SetStateOverride(Manager.instance.GetStateID(overrideStateProp.stringValue));
+                    node.SetStateOverride(Core.instance.GetStateID(overrideStateProp.stringValue));
             }
             GUI.enabled = true;
         }
@@ -225,7 +225,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(Manager.instance.GetFieldDefinition(field.definitionId).name);
+                EditorGUILayout.LabelField(Core.instance.GetFieldDefinition(field.definitionId).name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();
@@ -260,7 +260,7 @@ namespace OneHamsa.Dexterity.Visual
                 style.fontSize = 14;
 
                 GUI.color = Color.green;
-                GUILayout.Label(Manager.instance.GetStateAsString(node.activeState), style);
+                GUILayout.Label(Core.instance.GetStateAsString(node.activeState), style);
                 GUI.color = origColor;
             }
         }

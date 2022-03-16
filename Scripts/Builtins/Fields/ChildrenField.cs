@@ -140,7 +140,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            fieldId = Manager.instance.GetFieldID(fieldName);
+            fieldId = Core.instance.GetFieldID(fieldName);
             RefreshReferences();
         }
 

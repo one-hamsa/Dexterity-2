@@ -31,12 +31,12 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void Initialize() 
 		{
-			definitionId = Manager.instance.GetFieldID(fieldName);
+			definitionId = Core.instance.GetFieldID(fieldName);
 			if (definitionId == -1)
 			{
 				UnityEngine.Debug.LogError($"definition id == -1 (field {fieldName})");
 			}
-			definition = Manager.instance.GetFieldDefinition(definitionId);
+			definition = Core.instance.GetFieldDefinition(definitionId);
 		}
 
 		[Conditional("DEBUG")]
