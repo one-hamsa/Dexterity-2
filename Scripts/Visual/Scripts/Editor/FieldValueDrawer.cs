@@ -19,9 +19,9 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            if (Manager.instance == null)
+            if (DexteritySettingsProvider.settings == null)
             {
-                EditorGUI.LabelField(position, label.text, "Dexterity Manager not found.");
+                EditorGUI.LabelField(position, label.text, "Dexterity Settings not found.");
                 return;
             }
 
