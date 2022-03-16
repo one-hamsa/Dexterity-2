@@ -353,8 +353,13 @@ namespace OneHamsa.Dexterity.Visual
                 anyChanged = false;
                 foreach (var modifier in modifiers) {
                     modifier.Update();
-                    EditorUtility.SetDirty(modifier);
-                    anyChanged |= modifier.IsChanged();
+                    if (modifier.IsChanged()) {
+                        anyChanged = true;
+                        EditorUtility.SetDirty(modifier);
+                    }
+                }
+                if (anyChanged) {
+                    SceneView.RepaintAll();
                 }
             } while (anyChanged);
 
