@@ -249,7 +249,9 @@ namespace OneHamsa.Dexterity.Visual
                         propFreeze.FreezeProperty(modifier.properties[i]);
                     }
 
-                    GUI.enabled = Application.isPlaying;
+                    if (Application.isPlaying)
+                        return;
+
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
                     {
@@ -258,7 +260,6 @@ namespace OneHamsa.Dexterity.Visual
                         coro = EditorCoroutineUtility.StartCoroutine(
                             AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState), this);
                     }
-                    GUI.enabled = true;
                 }
 
                 if (stateProps.Count > 1)
