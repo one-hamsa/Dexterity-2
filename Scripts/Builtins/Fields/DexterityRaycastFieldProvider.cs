@@ -7,6 +7,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         HashSet<IRaycastController> controllers = new HashSet<IRaycastController>();
         HashSet<IRaycastController> receivedPressStart = new HashSet<IRaycastController>();
+        List<RaycastRouter> routers = new List<RaycastRouter>();
+
         public bool GetHover(string castTag = null) 
         {
             foreach (var ctrl in controllers) {
@@ -39,6 +41,47 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             controllers.Remove(controller);
             receivedPressStart.Remove(controller);
+        }
+
+        private void Awake() {
+            AddRoutersToAllColliders();
+        }
+
+        private void OnDestroy() {
+            RemoveRoutersFromAllColliders();
+        }
+
+        private void AddRoutersToAllColliders() {
+            var queue = new Queue<Transform>();
+            queue.Enqueue(transform);
+
+            while (queue.Count > 0) {
+                var current = queue.Dequeue();
+
+                foreach (Transform child in current) {
+                    queue.Enqueue(child);
+                }
+
+                if (current.GetComponent<Node>() != null) {
+                    continue;
+                }
+                
+                if (current != transform) {
+                    var collider = current.GetComponent<Collider>();
+                    if (collider != null) {
+                        // add router component and route it to receivers
+                        var router = collider.gameObject.AddComponent<RaycastRouter>();
+                        router.AddReceiver(this);
+                        routers.Add(router);
+                    }
+                }
+            }
+        }
+        private void RemoveRoutersFromAllColliders() {
+            foreach (var router in routers) {
+                Destroy(router);
+            }
+            routers.Clear();
         }
     }
 }
