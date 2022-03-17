@@ -36,6 +36,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public void FreezeProperty(PropertyBase property)
         {
+            if (component == null)
+                return;
+                
             var prop = property as Property;
             prop.alpha = component.alpha;
         } 

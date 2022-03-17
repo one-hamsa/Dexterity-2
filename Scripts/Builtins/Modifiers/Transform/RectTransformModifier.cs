@@ -38,12 +38,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public void FreezeProperty(PropertyBase property)
         {
+            if (component == null)
+                return;
+
             var prop = property as Property;
             prop.sizeDelta = component.sizeDelta - baseSize;
         }
 
         public void FreezeValue()
         {
+            if (component == null)
+                return;
+                
             baseSize = component.sizeDelta;
         }
     }
