@@ -364,6 +364,9 @@ namespace OneHamsa.Dexterity.Visual
                 }
             } while (anyChanged);
 
+            foreach (var modifier in modifiers)
+                modifier.OnDestroy();
+
             Core.Destroy();
         }
 
