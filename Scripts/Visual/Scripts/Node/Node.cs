@@ -346,7 +346,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             catch (BaseField.FieldInitializationException)
             {
-                Debug.LogWarning($"caught FieldInitializationException, removing {gate}", this);
+                Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
                 FinalizeGate(gate);
             }
         }
