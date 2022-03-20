@@ -93,6 +93,10 @@ namespace OneHamsa.Dexterity.Visual
                 propertiesCache.Add(id, prop);
             }
         }
+        public virtual void OnDestroy() 
+        {
+
+        }
 
         public void HandleNodeEnabled()
         {
