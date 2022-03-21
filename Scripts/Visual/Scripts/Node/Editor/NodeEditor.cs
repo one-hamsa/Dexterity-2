@@ -296,28 +296,29 @@ namespace OneHamsa.Dexterity.Visual
         {
             upstreams.Add(field);
 
-            EditorGUI.indentLevel++;
-            foreach (var upstreamField in Manager.instance.graph.edges[field])
-            {
-                var upstreamFieldName = upstreamField.ToShortString();
-                var upstreamValue = upstreamField.GetValueAsString();
+            if (Manager.instance.graph.edges.TryGetValue(field, out var upstreamFields)) {
+                EditorGUI.indentLevel++;
+                foreach (var upstreamField in upstreamFields) {
+                    var upstreamFieldName = upstreamField.ToShortString();
+                    var upstreamValue = upstreamField.GetValueAsString();
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
-                GUILayout.FlexibleSpace();
-                if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name)) {
-                    Selection.activeObject = upstreamField.context;
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
+                    GUILayout.FlexibleSpace();
+                    if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name)) {
+                        Selection.activeObject = upstreamField.context;
+                    }
+                    EditorGUILayout.EndHorizontal();
+
+                    if (upstreams.Contains(upstreamField)) {
+                        EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
+                        continue;
+                    }
+
+                    ShowUpstreams(upstreamField, context);
                 }
-                EditorGUILayout.EndHorizontal();
-
-                if (upstreams.Contains(upstreamField)) {
-                    EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
-                    continue;
-                }
-
-                ShowUpstreams(upstreamField, context);
+                EditorGUI.indentLevel--;
             }
-            EditorGUI.indentLevel--;
         }
 
         private void ShowPreviewState()
