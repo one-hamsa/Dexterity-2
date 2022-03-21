@@ -76,7 +76,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // check if children transforms stay the same
             if (children == null || updateChildrenReference) {
                 var nodesIter = recursive 
-                    ? context.transform.GetComponentsInChildren<Node>(includeInactive: true) 
+                    ? GetNodesInChildrenRecursive() 
                     : GetNodesInImmediateChildren();
 
                 // recalculate paths
@@ -125,6 +125,23 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             // proxy might have changed - re-calculate node's outputs
             context.SetDirty();
+        }
+
+        private IEnumerable<Node> GetNodesInChildrenRecursive()
+        {
+            // all children, but stop recursing when finding nodes
+            var queue = new Queue<Transform>();
+            queue.Enqueue(context.transform);
+
+            while (queue.Count > 0) {
+                var transform = queue.Dequeue();
+                var node = transform.GetComponent<Node>();
+                if (node != context && node != null)
+                    yield return node;
+                else
+                    foreach (Transform child in transform)
+                        queue.Enqueue(child);
+            }
         }
 
         private IEnumerable<Node> GetNodesInImmediateChildren()
