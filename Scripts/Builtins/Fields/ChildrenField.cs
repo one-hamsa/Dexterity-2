@@ -76,7 +76,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // check if children transforms stay the same
             if (children == null || updateChildrenReference) {
                 var nodesIter = recursive 
-                    ? context.transform.GetComponentsInChildren<Node>() 
+                    ? context.transform.GetComponentsInChildren<Node>(includeInactive: true) 
                     : GetNodesInImmediateChildren();
 
                 // recalculate paths
