@@ -99,6 +99,15 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
                 propertiesUpdated |= ShowProperties(sfStates);
+
+                if (targets.Length == 1 && 
+                    modifier is ISupportPropertyFreeze propFreeze && GUILayout.Button("Freeze Properties")) 
+                {
+                    Undo.RecordObject(modifier, "Freeze properties");
+                    foreach (var prop in modifier.properties) {
+                        propFreeze.FreezeProperty(prop);
+                    }
+                }
             }
 
             // warnings
