@@ -5,41 +5,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [RequireComponent(typeof(Renderer))]
-    public class MaterialLerpModifier : ComponentModifier<Renderer>
+    public class MaterialLerpModifier : BaseMaterialModifier, ISupportPropertyFreeze
     {
-        private Material originalMaterial;
-
-        // Start is called before the first frame update [Serializable]
-
-        Material targetMaterial;
         public class Property : PropertyBase
         {
             // custom params
             public Material material;
-        }
-
-        public override void Awake()
-        {
-            base.Awake();
-
-            #if UNITY_EDITOR
-            // support editor transitions
-            if (targetMaterial == null) {
-                originalMaterial = component.sharedMaterial;
-                targetMaterial = new Material(originalMaterial);
-                component.sharedMaterial = targetMaterial;
-            }
-            #else
-            targetMaterial = component.material;
-            #endif
-        }
-
-        public override void OnDestroy()
-        {
-            base.OnDestroy();
-            #if UNITY_EDITOR
-            component.sharedMaterial = originalMaterial;
-            #endif
         }
 
         // Update is called once per frame
@@ -56,8 +27,15 @@ namespace OneHamsa.Dexterity.Visual
                 var value = kv.Value;
 
                 var propMaterial = property.material != null ? property.material : targetMaterial;
-                targetMaterial.Lerp(targetMaterial, property.material, value);
-            }            
+                targetMaterial.Lerp(targetMaterial, propMaterial, value);
+            }
+        }
+
+        void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
+        {
+            var prop = property as Property;
+
+            prop.material = component.sharedMaterial;
         }
     }
 }
