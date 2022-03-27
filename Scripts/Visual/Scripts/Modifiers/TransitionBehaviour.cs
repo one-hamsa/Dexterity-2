@@ -63,7 +63,12 @@ namespace OneHamsa.Dexterity.Visual
 
         public void InitializeTransitionState()
         {
-            transitionState = transitionStrategy.Initialize(states, activeState);
+            try {
+                transitionState = transitionStrategy.Initialize(states, activeState);
+            } catch (ITransitionStrategy.TransitionInitializationException e) {
+                Debug.LogError(e.Message, this);
+                enabled = false;
+            }
             lastUpdateTime = currentTime;
         }
 

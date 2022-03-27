@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             if (!foundState)
-                Debug.LogError($"BaseStrategy.Initialize: did not find state {currentState} in states");
+                throw new ITransitionStrategy.TransitionInitializationException($"did not find state {currentState} in states");
             
             return result;
         }
