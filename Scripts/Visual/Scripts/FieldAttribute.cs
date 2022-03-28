@@ -4,11 +4,11 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class FieldAttribute : PropertyAttribute
     {
-        public bool drawLabelSeparately;
+        public bool allowNull;
 
-        public FieldAttribute(bool drawLabelSeparately = false)
+        public FieldAttribute(bool allowNull = false)
         {
-            this.drawLabelSeparately = drawLabelSeparately;
+            this.allowNull = allowNull;
         }
     }
 }

@@ -24,31 +24,31 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name).ToArray();
+            var fieldsEnum = DexteritySettingsProvider.settings.fieldDefinitions.Select(f => f.name);
+            var attr = attribute as FieldAttribute;
+            if (attr.allowNull) {
+                fieldsEnum = new string[] { "(None)" }.Concat(fieldsEnum);
+            }
+
+            var fields = fieldsEnum.ToArray();
 
             var prevIndex = Array.IndexOf(fields, property.stringValue);
+            if (prevIndex == -1)
+            {
+                prevIndex = 0;
+                property.stringValue = null;
+            }
 
             EditorGUI.BeginProperty(position, GUIContent.none, property);
 
-            var attr = attribute as FieldAttribute;
-            int index;
-            if (attr.drawLabelSeparately)
-            {
-                var lblPos = position;
-                lblPos.width /= 2;
-                EditorGUI.LabelField(lblPos, label.text);
-
-                var popPos = lblPos;
-                popPos.x += lblPos.width;
-                index = EditorGUI.Popup(popPos, prevIndex, fields);
-            }
-            else
-            {
-                index = EditorGUI.Popup(position, label.text, prevIndex, fields);
-            }
+            int index = EditorGUI.Popup(position, label.text, prevIndex, fields);
 
             if (index != prevIndex) {
-                property.stringValue = fields[index];
+                if (attr.allowNull && index == 0) {
+                    property.stringValue = null;
+                } else {
+                    property.stringValue = fields[index];
+                }
             }
             EditorGUI.EndProperty();
         }
