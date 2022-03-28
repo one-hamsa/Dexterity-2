@@ -261,14 +261,30 @@ namespace OneHamsa.Dexterity.Visual
                     if (Application.isPlaying)
                         return;
 
+                    GUI.contentColor = coro != null ? Color.green : origColor;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
                     {
-                        if (coro != null)
-                            EditorCoroutineUtility.StopCoroutine(coro);
-                        coro = EditorCoroutineUtility.StartCoroutine(
-                            AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState), this);
+                        void Animate(float speed) {
+                            if (coro != null)
+                                EditorCoroutineUtility.StopCoroutine(coro);
+                            coro = EditorCoroutineUtility.StartCoroutine(
+                                AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState, speed, () => coro = null), this);
+                        }
+
+                        if (Event.current.button == 1) {
+                            // right click
+                            var menu = new GenericMenu();
+                            foreach (var speed in new [] { .1f, .25f, .5f, 1f, 1.25f, 1.5f, 2f })
+                            {
+                                menu.AddItem(new GUIContent($"x{speed}"), false, () => Animate(speed));
+                            }
+                            menu.ShowAsContext();
+                        } else {
+                            Animate(1f);
+                        }
                     }
+                    GUI.contentColor = origColor;
                 }
 
                 if (stateProps.Count > 1)
@@ -316,7 +332,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public static IEnumerator AnimateStateTransition(Node node, IEnumerable<Modifier> modifiers, 
-        string state, float speed = 1f)
+        string state, float speed = 1f, Action onEnd = null)
         {
             // record all components on modifiers for undo
             foreach (var modifier in modifiers) {
@@ -377,6 +393,8 @@ namespace OneHamsa.Dexterity.Visual
                 modifier.OnDestroy();
 
             Core.Destroy();
+
+            onEnd?.Invoke();
         }
 
         static void DrawSeparator()

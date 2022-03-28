@@ -344,11 +344,16 @@ namespace OneHamsa.Dexterity.Visual
 
             var didChange = EditorGUI.EndChangeCheck();
 
-            var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.5f, 2f };
+            var origColor = GUI.contentColor;
+            GUI.contentColor = coro != null ? Color.green : origColor;
+
+            var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.25f, 1.5f, 2f };
             var speedsNames = speeds.Select(s => $"x{s}").ToArray();
             if (speedIndex == -1)
                 speedIndex = Array.IndexOf(speeds, 1f);
             speedIndex = EditorGUILayout.Popup("", speedIndex, speedsNames, GUILayout.Width(50));
+
+            GUI.contentColor = origColor;
 
             if (didChange && previewStates[previewStateIndex] != null)
             {
@@ -365,7 +370,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 coro = EditorCoroutineUtility.StartCoroutine(
                     ModifierEditor.AnimateStateTransition(node, modifiers, previewStates[previewStateIndex]
-                    , speeds[speedIndex]), this);
+                    , speeds[speedIndex], () => coro = null), this);
             }
             EditorGUILayout.EndHorizontal();
         }
