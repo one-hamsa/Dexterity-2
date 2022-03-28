@@ -14,9 +14,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public string pressedFieldName = "pressed";
             [Field]
             public string hoverFieldName = "hover";
-            [Field]
+            [Field(allowNull: true)]
             public string disabledFieldName = "disabled";
-            [Field]
+            [Field(allowNull: true)]
             public string visibleFieldName = "visible";
         }
 
@@ -53,8 +53,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             pressedField = node.GetOutputField(settings.pressedFieldName);
             hoverField = node.GetOutputField(settings.hoverFieldName);
-            disabledField = node.GetOutputField(settings.disabledFieldName);
-            visibleField = node.GetOutputField(settings.visibleFieldName);
+            if (!string.IsNullOrEmpty(settings.disabledFieldName))
+                disabledField = node.GetOutputField(settings.disabledFieldName);
+            if (!string.IsNullOrEmpty(settings.visibleFieldName))
+                visibleField = node.GetOutputField(settings.visibleFieldName);
 
             pressedField.onBooleanValueChanged += HandlePress;
         }
@@ -65,8 +67,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private void HandlePress(Node.OutputField field, bool oldValue, bool newValue)
         {
+            // don't handle if hidden
+            if (visibleField != null && !visibleField.GetBooleanValue())
+                return;
+
             // don't handle if disabled
-            if (!visibleField.GetBooleanValue() || disabledField.GetBooleanValue())
+            if (disabledField != null && disabledField.GetBooleanValue())
                 return;
 
             if (newValue && !oldValue)
