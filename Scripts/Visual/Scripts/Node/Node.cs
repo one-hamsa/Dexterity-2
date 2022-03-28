@@ -388,6 +388,17 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
+        /// Builds all node's fields' cache
+        /// </summary>
+        public void RebuildCache() {
+            foreach (var field in nonOutputFields.Concat(outputFields.Values)) {
+                field.RebuildCache();
+                field.RefreshReferences();
+                field.CacheValue();
+            }
+        }
+
+        /// <summary>
         /// Sets the node as dirty. Forces gates update
         /// </summary>
         public void SetDirty() => gatesDirtyIncrement++;

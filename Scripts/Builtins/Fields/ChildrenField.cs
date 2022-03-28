@@ -16,6 +16,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         [Field]
         public string fieldName;
+        public Transform parent;
         public bool recursive = true;
         public TakeValueWhen takeValueWhen = TakeValueWhen.AnyEqualsTrue;
         public bool negate;
@@ -68,10 +69,25 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public override void RefreshReferences()
         {
+            // find if any child is destroyed - if so, refresh all children
+            if (children != null) {
+                var anyIsNull = false;
+                foreach (var child in children) {
+                    if (child == null) {
+                        anyIsNull = true;
+                        break;
+                    }
+                }
+                if (anyIsNull) {
+                    children = null;
+                }
+            }
+
             prevChildren.Clear();
             if (children != null)
-                foreach (var child in children)
+                foreach (var child in children) {
                     prevChildren.Add(child);
+                }
 
             // check if children transforms stay the same
             if (children == null || updateChildrenReference) {
@@ -82,9 +98,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 // recalculate paths
                 childrenPath.Clear();
                 foreach (var child in nodesIter) {
-                    if (child == context)
-                        continue;
-
                     childrenPath.Add(GetPath(child.transform));
                 }
 
@@ -110,9 +123,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
                 children.Clear();
                 foreach (var child in nodesIter) {
-                    if (child == context)
-                        continue;
-
                     children.Add(child);
                 }
             }
@@ -131,12 +141,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             // all children, but stop recursing when finding nodes
             var queue = new Queue<Transform>();
-            queue.Enqueue(context.transform);
+            queue.Enqueue(parent);
 
             while (queue.Count > 0) {
                 var transform = queue.Dequeue();
                 var node = transform.GetComponent<Node>();
-                if (node != context && node != null)
+                if (transform != parent && node != null)
                     yield return node;
                 else
                     foreach (Transform child in transform)
@@ -146,8 +156,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private IEnumerable<Node> GetNodesInImmediateChildren()
         {
-            for (var i = 0; i < context.transform.childCount; i++) {
-                var child = context.transform.GetChild(i).GetComponent<Node>();
+            for (var i = 0; i < parent.childCount; i++) {
+                var child = parent.GetChild(i).GetComponent<Node>();
                 if (child != null)
                     yield return child;
             }
@@ -158,7 +168,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             base.Initialize(context);
 
             fieldId = Core.instance.GetFieldID(fieldName);
+            if (parent == null)
+                parent = context.transform;
             RefreshReferences();
+        }
+
+        public override void RebuildCache() {
+            children = null;
         }
 
         private static string GetPath(Transform current) {

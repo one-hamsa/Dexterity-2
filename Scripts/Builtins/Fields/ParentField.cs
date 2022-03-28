@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         [Field]
         public string fieldName;
+        public Transform child;
         public bool negate;
         public bool updateParentReference;
 
@@ -36,7 +37,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             {
                 {
                     // traverse to check if the chain broke
-                    var current = context.transform.parent;
+                    var current = child.parent;
 
                     // make sure you don't skip the update in case the cache is empty
                     if (parentsTransform.Count > 0)
@@ -58,7 +59,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 parentsTransform.Clear();
 
                 {
-                    var current = context.transform.parent;
+                    var current = child.parent;
                     // save until the parent, or until the root if the parent is null
                     do
                     {
@@ -78,12 +79,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // proxy might have changed - re-calculate node's outputs
             context.SetDirty();
         }
+        
+        public override void RebuildCache() {
+            parent = null;
+        }
 
         protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
             fieldId = Core.instance.GetFieldID(fieldName);
+            if (child == null)
+                child = context.transform;
             RefreshReferences();
         }
     }

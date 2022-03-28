@@ -175,6 +175,12 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
+            public override void RebuildCache()
+            {
+                gatesDirtyIncrement = -1;
+                overridesDirtyIncrement = -1;
+            }
+
             private void InvokeEvents(int oldValue, int newValue)
             {
                 onValueChanged?.Invoke(this, oldValue, newValue);
