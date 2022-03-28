@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual
 		[Output]
 		public IEnumerable<bool> outputs;
 
-		[Field(drawLabelSeparately = true), UseLegacyLabel, InspectorName("Field")]
+		[Field]
 		public string fieldName;
 
 		public override string name => string.IsNullOrWhiteSpace(fieldName) ? "Condition" : $"{fieldName}?";
