@@ -70,7 +70,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     var collider = current.GetComponent<Collider>();
                     if (collider != null) {
                         // add router component and route it to receivers
-                        var router = collider.gameObject.AddComponent<RaycastRouter>();
+                        var router = collider.gameObject.GetOrAddComponent<RaycastRouter>();
                         router.AddReceiver(this);
                         routers.Add(router);
                     }
@@ -79,7 +79,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
         private void RemoveRoutersFromAllColliders() {
             foreach (var router in routers) {
-                Destroy(router);
+                router.RemoveReceiver(this);
+                if (!router.hasReceivers)
+                    Destroy(router);
             }
             routers.Clear();
         }

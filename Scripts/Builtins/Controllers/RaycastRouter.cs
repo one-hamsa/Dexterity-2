@@ -11,10 +11,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class RaycastRouter : MonoBehaviour, IRaycastReceiver
     {
         private readonly List<IRaycastReceiver> receivers = new List<IRaycastReceiver>();
+        public bool hasReceivers => receivers.Count > 0;
 
         public void AddReceiver(IRaycastReceiver receiver)
         {
             receivers.Add(receiver);
+        }
+        public void RemoveReceiver(IRaycastReceiver receiver)
+        {
+            receivers.Remove(receiver);
         }
         
         void IRaycastReceiver.ClearHit(IRaycastController controller)
