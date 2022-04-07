@@ -30,7 +30,6 @@ namespace OneHamsa.Dexterity.Visual
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
-            ShowDelays();
             ShowWarnings();
 
             serializedObject.ApplyModifiedProperties();
@@ -51,11 +50,6 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox($"No state functions selected (either by reference or its parents)", MessageType.Error);
             }
-        }
-
-        private void ShowDelays()
-        {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(reference.delays)));
         }
 
         private void ShowExtends()

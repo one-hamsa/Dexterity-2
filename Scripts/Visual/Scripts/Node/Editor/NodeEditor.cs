@@ -59,6 +59,8 @@ namespace OneHamsa.Dexterity.Visual
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
                     node, ref foldoutOpen);
 
+            ShowDelays();
+
             ShowOverrides();
 
             EditorGUILayout.Space();
@@ -167,6 +169,11 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 EditorGUILayout.EndHorizontal();
             }
+        }
+
+        private void ShowDelays()
+        {
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.delays)));
         }
 
         private void ShowRuntimeStateFunctions()

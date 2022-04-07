@@ -11,6 +11,14 @@ namespace OneHamsa.Dexterity.Visual
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class Node : MonoBehaviour, IGateContainer, IStatesProvider
     {
+        [Serializable]
+        public class TransitionDelay
+        {
+            [State]
+            public string beforeExitingState;
+            public float waitFor = 0;
+        }
+
         #region Static Functions
         // mainly for debugging graph problems
         private static Dictionary<BaseField, Node> fieldsToNodes = new Dictionary<BaseField, Node>();
@@ -61,6 +69,9 @@ namespace OneHamsa.Dexterity.Visual
         public List<Gate> customGates = new List<Gate>();
 
         [SerializeField]
+        public List<TransitionDelay> delays = new List<TransitionDelay>();
+
+        [SerializeField]
         public List<OutputOverride> overrides = new List<OutputOverride>();
 
         [State(allowEmpty: true)]
@@ -99,6 +110,7 @@ namespace OneHamsa.Dexterity.Visual
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
         int gatesDirtyIncrement;
         int overridesDirtyIncrement;
+        Dictionary<int, TransitionDelay> cachedDelays;
 
         bool stateDirty = true;
         FieldsState fieldsState = new FieldsState(32);
@@ -172,8 +184,8 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    var delay = reference.GetDelay(activeState);
-                    nextStateChangeTime = currentTime + delay?.delay ?? 0;
+                    var delay = GetExitingStateDelay(activeState);
+                    nextStateChangeTime = currentTime + delay?.waitFor ?? 0;
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
@@ -236,6 +248,8 @@ namespace OneHamsa.Dexterity.Visual
 
             // go through all the fields. initialize them, register them to manager and add them to internal structure
             RestartFields();
+            // cache delays (from string to int)
+            CacheDelays();
             // cache overrides to allow quick access internally
             CacheFieldOverrides();
             CacheStateOverride();
@@ -474,6 +488,22 @@ namespace OneHamsa.Dexterity.Visual
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
         #endregion State Reduction
+
+        #region Transitions
+        private void CacheDelays()
+        {
+            cachedDelays = new Dictionary<int, TransitionDelay>();
+            foreach (var delay in delays)
+                cachedDelays[Core.instance.GetStateID(delay.beforeExitingState)] = delay;
+        }
+
+        private TransitionDelay GetExitingStateDelay(int state)
+        {
+            cachedDelays.TryGetValue(state, out var value);
+            return value;
+        }
+
+        #endregion Transitions
 
         #region Overrides
         /// <summary>

@@ -43,15 +43,7 @@ namespace OneHamsa.Dexterity.Visual
                 return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
             }
         }
-
-        [Serializable]
-        public class TransitionDelay
-        {
-            [State]
-            public string state;
-            public float delay = 0;
-        }
-
+        
         public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
 
         [SerializeField]
@@ -60,8 +52,6 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeField]
         public List<Gate> gates = new List<Gate>();
 
-        [SerializeField]
-        public List<TransitionDelay> delays = new List<TransitionDelay>();
 
         [NonSerialized]
         public Node owner;
@@ -72,7 +62,6 @@ namespace OneHamsa.Dexterity.Visual
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        Dictionary<int, TransitionDelay> cachedDelays;
         HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
         private int defaultStateId = -1;
 
@@ -115,12 +104,6 @@ namespace OneHamsa.Dexterity.Visual
                     this.gates.Insert(i++, gate);
                 }
 
-                i = 0;
-                foreach (var delay in newParent.delays)
-                {
-                    delays.Insert(i++, delay);
-                }
-
                 // c'est tout
                 Destroy(newParent);
             }
@@ -130,17 +113,6 @@ namespace OneHamsa.Dexterity.Visual
             {
                 this.gates.Add(gate);
             }
-
-            // cache delays
-            cachedDelays = new Dictionary<int, TransitionDelay>();
-            foreach (var delay in delays)
-                cachedDelays[Core.instance.GetStateID(delay.state)] = delay;
-        }
-
-        public TransitionDelay GetDelay(int state)
-        {
-            cachedDelays.TryGetValue(state, out var value);
-            return value;
         }
 
         public void AddGate(Gate gate)
