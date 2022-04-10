@@ -9,7 +9,7 @@ using Unity.EditorCoroutines.Editor;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [CustomEditor(typeof(Core), true)]
+    [CustomEditor(typeof(Manager), true)]
     public class ManagerEditor : Editor
     {
         public override void OnInspectorGUI()
