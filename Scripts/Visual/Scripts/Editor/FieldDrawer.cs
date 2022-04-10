@@ -36,7 +36,11 @@ namespace OneHamsa.Dexterity.Visual
             if (prevIndex == -1)
             {
                 prevIndex = 0;
-                property.stringValue = null;
+                if (attr.allowNull) {
+                    property.stringValue = null;
+                } else {
+                    property.stringValue = fields[0];
+                }
             }
 
             EditorGUI.BeginProperty(position, GUIContent.none, property);
