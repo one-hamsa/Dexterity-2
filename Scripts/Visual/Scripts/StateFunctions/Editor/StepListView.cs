@@ -200,7 +200,7 @@ namespace OneHamsa.Dexterity.Visual
         private void BuildStepToDepthCache()
         {
             stepToDepth = new Dictionary<StateFunction.Step, int>();
-            foreach (var s in StateFunction.EnumerateTreeStepsDFS(stepList))
+            foreach (var s in stepList.EnumerateTreeStepsDFS())
             {
                 stepToDepth[s.step] = s.depth;
             }

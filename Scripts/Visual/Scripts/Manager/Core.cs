@@ -111,7 +111,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             stepLists.Add(stepList);
 
-            foreach (var state in StateFunction.GetStates(stepList))
+            foreach (var state in stepList.GetStates())
                 stateNames.Add(state);
 
             foreach (var step in stepList.steps)  {

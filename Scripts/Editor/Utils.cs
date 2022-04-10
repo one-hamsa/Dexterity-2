@@ -96,7 +96,7 @@ namespace OneHamsa.Dexterity.Visual
         public static IEnumerable<string> GetStatesFromObject(UnityEngine.Object unityObject)
         {
             if (unityObject is StateFunction sf)
-                return StateFunction.GetStates(sf);
+                return sf.GetStates();
 
             if (unityObject is IStatesProvider statesProvider)
                 return statesProvider.GetStateNames();

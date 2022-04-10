@@ -120,7 +120,7 @@ namespace OneHamsa.Dexterity.Visual
         double nextStateChangeTime;
         int pendingState = -1;
         private HashSet<string> namesSet = new HashSet<string>();
-        private List<(StateFunction.Step step, int depth)> cachedStepsWithDepths;
+        private StateFunction.StepEvaluationCache stepEvalCache;
 
         public IEnumerable<Gate> allGates
         {
@@ -494,10 +494,10 @@ namespace OneHamsa.Dexterity.Visual
             if (stateId != StateFunction.emptyStateId)
                 return stateId;
 
-            if (cachedStepsWithDepths == null)
-                cachedStepsWithDepths = StateFunction.EnumerateTreeStepsDFS(this).ToList();
+            if (stepEvalCache == null)
+                stepEvalCache = this.BuildStepCache();
 
-            return StateFunction.Evaluate(cachedStepsWithDepths, mask);
+            return this.Evaluate(stepEvalCache, mask);
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -658,11 +658,11 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var sf in stateFunctionAssets) {
                 if (sf == null)
                     continue;
-                if (StateFunction.HasFallback(sf))
+                if (sf.HasFallback())
                     return;
             }
 
-            if (StateFunction.HasFallback(this))
+            if (this.HasFallback())
                 return;
 
             customSteps.Add(new StateFunction.Step {
@@ -707,7 +707,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            foreach (var name in StateFunction.GetStates(this)) {
+            foreach (var name in this.GetStates()) {
                 if (namesSet.Add(name)) {
                     yield return name;
                 }
@@ -722,7 +722,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            foreach (var name in StateFunction.GetFieldNames(this)) {
+            foreach (var name in this.GetFieldNames()) {
                 if (namesSet.Add(name)) {
                     yield return name;
                 }
