@@ -119,6 +119,8 @@ namespace OneHamsa.Dexterity.Visual
         int[] stateFieldIds;
         double nextStateChangeTime;
         int pendingState = -1;
+        private HashSet<string> namesSet = new HashSet<string>();
+        private List<(StateFunction.Step step, int depth)> cachedStepsWithDepths;
 
         public IEnumerable<Gate> allGates
         {
@@ -233,6 +235,8 @@ namespace OneHamsa.Dexterity.Visual
                 reference.extends.AddRange(referenceAssets);
                 // initialize reference (this will create the runtime version with all the inherited gates)
                 reference.Initialize(customGates);
+                // register my states, too
+                Core.instance.RegisterStates(this);
             }
 
             // find all fields that are used by this node's state function
@@ -485,7 +489,15 @@ namespace OneHamsa.Dexterity.Visual
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return reference.Evaluate(GenerateFieldMask());
+            var mask = GenerateFieldMask();
+            var stateId = reference.Evaluate(mask);
+            if (stateId != StateFunction.emptyStateId)
+                return stateId;
+
+            if (cachedStepsWithDepths == null)
+                cachedStepsWithDepths = StateFunction.EnumerateTreeStepsDFS(this).ToList();
+
+            return StateFunction.Evaluate(cachedStepsWithDepths, mask);
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -646,7 +658,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var sf in stateFunctionAssets) {
                 if (sf == null)
                     continue;
-                if (sf.HasFallback())
+                if (StateFunction.HasFallback(sf))
                     return;
             }
 
@@ -687,7 +699,6 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private HashSet<string> namesSet = new HashSet<string>();
         IEnumerable<string> IStatesProvider.GetStateNames() {
             namesSet.Clear();
             foreach (var name in StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences())) {

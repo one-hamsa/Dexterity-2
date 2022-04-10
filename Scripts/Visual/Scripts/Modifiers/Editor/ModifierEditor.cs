@@ -347,7 +347,7 @@ namespace OneHamsa.Dexterity.Visual
 
             // setup
             foreach (var asset in node.GetStateFunctionAssetsIncludingReferences())
-                Core.instance.RegisterStateFunction(asset);
+                Core.instance.RegisterStates(asset);
 
             foreach (var modifier in modifiers)
                 modifier.Awake();

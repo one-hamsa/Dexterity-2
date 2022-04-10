@@ -63,7 +63,6 @@ namespace OneHamsa.Dexterity.Visual
         public event Action onGatesUpdated;
 
         HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
-        private int defaultStateId = -1;
 
         private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
 
@@ -76,11 +75,9 @@ namespace OneHamsa.Dexterity.Visual
 
             // register all functions
             stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
-            for (int i = 0; i < stateFunctions.Length; i++)
-                Core.instance.RegisterStateFunction(stateFunctions[i]);
-
-            // cache default state
-            defaultStateId = Core.instance.GetStateID(StateFunction.kDefaultState);
+            for (int i = 0; i < stateFunctions.Length; i++) {
+                Core.instance.RegisterStates(stateFunctions[i]);
+            }
 
             // copy from parents
             foreach (var parent in extends)
@@ -184,7 +181,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (result != StateFunction.emptyStateId)
                     return result;
             }
-            return defaultStateId;
+            return StateFunction.emptyStateId;
         }
 
         private void OnValidate() {

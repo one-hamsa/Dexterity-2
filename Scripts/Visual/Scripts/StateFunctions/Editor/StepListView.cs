@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
             itemIndexChanged += HandleItemIndexChanged;
             itemsRemoved += HandleItemsRemoved;
 
-            RebuildDataAndCache();
+            RebuildDataAndCache(isMutated: false);
         }
 
         private VisualElement CreateListItem()
@@ -54,7 +54,7 @@ namespace OneHamsa.Dexterity.Visual
 
             e.style.opacity = GetStepEnabled(i) ? 1 : 0.35f;
 
-            var depth = stepToDepth[step] - 1;
+            var depth = stepToDepth[step];
             if (depth > 0) {
                 var indent = new VisualElement();
                 indent.style.width = 0;
@@ -186,10 +186,13 @@ namespace OneHamsa.Dexterity.Visual
                 .GetArrayElementAtIndex(stepList.steps.IndexOf(step));
         }
 
-        private void RebuildDataAndCache() {
+        private void RebuildDataAndCache(bool isMutated = true) {
             ReparentStepsIfNeeded();
             BuildStepToDepthCache();
             serializedObject.ApplyModifiedProperties();
+
+            if (isMutated)
+                EditorUtility.SetDirty(serializedObject.targetObject as UnityEngine.Object);
 
             RefreshItems();
         }

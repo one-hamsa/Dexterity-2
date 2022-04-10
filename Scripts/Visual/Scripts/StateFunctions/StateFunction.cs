@@ -38,7 +38,7 @@ namespace OneHamsa.Dexterity.Visual
             private int condition_fieldId;
             public int GetConditionFieldID() {
                 if (condition_fieldId == -1)
-                    condition_fieldId = Core.instance.GetFieldID(condition_fieldName);
+                    Debug.LogError($"{nameof(GetConditionFieldID)}: {condition_fieldName}: id not initialized");
                 return condition_fieldId;
             }
 
@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual
             private int result_stateId = -1;
             public int GetResultStateID() {
                 if (result_stateId == -1)
-                    result_stateId = Core.instance.GetStateID(result_stateName);
+                    Debug.LogError($"{nameof(GetResultStateID)}: {result_stateName}: id not initialized");
                 return result_stateId;
             }
 
@@ -59,12 +59,27 @@ namespace OneHamsa.Dexterity.Visual
             public override string ToString() {
                 switch (type) {
                     case Type.Condition:
-                        return $"{condition_fieldName} == {condition_fieldValue}?";
+                        return $"{condition_fieldName} {(condition_negate ? "!=" : "==")} {condition_fieldValue}?";
 
                     case Type.Result:
                         return $"Go to {result_stateName}";
+
+                    case Type.Reference:
+                        return $"Run {reference_stateFunction.name}";
                 }
                 return base.ToString();
+            }
+
+            internal void Initialize()
+            {
+                switch (type) {
+                    case Type.Condition:
+                        condition_fieldId = Core.instance.GetFieldID(condition_fieldName);
+                        break;
+                    case Type.Result:
+                        result_stateId = Core.instance.GetStateID(result_stateName);
+                        break;
+                }
             }
         }
 
@@ -74,21 +89,21 @@ namespace OneHamsa.Dexterity.Visual
         private static Stack<(Step step, int depth)> stack = new Stack<(Step step, int depth)>();
 
         public List<Step> steps = new List<Step>();
-        private Dictionary<Step, List<Step>> cachedTree;
+        private List<(Step step, int depth)> cachedStepsWithDepth;
 
         List<Step> IStepList.steps => steps;
 
         internal int Evaluate(FieldMask mask)
         {
-            if (cachedTree == null)
-                cachedTree = ListToTree(steps);
-            return Evaluate(cachedTree, mask);
+            if (cachedStepsWithDepth == null)
+                cachedStepsWithDepth = EnumerateTreeStepsDFS(this).ToList();
+            return Evaluate(cachedStepsWithDepth, mask);
         }
 
-        private static int Evaluate(Dictionary<Step, List<Step>> tree, FieldMask mask) {
-            var conditionMetDepth = 0;
-            foreach (var (step, depth) in EnumerateTreeStepsDFS(tree)) {
-                if (conditionMetDepth < depth) {
+        public static int Evaluate(IEnumerable<(Step step, int depth)> stepsWithDepth, FieldMask mask) {
+            var conditionMetDepth = -1;
+            foreach (var (step, depth) in stepsWithDepth) {
+                if (conditionMetDepth < depth - 1) {
                     continue;
                 }
 
@@ -141,7 +156,6 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        public bool HasFallback() => HasFallback(this);
         public static bool HasFallback(IStepList stepList) {
             foreach (var step in stepList.steps) {
                 if (step.parent == -1) {
@@ -190,19 +204,17 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public static IEnumerable<(Step step, int depth)> EnumerateTreeStepsDFS(IStepList stepList) {
-            return EnumerateTreeStepsDFS(ListToTree(stepList.steps));
-        }
-
-        private static IEnumerable<(Step step, int depth)> EnumerateTreeStepsDFS(Dictionary<Step, List<Step>> tree) {
+            var tree = ListToTree(stepList);
             stack.Clear();
             foreach (var step in tree.Keys) {
                 if (step.isRoot)
-                    stack.Push((step, 0));
+                    stack.Push((step, -1));
             }
 
             while (stack.Count > 0) {
                 var (step, depth) = stack.Pop();
-                yield return (step, depth);
+                if (!step.isRoot)
+                    yield return (step, depth);
                 if (tree.ContainsKey(step)) {
                     foreach (var child in tree[step].Reverse<Step>()) {
                         stack.Push((child, depth + 1));
@@ -213,20 +225,20 @@ namespace OneHamsa.Dexterity.Visual
 
 
         // convert list with parent ids to tree structure where each node has a list of children
-        private static Dictionary<Step, List<Step>> ListToTree(List<Step> steps) {
+        private static Dictionary<Step, List<Step>> ListToTree(IStepList stepList) {
             // add root step
             var lastVisited = Step.Root;
             
             var idToStep = new Dictionary<int, Step>();
             idToStep.Add(Step.Root.id, Step.Root);
 
-            foreach (var step in steps) {
+            foreach (var step in stepList.steps) {
                 idToStep.Add(step.id, step);
             }
 
             var tree = new Dictionary<Step, List<Step>>();
 
-            foreach (var step in steps) {
+            foreach (var step in stepList.steps) {
                 if (!idToStep.ContainsKey(step.parent)) {
                     Debug.LogError($"Step {step.id} has invalid parent {step.parent}");
                     continue;
@@ -241,10 +253,10 @@ namespace OneHamsa.Dexterity.Visual
             return tree;
         }
 
-        private string PrintTreeWithDepth(Dictionary<Step, List<Step>> tree) {
+        private static string PrintTreeWithDepth(IStepList stepList) {
             var sb = new System.Text.StringBuilder();
 
-            foreach (var (step, depth) in EnumerateTreeStepsDFS(tree)) {
+            foreach (var (step, depth) in EnumerateTreeStepsDFS(stepList)) {
                 sb.Append($"{new string('-', depth)}[{step.id}] {step.type}\n");
             }
             

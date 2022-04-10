@@ -45,7 +45,7 @@ namespace OneHamsa.Dexterity.Visual
         public ListSet<string> stateNames = new ListSet<string>(32);
         public string[] fieldNames;
 
-        private HashSet<StateFunction> stateFunctions = new HashSet<StateFunction>();
+        private HashSet<IStepList> stepLists = new HashSet<IStepList>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -104,16 +104,19 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
-        /// Registers a state function, adding global state IDs
+        /// Registers a step list, adding global state IDs
         /// </summary>
-        /// <param name="stateFunction">State Function asset to register</param>
-        /// <returns>State Function runtime instance</returns>
-        public void RegisterStateFunction(StateFunction asset)
+        /// <param name="stateFunction">Step List to register</param>
+        public void RegisterStates(IStepList stepList)
         {
-            stateFunctions.Add(asset);
+            stepLists.Add(stepList);
 
-            foreach (var state in StateFunction.GetStates(asset))
+            foreach (var state in StateFunction.GetStates(stepList))
                 stateNames.Add(state);
+
+            foreach (var step in stepList.steps)  {
+                step.Initialize();
+            }
         }
 
         /// <summary>
@@ -132,7 +135,7 @@ namespace OneHamsa.Dexterity.Visual
         private void Uninitialize() {
             fieldNames = null;
             stateNames.Clear();
-            stateFunctions.Clear();
+            stepLists.Clear();
         }
     }
 }
