@@ -45,11 +45,13 @@ namespace OneHamsa.Dexterity.Visual
         public static IEnumerable<SerializedProperty> GetVisibleChildren(SerializedProperty serializedProperty)
         {
             SerializedProperty currentProperty = serializedProperty.Copy();
+            SerializedProperty nextSiblingProperty = serializedProperty.Copy();
+            /*{
+                nextSiblingProperty.NextVisible(false);
+            }*/
 
             if (currentProperty.NextVisible(true))
             {
-                SerializedProperty nextSiblingProperty = currentProperty.Copy();
-                nextSiblingProperty.NextVisible(true);
                 do
                 {
                     if (SerializedProperty.EqualContents(currentProperty, nextSiblingProperty))
