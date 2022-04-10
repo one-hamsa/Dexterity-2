@@ -14,7 +14,6 @@ namespace OneHamsa.Dexterity.Visual
     {
         NodeReference reference;
         bool foldoutOpen = true;
-        private HashSet<StateFunctionGraph> functions = new HashSet<StateFunctionGraph>();
         private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField
         = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
 

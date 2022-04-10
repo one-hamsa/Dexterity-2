@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IGateContainer, IStatesProvider
+    public partial class Node : MonoBehaviour, IGateContainer, IStatesProvider, IStepList
     {
         [Serializable]
         public class TransitionDelay
@@ -60,10 +60,10 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
-        public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
+        public List<StateFunction> stateFunctionAssets = new List<StateFunction>();
         
         [State]
-        public string initialState = StateFunctionGraph.kDefaultState;
+        public string initialState = StateFunction.kDefaultState;
 
         [SerializeField]
         public List<Gate> customGates = new List<Gate>();
@@ -76,6 +76,8 @@ namespace OneHamsa.Dexterity.Visual
 
         [State(allowEmpty: true)]
         public string overrideState;
+
+        public List<StateFunction.Step> customSteps = new List<StateFunction.Step>();
 
         #endregion Serialized Fields
 
@@ -113,7 +115,7 @@ namespace OneHamsa.Dexterity.Visual
         Dictionary<int, TransitionDelay> cachedDelays;
 
         bool stateDirty = true;
-        FieldsState fieldsState = new FieldsState(32);
+        FieldMask fieldMask = new FieldMask(32);
         int[] stateFieldIds;
         double nextStateChangeTime;
         int pendingState = -1;
@@ -462,9 +464,9 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Fields & Gates
 
         #region State Reduction
-        private FieldsState GenerateFieldsState()
+        private FieldMask GenerateFieldMask()
         {
-            fieldsState.Clear();
+            fieldMask.Clear();
 
             foreach (var fieldId in stateFieldIds)
             {
@@ -474,16 +476,16 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     value = defaultFieldValue;
                 }
-                fieldsState.Add((fieldId, value));
+                fieldMask.Add((fieldId, value));
             }
-            return fieldsState;
+            return fieldMask;
         }
         protected int GetState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return reference.Evaluate(GenerateFieldsState());
+            return reference.Evaluate(GenerateFieldMask());
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -633,14 +635,37 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
+            AddFallbackStateIfNeeded();
+
             if (Application.isPlaying)
                 CacheFieldOverrides();
         }
-#endregion Overrides
 
-#region Interface Implementation (Editor)
-        HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
-        public IEnumerable<StateFunctionGraph> GetStateFunctionAssetsIncludingReferences() {
+        private void AddFallbackStateIfNeeded()
+        {
+            foreach (var sf in stateFunctionAssets) {
+                if (sf == null)
+                    continue;
+                if (sf.HasFallback())
+                    return;
+            }
+
+            if (StateFunction.HasFallback(this))
+                return;
+
+            customSteps.Add(new StateFunction.Step {
+                type = StateFunction.Step.Type.Result,
+                result_stateName = StateFunction.kDefaultState,
+            });
+            #if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(this);
+            #endif
+        }
+        #endregion Overrides
+
+        #region Interface Implementation (Editor)
+        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
+        public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingReferences() {
             stateFunctionsSet.Clear();
             foreach (var asset in stateFunctionAssets) {
                 if (asset == null)
@@ -662,16 +687,43 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        IEnumerable<string> IStatesProvider.GetStateNames()
-        => StateFunctionGraph.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences());
+        private HashSet<string> namesSet = new HashSet<string>();
+        IEnumerable<string> IStatesProvider.GetStateNames() {
+            namesSet.Clear();
+            foreach (var name in StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences())) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
 
-        IEnumerable<string> IStatesProvider.GetFieldNames()
-        => StateFunctionGraph.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences());
+            foreach (var name in StateFunction.GetStates(this)) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+        }
+
+        IEnumerable<string> IStatesProvider.GetFieldNames() {
+            namesSet.Clear();
+            foreach (var name in StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences())) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+
+            foreach (var name in StateFunction.GetFieldNames(this)) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+        }
 
         IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
         IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
 
         Node IGateContainer.node => this;
-#endregion Interface Implementation (Editor)
+
+        List<StateFunction.Step> IStepList.steps => customSteps;
+        #endregion Interface Implementation (Editor)
     }
 }

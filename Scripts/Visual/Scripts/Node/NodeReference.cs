@@ -43,8 +43,8 @@ namespace OneHamsa.Dexterity.Visual
                 return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
             }
         }
-        
-        public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
+
+        public List<StateFunction> stateFunctionAssets = new List<StateFunction>();
 
         [SerializeField]
         public List<NodeReference> extends = new List<NodeReference>();
@@ -56,13 +56,13 @@ namespace OneHamsa.Dexterity.Visual
         [NonSerialized]
         public Node owner;
 
-        public StateFunctionGraph[] stateFunctions { get; private set; }
+        public StateFunction[] stateFunctions { get; private set; }
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
+        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
         private int defaultStateId = -1;
 
         private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
@@ -74,16 +74,13 @@ namespace OneHamsa.Dexterity.Visual
                 parentReferences.Clear();
             }
 
-            // register and initialize all functions
-            var assets = GetStateFunctionAssetsIncludingParents().ToList();
-            stateFunctions = new StateFunctionGraph[assets.Count];
-            for (int i = 0; i < assets.Count; i++)
-            {
-                stateFunctions[i] = Core.instance.RegisterStateFunction(assets[i]);
-            }
+            // register all functions
+            stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
+            for (int i = 0; i < stateFunctions.Length; i++)
+                Core.instance.RegisterStateFunction(stateFunctions[i]);
 
             // cache default state
-            defaultStateId = Core.instance.GetStateID(StateFunctionGraph.kDefaultState);
+            defaultStateId = Core.instance.GetStateID(StateFunction.kDefaultState);
 
             // copy from parents
             foreach (var parent in extends)
@@ -139,7 +136,7 @@ namespace OneHamsa.Dexterity.Visual
             return gates[i];
         }
 
-        public IEnumerable<StateFunctionGraph> GetStateFunctionAssetsIncludingParents() {
+        public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingParents() {
             stateFunctionsSet.Clear();
             foreach (var asset in stateFunctionAssets) {
                 if (asset == null)
@@ -162,10 +159,10 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public IEnumerable<string> GetStateNames()
-        => StateFunctionGraph.EnumerateStateNames(GetStateFunctionAssetsIncludingParents());
+        => StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingParents());
 
         public IEnumerable<string> GetFieldNames()
-        => StateFunctionGraph.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
+        => StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
 
         public IEnumerable<int> GetFieldIDs()
         {
@@ -180,11 +177,11 @@ namespace OneHamsa.Dexterity.Visual
                 yield return Core.instance.GetStateID(stateName);
         }
 
-        internal int Evaluate(FieldsState fieldsState)
+        internal int Evaluate(FieldMask fieldMask)
         {
             foreach (var function in stateFunctions) {
-                var result = function.Evaluate(fieldsState);
-                if (result != -1)
+                var result = function.Evaluate(fieldMask);
+                if (result != StateFunction.emptyStateId)
                     return result;
             }
             return defaultStateId;

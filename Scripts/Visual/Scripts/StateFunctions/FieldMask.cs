@@ -5,10 +5,18 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    public class FieldsState : List<(int field, int value)>
+    public class FieldMask : List<(int field, int value)>
     {
-        public FieldsState() : base() { }
-        public FieldsState(int capacity) : base(capacity) { }
+        public FieldMask() : base() { }
+        public FieldMask(int capacity) : base(capacity) { }
+
+        public int GetValue(int field)
+        {
+            foreach (var pair in this)
+                if (pair.field == field)
+                    return pair.value;
+            return Node.emptyFieldValue;
+        }
 
         public override string ToString()
         {

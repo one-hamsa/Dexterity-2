@@ -52,14 +52,6 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="field">BaseField to mark as dirty</param>
         public void SetDirty(BaseField field) => graph.SetDirty(field);
 
-        /// <summary>
-        /// Registers a state function, adding global state IDs
-        /// </summary>
-        /// <param name="stateFunction">State Function asset to register</param>
-        /// <returns>State Function runtime instance</returns>
-        public StateFunctionGraph RegisterStateFunction(StateFunctionGraph asset)
-        => Core.instance.RegisterStateFunction(asset);
-
         protected void Awake()
         {
             Core.Create(settings);

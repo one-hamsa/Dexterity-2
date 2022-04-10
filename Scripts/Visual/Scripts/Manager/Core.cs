@@ -45,8 +45,7 @@ namespace OneHamsa.Dexterity.Visual
         public ListSet<string> stateNames = new ListSet<string>(32);
         public string[] fieldNames;
 
-        private Dictionary<StateFunctionGraph, StateFunctionGraph> stateFunctions
-            = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
+        private HashSet<StateFunction> stateFunctions = new HashSet<StateFunction>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -109,19 +108,12 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         /// <param name="stateFunction">State Function asset to register</param>
         /// <returns>State Function runtime instance</returns>
-        public StateFunctionGraph RegisterStateFunction(StateFunctionGraph asset)
+        public void RegisterStateFunction(StateFunction asset)
         {
-            if (!stateFunctions.TryGetValue(asset, out var runtime)) {
-                stateFunctions[asset] = runtime = GameObject.Instantiate(asset);
+            stateFunctions.Add(asset);
 
-                // first add the states so Initialize() can use them
-                foreach (var state in runtime.GetStates())
-                    stateNames.Add(state);
-
-                // then initialize all nodes
-                runtime.Initialize();
-            }
-            return runtime;
+            foreach (var state in StateFunction.GetStates(asset))
+                stateNames.Add(state);
         }
 
         /// <summary>
@@ -140,14 +132,6 @@ namespace OneHamsa.Dexterity.Visual
         private void Uninitialize() {
             fieldNames = null;
             stateNames.Clear();
-            
-            foreach (var sf in stateFunctions.Values) {
-                // call DestroyImmediate if in edit mode
-                if (!Application.isPlaying)
-                    GameObject.DestroyImmediate(sf);
-                else
-                    GameObject.Destroy(sf);
-            }
             stateFunctions.Clear();
         }
     }

@@ -6,6 +6,7 @@ using System.Reflection;
 using System;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -27,7 +28,19 @@ namespace OneHamsa.Dexterity.Visual
             foldoutOpen = true;
         }
 
-        public override void OnInspectorGUI()
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = new VisualElement();
+            var imguiContainer = new IMGUIContainer(Legacy_OnInspectorGUI);
+            root.Add(imguiContainer);
+
+            var foldout = new Foldout { text = "Custom Steps" };
+            foldout.Add(new StepListView(serializedObject, nameof(Node.customSteps)));
+            root.Add(foldout);
+            return root;
+        }
+
+        private void Legacy_OnInspectorGUI()
         {
             sfStates.Clear();
             var first = true;
@@ -146,7 +159,6 @@ namespace OneHamsa.Dexterity.Visual
             else 
             {
                 ShowActiveState();
-                ShowRuntimeStateFunctions();
                 ShowModifiers();
                 ShowFieldValues();
             }
@@ -174,24 +186,6 @@ namespace OneHamsa.Dexterity.Visual
         private void ShowDelays()
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.delays)));
-        }
-
-        private void ShowRuntimeStateFunctions()
-        {
-            if (node.reference != null && node.reference.stateFunctions.Length > 0)
-            {
-                if (!(stateFunctionsRuntimeDebugOpen = EditorGUILayout.Foldout(stateFunctionsRuntimeDebugOpen, "State Functions (Runtime)", true, EditorStyles.foldoutHeader)))
-                    return;
-
-                foreach (var function in node.reference.stateFunctions)
-                {
-                    // show state function button (play time)
-                    if (GUILayout.Button(function.name))
-                    {
-                        EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(function);
-                    }
-                }
-            }
         }
 
         private void ShowFieldValues()
