@@ -4,8 +4,6 @@
     "references": [
         "Dexterity",
         "Unity.InputSystem",
-        "com.alelievr.NodeGraphProcessor.Runtime",
-        "com.alelievr.NodeGraphProcessor.Editor",
         "Unity.EditorCoroutines.Editor"
     ],
     "includePlatforms": [
