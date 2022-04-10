@@ -22,10 +22,15 @@ namespace OneHamsa.Dexterity.Visual
             this.propertyName = propertyName;
             stepList = serializedObject.targetObject as IStepList;
 
-            itemsSource = stepList.steps;
+            this.BindProperty(serializedObject.FindProperty(propertyName));
             fixedItemHeight = kListItemHeight;
             makeItem = CreateListItem;
             bindItem = BindListItem;
+            unbindItem = UnbindListItem;
+
+            // lol thanks unity for arcane stuff
+            //. (see https://forum.unity.com/threads/correct-way-to-use-listview-bind.861862/#post-5743669)
+            showBoundCollectionSize = false;
 
             selectionType = SelectionType.Multiple;
             reorderable = true;
@@ -50,6 +55,11 @@ namespace OneHamsa.Dexterity.Visual
         {
             e.Clear();
 
+            // for some reason we get a call when i >= stepList.steps.Count after deleting when using bindings
+            if (i >= stepList.steps.Count)
+                return;
+
+            BuildStepToDepthCache();
             var step = stepList.steps[i];
 
             e.style.opacity = GetStepEnabled(i) ? 1 : 0.35f;
@@ -163,6 +173,11 @@ namespace OneHamsa.Dexterity.Visual
             rest.Add(upHierarchyBtn);
         }
 
+        private void UnbindListItem(VisualElement e, int i)
+        {
+            e.Unbind();
+        }
+
         private bool GetStepEnabled(int index)
         {
             var step = stepList.steps[index];
@@ -189,12 +204,11 @@ namespace OneHamsa.Dexterity.Visual
         private void RebuildDataAndCache(bool isMutated = true) {
             ReparentStepsIfNeeded();
             BuildStepToDepthCache();
+
             serializedObject.ApplyModifiedProperties();
 
             if (isMutated)
-                EditorUtility.SetDirty(serializedObject.targetObject as UnityEngine.Object);
-
-            RefreshItems();
+                EditorUtility.SetDirty(serializedObject.targetObject);
         }
 
         private void BuildStepToDepthCache()
