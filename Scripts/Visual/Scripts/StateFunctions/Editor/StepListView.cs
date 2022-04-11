@@ -53,7 +53,7 @@ namespace OneHamsa.Dexterity.Visual
         private void HandleUndoRedo()
         {
             // XXX sad but needed for now: ListView gets corrupted when reordering undo is performed 
-            Rebuild();
+            schedule.Execute(Rebuild);
         }
 
         private VisualElement CreateListItem()
@@ -100,8 +100,10 @@ namespace OneHamsa.Dexterity.Visual
                     ? StateFunction.Step.Type.Result 
                     : StateFunction.Step.Type.Condition;
 
+                Undo.RecordObject(serializedObject.targetObject, "Toggle Step Type");
                 step.type = toggleType;
                 RebuildDataAndCache();
+                RefreshItem(i);
             });
             typeBtn.RegisterCallback<MouseUpEvent>(e => {
                 if (e.button != (int)MouseButton.RightMouse)
@@ -111,8 +113,10 @@ namespace OneHamsa.Dexterity.Visual
                     ? StateFunction.Step.Type.Condition 
                     : StateFunction.Step.Type.Reference;
 
+                Undo.RecordObject(serializedObject.targetObject, "Toggle Step Type");
                 step.type = toggleType;
                 RebuildDataAndCache();
+                RefreshItem(i);
             });
 
             Color typeColor = default;
@@ -146,8 +150,10 @@ namespace OneHamsa.Dexterity.Visual
                     rest.Add(fieldNamePf);
 
                     var signBtn = new Button(() => {
+                        Undo.RecordObject(serializedObject.targetObject, "Toggle Negate");
                         step.condition_negate = !step.condition_negate;
                         RebuildDataAndCache();
+                        RefreshItem(i);
                     }){ text = !step.condition_negate ? "==" : "!=" };
                     signBtn.style.backgroundColor = !step.condition_negate ? new Color(0f, 1f, 0f, .1f) : new Color(1f, 0f, 0f, .1f);
                     rest.Add(signBtn);
@@ -177,9 +183,11 @@ namespace OneHamsa.Dexterity.Visual
 
             var upHierarchyBtn = new Button(() => {
                 if (step.parent != -1) {
+                    Undo.RecordObject(serializedObject.targetObject, "Move Step Up");
                     step.parent = stepList.steps.First(s => s.id == step.parent).parent;
+                    RebuildDataAndCache();
+                    RefreshItem(i);
                 }
-                RebuildDataAndCache();
             }) { text = "◀" };
             upHierarchyBtn.style.width = 17;
             upHierarchyBtn.style.visibility = step.parent == -1 ? Visibility.Hidden : Visibility.Visible;
