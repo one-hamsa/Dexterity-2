@@ -6,7 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
-    public class NodeReference : ScriptableObject, IGateContainer, IStatesProvider
+    public class NodeReference : ScriptableObject, IGateContainer, IHasStates
     {
         private static Dictionary<NodeReference, NodeReference> prefabToRuntime
             = new Dictionary<NodeReference, NodeReference>();
@@ -43,8 +43,8 @@ namespace OneHamsa.Dexterity.Visual
                 return $"{outputFieldName} Gate <{(field != null ? field.ToString() : "none")}>";
             }
         }
-        
-        public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
+
+        public List<StateFunction> stateFunctionAssets = new List<StateFunction>();
 
         [SerializeField]
         public List<NodeReference> extends = new List<NodeReference>();
@@ -56,14 +56,13 @@ namespace OneHamsa.Dexterity.Visual
         [NonSerialized]
         public Node owner;
 
-        public StateFunctionGraph[] stateFunctions { get; private set; }
+        public StateFunction[] stateFunctions { get; private set; }
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
-        private int defaultStateId = -1;
+        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
 
         private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
 
@@ -74,16 +73,11 @@ namespace OneHamsa.Dexterity.Visual
                 parentReferences.Clear();
             }
 
-            // register and initialize all functions
-            var assets = GetStateFunctionAssetsIncludingParents().ToList();
-            stateFunctions = new StateFunctionGraph[assets.Count];
-            for (int i = 0; i < assets.Count; i++)
-            {
-                stateFunctions[i] = Core.instance.RegisterStateFunction(assets[i]);
+            // register all functions
+            stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
+            for (int i = 0; i < stateFunctions.Length; i++) {
+                Core.instance.RegisterStates(stateFunctions[i]);
             }
-
-            // cache default state
-            defaultStateId = Core.instance.GetStateID(StateFunctionGraph.kDefaultState);
 
             // copy from parents
             foreach (var parent in extends)
@@ -139,7 +133,7 @@ namespace OneHamsa.Dexterity.Visual
             return gates[i];
         }
 
-        public IEnumerable<StateFunctionGraph> GetStateFunctionAssetsIncludingParents() {
+        public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingParents() {
             stateFunctionsSet.Clear();
             foreach (var asset in stateFunctionAssets) {
                 if (asset == null)
@@ -162,32 +156,19 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public IEnumerable<string> GetStateNames()
-        => StateFunctionGraph.EnumerateStateNames(GetStateFunctionAssetsIncludingParents());
+        => StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingParents());
 
         public IEnumerable<string> GetFieldNames()
-        => StateFunctionGraph.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
+        => StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
 
-        public IEnumerable<int> GetFieldIDs()
-        {
-            foreach (var name in GetFieldNames())
-            {
-                yield return Core.instance.GetFieldID(name);
-            }
-        }
-        public IEnumerable<int> GetStateIDs()
-        {
-            foreach (var stateName in GetStateNames())
-                yield return Core.instance.GetStateID(stateName);
-        }
-
-        internal int Evaluate(FieldsState fieldsState)
+        internal int Evaluate(FieldMask fieldMask)
         {
             foreach (var function in stateFunctions) {
-                var result = function.Evaluate(fieldsState);
-                if (result != -1)
+                var result = function.Evaluate(fieldMask);
+                if (result != StateFunction.emptyStateId)
                     return result;
             }
-            return defaultStateId;
+            return StateFunction.emptyStateId;
         }
 
         private void OnValidate() {
@@ -204,8 +185,8 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
+        IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
+        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
 
         Node IGateContainer.node => owner;
     }

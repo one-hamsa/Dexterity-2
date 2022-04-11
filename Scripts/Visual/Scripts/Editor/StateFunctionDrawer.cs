@@ -7,10 +7,10 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [CustomPropertyDrawer(typeof(StateFunctionGraph))]
-    public class StateFunctionGraphDrawer : PropertyDrawer
+    //[CustomPropertyDrawer(typeof(StateFunction))]
+    public class StateFunctionDrawer : PropertyDrawer
     {
-        private List<StateFunctionGraph> functions = new List<StateFunctionGraph>();
+        private List<StateFunction> functions = new List<StateFunction>();
         private double lastRefresh = double.NegativeInfinity;
         private string[] funcNames;
 
@@ -23,12 +23,12 @@ namespace OneHamsa.Dexterity.Visual
 
             if (property.propertyType != SerializedPropertyType.ObjectReference)
             {
-                EditorGUI.LabelField(position, label.text, "Use [StateFunctionGraph] with StateFunctionGraph.");
+                EditorGUI.LabelField(position, label.text, "Use [StateFunction] with StateFunction.");
                 return;
             }
 
             RefreshStateFunctionList();
-            var stateFunctionObj = (StateFunctionGraph)property.objectReferenceValue;
+            var stateFunctionObj = (StateFunction)property.objectReferenceValue;
 
             var r = position;
             r.height = EditorGUIUtility.singleLineHeight;
@@ -44,14 +44,6 @@ namespace OneHamsa.Dexterity.Visual
                 property.objectReferenceValue = stateFunction;
             }
             EditorGUI.EndProperty();
-
-            r.y += EditorGUIUtility.singleLineHeight;
-            r.yMax = position.yMax;
-
-            if (stateFunctionObj != null && GUI.Button(r, "Open State Function Graph"))
-            {
-                EditorWindow.GetWindow<StateFunctionGraphWindow>().InitializeGraph(stateFunctionObj);
-            }
         }
 
         private void RefreshStateFunctionList()
@@ -62,7 +54,7 @@ namespace OneHamsa.Dexterity.Visual
             lastRefresh = EditorApplication.timeSinceStartup;
 
             functions.Clear();
-            foreach (var asset in Utils.FindAssetsByType<StateFunctionGraph>())
+            foreach (var asset in Utils.FindAssetsByType<StateFunction>())
             {
                 functions.Add(asset);
             }

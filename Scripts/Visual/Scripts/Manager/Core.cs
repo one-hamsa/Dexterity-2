@@ -45,8 +45,7 @@ namespace OneHamsa.Dexterity.Visual
         public ListSet<string> stateNames = new ListSet<string>(32);
         public string[] fieldNames;
 
-        private Dictionary<StateFunctionGraph, StateFunctionGraph> stateFunctions
-            = new Dictionary<StateFunctionGraph, StateFunctionGraph>();
+        private HashSet<IStepList> stepLists = new HashSet<IStepList>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -105,23 +104,19 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
-        /// Registers a state function, adding global state IDs
+        /// Registers a step list, adding global state IDs
         /// </summary>
-        /// <param name="stateFunction">State Function asset to register</param>
-        /// <returns>State Function runtime instance</returns>
-        public StateFunctionGraph RegisterStateFunction(StateFunctionGraph asset)
+        /// <param name="stateFunction">Step List to register</param>
+        public void RegisterStates(IStepList stepList)
         {
-            if (!stateFunctions.TryGetValue(asset, out var runtime)) {
-                stateFunctions[asset] = runtime = GameObject.Instantiate(asset);
+            stepLists.Add(stepList);
 
-                // first add the states so Initialize() can use them
-                foreach (var state in runtime.GetStates())
-                    stateNames.Add(state);
+            foreach (var state in stepList.GetStateNames())
+                stateNames.Add(state);
 
-                // then initialize all nodes
-                runtime.Initialize();
+            foreach (var step in stepList.steps)  {
+                step.Initialize();
             }
-            return runtime;
         }
 
         /// <summary>
@@ -140,15 +135,7 @@ namespace OneHamsa.Dexterity.Visual
         private void Uninitialize() {
             fieldNames = null;
             stateNames.Clear();
-            
-            foreach (var sf in stateFunctions.Values) {
-                // call DestroyImmediate if in edit mode
-                if (!Application.isPlaying)
-                    GameObject.DestroyImmediate(sf);
-                else
-                    GameObject.Destroy(sf);
-            }
-            stateFunctions.Clear();
+            stepLists.Clear();
         }
     }
 }

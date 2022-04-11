@@ -9,8 +9,9 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IGateContainer, IStatesProvider
+    public partial class Node : MonoBehaviour, IGateContainer, IHasStates, IStepList
     {
+        
         [Serializable]
         public class TransitionDelay
         {
@@ -60,10 +61,9 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
-        public List<StateFunctionGraph> stateFunctionAssets = new List<StateFunctionGraph>();
         
         [State]
-        public string initialState = StateFunctionGraph.kDefaultState;
+        public string initialState = StateFunction.kDefaultState;
 
         [SerializeField]
         public List<Gate> customGates = new List<Gate>();
@@ -76,6 +76,8 @@ namespace OneHamsa.Dexterity.Visual
 
         [State(allowEmpty: true)]
         public string overrideState;
+
+        public List<StateFunction.Step> customSteps = new List<StateFunction.Step>();
 
         #endregion Serialized Fields
 
@@ -113,10 +115,12 @@ namespace OneHamsa.Dexterity.Visual
         Dictionary<int, TransitionDelay> cachedDelays;
 
         bool stateDirty = true;
-        FieldsState fieldsState = new FieldsState(32);
+        FieldMask fieldMask = new FieldMask(32);
         int[] stateFieldIds;
         double nextStateChangeTime;
         int pendingState = -1;
+        private HashSet<string> namesSet = new HashSet<string>();
+        private StateFunction.StepEvaluationCache stepEvalCache;
 
         public IEnumerable<Gate> allGates
         {
@@ -194,7 +198,7 @@ namespace OneHamsa.Dexterity.Visual
             // change to next state (delay is accounted for already)
             if (nextStateChangeTime <= currentTime && pendingState != -1)
             {
-                var oldState = activeState;
+                var oldState = activeState; 
 
                 activeState = pendingState;
                 pendingState = -1;
@@ -209,9 +213,9 @@ namespace OneHamsa.Dexterity.Visual
         #region General Methods
         private bool EnsureValidState()
         {
-            if (stateFunctionAssets.Count == 0 && referenceAssets.Count == 0)
+            if (customSteps.Count == 0)
             {
-                Debug.LogError("No state functions or references assigned to node", this);
+                Debug.LogError("No steps assigned to node", this);
                 return false;
             }
             return true;
@@ -227,14 +231,15 @@ namespace OneHamsa.Dexterity.Visual
                 reference.owner = this;
                 reference.name = $"{name} (Live Reference)";
                 // copy all references from this node to the runtime instance
-                reference.stateFunctionAssets.AddRange(stateFunctionAssets);
                 reference.extends.AddRange(referenceAssets);
                 // initialize reference (this will create the runtime version with all the inherited gates)
                 reference.Initialize(customGates);
+                // register my states, too
+                Core.instance.RegisterStates(this);
             }
 
             // find all fields that are used by this node's state function
-            stateFieldIds = reference.GetFieldIDs().ToArray();
+            stateFieldIds = GetFieldIDs().ToArray();
 
             // subscribe to more changes
             onGateAdded += RestartFields;
@@ -258,7 +263,7 @@ namespace OneHamsa.Dexterity.Visual
             var initialStateId = Core.instance.GetStateID(initialState);
             if (initialStateId == -1)
             {
-                initialStateId = reference.GetStateIDs().ElementAt(0);
+                initialStateId = GetStateIDs().ElementAt(0);
                 Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
             }
             activeState = initialStateId;
@@ -286,6 +291,19 @@ namespace OneHamsa.Dexterity.Visual
                 reference.onGateRemoved -= RestartFields;
                 reference.onGatesUpdated -= RestartFields;
             }
+        }
+
+        private IEnumerable<int> GetFieldIDs()
+        {
+            foreach (var name in this.GetFieldNames())
+            {
+                yield return Core.instance.GetFieldID(name);
+            }
+        }
+        private IEnumerable<int> GetStateIDs()
+        {
+            foreach (var stateName in this.GetStateNames())
+                yield return Core.instance.GetStateID(stateName);
         }
         #endregion General Methods
 
@@ -462,9 +480,9 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Fields & Gates
 
         #region State Reduction
-        private FieldsState GenerateFieldsState()
+        private FieldMask GenerateFieldMask()
         {
-            fieldsState.Clear();
+            fieldMask.Clear();
 
             foreach (var fieldId in stateFieldIds)
             {
@@ -474,16 +492,19 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     value = defaultFieldValue;
                 }
-                fieldsState.Add((fieldId, value));
+                fieldMask.Add((fieldId, value));
             }
-            return fieldsState;
+            return fieldMask;
         }
         protected int GetState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return reference.Evaluate(GenerateFieldsState());
+            if (stepEvalCache == null)
+                stepEvalCache = this.BuildStepCache();
+
+            return this.Evaluate(stepEvalCache, GenerateFieldMask());
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -621,35 +642,101 @@ namespace OneHamsa.Dexterity.Visual
         // update overrides when selected to allow setting overrides from editor
         void OnValidate()
         {
-            // add all state functions from references
-            foreach (var reference in referenceAssets) {
-                if (reference == null)
-                    continue;
-
-                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents()) {
-                    if (!stateFunctionAssets.Contains(asset)) {
-                        stateFunctionAssets.Add(asset);
-                    }
-                }
-            }
+            FixSteps();
 
             if (Application.isPlaying)
                 CacheFieldOverrides();
         }
-#endregion Overrides
 
-#region Interface Implementation (Editor)
-        HashSet<StateFunctionGraph> stateFunctionsSet = new HashSet<StateFunctionGraph>();
-        public IEnumerable<StateFunctionGraph> GetStateFunctionAssetsIncludingReferences() {
-            stateFunctionsSet.Clear();
-            foreach (var asset in stateFunctionAssets) {
-                if (asset == null)
+        void Reset() {
+            customSteps.Clear();
+            FixSteps();
+        }
+
+        
+        private void FixSteps()
+        {
+            // fix duplicate IDs
+            var ids = new HashSet<int>();
+            for (int i = 0; i < customSteps.Count; i++)
+            {
+                var step = customSteps[i];
+                if (ids.Contains(step.id))
+                {
+                    Debug.LogWarning($"duplicate step ID {step.id} in {name}");
+                    step.id = GetNextStepID();
+                    #if UNITY_EDITOR
+                    UnityEditor.EditorUtility.SetDirty(this);
+                    #endif
+                }
+                ids.Add(step.id);
+            }
+            
+            AddReferencesToStateFunctions();
+            AddFallbackStateIfNeeded();
+        }
+
+        private void AddReferencesToStateFunctions()
+        {
+            // find all references in steps
+            var refs = new HashSet<StateFunction>();
+            foreach (var step in customSteps)
+            {
+                if (step.type == StateFunction.Step.Type.Reference && step.reference_stateFunction != null)
+                    refs.Add(step.reference_stateFunction);
+            }
+
+            // add all state functions from references
+            var additionIndex = 0;
+            foreach (var reference in referenceAssets)
+            {
+                if (reference == null)
                     continue;
 
-                if (stateFunctionsSet.Add(asset)) {
-                    yield return asset;
+                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents())
+                {
+                    if (refs.Add(asset))
+                    {
+                        customSteps.Insert(additionIndex++, new StateFunction.Step
+                        {
+                            id = GetNextStepID(),
+                            type = StateFunction.Step.Type.Reference,
+                            reference_stateFunction = asset
+                        });
+                        #if UNITY_EDITOR
+                            UnityEditor.EditorUtility.SetDirty(this);
+                        #endif
+                    }
                 }
             }
+        }
+
+        private void AddFallbackStateIfNeeded()
+        {
+            if (this.HasFallback())
+                return;
+
+            customSteps.Add(new StateFunction.Step
+            {
+                id = GetNextStepID(),
+                type = StateFunction.Step.Type.Result,
+                result_stateName = StateFunction.kDefaultState,
+            });
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        }
+
+        private int GetNextStepID()
+        {
+            return customSteps.Count == 0 ? 0 : customSteps.Max(s => s.id) + 1;
+        }
+        #endregion Overrides
+
+        #region Interface Implementation (Editor)
+        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
+        public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingReferences() {
+            stateFunctionsSet.Clear();
             foreach (var reference in referenceAssets) {
                 if (reference == null)
                     continue;
@@ -662,16 +749,42 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        IEnumerable<string> IStatesProvider.GetStateNames()
-        => StateFunctionGraph.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences());
+        IEnumerable<string> IHasStates.GetStateNames() {
+            namesSet.Clear();
+            foreach (var name in StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences())) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
 
-        IEnumerable<string> IStatesProvider.GetFieldNames()
-        => StateFunctionGraph.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences());
+            foreach (var name in this.GetStateNames()) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+        }
 
-        IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
+        IEnumerable<string> IHasStates.GetFieldNames() {
+            namesSet.Clear();
+            foreach (var name in StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences())) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+
+            foreach (var name in this.GetFieldNames()) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+        }
+
+        IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
+        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
 
         Node IGateContainer.node => this;
-#endregion Interface Implementation (Editor)
+
+        List<StateFunction.Step> IStepList.steps => customSteps;
+        #endregion Interface Implementation (Editor)
     }
 }
