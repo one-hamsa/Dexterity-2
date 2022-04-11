@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
             public int condition_fieldValue;
             public bool condition_negate;
             [NonSerialized]
-            private int condition_fieldId;
+            private int condition_fieldId = -1;
             public int GetConditionFieldID() {
                 if (condition_fieldId == -1)
                     Debug.LogError($"{nameof(GetConditionFieldID)}: {condition_fieldName}: id not initialized");
@@ -78,6 +78,13 @@ namespace OneHamsa.Dexterity.Visual
                         break;
                     case Type.Result:
                         result_stateId = Core.instance.GetStateID(result_stateName);
+                        break;
+                    case Type.Reference:
+                        if (reference_stateFunction == null)
+                            break;
+                        foreach (var step in reference_stateFunction.steps) {
+                            step.Initialize();
+                        }
                         break;
                 }
             }
