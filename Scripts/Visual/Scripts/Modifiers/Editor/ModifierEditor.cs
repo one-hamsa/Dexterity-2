@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Visual
             sfStates.Clear();
             var first = true;
             foreach (var t in targets) {
-                foreach (var state in (t as IStatesProvider).GetStateNames()) {
+                foreach (var state in (t as IHasStates).GetStateNames()) {
                     if (sfStates.Add(state) && !first) {
                         EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
                         return;

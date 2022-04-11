@@ -58,13 +58,13 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        public static IEnumerable<string> GetStates(this IStepList stepList)
+        public static IEnumerable<string> GetStateNames(this IStepList stepList)
         {
             foreach (var step in stepList.steps) {
                 if (step.type == Step.Type.Result)
                     yield return step.result_stateName;
                 else if (step.type == Step.Type.Reference && step.reference_stateFunction != null) {
-                    foreach (var state in GetStates(step.reference_stateFunction))
+                    foreach (var state in GetStateNames(step.reference_stateFunction))
                         yield return state;
                 }
             }

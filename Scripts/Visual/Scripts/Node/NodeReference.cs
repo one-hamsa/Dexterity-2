@@ -6,7 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
-    public class NodeReference : ScriptableObject, IGateContainer, IStatesProvider
+    public class NodeReference : ScriptableObject, IGateContainer, IHasStates
     {
         private static Dictionary<NodeReference, NodeReference> prefabToRuntime
             = new Dictionary<NodeReference, NodeReference>();
@@ -161,19 +161,6 @@ namespace OneHamsa.Dexterity.Visual
         public IEnumerable<string> GetFieldNames()
         => StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
 
-        public IEnumerable<int> GetFieldIDs()
-        {
-            foreach (var name in GetFieldNames())
-            {
-                yield return Core.instance.GetFieldID(name);
-            }
-        }
-        public IEnumerable<int> GetStateIDs()
-        {
-            foreach (var stateName in GetStateNames())
-                yield return Core.instance.GetStateID(stateName);
-        }
-
         internal int Evaluate(FieldMask fieldMask)
         {
             foreach (var function in stateFunctions) {
@@ -198,8 +185,8 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        IEnumerable<string> IGateContainer.GetStateNames() => (this as IStatesProvider).GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IStatesProvider).GetFieldNames();
+        IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
+        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
 
         Node IGateContainer.node => owner;
     }

@@ -96,13 +96,13 @@ namespace OneHamsa.Dexterity.Visual
         public static IEnumerable<string> GetStatesFromObject(UnityEngine.Object unityObject)
         {
             if (unityObject is StateFunction sf)
-                return sf.GetStates();
+                return sf.GetStateNames();
 
-            if (unityObject is IStatesProvider statesProvider)
+            if (unityObject is IHasStates statesProvider)
                 return statesProvider.GetStateNames();
 
             if (unityObject is MonoBehaviour monoBehaviour) {
-                    var potentialNode = monoBehaviour.GetComponent<IStatesProvider>();
+                    var potentialNode = monoBehaviour.GetComponent<IHasStates>();
                     if (potentialNode != null)
                         return GetStatesFromObject(potentialNode as UnityEngine.Object);
             }

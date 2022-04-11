@@ -124,7 +124,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (asset == null)
                     continue; 
 
-                foreach (var state in asset.GetStates()) {
+                foreach (var state in asset.GetStateNames()) {
                     if (namesSet.Add(state))
                         yield return state;
                 }

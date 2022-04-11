@@ -31,13 +31,40 @@ namespace OneHamsa.Dexterity.Visual
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
-            var imguiContainer = new IMGUIContainer(Legacy_OnInspectorGUI);
-            root.Add(imguiContainer);
 
-            var foldout = new Foldout { text = "Custom Steps" };
+            root.Add(new IMGUIContainer(Legacy_OnInspectorGUI_ChooseReference));
+
+            var foldout = new Foldout { text = "Evaluation Steps" };
+            foldout.style.unityFontStyleAndWeight = FontStyle.Bold;
+            foldout.style.marginLeft = 10;
+            foldout.contentContainer.style.unityFontStyleAndWeight = FontStyle.Normal;
             foldout.Add(new StepListView(serializedObject, nameof(Node.customSteps)));
             root.Add(foldout);
+            
+            // TODO 
+            // EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
+            
+            root.Add(new IMGUIContainer(Legacy_OnInspectorGUI));
+
             return root;
+        }
+
+        private void Legacy_OnInspectorGUI_ChooseReference() {
+            node = target as Node;
+
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
+
+            // runtime
+            if (node.reference != null) {
+                if (GUILayout.Button("Open Live Reference"))
+                {
+                    NodeReferenceEditorWindow.Open(node.reference); 
+                }
+            }
+
+            serializedObject.ApplyModifiedProperties();
         }
 
         private void Legacy_OnInspectorGUI()
@@ -45,7 +72,7 @@ namespace OneHamsa.Dexterity.Visual
             sfStates.Clear();
             var first = true;
             foreach (var t in targets) {
-                foreach (var state in (t as IStatesProvider).GetStateNames()) {
+                foreach (var state in (t as IHasStates).GetStateNames()) {
                     if (sfStates.Add(state) && !first) {
                         EditorGUILayout.HelpBox("Can't multi-edit nodes with different state lists.", MessageType.Error);
                         return;
@@ -58,11 +85,6 @@ namespace OneHamsa.Dexterity.Visual
 
             serializedObject.Update();
 
-            ShowChooseReference();
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.stateFunctionAssets)));
-            EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
-
-            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
 
             ShowChooseInitialState();
@@ -94,19 +116,6 @@ namespace OneHamsa.Dexterity.Visual
         private void ShowChooseInitialState()
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
-        }
-
-        void ShowChooseReference()
-        {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
-
-            // runtime
-            if (node.reference != null) {
-                if (GUILayout.Button("Open Live Reference"))
-                {
-                    NodeReferenceEditorWindow.Open(node.reference); 
-                }
-            }
         }
 
         void ShowOverrides()
@@ -378,9 +387,9 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowWarnings()
         {
-            if (node.stateFunctionAssets.Count == 0 && node.referenceAssets.Count == 0)
+            if (node.customSteps.Count == 0)
             {
-                EditorGUILayout.HelpBox($"No state functions or references assigned to node", MessageType.Error);
+                EditorGUILayout.HelpBox($"Node has no steps", MessageType.Error);
             }
             if (!sfStates.Contains(node.initialState))
             {

@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity.Visual
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IStatesProvider
+    public abstract class Modifier : TransitionBehaviour, IHasStates
     {
         private static Dictionary<Node, HashSet<Modifier>> nodesToModifiers = new Dictionary<Node, HashSet<Modifier>>();
         public static IEnumerable<Modifier> GetModifiers(Node node)
@@ -59,17 +59,17 @@ namespace OneHamsa.Dexterity.Visual
         protected override double stateChangeTime => node.stateChangeTime;
         protected override int activeState => node.activeState;
 
-        IEnumerable<string> IStatesProvider.GetStateNames() {
+        IEnumerable<string> IHasStates.GetStateNames() {
             if (node == null)
             yield break;
-            foreach (var state in (node as IStatesProvider).GetStateNames())
+            foreach (var state in (node as IHasStates).GetStateNames())
                 yield return state;
         }
 
-        IEnumerable<string> IStatesProvider.GetFieldNames() {
+        IEnumerable<string> IHasStates.GetFieldNames() {
             if (node == null)
             yield break;
-            foreach (var field in (node as IStatesProvider).GetFieldNames())
+            foreach (var field in (node as IHasStates).GetFieldNames())
                 yield return field;
         }
 

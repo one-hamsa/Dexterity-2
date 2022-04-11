@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual
             var saveStrategy = false;
             var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>()
                 .Where(t => !t.IsAbstract 
-                    && (target is IStatesProvider || !t.IsDefined(typeof(RequiresStateFunctionAttribute), true)))
+                    && (target is IHasStates || !t.IsDefined(typeof(RequiresStateFunctionAttribute), true)))
                 .ToArray();
             var typesNames = types
                 .Select(t => t.ToString())

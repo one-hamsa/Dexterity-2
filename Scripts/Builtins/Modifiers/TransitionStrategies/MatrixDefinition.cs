@@ -6,7 +6,7 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
     [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "Dexterity/Matrix Definition", order = 100)]
-    public class MatrixDefinition : ScriptableObject, IStatesProvider {
+    public class MatrixDefinition : ScriptableObject, IHasStates {
         [Serializable]
         public class Row
         {
@@ -47,10 +47,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private Row defaultRow;
 
 
-        IEnumerable<string> IStatesProvider.GetStateNames()
+        IEnumerable<string> IHasStates.GetStateNames()
         => StateFunction.EnumerateStateNames(stateFunctionAssets);
 
-        IEnumerable<string> IStatesProvider.GetFieldNames()
+        IEnumerable<string> IHasStates.GetFieldNames()
         => StateFunction.EnumerateFieldNames(stateFunctionAssets);
 
         public void Initialize()
