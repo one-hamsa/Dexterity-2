@@ -41,6 +41,19 @@ namespace OneHamsa.Dexterity.Visual
             itemsRemoved += HandleItemsRemoved;
 
             RebuildDataAndCache(isMutated: false);
+
+            Undo.undoRedoPerformed += HandleUndoRedo;
+        }
+        
+        ~StepListView()
+        {
+            Undo.undoRedoPerformed -= HandleUndoRedo;
+        }
+
+        private void HandleUndoRedo()
+        {
+            // XXX sad but needed for now: ListView gets corrupted when reordering undo is performed 
+            Rebuild();
         }
 
         private VisualElement CreateListItem()
