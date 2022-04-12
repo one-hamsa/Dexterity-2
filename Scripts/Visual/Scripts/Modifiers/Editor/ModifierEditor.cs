@@ -346,8 +346,7 @@ namespace OneHamsa.Dexterity.Visual
             Core.Create(DexteritySettingsProvider.settings);
 
             // setup
-            foreach (var asset in node.GetStateFunctionAssetsIncludingReferences())
-                Core.instance.RegisterStates(asset);
+            Core.instance.RegisterStates(node);
 
             foreach (var modifier in modifiers)
                 modifier.Awake();
