@@ -136,6 +136,9 @@ namespace OneHamsa.Dexterity.Visual
         #region Unity Events
         protected void OnEnable()
         {
+            // one more chance to run hotfix in case references changed but OnValidate() wasn't called
+            FixSteps();
+
             if (!EnsureValidState())
             {
                 enabled = false;
@@ -735,27 +738,9 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Interface Implementation (Editor)
         HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
-        public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingReferences() {
-            stateFunctionsSet.Clear();
-            foreach (var reference in referenceAssets) {
-                if (reference == null)
-                    continue;
-
-                foreach (var asset in reference.GetStateFunctionAssetsIncludingParents()) {
-                    if (stateFunctionsSet.Add(asset)) {
-                        yield return asset;
-                    }
-                }
-            }
-        }
 
         IEnumerable<string> IHasStates.GetStateNames() {
             namesSet.Clear();
-            foreach (var name in StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingReferences())) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
-            }
 
             foreach (var name in this.GetStateNames()) {
                 if (namesSet.Add(name)) {
@@ -766,11 +751,6 @@ namespace OneHamsa.Dexterity.Visual
 
         IEnumerable<string> IHasStates.GetFieldNames() {
             namesSet.Clear();
-            foreach (var name in StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingReferences())) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
-            }
 
             foreach (var name in this.GetFieldNames()) {
                 if (namesSet.Add(name)) {
