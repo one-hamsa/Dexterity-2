@@ -9,17 +9,8 @@ namespace OneHamsa.Dexterity.Visual
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : MonoBehaviour, IGateContainer, IHasStates, IStepList
+    public partial class Node : DexterityBaseNode, IGateContainer, IStepList
     {
-        
-        [Serializable]
-        public class TransitionDelay
-        {
-            [State]
-            public string beforeExitingState;
-            public float waitFor = 0;
-        }
-
         #region Static Functions
         // mainly for debugging graph problems
         private static Dictionary<BaseField, Node> fieldsToNodes = new Dictionary<BaseField, Node>();
@@ -61,21 +52,12 @@ namespace OneHamsa.Dexterity.Visual
 
         #region Serialized Fields
         public List<NodeReference> referenceAssets = new List<NodeReference>();
-        
-        [State]
-        public string initialState = StateFunction.kDefaultState;
-
+     
         [SerializeField]
         public List<Gate> customGates = new List<Gate>();
 
         [SerializeField]
-        public List<TransitionDelay> delays = new List<TransitionDelay>();
-
-        [SerializeField]
         public List<OutputOverride> overrides = new List<OutputOverride>();
-
-        [State(allowEmpty: true)]
-        public string overrideState;
 
         public List<StateFunction.Step> customSteps = new List<StateFunction.Step>();
 
@@ -87,38 +69,19 @@ namespace OneHamsa.Dexterity.Visual
         // output fields of this node
         public Dictionary<int, OutputField> outputFields = new Dictionary<int, OutputField>();
         public Dictionary<int, OutputOverride> cachedOverrides = new Dictionary<int, OutputOverride>();
-        
-        // don't change this directly, use fields
-        [NonSerialized]
-        public int activeState = -1;
-        // don't change this directly, use SetStateOverride
-        [NonSerialized]
-        public int overrideStateId = -1;
-        // don't change this directly
-        [NonSerialized]
-        public double stateChangeTime;
-        // don't change this directly
-        [NonSerialized]
-        public double currentTime;
 
-        public event Action onEnabled;
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
-        public event Action<int, int> onStateChanged;
         #endregion Public Properties
 
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
         int gatesDirtyIncrement;
         int overridesDirtyIncrement;
-        Dictionary<int, TransitionDelay> cachedDelays;
 
-        bool stateDirty = true;
         FieldMask fieldMask = new FieldMask(32);
         int[] stateFieldIds;
-        double nextStateChangeTime;
-        int pendingState = -1;
         private HashSet<string> namesSet = new HashSet<string>();
         private StateFunction.StepEvaluationCache stepEvalCache;
 
@@ -134,27 +97,7 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Private Properties
 
         #region Unity Events
-        protected void OnEnable()
-        {
-            // one more chance to run hotfix in case references changed but OnValidate() wasn't called
-            FixSteps();
-
-            if (!EnsureValidState())
-            {
-                enabled = false;
-                return;
-            }
-
-            Initialize();
-            onEnabled?.Invoke();
-        }
-
-        protected void OnDisable()
-        {
-            Uninitialize();
-        }
-
-        protected void OnDestroy()
+        protected override void OnDestroy()
         {
             // only now it's ok to remove output fields
             foreach (var output in outputFields.Values.ToArray())
@@ -167,50 +110,8 @@ namespace OneHamsa.Dexterity.Visual
                 Destroy(reference);
                 reference = null;
             }
+            base.OnDestroy();
         }
-
-        protected virtual void Update()
-        {
-            currentTime = 
-                #if UNITY_2020_1_OR_NEWER
-                Time.unscaledTimeAsDouble
-            #else
-                Time.unscaledTime
-            #endif
-            ;
-
-            if (stateDirty)
-            {
-                // someone marked this dirty, check for new state
-                var newState = GetState();
-                if (newState == -1)
-                {
-                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
-                    return;
-                }
-                if (newState != pendingState)
-                {
-                    // add delay to change time
-                    var delay = GetExitingStateDelay(activeState);
-                    nextStateChangeTime = currentTime + delay?.waitFor ?? 0;
-                    // don't trigger change if moving back to current state
-                    pendingState = newState != activeState ? newState : -1;
-                }
-                stateDirty = false;
-            }
-            // change to next state (delay is accounted for already)
-            if (nextStateChangeTime <= currentTime && pendingState != -1)
-            {
-                var oldState = activeState; 
-
-                activeState = pendingState;
-                pendingState = -1;
-                stateChangeTime = currentTime;
-
-                onStateChanged?.Invoke(oldState, activeState);
-            }
-        }
-
         #endregion Unity Events
 
         #region General Methods
@@ -224,8 +125,17 @@ namespace OneHamsa.Dexterity.Visual
             return true;
         }
 
-        public void Initialize()
+        protected override void Initialize()
         {
+            // one more chance to run hotfix in case references changed but OnValidate() wasn't called
+            FixSteps();
+
+            if (!EnsureValidState())
+            {
+                enabled = false;
+                return;
+            }
+
             // only needed once
             if (reference == null) {
                 // create a runtime instance of this scriptable object to allow changing it
@@ -237,9 +147,13 @@ namespace OneHamsa.Dexterity.Visual
                 reference.extends.AddRange(referenceAssets);
                 // initialize reference (this will create the runtime version with all the inherited gates)
                 reference.Initialize(customGates);
-                // register my states, too
-                Core.instance.RegisterStates(this);
             }
+
+            // register my states 
+            Core.instance.RegisterStates(this);
+
+            // run base initialize after registering states
+            base.Initialize();
 
             // find all fields that are used by this node's state function
             stateFieldIds = GetFieldIDs().ToArray();
@@ -256,26 +170,11 @@ namespace OneHamsa.Dexterity.Visual
 
             // go through all the fields. initialize them, register them to manager and add them to internal structure
             RestartFields();
-            // cache delays (from string to int)
-            CacheDelays();
             // cache overrides to allow quick access internally
             CacheFieldOverrides();
-            CacheStateOverride();
-
-            // find default state and define initial state
-            var initialStateId = Core.instance.GetStateID(initialState);
-            if (initialStateId == -1)
-            {
-                initialStateId = GetStateIDs().ElementAt(0);
-                Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
-            }
-            activeState = initialStateId;
-
-            // mark state as dirty - important if node was re-enabled
-            stateDirty = true;
         }
 
-        public void Uninitialize()
+        protected override void Uninitialize()
         {
             // cleanup gates
             foreach (var gate in allGates.ToArray())
@@ -294,6 +193,8 @@ namespace OneHamsa.Dexterity.Visual
                 reference.onGateRemoved -= RestartFields;
                 reference.onGatesUpdated -= RestartFields;
             }
+
+            base.Uninitialize();
         }
 
         private IEnumerable<int> GetFieldIDs()
@@ -305,8 +206,26 @@ namespace OneHamsa.Dexterity.Visual
         }
         private IEnumerable<int> GetStateIDs()
         {
-            foreach (var stateName in this.GetStateNames())
+            foreach (var stateName in GetStateNames())
                 yield return Core.instance.GetStateID(stateName);
+        }
+        public override IEnumerable<string> GetStateNames() {
+            namesSet.Clear();
+
+            foreach (var name in (this as IStepList).GetStateNames()) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
+        }
+        public override IEnumerable<string> GetFieldNames() {
+            namesSet.Clear();
+
+            foreach (var name in (this as IStepList).GetFieldNames()) {
+                if (namesSet.Add(name)) {
+                    yield return name;
+                }
+            }
         }
         #endregion General Methods
 
@@ -499,7 +418,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             return fieldMask;
         }
-        protected int GetState()
+        protected override int GetState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;
@@ -512,22 +431,6 @@ namespace OneHamsa.Dexterity.Visual
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
         #endregion State Reduction
-
-        #region Transitions
-        private void CacheDelays()
-        {
-            cachedDelays = new Dictionary<int, TransitionDelay>();
-            foreach (var delay in delays)
-                cachedDelays[Core.instance.GetStateID(delay.beforeExitingState)] = delay;
-        }
-
-        private TransitionDelay GetExitingStateDelay(int state)
-        {
-            cachedDelays.TryGetValue(state, out var value);
-            return value;
-        }
-
-        #endregion Transitions
 
         #region Overrides
         /// <summary>
@@ -601,30 +504,7 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogWarning($"clearing undefined override {name}");
             }
         }
-
-        /// <summary>
-        /// Overrides state to manual value
-        /// </summary>
-        /// <param name="fieldId">State ID (from Manager)</param>
-        public void SetStateOverride(int state)
-        {
-            overrideStateId = state;
-            stateDirty = true;
-
-#if UNITY_EDITOR
-            // in editor, write to the overrideState string (this can be called in edit time)
-            overrideState = Core.instance.GetStateAsString(state);
-#else
-            // in runtime, clear the string
-            overrideState = null;
-#endif
-        }
-        /// <summary>
-        /// Overrides state to manual value
-        /// </summary>
-        /// <param name="fieldId">State ID (from Manager)</param>
-        public void ClearStateOverride() => SetStateOverride(-1);
-
+        
         void CacheFieldOverrides()
         {
             cachedOverrides.Clear();
@@ -737,28 +617,6 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Overrides
 
         #region Interface Implementation (Editor)
-        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
-
-        IEnumerable<string> IHasStates.GetStateNames() {
-            namesSet.Clear();
-
-            foreach (var name in this.GetStateNames()) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
-            }
-        }
-
-        IEnumerable<string> IHasStates.GetFieldNames() {
-            namesSet.Clear();
-
-            foreach (var name in this.GetFieldNames()) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
-            }
-        }
-
         IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
         IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
 
