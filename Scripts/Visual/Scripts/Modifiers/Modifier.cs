@@ -8,8 +8,8 @@ namespace OneHamsa.Dexterity.Visual
     [ModifierPropertyDefinition("Property")]
     public abstract class Modifier : TransitionBehaviour, IHasStates
     {
-        private static Dictionary<Node, HashSet<Modifier>> nodesToModifiers = new Dictionary<Node, HashSet<Modifier>>();
-        public static IEnumerable<Modifier> GetModifiers(Node node)
+        private static Dictionary<DexterityBaseNode, HashSet<Modifier>> nodesToModifiers = new Dictionary<DexterityBaseNode, HashSet<Modifier>>();
+        public static IEnumerable<Modifier> GetModifiers(DexterityBaseNode node)
         {
             if (nodesToModifiers.TryGetValue(node, out var modifiers))
                 return modifiers;
@@ -17,12 +17,12 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [SerializeField]
-        public Node _node;
+        public DexterityBaseNode _node;
 
         [SerializeReference]
         public List<PropertyBase> properties = new List<PropertyBase>();
 
-        public Node node => TryFindNode();
+        public DexterityBaseNode node => TryFindNode();
 
         Dictionary<int, PropertyBase> propertiesCache = null;
 
@@ -151,15 +151,15 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        Node TryFindNode()
+        DexterityBaseNode TryFindNode()
         {
-            Node current = _node;
+            DexterityBaseNode current = _node;
             Transform parent = transform;
             while (current == null && parent != null)
             {
                 // include inactive if we're inactive
                 if (!gameObject.activeInHierarchy || parent.gameObject.activeInHierarchy)
-                    current = parent.GetComponent<Node>();
+                    current = parent.GetComponent<DexterityBaseNode>();
 
                 parent = parent.parent;
             }

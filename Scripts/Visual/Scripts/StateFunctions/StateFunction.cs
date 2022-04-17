@@ -110,8 +110,8 @@ namespace OneHamsa.Dexterity.Visual
         internal int Evaluate(FieldMask mask)
         {
             if (stepEvalCache == null)
-                stepEvalCache = this.BuildStepCache();
-            return this.Evaluate(stepEvalCache, mask);
+                stepEvalCache = (this as IStepList).BuildStepCache();
+            return IStepList.Evaluate(stepEvalCache, mask);
         }
 
         public static IEnumerable<string> EnumerateStateNames(IEnumerable<IStepList> assets)
@@ -146,5 +146,10 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
         }
+
+        // XXX this proxy code is stupid and unnecessary in theory, but something about interface inheritance 
+        //. + default implementation is not working well. so here we go.
+        IEnumerable<string> IHasStates.GetFieldNames() => (this as IStepList).GetStepListFieldNames();
+        IEnumerable<string> IHasStates.GetStateNames() => (this as IStepList).GetStepListStateNames();
     }
 }

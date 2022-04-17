@@ -42,10 +42,10 @@ namespace OneHamsa.Dexterity.Visual
             Uninitialize();
         }
 
+        public ListSet<string> fieldNames = new ListSet<string>(32);
         public ListSet<string> stateNames = new ListSet<string>(32);
-        public string[] fieldNames;
 
-        private HashSet<IStepList> stepLists = new HashSet<IStepList>();
+        private HashSet<IHasStates> stateHolders = new HashSet<IHasStates>();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -55,10 +55,10 @@ namespace OneHamsa.Dexterity.Visual
         /// <returns>Field Definition ID (runtime, may vary from run to run)</returns>
         public int GetFieldID(string name)
         {
-            if (fieldNames.Length == 0)
+            if (fieldNames.Count == 0)
                 Debug.LogWarning($"tried to get field id of {name} but fieldNames is empty");
 
-            return Array.IndexOf(fieldNames, name);
+            return fieldNames.IndexOf(name);
         }
 
         /// <summary>
@@ -104,19 +104,18 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         /// <summary>
-        /// Registers a step list, adding global state IDs
+        /// Registers a step list, adding global state and field IDs
         /// </summary>
         /// <param name="stateFunction">Step List to register</param>
-        public void RegisterStates(IStepList stepList)
+        public void Register(IHasStates stateHolder)
         {
-            stepLists.Add(stepList);
+            stateHolders.Add(stateHolder);
 
-            foreach (var state in stepList.GetStateNames())
-                stateNames.Add(state);
+            foreach (var field in stateHolder.GetFieldNames())
+                RegisterField(field);
 
-            foreach (var step in stepList.steps)  {
-                step.Initialize();
-            }
+            foreach (var state in stateHolder.GetStateNames())
+                RegisterState(state);
         }
 
         /// <summary>
@@ -124,9 +123,18 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         private void Initialize()
         {
-            fieldNames = new string[settings.fieldDefinitions.Length];
             for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
-                fieldNames[i] = settings.fieldDefinitions[i].name;
+                RegisterField(settings.fieldDefinitions[i].name);
+        }
+
+        private void RegisterField(string fieldName)
+        {
+            fieldNames.Add(fieldName);
+        }
+
+        private void RegisterState(string stateName)
+        {
+            stateNames.Add(stateName);
         }
 
         /// <summary>
@@ -135,7 +143,7 @@ namespace OneHamsa.Dexterity.Visual
         private void Uninitialize() {
             fieldNames = null;
             stateNames.Clear();
-            stepLists.Clear();
+            stateHolders.Clear();
         }
     }
 }

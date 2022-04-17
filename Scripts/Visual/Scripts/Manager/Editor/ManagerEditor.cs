@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             GUILayout.Label("Field IDs (runtime)", EditorStyles.whiteLargeLabel);
-            for (var i = 0; i < Core.instance.fieldNames.Length; ++i) {
+            for (var i = 0; i < Core.instance.fieldNames.Count; ++i) {
                 var field = Core.instance.fieldNames[i];
                 EditorGUILayout.LabelField(field, i.ToString());
             }

@@ -331,7 +331,7 @@ namespace OneHamsa.Dexterity.Visual
             return updated;
         }
 
-        public static IEnumerator AnimateStateTransition(Node node, IEnumerable<Modifier> modifiers, 
+        public static IEnumerator AnimateStateTransition(DexterityBaseNode node, IEnumerable<Modifier> modifiers, 
         string state, float speed = 1f, Action onEnd = null)
         {
             // record all components on modifiers for undo
@@ -346,7 +346,9 @@ namespace OneHamsa.Dexterity.Visual
             Core.Create(DexteritySettingsProvider.settings);
 
             // setup
-            Core.instance.RegisterStates(node);
+            Core.instance.Register(node);
+            if (node is IStepList stepList)
+                stepList.InitializeSteps();
 
             foreach (var modifier in modifiers)
                 modifier.Awake();

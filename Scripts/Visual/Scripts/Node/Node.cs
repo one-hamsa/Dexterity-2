@@ -149,11 +149,10 @@ namespace OneHamsa.Dexterity.Visual
                 reference.Initialize(customGates);
             }
 
-            // register my states 
-            Core.instance.RegisterStates(this);
-
             // run base initialize after registering states
             base.Initialize();
+            // then initialize step list
+            (this as IStepList).InitializeSteps();
 
             // find all fields that are used by this node's state function
             stateFieldIds = GetFieldIDs().ToArray();
@@ -199,7 +198,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private IEnumerable<int> GetFieldIDs()
         {
-            foreach (var name in this.GetFieldNames())
+            foreach (var name in GetFieldNames())
             {
                 yield return Core.instance.GetFieldID(name);
             }
@@ -211,8 +210,8 @@ namespace OneHamsa.Dexterity.Visual
         }
         public override IEnumerable<string> GetStateNames() {
             namesSet.Clear();
-
-            foreach (var name in (this as IStepList).GetStateNames()) {
+            
+            foreach (var name in (this as IStepList).GetStepListStateNames()) {
                 if (namesSet.Add(name)) {
                     yield return name;
                 }
@@ -221,7 +220,7 @@ namespace OneHamsa.Dexterity.Visual
         public override IEnumerable<string> GetFieldNames() {
             namesSet.Clear();
 
-            foreach (var name in (this as IStepList).GetFieldNames()) {
+            foreach (var name in (this as IStepList).GetStepListFieldNames()) {
                 if (namesSet.Add(name)) {
                     yield return name;
                 }
@@ -420,13 +419,14 @@ namespace OneHamsa.Dexterity.Visual
         }
         protected override int GetState()
         {
-            if (overrideStateId != -1)
-                return overrideStateId;
+            var baseState = base.GetState();
+            if (baseState != StateFunction.emptyStateId)
+                return baseState;
 
             if (stepEvalCache == null)
-                stepEvalCache = this.BuildStepCache();
+                stepEvalCache = (this as IStepList).BuildStepCache();
 
-            return this.Evaluate(stepEvalCache, GenerateFieldMask());
+            return IStepList.Evaluate(stepEvalCache, GenerateFieldMask());
         }
 
         private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -596,7 +596,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void AddFallbackStateIfNeeded()
         {
-            if (this.HasFallback())
+            if ((this as IStepList).HasFallback())
                 return;
 
             customSteps.Add(new StateFunction.Step
@@ -617,8 +617,8 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Overrides
 
         #region Interface Implementation (Editor)
-        IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
+        IEnumerable<string> IGateContainer.GetStateNames() => GetStateNames();
+        IEnumerable<string> IGateContainer.GetFieldNames() => GetFieldNames();
 
         Node IGateContainer.node => this;
 

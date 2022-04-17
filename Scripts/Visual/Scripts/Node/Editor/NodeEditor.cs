@@ -12,20 +12,21 @@ namespace OneHamsa.Dexterity.Visual
 {
 
     [CustomEditor(typeof(Node)), CanEditMultipleObjects]
-    public class NodeEditor : Editor
+    public class NodeEditor : DexterityBaseNodeEditor
     {
+        static bool fieldValuesDebugOpen;
+        static bool upstreamDebugOpen;
+        private static HashSet<BaseField> upstreams = new HashSet<BaseField>();
         Node node;
         bool foldoutOpen;
-        private HashSet<string> sfStates = new HashSet<string>();
-        private List<string> previewStates = new List<string>();
-        private List<string> previewStateNames = new List<string>();
-        private static HashSet<BaseField> upstreams = new HashSet<BaseField>();
+        
+        private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
+        private bool gatesUpdated;
 
-        private void OnEnable()
+        protected void OnEnable()
         {
-            fieldValuesDebugOpen = Application.isPlaying;
-            
             foldoutOpen = true;
+            fieldValuesDebugOpen = Application.isPlaying;
         }
 
         public override VisualElement CreateInspectorGUI()
@@ -67,46 +68,10 @@ namespace OneHamsa.Dexterity.Visual
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void Legacy_OnInspectorGUI()
+        protected override void Legacy_OnInspectorGUI()
         {
-            sfStates.Clear();
-            var first = true;
-            foreach (var t in targets) {
-                foreach (var state in (t as IHasStates).GetStateNames()) {
-                    if (sfStates.Add(state) && !first) {
-                        EditorGUILayout.HelpBox("Can't multi-edit nodes with different state lists.", MessageType.Error);
-                        return;
-                    }
-                }
-                first = false;
-            }
-
-            node = target as Node;
-
-            serializedObject.Update();
-
-            EditorGUILayout.LabelField("Fields & State", EditorStyles.whiteLargeLabel);
-
-            ShowChooseInitialState();
-
-            var gatesUpdated = false;
-            if (targets.Length <= 1)
-                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
-                    node, ref foldoutOpen);
-
-            ShowDelays();
-
-            ShowOverrides();
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
-            
-            if (targets.Length <= 1)
-                ShowSingleTargetDebug();
-            ShowAllTargetsDebug();
-
-            ShowWarnings();
-            serializedObject.ApplyModifiedProperties();
+            gatesUpdated = false;
+            base.Legacy_OnInspectorGUI();
 
             // do this after ApplyModifiedProperties() to ensure integrity
             if (gatesUpdated)
@@ -118,7 +83,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
         }
 
-        void ShowOverrides()
+        protected override void ShowFieldOverrides()
         {
             // add nice name for all overrides
             foreach (var o in node.overrides)
@@ -129,75 +94,22 @@ namespace OneHamsa.Dexterity.Visual
 
             var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
-
-            if (targets.Length > 1)
-                return;
-
-            GUI.enabled = Application.isPlaying;
-            var overrideStateProp = serializedObject.FindProperty(nameof(Node.overrideState));
-
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(overrideStateProp, new GUIContent("State Override"));
-            if (EditorGUI.EndChangeCheck())
-            {
-                if (string.IsNullOrEmpty(overrideStateProp.stringValue))
-                    node.ClearStateOverride();
-                else
-                    node.SetStateOverride(Core.instance.GetStateID(overrideStateProp.stringValue));
-            }
-            GUI.enabled = true;
         }
 
-        static bool modifiersDebugOpen;
-        static bool stateFunctionsRuntimeDebugOpen;
-        static bool fieldValuesDebugOpen;
-        static bool upstreamDebugOpen;
-        private static int speedIndex = -1;
-        private EditorCoroutine coro;
-
-        private int previewStateIndex;
-        private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
-        private HashSet<Modifier> modifiers = new HashSet<Modifier>();
-
-        void ShowSingleTargetDebug()
+        protected override void ShowFields()
         {
-            if (!Application.isPlaying)
-            {
-                ShowPreviewState();
-            }
-            else 
-            {
-                ShowActiveState();
-                ShowModifiers();
-                ShowFieldValues();
-            }
+            if (targets.Length <= 1)
+                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
+                    node, ref foldoutOpen);
         }
 
-        private void ShowModifiers()
-        {
-            var modifiers = Modifier.GetModifiers(node);
-
-            if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
-                return;
-
-            foreach (var m in modifiers)
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{m.name}: {m.GetType().Name}");
-                if (GUILayout.Button("Go"))
-                {
-                    Selection.activeObject = m;
-                }
-                EditorGUILayout.EndHorizontal();
-            }
-        }
 
         private void ShowDelays()
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.delays)));
         }
 
-        private void ShowFieldValues()
+        protected override void ShowFieldValues()
         {
             if (!(fieldValuesDebugOpen = EditorGUILayout.Foldout(fieldValuesDebugOpen, "Field values", true, EditorStyles.foldoutHeader)))
                 return;
@@ -275,7 +187,7 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void ShowAllTargetsDebug()
+        protected override void ShowAllTargetsDebug()
         {
             if (!Application.isPlaying)
                 return;
@@ -331,94 +243,13 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void ShowPreviewState()
-        {
-            previewStates.Clear();
-            previewStateNames.Clear();
-
-            previewStates.Add(null);
-            previewStateNames.Add("(None)");
-
-            foreach (var state in sfStates) {
-                previewStates.Add(state);
-                previewStateNames.Add(state);
-            }
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUI.BeginChangeCheck();
-            var propDrawer = new StateDrawer();
-            GUILayout.Label("Preview");
-            var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray());
-            if (newIndex != 0)
-                previewStateIndex = newIndex;
-
-            var didChange = EditorGUI.EndChangeCheck();
-
-            var origColor = GUI.contentColor;
-            GUI.contentColor = coro != null ? Color.green : origColor;
-
-            var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.25f, 1.5f, 2f };
-            var speedsNames = speeds.Select(s => $"x{s}").ToArray();
-            if (speedIndex == -1)
-                speedIndex = Array.IndexOf(speeds, 1f);
-            speedIndex = EditorGUILayout.Popup("", speedIndex, speedsNames, GUILayout.Width(50));
-
-            GUI.contentColor = origColor;
-
-            if (didChange && previewStates[previewStateIndex] != null)
-            {
-                if (coro != null)
-                    EditorCoroutineUtility.StopCoroutine(coro);
-
-                // collect all children modifiers
-                modifiers.Clear();
-                // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
-                foreach (var modifier in StageUtility.GetCurrentStageHandle().FindComponentsOfType<Modifier>()) {
-                    if (modifier.node == node)
-                        modifiers.Add(modifier);
-                }
-
-                coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(node, modifiers, previewStates[previewStateIndex]
-                    , speeds[speedIndex], () => coro = null), this);
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void ShowWarnings()
+        protected override void ShowWarnings()
         {
             if (node.customSteps.Count == 0)
             {
                 EditorGUILayout.HelpBox($"Node has no steps", MessageType.Error);
             }
-            if (!sfStates.Contains(node.initialState))
-            {
-                EditorGUILayout.HelpBox($"Initial State should be selected", MessageType.Warning);
-            }
-            if (targets.Length > 1) 
-            {
-                EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
-            }
-        }
-
-        public static string StrikeThrough(string s)
-        {
-            string strikethrough = "";
-            foreach (char c in s)
-            {
-                strikethrough = strikethrough + c + '\u0336';
-            }
-            return strikethrough;
-        }
-
-        static void DrawSeparator(Color color)
-        {
-            EditorGUILayout.Space();
-            var rect = EditorGUILayout.BeginHorizontal();
-            Handles.color = color;
-            Handles.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.width + 15, rect.y));
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.Space();
+            base.ShowWarnings();
         }
     }
 }

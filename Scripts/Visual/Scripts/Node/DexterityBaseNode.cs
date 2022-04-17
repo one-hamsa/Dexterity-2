@@ -7,7 +7,6 @@ namespace OneHamsa.Dexterity.Visual
 {
     public abstract class DexterityBaseNode : MonoBehaviour, IHasStates
     {
-        
         [Serializable]
         public class TransitionDelay
         {
@@ -28,10 +27,10 @@ namespace OneHamsa.Dexterity.Visual
         #region Public Properties
         // don't change this directly, use fields
         [NonSerialized]
-        public int activeState = -1;
+        public int activeState = StateFunction.emptyStateId;
         // don't change this directly, use SetStateOverride
         [NonSerialized]
-        public int overrideStateId = -1;
+        public int overrideStateId = StateFunction.emptyStateId;
         // don't change this directly
         [NonSerialized]
         public double stateChangeTime;
@@ -117,6 +116,9 @@ namespace OneHamsa.Dexterity.Visual
         #region General Methods
         protected virtual void Initialize()
         {
+            // register my states 
+            Core.instance.Register(this);
+            
             // cache delays (from string to int)
             CacheDelays();
             // cache overrides to allow quick access internally
@@ -147,7 +149,13 @@ namespace OneHamsa.Dexterity.Visual
         #endregion General Methods
 
         #region State Reduction
-        protected abstract int GetState();
+        protected virtual int GetState()
+        {
+            if (overrideStateId != -1)
+                return overrideStateId;
+
+            return StateFunction.emptyStateId;
+        }
         public abstract IEnumerable<string> GetStateNames();
         public abstract IEnumerable<string> GetFieldNames();
         #endregion State Reduction

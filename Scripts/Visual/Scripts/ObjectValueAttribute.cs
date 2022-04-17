@@ -27,24 +27,32 @@ namespace OneHamsa.Dexterity.Visual
         {            
             private readonly UnityEngine.Object unityObject;
             private readonly MemberInfo memberInfo;
+            public readonly Type type;
 
             public Context(object callerObject, string objectFieldName, string propertyFieldName) 
             {
-                unityObject = (UnityEngine.Object)callerObject.GetType().GetField(objectFieldName).GetValue(callerObject);
+                var fieldInfo = callerObject.GetType().GetField(objectFieldName);
+                unityObject = (UnityEngine.Object)fieldInfo.GetValue(callerObject);
                 var field = (string)callerObject.GetType().GetField(propertyFieldName).GetValue(callerObject);
 
-                if (memberInfo == null)
+                if (memberInfo == null) {
                     memberInfo = unityObject.GetType().GetMethod(field, BindingFlags.Public | BindingFlags.Instance);
+                    type = (memberInfo as MethodInfo)?.ReturnType;
+                }
 
-                if (memberInfo == null)
+                if (memberInfo == null) {
                     memberInfo = unityObject.GetType().GetField(field, BindingFlags.Public | BindingFlags.Instance);
+                    type = (memberInfo as FieldInfo)?.FieldType;
+                }
 
-                if (memberInfo == null)
+                if (memberInfo == null) {
                     memberInfo = unityObject.GetType().GetProperty(field, BindingFlags.Public | BindingFlags.Instance);
+                    type = (memberInfo as PropertyInfo)?.PropertyType;
+                }
 
                 if (memberInfo == null)
                 {
-                    Debug.LogError($"could not read reflected property {field} in {unityObject.name}");
+                    throw new ArgumentException($"could not read reflected property {field} in {unityObject.name}");
                 }
             }
 

@@ -76,7 +76,7 @@ namespace OneHamsa.Dexterity.Visual
             // register all functions
             stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
             for (int i = 0; i < stateFunctions.Length; i++) {
-                Core.instance.RegisterStates(stateFunctions[i]);
+                Core.instance.Register(stateFunctions[i]);
             }
 
             // copy from parents

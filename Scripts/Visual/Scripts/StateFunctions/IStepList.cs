@@ -5,16 +5,19 @@ using static OneHamsa.Dexterity.Visual.StateFunction;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    public interface IStepList
+    public interface IStepList : IHasStates
     {
-        List<Step> steps { get; }
-    }
-
-    public static class IStepListExtensions {
-        private static HashSet<string> namesSet = new HashSet<string>();
         private static Stack<(Step step, int depth)> depthStack = new Stack<(Step step, int depth)>();
 
-        public static int Evaluate(this IStepList stepList, StepEvaluationCache cache, FieldMask mask) {
+        List<Step> steps { get; }
+
+        void InitializeSteps() {
+            foreach (var step in steps) {
+                step.Initialize();
+            }
+        }
+
+        static int Evaluate(StepEvaluationCache cache, FieldMask mask) {
             var conditionMetDepth = -1;
             foreach (var (step, depth) in cache) {
                 if (conditionMetDepth < depth - 1) {
@@ -46,37 +49,40 @@ namespace OneHamsa.Dexterity.Visual
             return emptyStateId;
         }
 
-        public static IEnumerable<string> GetFieldNames(this IStepList stepList)
+        // XXX there's a bug in C#?! - if I cast the object to be IStepList and call a method
+        //. whose signature (here) is IHasStates.X() - it calls the parent method, not this one.
+        //. that's why "StepList" is added here, and the code become more convoluted. sorry.
+        IEnumerable<string> GetStepListFieldNames()
         {
-            foreach (var step in stepList.steps) {
+            foreach (var step in steps) {
                 if (step.type == Step.Type.Condition)
                     yield return step.condition_fieldName;
                 else if (step.type == Step.Type.Reference && step.reference_stateFunction != null) {
-                    foreach (var state in GetFieldNames(step.reference_stateFunction))
+                    foreach (var state in (step.reference_stateFunction as IStepList).GetStepListFieldNames())
                         yield return state;
                 }
             }
         }
 
-        public static IEnumerable<string> GetStateNames(this IStepList stepList)
+        IEnumerable<string> GetStepListStateNames()
         {
-            foreach (var step in stepList.steps) {
+            foreach (var step in steps) {
                 if (step.type == Step.Type.Result)
                     yield return step.result_stateName;
                 else if (step.type == Step.Type.Reference && step.reference_stateFunction != null) {
-                    foreach (var state in GetStateNames(step.reference_stateFunction))
+                    foreach (var state in (step.reference_stateFunction as IStepList).GetStepListStateNames())
                         yield return state;
                 }
             }
         }
 
-        public static bool HasFallback(this IStepList stepList) {
-            foreach (var step in stepList.steps) {
+        bool HasFallback() {
+            foreach (var step in steps) {
                 if (step.parent == -1) {
                     if (step.type == Step.Type.Result)
                         return true;
                     if (step.type == Step.Type.Reference && step.reference_stateFunction != null) {
-                        if (HasFallback(step.reference_stateFunction))
+                        if ((step.reference_stateFunction as IStepList).HasFallback())
                             return true;
                     }
                 }
@@ -84,11 +90,11 @@ namespace OneHamsa.Dexterity.Visual
             return false;
         }
 
-        public static StepEvaluationCache BuildStepCache(this IStepList stepList)
-            => new StepEvaluationCache(EnumerateTreeStepsDFS(stepList));
+        StepEvaluationCache BuildStepCache()
+            => new StepEvaluationCache(EnumerateTreeStepsDFS());
 
-        public static IEnumerable<(Step step, int depth)> EnumerateTreeStepsDFS(this IStepList stepList) {
-            var tree = ListToTree(stepList);
+        IEnumerable<(Step step, int depth)> EnumerateTreeStepsDFS() {
+            var tree = ListToTree();
             depthStack.Clear();
             foreach (var step in tree.Keys) {
                 if (step.isRoot)
@@ -108,20 +114,20 @@ namespace OneHamsa.Dexterity.Visual
         }
         
         // convert list with parent ids to tree structure where each node has a list of children
-        private static Dictionary<Step, List<Step>> ListToTree(IStepList stepList) {
+        Dictionary<Step, List<Step>> ListToTree() {
             // add root step
             var lastVisited = Step.Root;
             
             var idToStep = new Dictionary<int, Step>();
             idToStep.Add(Step.Root.id, Step.Root);
 
-            foreach (var step in stepList.steps) {
+            foreach (var step in steps) {
                 idToStep.Add(step.id, step);
             }
 
             var tree = new Dictionary<Step, List<Step>>();
 
-            foreach (var step in stepList.steps) {
+            foreach (var step in steps) {
                 if (!idToStep.ContainsKey(step.parent)) {
                     Debug.LogError($"Step {step.id} has invalid parent {step.parent}");
                     continue;
@@ -135,10 +141,10 @@ namespace OneHamsa.Dexterity.Visual
 
             return tree;
         }
-        public static string GetTreeDebugString(this IStepList stepList) {
+        string GetTreeDebugString() {
             var sb = new System.Text.StringBuilder();
 
-            foreach (var (step, depth) in EnumerateTreeStepsDFS(stepList)) {
+            foreach (var (step, depth) in EnumerateTreeStepsDFS()) {
                 sb.Append($"{new string('-', depth)}[{step.id}] {step.type}\n");
             }
             
