@@ -54,7 +54,8 @@ namespace OneHamsa.Dexterity.Visual
 
         protected void Awake()
         {
-            Core.Create(settings);
+            if (Core.instance == null)
+                Core.Create(settings);
          
             // create graph instance
             graph = gameObject.AddComponent<Graph>();
