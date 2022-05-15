@@ -16,7 +16,24 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // custom params
             public Vector2 sizeDelta;
         }
+        
+        [Tooltip("Check this flag only if the object may be re-parented in runtime")]
+        public bool updateParentReference = false;
 
+        List<RectTransform> _transformsToUpdate;
+
+        public override void Awake() {
+            base.Awake();
+
+            CollectTransformsToUpdate();
+        }
+
+        void CollectTransformsToUpdate() {
+            _transformsToUpdate = new List<RectTransform> {(RectTransform)transform};
+            foreach (var group in gameObject.GetComponentsInParent<LayoutGroup>())
+                _transformsToUpdate.Add((RectTransform)group.transform);
+        }
+        
         public override void Update()
         {
             base.Update();
@@ -36,9 +53,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             component.sizeDelta = sizeDelta;
 
             // update UI layout
-            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
-            foreach (LayoutGroup group in gameObject.GetComponentsInParent<LayoutGroup>())
-                LayoutRebuilder.MarkLayoutForRebuild((RectTransform)group.transform);
+            if (updateParentReference)
+                CollectTransformsToUpdate();
+            foreach (var rectTransform in _transformsToUpdate)
+                LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
         public void FreezeProperty(PropertyBase property)
