@@ -34,6 +34,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             component.sizeDelta = sizeDelta;
+
+            // update UI layout
             LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
             foreach (LayoutGroup group in gameObject.GetComponentsInParent<LayoutGroup>())
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)group.transform);
