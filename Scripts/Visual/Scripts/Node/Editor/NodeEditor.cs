@@ -54,6 +54,11 @@ namespace OneHamsa.Dexterity.Visual
             node = target as Node;
 
             serializedObject.Update();
+            
+            // XXX call this from here because adding to customSteps from OnValidate() literally causes editor to crash
+            //. when selecting multiple editor targets
+            foreach (var node in targets.Cast<Node>())
+                node.FixSteps();
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
 

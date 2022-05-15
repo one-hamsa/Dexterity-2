@@ -525,7 +525,8 @@ namespace OneHamsa.Dexterity.Visual
         // update overrides when selected to allow setting overrides from editor
         void OnValidate()
         {
-            FixSteps();
+            // this will cause editor to crash if selecting multiple nodes, so we call it from CustomEditor instead
+            // FixSteps();
 
             if (Application.isPlaying)
                 CacheFieldOverrides();
@@ -537,7 +538,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         
-        private void FixSteps()
+        public void FixSteps()
         {
             // fix duplicate IDs
             var ids = new HashSet<int>();
