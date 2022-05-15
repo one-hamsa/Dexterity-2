@@ -28,8 +28,8 @@ namespace OneHamsa.Dexterity.Visual
         protected override void Initialize()
         {
             InitializeObjectContext();
-            CacheEnumOptions();
             base.Initialize();
+            CacheEnumOptions();
         }
 
         private void CacheEnumOptions()
@@ -64,6 +64,8 @@ namespace OneHamsa.Dexterity.Visual
             } catch (ArgumentException) {
                 // it's ok in editor!
             }
+            
+            // cache for sake of showing options in editor (enumToStateId.Keys)
             CacheEnumOptions();
         }
     }

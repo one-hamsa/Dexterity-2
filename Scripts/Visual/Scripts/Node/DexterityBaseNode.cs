@@ -85,7 +85,7 @@ namespace OneHamsa.Dexterity.Visual
                 var newState = GetState();
                 if (newState == -1)
                 {
-                    Debug.LogWarning($"{name}: got -1 for new state, not updating");
+                    Debug.LogWarning($"{name}: got -1 for new state, not updating", this);
                     return;
                 }
                 if (newState != pendingState)

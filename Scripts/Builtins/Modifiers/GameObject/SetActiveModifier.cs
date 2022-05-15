@@ -51,8 +51,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override void Awake()
         {
             base.Awake();
-            // enable anyway, because we might get disabled
-            base.OnEnable();
+            
+            // don't run on edit time - this might be triggered by an animation
+            if (Application.isPlaying)
+                // enable anyway, because we might get disabled
+                base.OnEnable();
         }
 
         public override void HandleNodeEnabled()

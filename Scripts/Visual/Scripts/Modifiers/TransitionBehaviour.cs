@@ -66,7 +66,7 @@ namespace OneHamsa.Dexterity.Visual
             try {
                 transitionState = transitionStrategy.Initialize(states, activeState);
             } catch (ITransitionStrategy.TransitionInitializationException e) {
-                Debug.LogError(e.Message, this);
+                Debug.LogException(e, this);
                 enabled = false;
             }
             lastUpdateTime = currentTime;
