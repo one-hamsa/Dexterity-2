@@ -58,6 +58,14 @@ namespace OneHamsa.Dexterity.Visual
             return enumToStateId[enumOptions[Convert.ToInt32(value)]];
         }
 
+        protected override void Update()
+        {
+            // since this type of node is using a data source, state should always be considered dirty
+            stateDirty = true;
+            
+            base.Update();
+        }
+
         private void OnValidate() {
             try {
                 InitializeObjectContext();
