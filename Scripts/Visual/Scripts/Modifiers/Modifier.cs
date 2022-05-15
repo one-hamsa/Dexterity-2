@@ -98,7 +98,7 @@ namespace OneHamsa.Dexterity.Visual
 
         }
 
-        public void HandleNodeEnabled()
+        public virtual void HandleNodeEnabled()
         {
             HandleStateChange(node.activeState, node.activeState);
 
@@ -133,8 +133,12 @@ namespace OneHamsa.Dexterity.Visual
             if (node.enabled)
                 HandleNodeEnabled();
             else
+            {
+                node.onEnabled -= HandleNodeEnabled;
                 node.onEnabled += HandleNodeEnabled;
+            }
 
+            node.onStateChanged -= HandleStateChange;
             node.onStateChanged += HandleStateChange;
 
             base.OnEnable();

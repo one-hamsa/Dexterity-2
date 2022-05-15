@@ -311,11 +311,11 @@ namespace OneHamsa.Dexterity.Visual
                 else if (stateProps.Count == 1)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"{propState}{suffix}");
+                    EditorGUILayout.LabelField($"{propState}{suffix}", GUILayout.MinWidth(30));
                     GUI.contentColor = origColor;
 
                     EditorGUI.BeginChangeCheck();
-                    EditorGUILayout.PropertyField(stateProps[0], new GUIContent());
+                    EditorGUILayout.PropertyField(stateProps[0], GUIContent.none, GUILayout.MinWidth(30));
                     updated |= EditorGUI.EndChangeCheck();
 
                     UtilityButtons();
