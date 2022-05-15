@@ -34,6 +34,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             component.sizeDelta = sizeDelta;
+            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
+            foreach (LayoutGroup group in gameObject.GetComponentsInParent<LayoutGroup>())
+                LayoutRebuilder.MarkLayoutForRebuild((RectTransform)group.transform);
         }
 
         public void FreezeProperty(PropertyBase property)
