@@ -84,6 +84,10 @@ namespace OneHamsa.Dexterity.Visual
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
+                if (prop == null) {
+                    Debug.LogError("Null property in Modifier", this);
+                    continue;
+                }
                 var id = Core.instance.GetStateID(prop.state);
                 if (id == -1)
                 {
