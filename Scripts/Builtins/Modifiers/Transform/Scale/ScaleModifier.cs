@@ -17,6 +17,23 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public float scale = 1f;
         }
 
+        [Tooltip("Check this flag only if the object may be re-parented in runtime")]
+        public bool updateParentReference = false;
+        
+        List<RectTransform> _transformsToUpdate;
+
+        public override void Awake() {
+            base.Awake();
+
+            CollectTransformsToUpdate();
+        }
+
+        void CollectTransformsToUpdate() {
+            _transformsToUpdate = new List<RectTransform> {(RectTransform)transform};
+            foreach (var group in gameObject.GetComponentsInParent<LayoutGroup>())
+                _transformsToUpdate.Add((RectTransform)group.transform);
+        }
+
         public override void Update()
         {
             base.Update();
@@ -34,6 +51,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             transform.localScale = scale;
+            
+            // update UI layout
+            if (updateParentReference)
+                CollectTransformsToUpdate();
+            foreach (var rectTransform in _transformsToUpdate)
+                LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
         public void FreezeValue()
