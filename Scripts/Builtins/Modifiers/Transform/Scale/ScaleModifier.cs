@@ -29,9 +29,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         void CollectTransformsToUpdate() {
-            _transformsToUpdate = new List<RectTransform> {(RectTransform)transform};
-            foreach (var group in gameObject.GetComponentsInParent<LayoutGroup>())
-                _transformsToUpdate.Add((RectTransform)group.transform);
+            _transformsToUpdate = new List<RectTransform>();
+            if (transform is RectTransform) {
+                _transformsToUpdate.Add((RectTransform) transform);
+                foreach (var group in gameObject.GetComponentsInParent<LayoutGroup>())
+                    if (group.transform is RectTransform)
+                        _transformsToUpdate.Add((RectTransform) group.transform);
+            }
         }
 
         public override void Update()
