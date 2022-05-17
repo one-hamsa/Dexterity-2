@@ -30,11 +30,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         void CollectTransformsToUpdate() {
             _transformsToUpdate = new List<RectTransform>();
-            if (transform is RectTransform) {
-                _transformsToUpdate.Add((RectTransform) transform);
+            if (transform is RectTransform rectTransform) {
+                _transformsToUpdate.Add(rectTransform);
                 foreach (var group in gameObject.GetComponentsInParent<LayoutGroup>())
-                    if (group.transform is RectTransform)
-                        _transformsToUpdate.Add((RectTransform) group.transform);
+                    if (group.transform is RectTransform parentRectTransform)
+                        _transformsToUpdate.Add(parentRectTransform);
             }
         }
 
