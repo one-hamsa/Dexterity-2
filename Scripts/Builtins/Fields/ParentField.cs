@@ -55,7 +55,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 }
 
                 // save new references
-                parent = context.transform.parent.GetComponentInParent<Node>();
+                var transformParent = context.transform.parent;
+                parent = transformParent != null ? transformParent.GetComponentInParent<Node>() : null;
                 parentsTransform.Clear();
 
                 {
