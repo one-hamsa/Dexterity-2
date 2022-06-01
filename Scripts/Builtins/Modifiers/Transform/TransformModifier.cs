@@ -9,7 +9,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class TransformModifier : Modifier, ISupportValueFreeze, ISupportPropertyFreeze
     {
         public Vector3 basePosition;
-        public Vector3 baseRotation;
+        [EulerAngles]
+        public Quaternion baseRotation;
 
         [Serializable]
         public class Property : PropertyBase
@@ -27,8 +28,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (!transitionChanged)
                 return;
 
-            Quaternion baseRotationQ = Quaternion.Euler(baseRotation);
-            var rotationOffset = baseRotationQ;
+            var rotationOffset = baseRotation;
             var positionOffset = basePosition;
             foreach (var kv in transitionState)
             {
@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 var value = kv.Value;
 
                 positionOffset += Vector3.Lerp(Vector3.zero, property.position, value);
-                rotationOffset = Quaternion.Slerp(rotationOffset, baseRotationQ * property.rotation, value);
+                rotationOffset = Quaternion.Slerp(rotationOffset, baseRotation * property.rotation, value);
             }
 
             transform.localPosition = positionOffset;
@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             var prop = property as Property;
             prop.position = transform.localPosition - basePosition;
-            prop.rotation = transform.localRotation * Quaternion.Inverse(Quaternion.Euler(baseRotation));
+            prop.rotation = transform.localRotation * Quaternion.Inverse(baseRotation);
         } 
 
         public void FreezeValue()
@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             //     return;
 
             basePosition = transform.localPosition;
-            baseRotation = transform.localEulerAngles;
+            baseRotation = transform.localRotation;
         }
     }
 }
