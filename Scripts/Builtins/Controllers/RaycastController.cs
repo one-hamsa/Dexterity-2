@@ -104,9 +104,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
 			foreach (var receiver in lastReceivers)
             {
-				if (closestReceivers == null || !closestReceivers.Contains(receiver))
-					receiver?.ClearHit(this);
-			}
+	            if (
+		            // no new receivers
+		            closestReceivers == null
+		            // this receiver is no longer relevant
+		            || !closestReceivers.Contains(receiver)
+		            // this controller is locked, but not by this receiver
+		            || (isLocked && lockedOn != receiver))
+	            {
+		            receiver?.ClearHit(this);
+	            }
+            }
 			lastReceivers.Clear();
 
 			if (closestReceivers != null)
@@ -115,6 +123,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 				foreach (var receiver in closestReceivers)
 				{
 					if (isLocked && lockedOn != receiver)
+						// this controller is locked, but not by this receiver
 						continue;
 						
 					receiver.ReceiveHit(this, hit);
