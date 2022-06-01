@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual
     [ModifierPropertyDefinition("Property")]
     public abstract class Modifier : TransitionBehaviour, IReferencesNode
     {
-        private static Dictionary<DexterityBaseNode, HashSet<Modifier>> nodesToModifiers = new Dictionary<DexterityBaseNode, HashSet<Modifier>>();
+        private static Dictionary<DexterityBaseNode, HashSet<Modifier>> nodesToModifiers = new();
         public static IEnumerable<Modifier> GetModifiers(DexterityBaseNode node)
         {
             if (nodesToModifiers.TryGetValue(node, out var modifiers))
@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual
         public DexterityBaseNode _node;
 
         [SerializeReference]
-        public List<PropertyBase> properties = new List<PropertyBase>();
+        public List<PropertyBase> properties = new();
 
         public DexterityBaseNode node => TryFindNode();
 

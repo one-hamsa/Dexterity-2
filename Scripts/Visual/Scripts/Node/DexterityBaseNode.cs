@@ -174,6 +174,26 @@ namespace OneHamsa.Dexterity.Visual
             return value;
         }
 
+        public void UpdateStateImmediately()
+        {
+            // make sure state is up-to-date
+            Update();
+            foreach (var modifier in Modifier.GetModifiers(this))
+            {
+                // create a new transition state that is already pointing to active state
+                modifier.InitializeTransitionState();
+                // force updating now
+                modifier.ForceTransitionUpdate();
+            }
+        }
+
+        public void UpdateStateImmediately(int state)
+        {
+            SetStateOverride(state);
+            UpdateStateImmediately();
+            ClearStateOverride();
+        }
+        
         #endregion Transitions
 
         #region Overrides
