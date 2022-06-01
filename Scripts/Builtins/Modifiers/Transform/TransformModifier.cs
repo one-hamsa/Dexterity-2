@@ -6,8 +6,11 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public class TransformModifier : Modifier, ISupportPropertyFreeze
+    public class TransformModifier : Modifier, ISupportValueFreeze, ISupportPropertyFreeze
     {
+        public Vector3 basePosition;
+        public Vector3 baseRotation;
+
         [Serializable]
         public class Property : PropertyBase
         {
@@ -24,15 +27,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (!transitionChanged)
                 return;
 
-            var rotationOffset = Quaternion.identity;
-            var positionOffset = Vector3.zero;
+            Quaternion baseRotationQ = Quaternion.Euler(baseRotation);
+            var rotationOffset = baseRotationQ;
+            var positionOffset = basePosition;
             foreach (var kv in transitionState)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;
 
                 positionOffset += Vector3.Lerp(Vector3.zero, property.position, value);
-                rotationOffset = Quaternion.Slerp(rotationOffset, property.rotation, value);
+                rotationOffset = Quaternion.Slerp(rotationOffset, baseRotationQ * property.rotation, value);
             }
 
             transform.localPosition = positionOffset;
@@ -42,8 +46,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public void FreezeProperty(PropertyBase property)
         {
             var prop = property as Property;
-            prop.position = transform.localPosition;
-            prop.rotation = transform.localRotation;
+            prop.position = transform.localPosition - basePosition;
+            prop.rotation = transform.localRotation * Quaternion.Inverse(Quaternion.Euler(baseRotation));
         } 
+
+        public void FreezeValue()
+        {
+            // if (transform == null)
+            //     return;
+
+            basePosition = transform.localPosition;
+            baseRotation = transform.localEulerAngles;
+        }
     }
 }
