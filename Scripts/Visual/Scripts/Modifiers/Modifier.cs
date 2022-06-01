@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (nodesToModifiers.TryGetValue(node, out var modifiers))
                 return modifiers;
-            return new Modifier[0];
+            return System.Linq.Enumerable.Empty<Modifier>();
         }
 
         [SerializeField]
@@ -61,14 +61,14 @@ namespace OneHamsa.Dexterity.Visual
 
         IEnumerable<string> IHasStates.GetStateNames() {
             if (node == null)
-            yield break;
+                yield break;
             foreach (var state in (node as IHasStates).GetStateNames())
                 yield return state;
         }
 
         IEnumerable<string> IHasStates.GetFieldNames() {
             if (node == null)
-            yield break;
+                yield break;
             foreach (var field in (node as IHasStates).GetFieldNames())
                 yield return field;
         }
