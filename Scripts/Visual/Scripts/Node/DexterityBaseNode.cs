@@ -178,13 +178,20 @@ namespace OneHamsa.Dexterity.Visual
         {
             // make sure state is up-to-date
             Update();
+
+            var modifiersUpdated = 0;
             foreach (var modifier in Modifier.GetModifiers(this))
             {
                 // create a new transition state that is already pointing to active state
                 modifier.InitializeTransitionState();
                 // force updating now
                 modifier.ForceTransitionUpdate();
+                
+                modifiersUpdated++;
             }
+            
+            if (modifiersUpdated == 0)
+                Debug.LogWarning($"{name}: UpdateStateImmediately: no modifiers found to update", this);
         }
 
         public void UpdateStateImmediately(int state)
