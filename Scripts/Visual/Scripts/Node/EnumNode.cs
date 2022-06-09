@@ -28,7 +28,11 @@ namespace OneHamsa.Dexterity.Visual
         protected override void Initialize()
         {
             InitializeObjectContext();
+            //cache that state names to register
+            CacheEnumOptions();
+            //registers them
             base.Initialize();
+            //gets the state IDs from the manager
             CacheEnumOptions();
         }
 
@@ -67,6 +71,8 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         private void OnValidate() {
+            if(Application.isPlaying) return;
+            
             try {
                 InitializeObjectContext();
             } catch (ArgumentException) {
