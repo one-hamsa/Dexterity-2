@@ -4,11 +4,11 @@ namespace OneHamsa.Dexterity.Visual
 {
     public class EnumFieldAttribute : PropertyAttribute
     {
-        public readonly string fieldName;
+        public readonly string nodeFieldName;
 
-        public EnumFieldAttribute(string fieldName)
+        public EnumFieldAttribute(string nodeFieldName)
         {
-            this.fieldName = fieldName;
+            this.nodeFieldName = nodeFieldName;
         }
     }
 }

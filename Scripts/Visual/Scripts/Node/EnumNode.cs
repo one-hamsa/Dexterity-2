@@ -17,10 +17,10 @@ namespace OneHamsa.Dexterity.Visual
         private Dictionary<int, string> enumOptions = new();
         private Dictionary<string, int> enumToStateId = new();
 
-        private Enum targetEnumValue => objectCtx?.GetValue<Enum>();
-        private Type targetEnumType => objectCtx?.type;
+        public Enum targetEnumValue => objectCtx?.GetValue<Enum>();
+        public Type targetEnumType => objectCtx?.type;
 
-        private void InitializeObjectContext() {
+        public void InitializeObjectContext() {
             if (targetObject != null && !string.IsNullOrEmpty(targetProperty))
                 objectCtx = ObjectValueAttribute.CreateContext(this, nameof(targetProperty));
         }
@@ -52,7 +52,8 @@ namespace OneHamsa.Dexterity.Visual
         public override IEnumerable<string> GetFieldNames() => enumToStateId.Keys;
         public override IEnumerable<string> GetStateNames() => enumToStateId.Keys;
         
-        public string GetEnumValue() => enumOptions[Convert.ToInt32(targetEnumValue)];
+        public int GetEnumValue() => Convert.ToInt32(targetEnumValue);
+        public string GetEnumValueAsString() => enumOptions[GetEnumValue()];
 
         protected override int GetState()
         {
@@ -60,7 +61,7 @@ namespace OneHamsa.Dexterity.Visual
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
-            return enumToStateId[GetEnumValue()];
+            return enumToStateId[GetEnumValueAsString()];
         }
 
         protected override void Update()
