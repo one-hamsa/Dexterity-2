@@ -205,7 +205,7 @@ namespace OneHamsa.Dexterity.Visual
                 // collect all children modifiers
                 modifiers.Clear();
                 // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
-                foreach (var modifier in StageUtility.GetCurrentStageHandle().FindComponentsOfType<Modifier>()) {
+                foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
                     if (modifier.node == baseNode)
                         modifiers.Add(modifier);
                 }
