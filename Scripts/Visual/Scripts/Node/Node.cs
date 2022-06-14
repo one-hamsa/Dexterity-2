@@ -40,6 +40,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (fieldId != -1)
                 {
                     outputFieldDefinitionId = fieldId;
+                    outputFieldName = Core.instance.GetFieldDefinition(fieldId).name;
                     return true;
                 }
                 if (string.IsNullOrEmpty(outputFieldName))

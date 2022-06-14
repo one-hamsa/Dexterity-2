@@ -64,6 +64,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (fd.name == name)
                     return fd;
 
+            Debug.LogError($"No field definition found for name: {name}");
             return default;
         }
     }
