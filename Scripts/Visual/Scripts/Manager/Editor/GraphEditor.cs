@@ -16,8 +16,8 @@ namespace OneHamsa.Dexterity.Visual
         private static bool clustersFoldout;
         private static bool nodesFoldout;
         private static bool sortedFoldout;
-        private Dictionary<int, List<BaseField>> clusters = new Dictionary<int, List<BaseField>>();
-        private HashSet<Node> nodes = new HashSet<Node>();
+        private Dictionary<int, List<BaseField>> clusters = new();
+        private HashSet<Node> nodes = new();
 
         public override void OnInspectorGUI()
         {
@@ -50,10 +50,12 @@ namespace OneHamsa.Dexterity.Visual
             GUI.contentColor = origColor;
 
             GUI.contentColor = graph.lastSortResult ? Color.green : Color.red;
-            EditorGUILayout.LabelField("Last sort result", graph.lastSortResult ? "Success" : "Failure");
-            if (!graph.lastSortResult) { 
-                EditorGUILayout.LabelField("Cycle found at", graph.cyclePoint.ToShortString());
-                foreach (var field in graph.cyclePoint.GetUpstreamFields()) {
+            EditorGUILayout.LabelField("Last sort result", graph.lastSortResult ? "Success" : "Cycles Found");
+            foreach (var cycle in graph.cyclePoints)
+            {
+                EditorGUILayout.LabelField("Cycle found at", cycle.ToShortString());
+                foreach (var field in cycle.GetUpstreamFields())
+                {
                     EditorGUILayout.LabelField("-> Upstream", field.ToShortString());
                 }
             }

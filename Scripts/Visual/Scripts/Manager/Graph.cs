@@ -15,22 +15,21 @@ namespace OneHamsa.Dexterity.Visual
         public const int throttleOperationsPerFrame = 3000;
 
         // debug info
-        public bool lastSortResult { get; private set; }
-        public BaseField cyclePoint { get; private set; }
         public float lastUpdateAttempt { get; private set; }
         public float lastSuccessfulUpdate { get; private set; }
         public int updateOperations { get; private set; }
         public int updatedNodes { get; private set; }
         public int updateFrames { get; private set; }
+        public bool lastSortResult => cyclePoints.Count == 0;
+        public readonly HashSet<BaseField> cyclePoints = new();
 
         public bool started { get; set; }
         public bool updating { get; private set; }
 
-        public HashSet<BaseField> nodes { get; } = new HashSet<BaseField>();
-        public HashSet<BaseField> nodesForCurrentSortIteration { get; } = new HashSet<BaseField>();
+        public HashSet<BaseField> nodes { get; } = new();
+        public HashSet<BaseField> nodesForCurrentSortIteration { get; } = new();
         
-        public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } 
-            = new Dictionary<BaseField, IEnumerable<BaseField>>();
+        public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } = new();
 
         public event Action<int> onGraphColorUpdated;
 
@@ -39,30 +38,30 @@ namespace OneHamsa.Dexterity.Visual
         /// CAUTION: don't read when updating, this might return stale values.
         /// </summary>
         public List<BaseField> sortedNodes = new ListSet<BaseField>();
-        private List<BaseField> sortedNodesCache = new List<BaseField>();
+        private List<BaseField> sortedNodesCache = new();
 
         /// <summary>
         /// "color" map (of islands within the graph) - used for updating only dirty nodes. public visibility for editor.
         /// CAUTION: don't read when updating, this might return stale values.
         /// </summary>
-        public Dictionary<BaseField, int> nodeToColor = new Dictionary<BaseField, int>();
-        private Dictionary<BaseField, int> nextNodeToColor = new Dictionary<BaseField, int>();
+        public Dictionary<BaseField, int> nodeToColor = new();
+        private Dictionary<BaseField, int> nextNodeToColor = new();
 
         /// <summary>
         /// map of color to color, used for clusters (disjointed set / union-find algo). public visibility for editor.
         /// CAUTION: don't read when updating, this might return stale values.
         /// </summary>
-        public Dictionary<int, int> colorToColorMap = new Dictionary<int, int>();
-        private Dictionary<int, int> nextColorToColorMap = new Dictionary<int, int>();
+        public Dictionary<int, int> colorToColorMap = new();
+        private Dictionary<int, int> nextColorToColorMap = new();
 
         // keeps track of visits in topological sort
-        private HashSet<BaseField> visited = new HashSet<BaseField>();
+        private HashSet<BaseField> visited = new();
         // dfs stack for topological sort
-        private Stack<(bool process, BaseField node)> dfs = new Stack<(bool, BaseField)>();
+        private Stack<(bool process, BaseField node)> dfs = new();
         // helper map for tracking which node is still on stack to avoid loops
-        private Dictionary<BaseField, bool> onStack = new Dictionary<BaseField, bool>();
-        private Dictionary<int, bool> dirtyColors = new Dictionary<int, bool>();
-        private List<int> colorsToReset = new List<int>(8);
+        private Dictionary<BaseField, bool> onStack = new();
+        private Dictionary<int, bool> dirtyColors = new();
+        private List<int> colorsToReset = new(8);
         private int dirtyIncrement = 0;
         private int lastDirtyUpdate = -1;
 
@@ -209,11 +208,6 @@ namespace OneHamsa.Dexterity.Visual
                     }
                 }
 
-                if (!lastSortResult) {
-                    Debug.LogError($"Graph sort failed (found cycle at [{cyclePoint.ToShortString()}])");
-                    yield break;
-                }
-
                 lastSuccessfulUpdate = Time.unscaledTime;
 
                 // invoke general update
@@ -242,6 +236,7 @@ namespace OneHamsa.Dexterity.Visual
             onStack.Clear();
             nextNodeToColor.Clear();
             nextColorToColorMap.Clear();
+            cyclePoints.Clear();
 
             foreach (var node in nodesForCurrentSortIteration)
             {
@@ -310,13 +305,16 @@ namespace OneHamsa.Dexterity.Visual
                             if (onStack.TryGetValue(son, out var sonOnStack) && sonOnStack)
                             {
                                 // this is already a dependency somewhere on the stack, it means we have a cycle
-                                lastSortResult = false;
-                                cyclePoint = son;
-                                yield break;
+                                cyclePoints.Add(son);
+                                
+                                Debug.LogError($"Graph sort: found cycle at [{son.ToShortString()}]");
+                                // try to recover
                             }
-
-                            // we visited this node, copy its color
-                            nextColorToColorMap[currentColor] = nextNodeToColor[son];
+                            else
+                            {
+                                // we visited this node, copy its color
+                                nextColorToColorMap[currentColor] = nextNodeToColor[son];
+                            }
                         }
                     }
                 }
@@ -338,7 +336,6 @@ namespace OneHamsa.Dexterity.Visual
                 dirtyColors[color] = false;
             }
 
-            lastSortResult = true;
             lastDirtyUpdate = dirtyIncrement;
         }
     }
