@@ -105,7 +105,9 @@ namespace OneHamsa.Dexterity.Visual
 
                 GUILayout.Label(!string.IsNullOrEmpty(kv.Key) ? kv.Key : "<unassigned>", EditorStyles.largeLabel);
 
-                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key);
+                var definition = !string.IsNullOrEmpty(kv.Key)
+                    ? DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key)
+                    : default;
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
                     if (definition.name != null)
