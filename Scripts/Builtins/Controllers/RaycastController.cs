@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Debug = UnityEngine.Debug;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -36,6 +38,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
 		potentialReceiversA = new List<IRaycastReceiver>(4), 
 		potentialReceiversB = new List<IRaycastReceiver>(4);
+
+		Dictionary<IRaycastReceiver, long> _recentlyHitReceivers = new();
 
         private void OnEnable()
         {
@@ -71,6 +75,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         void Update()
         {
+			long now = Stopwatch.GetTimestamp();
+
 			didHit = false;
 
 			if (!current)
@@ -112,6 +118,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		            // this controller is locked, but not by this receiver
 		            || (isLocked && lockedOn != receiver))
 	            {
+					_recentlyHitReceivers[receiver] = now;
 		            receiver?.ClearHit(this);
 	            }
             }
@@ -125,7 +132,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 					if (isLocked && lockedOn != receiver)
 						// this controller is locked, but not by this receiver
 						continue;
-						
+
+					// repeat-hit cooldown
+					if (_recentlyHitReceivers.ContainsKey(receiver)) {
+						float cooldown = (float)(now - _recentlyHitReceivers[receiver]) / Stopwatch.Frequency;
+						if (cooldown < Core.instance.settings.repeatHitCooldown)
+							continue;
+					}
+
 					receiver.ReceiveHit(this, hit);
 					lastReceivers.Add(receiver);
 				}

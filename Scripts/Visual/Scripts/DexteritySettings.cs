@@ -29,5 +29,8 @@ namespace OneHamsa.Dexterity.Visual
 
             return defaultValue;
         }
+
+		[Tooltip("Min time in seconds between hitting the same receiver (0 to disable)")]
+		public float repeatHitCooldown = 0f;
     }
 }

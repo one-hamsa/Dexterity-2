@@ -88,6 +88,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUILayout.Space(15);
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.globalFloatValues)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.repeatHitCooldown)));
 
             serializedObject.ApplyModifiedProperties();
         }
