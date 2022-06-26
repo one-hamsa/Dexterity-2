@@ -145,5 +145,20 @@ namespace OneHamsa.Dexterity.Visual
             stateNames.Clear();
             stateHolders.Clear();
         }
+
+        // Raycast Receiver filter
+        System.Func<Component, bool> _isRaycastReceiverIncluded;
+        public System.Func<Component, bool> isRaycastReceiverIncluded => _isRaycastReceiverIncluded;
+
+        /// <summary>
+        /// Set Raycast Receiver filter
+        /// </summary>
+        public void SetRaycastReceiverFilter(System.Func<Component, bool> isRaycastReceiverIncluded) {
+            _isRaycastReceiverIncluded = isRaycastReceiverIncluded;
+        }
+
+        public void ClearRaycastReceiverFilter() {
+            _isRaycastReceiverIncluded = null;
+        }
     }
 }

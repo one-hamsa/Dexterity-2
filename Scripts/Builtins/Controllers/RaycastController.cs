@@ -94,8 +94,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			hit = new RaycastHit();
 			List<IRaycastReceiver> closestReceivers = null;
 
+			var isRaycastReceiverIncluded = Core.instance.isRaycastReceiverIncluded;
 			for (int i = 0; i < numHits; ++i)
 			{
+				if (isRaycastReceiverIncluded != null && !isRaycastReceiverIncluded(hits[i].collider))
+					continue;
+
 				hits[i].collider.gameObject.GetComponents(potentialReceiversA);
 				if (potentialReceiversA.Count != 0 && hits[i].distance < minDist)
 				{
