@@ -124,12 +124,22 @@ namespace OneHamsa.Dexterity.Visual
             // cache overrides to allow quick access internally
             CacheStateOverride();
 
-            // find default state and define initial state
-            var initialStateId = Core.instance.GetStateID(initialState);
-            if (initialStateId == -1)
+            int initialStateId;
+            if (!GetStateNames().Contains(initialState))
             {
                 initialStateId = GetStateIDs().ElementAt(0);
-                Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
+                Debug.LogError($"Initial State {initialState} for node {name} is not part of node's states, " +
+                               $"selecting arbitrary", this);
+            }
+            else
+            {
+                // find default state and define initial state
+                initialStateId = Core.instance.GetStateID(initialState);
+                if (initialStateId == -1)
+                {
+                    initialStateId = GetStateIDs().ElementAt(0);
+                    Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
+                }
             }
             activeState = initialStateId;
 
