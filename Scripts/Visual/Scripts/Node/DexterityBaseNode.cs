@@ -135,12 +135,14 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // find default state and define initial state
                 initialStateId = Core.instance.GetStateID(initialState);
-                if (initialStateId == -1)
-                {
-                    initialStateId = GetStateIDs().ElementAt(0);
-                    Debug.LogWarning($"no initial state selected, selecting arbitrary", this);
-                }
             }
+            if (initialStateId == -1)
+            {
+                Debug.LogError($"internal error: initialState == -1 after initialization", this);
+                enabled = false;
+                return;
+            }
+            
             activeState = initialStateId;
 
             // mark state as dirty - important if node was re-enabled
