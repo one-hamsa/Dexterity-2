@@ -22,6 +22,8 @@ namespace OneHamsa.Dexterity.Visual
         [SerializeReference]
         public List<PropertyBase> properties = new();
 
+        [HideInInspector] public List<string> lastSeenStates = new();
+
         public DexterityBaseNode node => TryFindNode();
 
         Dictionary<int, PropertyBase> propertiesCache = null;

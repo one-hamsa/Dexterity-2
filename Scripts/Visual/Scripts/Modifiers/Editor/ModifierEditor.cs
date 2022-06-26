@@ -12,14 +12,15 @@ namespace OneHamsa.Dexterity.Visual
     [CustomEditor(typeof(Modifier), true), CanEditMultipleObjects]
     public class ModifierEditor : TransitionBehaviourEditor
     {
-        static Dictionary<string, bool> foldedStates = new Dictionary<string, bool>();
+        static Dictionary<string, bool> foldedStates = new();
         bool strategyExists { get; set; }
         Modifier modifier { get; set; }
-        List<SerializedProperty> stateProps = new List<SerializedProperty>(8);
+        List<SerializedProperty> stateProps = new(8);
         private EditorCoroutine coro;
-        private List<SerializedProperty> customProps = new List<SerializedProperty>();
-        private HashSet<string> currentPropStates = new HashSet<string>();
-        private HashSet<string> sfStates = new HashSet<string>();
+        private List<SerializedProperty> customProps = new();
+        private HashSet<string> currentPropStates = new();
+        private HashSet<string> sfStates = new();
+        private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
 
         private bool propertiesUpdated { get; set; } 
 
@@ -33,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
             sfStates.Clear();
             var first = true;
             foreach (var t in targets) {
-                foreach (var state in (t as IHasStates).GetStateNames()) {
+                foreach (var state in ((IHasStates)t).GetStateNames()) {
                     if (sfStates.Add(state) && !first) {
                         EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
                         return;
@@ -43,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             serializedObject.Update();
-
+            
             propertiesUpdated = false;
 
             ShowNode();
@@ -149,12 +150,14 @@ namespace OneHamsa.Dexterity.Visual
             if (targets.Length > 1)
                 return;
 
+            var hasNode = true;
             if (modifier._node == null)
             {
                 if (modifier.node == null)
                 {
-                    EditorGUILayout.HelpBox($"Could not find parent node, select manually or fix hierarchy",
-                        MessageType.Error);
+                    hasNode = false;
+                    EditorGUILayout.HelpBox($"Could not find parent node, showing latest states found",
+                        MessageType.Warning);
                 }
                 else
                     if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
@@ -162,6 +165,21 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     EditorGUIUtility.PingObject(modifier.node);
                 }
+            }
+
+            if (hasNode)
+            {
+                // move from node to modifier
+                modifier.lastSeenStates.Clear();
+                foreach (var state in sfStates)
+                    modifier.lastSeenStates.Add(state);
+            }
+            else
+            {
+                // use cache
+                sfStates.Clear();
+                foreach (var state in modifier.lastSeenStates)
+                    sfStates.Add(state);
             }
         }
 
@@ -212,10 +230,9 @@ namespace OneHamsa.Dexterity.Visual
                 if (!foldedStates.ContainsKey(state))
                     foldedStates[state] = true;
             }
-
-            var activeState = (target as Modifier).node.activeState;
-
-            // draw the editor for each value in property
+            
+            // sort by name
+            sortedStateProps.Clear();
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
@@ -223,7 +240,17 @@ namespace OneHamsa.Dexterity.Visual
 
                 if (!states.Contains(propState))
                     continue;
+                
+                sortedStateProps.Add((propState, property, i));
+            }
+            sortedStateProps.Sort((a,b) => String.CompareOrdinal(a.stateName, b.stateName));
 
+            var node = ((Modifier)target).node;
+            var activeState = node != null ? node.activeState : -1;
+
+            // draw the editor for each value in property
+            foreach (var (propState, property, i) in sortedStateProps)
+            {
                 DrawSeparator();
 
                 stateProps.Clear();
