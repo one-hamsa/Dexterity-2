@@ -524,8 +524,9 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // update overrides when selected to allow setting overrides from editor
-        void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             // this will cause editor to crash if selecting multiple nodes, so we call it from CustomEditor instead
             // FixSteps();
 
