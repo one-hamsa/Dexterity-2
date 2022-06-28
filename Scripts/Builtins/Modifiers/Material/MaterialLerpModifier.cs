@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    [RequireComponent(typeof(Renderer))]
     public class MaterialLerpModifier : BaseMaterialModifier, ISupportPropertyFreeze
     {
         public class Property : PropertyBase
@@ -35,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             var prop = property as Property;
 
-            prop.material = component.sharedMaterial;
+            prop.material = actions.getSharedMaterial(component);
         }
     }
 }

@@ -13,8 +13,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public Action<Component, Color> setColor;
         }
 
-        private static Dictionary<Type, SupportedComponentActions> supportedComponents 
-        = new Dictionary<Type, SupportedComponentActions>();
+        private static Dictionary<Type, SupportedComponentActions> supportedComponents = new();
         
         static void AddSupportedComponent<T>(Func<T, Color> getColor, Action<T, Color> setColor) where T : Component
         {

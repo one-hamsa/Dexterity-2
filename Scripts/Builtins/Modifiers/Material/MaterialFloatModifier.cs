@@ -6,21 +6,23 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
-    public class MaterialColorModifier : BaseMaterialModifier, ISupportPropertyFreeze
+    public class MaterialFloatModifier : BaseMaterialModifier, ISupportPropertyFreeze
     {
-        public string materialColorName = "_Color";
+        public string propertyName = "";
+        public float minValue = 0f;
+        public float maxValue = 1f;
 
         public class Property : PropertyBase
         {
             // custom params
-            public Color color;
+            public float value = 0f;
         }
         
         private int propertyId;
         public override void Awake()
         {
             base.Awake();
-            propertyId = Shader.PropertyToID(materialColorName);
+            propertyId = Shader.PropertyToID(propertyName);
         }
 
         // Update is called once per frame
@@ -31,30 +33,27 @@ namespace OneHamsa.Dexterity.Visual
             if (!transitionChanged)
                 return;
             
-            float r = 0, g = 0, b = 0, a = 0;
+            float total = 0f;
             foreach (var kv in transitionState)
             {
-                var property = GetProperty(kv.Key) as Property;
+                var property = (Property)GetProperty(kv.Key);
                 var value = kv.Value;
 
-                r += property.color.r * value;
-                g += property.color.g * value;
-                b += property.color.b * value;
-                a += property.color.a * value;
+                total += property.value * value;
             }
-            targetMaterial.SetColor(propertyId, new Color(r, g, b, a));
+            targetMaterial.SetFloat(propertyId, Mathf.Lerp(minValue, maxValue, total));
         }
 
         void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
         {
             #if UNITY_EDITOR
-            var prop = property as Property;
+            var prop = (Property)property;
 
             var allProps = UnityEditor.MaterialEditor.GetMaterialProperties(new [] { actions.getSharedMaterial(component) });
-                if (!allProps.Select(p => p.name).Contains(materialColorName))
+                if (!allProps.Select(p => p.name).Contains(propertyName))
                     return;
                     
-            prop.color = actions.getSharedMaterial(component).GetColor(materialColorName);
+            prop.value = actions.getSharedMaterial(component).GetFloat(propertyName);
             #endif
         }
     }

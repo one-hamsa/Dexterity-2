@@ -72,8 +72,11 @@ namespace OneHamsa.Dexterity.Visual
             base.Update();
         }
 
-        private void OnValidate() {
-            if(Application.isPlaying) return;
+        protected override void OnValidate() {
+            base.OnValidate();
+            
+            if (Application.isPlaying) 
+                return;
             
             try {
                 InitializeObjectContext();
