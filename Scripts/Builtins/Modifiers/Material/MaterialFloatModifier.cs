@@ -9,8 +9,6 @@ namespace OneHamsa.Dexterity.Visual
     public class MaterialFloatModifier : BaseMaterialModifier, ISupportPropertyFreeze
     {
         public string propertyName = "";
-        public float minValue = 0f;
-        public float maxValue = 1f;
 
         public class Property : PropertyBase
         {
@@ -41,7 +39,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 total += property.value * value;
             }
-            targetMaterial.SetFloat(propertyId, Mathf.Lerp(minValue, maxValue, total));
+            targetMaterial.SetFloat(propertyId, total);
         }
 
         void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
