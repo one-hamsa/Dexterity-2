@@ -13,44 +13,51 @@ namespace OneHamsa.Dexterity.Visual
     public abstract class BaseMaterialModifier : Modifier
     {
         protected struct SupportedComponentActions {
-            public Func<Component, Material> getMaterial;
+            public Func<Component, (Material material, bool created)> getMaterial;
             public Func<Component, Material> getSharedMaterial;
             public Action<Component, Material> setSharedMaterial;
         }
 
         private static Dictionary<Type, SupportedComponentActions> supportedComponents = new();
         
-        static void AddSupportedComponent<T>(Func<T, Material> getMaterial, Func<T, Material> getSharedMaterial,
+        static void AddSupportedComponent<T>(Func<T, (Material material, bool created)> getMaterial, Func<T, Material> getSharedMaterial,
             Action<T, Material> setSharedMaterial) where T : Component
         {
             supportedComponents.Add(typeof(T), new SupportedComponentActions {
                 getMaterial = (c) => getMaterial((T)c),
                 getSharedMaterial = (c) => getSharedMaterial((T)c),
-                setSharedMaterial = (c, material) => setSharedMaterial((T)c, material),
+                setSharedMaterial =  (c, material) => setSharedMaterial((T)c, material),
             });
         }
 
         static BaseMaterialModifier()
         {
             AddSupportedComponent<Renderer>(
-                c => c.material, 
+                c => (c.material, false), 
                 c => c.sharedMaterial, 
                 (c, m) => c.sharedMaterial = m
                 );
             AddSupportedComponent<TextMeshProUGUI>(
-                c => c.fontMaterial, 
+                c => (c.fontMaterial, false), 
                 c => c.fontSharedMaterial,
                 (c, m) => c.fontSharedMaterial = m
                 );
             AddSupportedComponent<Image>(
-                c => c.material, 
+                // for image component, material is actually sharedMaterial (it won't create a new one for us)
+                c =>
+                {
+                    var material = new Material(c.material);
+                    c.material = material;
+                    return (material, true);
+                }, 
                 c => c.material,
-                null);
+                (c, m) => c.material = m);
         }
         
         private Material originalMaterial;
         protected Material targetMaterial;
         private (Component component, SupportedComponentActions actions) _cached;
+        private bool shouldDestroyTargetMaterial;
 
         protected Component component {
             get {
@@ -75,21 +82,18 @@ namespace OneHamsa.Dexterity.Visual
             // support editor transitions
             if (!Application.isPlaying && targetMaterial == null)
             {
-                if (actions.setSharedMaterial == null)
-                    throw new NotSupportedException("Component does not support shared material");
-
                 originalMaterial = actions.getSharedMaterial(component);
-                targetMaterial = new Material(originalMaterial);
+                (targetMaterial, shouldDestroyTargetMaterial) = (new Material(originalMaterial), true);
                 targetMaterial.EnableKeyword("_NORMALMAP");
                 targetMaterial.EnableKeyword("_DETAIL_MULX2");
                 actions.setSharedMaterial(component, targetMaterial);
             }
             else
             {
-                targetMaterial = actions.getMaterial(component);
+                (targetMaterial, shouldDestroyTargetMaterial) = actions.getMaterial(component);
             }
             #else
-            targetMaterial = actions.getMaterial(component);
+            (targetMaterial, shouldDestroyTargetMaterial) = actions.getMaterial(component);
             #endif
         }
 
@@ -98,11 +102,18 @@ namespace OneHamsa.Dexterity.Visual
             base.OnDestroy();
             #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
                 actions.setSharedMaterial(component, originalMaterial);
+            #endif
+
+            if (targetMaterial != null && shouldDestroyTargetMaterial)
+            {
+                if (!Application.isPlaying)
+                    DestroyImmediate(targetMaterial);
+                else
+                    Destroy(targetMaterial);
+                
                 targetMaterial = null;
             }
-            #endif
         }
         
 
