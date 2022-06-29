@@ -206,7 +206,7 @@ namespace OneHamsa.Dexterity.Visual
                 modifiers.Clear();
                 // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
                 foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
-                    if (modifier.node == baseNode)
+                    if (modifier.node == baseNode && modifier.isActiveAndEnabled)
                         modifiers.Add(modifier);
                 }
 
