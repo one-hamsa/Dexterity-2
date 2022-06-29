@@ -28,9 +28,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             clickListener.onClick.RemoveListener(OnClick);
         }
 
-        private void OnClick()
-        {
-            toggled = !toggled;
-        }
+        private void OnClick() => Toggle();
+
+        public void Toggle() => toggled = !toggled;
+        public void ToggleOn() => toggled = true;
+        public void ToggleOff() => toggled = false;
     }
 }
