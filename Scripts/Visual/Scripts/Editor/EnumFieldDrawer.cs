@@ -33,14 +33,33 @@ namespace OneHamsa.Dexterity.Visual
 
             var enumNode = (EnumNode)unityObjectProp.objectReferenceValue;
             enumNode.InitializeObjectContext();
-            
-            if (!Enum.TryParse(enumNode.targetEnumType, property.stringValue, out var prevValue))
+
+            Enum enumPrevValue = default;
+            if (Enum.TryParse(enumNode.targetEnumType, property.stringValue, out var prevValue))
+            {
+                enumPrevValue = (Enum)prevValue;
+            }
+            else
+            {
                 // just take current value
-                prevValue = enumNode.targetEnumValue;
+                try
+                {
+                    enumPrevValue = enumNode.targetEnumValue;
+                }
+                catch (Exception e)
+                {
+                    // use default
+                    foreach (var v in Enum.GetValues(enumNode.targetEnumType))
+                    {
+                        enumPrevValue = (Enum)v;
+                        break;
+                    }
+                }
+            }
 
             EditorGUI.BeginProperty(position, GUIContent.none, property);
             EditorGUI.BeginChangeCheck();
-            var value = EditorGUI.EnumPopup(position, label.text, (Enum)prevValue);
+            var value = EditorGUI.EnumPopup(position, label.text, enumPrevValue);
             
             if (EditorGUI.EndChangeCheck() || string.IsNullOrEmpty(property.stringValue)) {
                 property.stringValue = value.ToString();
