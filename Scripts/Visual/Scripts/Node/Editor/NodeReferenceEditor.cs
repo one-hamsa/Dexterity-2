@@ -389,11 +389,15 @@ namespace OneHamsa.Dexterity.Visual
         static void DrawSeparator(Color color)
         {
             EditorGUILayout.Space();
-            var rect = EditorGUILayout.BeginHorizontal();
+            var origColor = Handles.color;
             Handles.color = color;
+            
+            var rect = EditorGUILayout.BeginHorizontal();
             Handles.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.width + 15, rect.y));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
+            
+            Handles.color = origColor;
         }
     }
 }

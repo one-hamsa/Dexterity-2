@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
@@ -12,6 +13,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 	{
 		const float rayLength = 100f;
 		const int maxHits = 20;
+
+        // Raycast Receiver filter
+        private static List<RaycastFilter> isRaycastReceiverIncluded = new();
 
 		public LayerMask layerMask = int.MaxValue;
 		public InputAction pressed;
@@ -35,11 +39,36 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		private RaycastController lastControllerPressed;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
-		List<IRaycastReceiver> lastReceivers = new List<IRaycastReceiver>(4), 
-		potentialReceiversA = new List<IRaycastReceiver>(4), 
-		potentialReceiversB = new List<IRaycastReceiver>(4);
+		List<IRaycastReceiver> lastReceivers = new(4), 
+			potentialReceiversA = new(4), 
+			potentialReceiversB = new(4),
+			receiversBeforeFilter = new(1);
 
 		Dictionary<IRaycastReceiver, long> _recentlyHitReceivers = new();
+		
+		public delegate bool RaycastFilter(IRaycastReceiver receiver);
+        /// <summary>
+        /// Set Global Raycast Receiver filter
+        /// </summary>
+        public static RaycastFilter AddFilter(RaycastFilter filter) {
+            isRaycastReceiverIncluded.Add(filter);
+            return filter;
+        }
+
+        public static RaycastFilter AddFilter(Transform root, RaycastFilter orFilter = null)
+        {
+			// cache all transforms
+			var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
+			bool Filter(IRaycastReceiver r) => childReceivers.Contains(r) || (orFilter != null && orFilter(r));
+			
+			AddFilter(Filter);
+			return Filter;
+        }
+
+        public static void RemoveFilter(RaycastFilter filter)
+        {
+            isRaycastReceiverIncluded.Remove(filter);
+        }
 
         private void OnEnable()
         {
@@ -94,15 +123,23 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			hit = new RaycastHit();
 			List<IRaycastReceiver> closestReceivers = null;
 
-			var isRaycastReceiverIncluded = Core.instance.isRaycastReceiverIncluded;
 			for (int i = 0; i < numHits; ++i)
 			{
-				if (isRaycastReceiverIncluded != null && !isRaycastReceiverIncluded(hits[i].collider))
-					continue;
-
-				hits[i].collider.gameObject.GetComponents(potentialReceiversA);
-				if (potentialReceiversA.Count != 0 && hits[i].distance < minDist)
+				hits[i].collider.gameObject.GetComponents(receiversBeforeFilter);
+				if (receiversBeforeFilter.Count != 0 && hits[i].distance < minDist)
 				{
+					// filter hit
+					potentialReceiversA.Clear();
+					foreach (var receiver in receiversBeforeFilter)
+					{
+						if (isRaycastReceiverIncluded.Count > 0 && !isRaycastReceiverIncluded[^1](receiver))
+							continue;
+						potentialReceiversA.Add(receiver);
+					}
+
+					if (potentialReceiversA.Count == 0)
+						continue;
+
 					// save hit
 					hit = hits[i];
 					minDist = hits[i].distance;

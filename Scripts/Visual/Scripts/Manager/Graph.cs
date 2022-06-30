@@ -307,7 +307,7 @@ namespace OneHamsa.Dexterity.Visual
                                 // this is already a dependency somewhere on the stack, it means we have a cycle
                                 cyclePoints.Add(son);
                                 
-                                Debug.LogError($"Graph sort: found cycle at [{son.ToShortString()}]");
+                                Debug.LogError($"Graph sort: found cycle at [{son.ToShortString()}]", son.context);
                                 // try to recover
                             }
                             else
