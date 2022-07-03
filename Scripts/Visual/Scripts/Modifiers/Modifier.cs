@@ -52,7 +52,7 @@ namespace OneHamsa.Dexterity.Visual
         }
         public PropertyBase activeProperty => GetProperty(node.activeState);
 
-        protected virtual void HandleStateChange(int oldState, int newState) { }
+        public virtual void HandleStateChange(int oldState, int newState) { }
 
         private int[] _states;
 

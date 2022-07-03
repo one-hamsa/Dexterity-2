@@ -388,13 +388,19 @@ namespace OneHamsa.Dexterity.Visual
             node.currentTime = startTime;
             node.stateChangeTime = EditorApplication.timeSinceStartup;
 
-            foreach (var modifier in modifiers) {
+            foreach (var modifier in modifiers) 
+            {
                 modifier.HandleNodeEnabled();
                 // force updating at least once
                 modifier.ForceTransitionUpdate();
             }
 
+            var oldState = node.activeState;
             node.activeState = Core.instance.GetStateID(state);
+            foreach (var modifier in modifiers)
+            {
+                modifier.HandleStateChange(oldState, node.activeState);
+            }
 
             bool anyChanged;
 

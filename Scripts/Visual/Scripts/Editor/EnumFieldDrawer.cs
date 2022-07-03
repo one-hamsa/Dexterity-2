@@ -46,7 +46,7 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     enumPrevValue = enumNode.targetEnumValue;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     // use default
                     foreach (var v in Enum.GetValues(enumNode.targetEnumType))

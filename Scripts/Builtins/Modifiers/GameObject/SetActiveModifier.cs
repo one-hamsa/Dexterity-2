@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public override void Update()
         {
-            // don't do anything here, we'll run update loop as a coroutine on node
+            // don't do anything here, we'll run update loop as a coroutine on node (to keep alive when inactive)
         }
 
         IEnumerator UpdateAlways()
@@ -31,18 +31,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 base.Update();
 
                 if (transitionChanged)
-                {
-                    var normalizedSum = 0f;
-                    foreach (var kv in transitionState)
-                    {
-                        var property = GetProperty(kv.Key) as Property;
-                        var value = kv.Value;
-
-                        normalizedSum += property.active ? value : 0f;
-                    }
-
-                    gameObject.SetActive(normalizedSum > 0f);
-                }
+                    gameObject.SetActive(((Property)GetProperty(node.activeState)).active);
 
                 yield return waitForEndOfFrame;
             }
