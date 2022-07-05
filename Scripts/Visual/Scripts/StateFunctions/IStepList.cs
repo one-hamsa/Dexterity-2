@@ -7,7 +7,8 @@ namespace OneHamsa.Dexterity.Visual
 {
     public interface IStepList : IHasStates
     {
-        private static Stack<(Step step, int depth)> depthStack = new Stack<(Step step, int depth)>();
+        private static Stack<(Step step, int depth)> depthStack = new();
+        int lastEvaluationResult { get; }
 
         List<Step> steps { get; }
 

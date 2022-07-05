@@ -625,6 +625,7 @@ namespace OneHamsa.Dexterity.Visual
 
         Node IGateContainer.node => this;
 
+        public int lastEvaluationResult => activeState;
         List<StateFunction.Step> IStepList.steps => customSteps;
         #endregion Interface Implementation (Editor)
     }

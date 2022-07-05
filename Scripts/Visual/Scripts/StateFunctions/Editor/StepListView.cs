@@ -18,6 +18,8 @@ namespace OneHamsa.Dexterity.Visual
 
         public StepListView(SerializedObject serializedObject, string propertyName) : base()
         {
+            styleSheets.Add(Resources.Load<StyleSheet>("StepListView"));
+            
             this.serializedObject = serializedObject;
             this.propertyName = propertyName;
             stepList = serializedObject.targetObject as IStepList;
@@ -34,7 +36,6 @@ namespace OneHamsa.Dexterity.Visual
 
             selectionType = SelectionType.Multiple;
             reorderable = true;
-            style.flexGrow = 1;
             showAddRemoveFooter = true;
             itemsAdded += HandleItemsAdded;
             itemIndexChanged += HandleItemIndexChanged;
@@ -170,6 +171,9 @@ namespace OneHamsa.Dexterity.Visual
                     stateNamePf.BindProperty(stepProp.FindPropertyRelative(nameof(StateFunction.Step.result_stateName)));
                     stateNamePf.style.flexGrow = 1;
                     rest.Add(stateNamePf);
+                    
+                    rest.EnableInClassList("selected", Application.isPlaying 
+                        && stepList.lastEvaluationResult == step.GetResultStateID());
                     break;
 
                 case StateFunction.Step.Type.Reference:
@@ -178,6 +182,9 @@ namespace OneHamsa.Dexterity.Visual
                     refPf.BindProperty(stepProp.FindPropertyRelative(nameof(StateFunction.Step.reference_stateFunction)));
                     refPf.style.flexGrow = 1;
                     rest.Add(refPf);
+                    
+                    rest.EnableInClassList("selected", Application.isPlaying 
+                        && step.reference_stateFunction.lastEvaluationResult != StateFunction.emptyStateId);
                     break;
             }
 

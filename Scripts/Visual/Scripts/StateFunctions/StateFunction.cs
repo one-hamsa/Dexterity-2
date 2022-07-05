@@ -104,6 +104,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public List<Step> steps = new List<Step>();
         private StepEvaluationCache stepEvalCache;
+        public int lastEvaluationResult { get; private set; } = emptyStateId;
 
         List<Step> IStepList.steps => steps;
 
@@ -111,7 +112,9 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (stepEvalCache == null)
                 stepEvalCache = (this as IStepList).BuildStepCache();
-            return IStepList.Evaluate(stepEvalCache, mask);
+            var result = IStepList.Evaluate(stepEvalCache, mask);
+            lastEvaluationResult = result;
+            return result;
         }
 
         public static IEnumerable<string> EnumerateStateNames(IEnumerable<IStepList> assets)

@@ -1,0 +1,7 @@
+﻿StepListView {
+    flex-grow: 1;
+}
+
+.selected {
+    background-color: rgba(96, 223, 28, 0.4);
+}
