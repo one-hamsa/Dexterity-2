@@ -31,8 +31,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 : GetComponents<Collider>().ToList();
         }
 
-        public override void HandleStateChange(int oldState, int newState)
-        {
+        public override void HandleStateChange(int oldState, int newState) {
+            if (!Application.isPlaying) return;
+
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
 
