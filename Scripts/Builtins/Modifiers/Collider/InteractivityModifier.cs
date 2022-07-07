@@ -2,7 +2,6 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -10,7 +9,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         public bool recursive = true;
         private List<Collider> cachedColliders;
-        
+
+        private bool _overrideDisable;
+        public bool overrideDisable { set { _overrideDisable = value; HandleStateChange(_node.activeState, _node.activeState); }}
+
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
 
         [Serializable]
@@ -38,8 +40,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             {
                 if (!colliderDisabledBy.TryGetValue(c, out var disablers))
                     colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
-                
-                if (shouldDisable)
+
+                if (shouldDisable || _overrideDisable)
                     disablers.Add(this);
                 else
                     disablers.Remove(this);
