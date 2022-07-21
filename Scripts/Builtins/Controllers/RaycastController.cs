@@ -59,8 +59,22 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
 			// cache all transforms
 			var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
-			bool Filter(IRaycastReceiver r) => childReceivers.Contains(r) || (orFilter != null && orFilter(r));
-			
+			bool Filter(IRaycastReceiver r)
+			{
+				if (childReceivers.Contains(r) || (orFilter != null && orFilter(r)))
+					return true;
+				
+				var t = ((Component)r).transform;
+				while (t != null)
+				{
+					if (t == root)
+						return true;
+					t = t.parent;
+				}
+
+				return false;
+			}
+
 			AddFilter(Filter);
 			return Filter;
         }
