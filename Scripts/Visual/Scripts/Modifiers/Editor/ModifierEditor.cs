@@ -33,14 +33,26 @@ namespace OneHamsa.Dexterity.Visual
         {
             sfStates.Clear();
             var first = true;
-            foreach (var t in targets) {
-                foreach (var state in ((IHasStates)t).GetStateNames()) {
+            
+            foreach (var t in targets.Cast<IHasStates>()) {
+                foreach (var state in t.GetStateNames()) {
                     if (sfStates.Add(state) && !first) {
                         EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
                         return;
                     }
                 }
                 first = false;
+            }
+            
+            var alphabetically = ((IHasStates)target).GetStateNames().OrderBy(x => x).ToList();
+            foreach (var t in targets.Cast<IHasStates>())
+            {
+                if (!t.GetStateNames().SequenceEqual(alphabetically))
+                {
+                    var m = (Modifier)target;
+                    m.properties = m.properties.OrderBy(x => x.state).ToList();
+                    EditorUtility.SetDirty(target);
+                }
             }
 
             serializedObject.Update();
@@ -210,7 +222,8 @@ namespace OneHamsa.Dexterity.Visual
                 currentPropStates.Add(propState);
             }
 
-            foreach (var state in states)
+            var statesList = states.ToList();
+            foreach (var state in statesList)
             {
                 if (!currentPropStates.Contains(state))
                 {
@@ -238,7 +251,7 @@ namespace OneHamsa.Dexterity.Visual
                 var property = properties.GetArrayElementAtIndex(i);
                 var propState = property.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue;
 
-                if (!states.Contains(propState))
+                if (!statesList.Contains(propState))
                     continue;
                 
                 sortedStateProps.Add((propState, property, i));
