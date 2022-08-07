@@ -18,8 +18,6 @@ namespace OneHamsa.Dexterity.Visual
         List<SerializedProperty> stateProps = new(8);
         private EditorCoroutine coro;
         private List<SerializedProperty> customProps = new();
-        private HashSet<string> currentPropStates = new();
-        private HashSet<string> sfStates = new();
         private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
 
         private bool propertiesUpdated { get; set; } 
@@ -31,25 +29,43 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
-            sfStates.Clear();
-            var first = true;
+            var alphabetically = ((IHasStates)target).GetStateNames().OrderBy(x => x).ToList();
+            var states = alphabetically.ToHashSet();
             
-            foreach (var t in targets.Cast<IHasStates>()) {
-                foreach (var state in t.GetStateNames()) {
-                    if (sfStates.Add(state) && !first) {
-                        EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
-                        return;
+            foreach (var m in targets.Cast<Modifier>())
+            {
+                var targetStates = m.properties.Select(p => p?.state).ToList();
+                var changed = false;
+                foreach (var state in alphabetically)
+                {
+                    if (!targetStates.Contains(state))
+                    {
+                        AddStateToModifier(m, state);
+                        changed = true;
                     }
                 }
-                first = false;
-            }
-            
-            var alphabetically = ((IHasStates)target).GetStateNames().OrderBy(x => x).ToList();
-            foreach (var t in targets.Cast<IHasStates>())
-            {
-                if (!t.GetStateNames().SequenceEqual(alphabetically))
+                
+                foreach (var state in targetStates)
                 {
-                    var m = (Modifier)target;
+                    if (state == null || !alphabetically.Contains(state))
+                    {
+                        RemoveStateFromModifier(m, state);
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    serializedObject.Update();
+                    targetStates = m.properties.Select(p => p.state).ToList();
+                }
+                
+                if (targetStates.Count != alphabetically.Count || !targetStates.ToHashSet().SetEquals(states)) {
+                    EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
+                    return;
+                }
+                if (!targetStates.SequenceEqual(alphabetically))
+                {
                     m.properties = m.properties.OrderBy(x => x.state).ToList();
                     EditorUtility.SetDirty(target);
                 }
@@ -59,7 +75,7 @@ namespace OneHamsa.Dexterity.Visual
             
             propertiesUpdated = false;
 
-            ShowNode();
+            ShowNode(states);
 
             customProps.Clear();
             var parent = serializedObject.GetIterator();
@@ -107,11 +123,11 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            if (sfStates.Count > 0)
+            if (states.Count > 0)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                propertiesUpdated |= ShowProperties(sfStates);
+                propertiesUpdated |= ShowProperties(states);
 
                 if (targets.Length == 1 && 
                     modifier is ISupportPropertyFreeze propFreeze && GUILayout.Button("Freeze Properties")) 
@@ -124,7 +140,7 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             // warnings
-            if (sfStates.Count == 0)
+            if (states.Count == 0)
             {
                 EditorGUILayout.HelpBox("Node has no states", MessageType.Error);
             }
@@ -153,7 +169,34 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void ShowNode()
+        private void AddStateToModifier(Modifier m, string state)
+        {
+            // get property info, iterate through parent classes to support inheritance
+            Type propType = null;
+            var objType = target.GetType();
+            while (propType == null)
+            {
+                var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
+                propType = attr?.propertyType
+                    ?? (!string.IsNullOrEmpty(attr.propertyName) ? objType.GetNestedType(attr.propertyName) : null);
+                    
+                objType = objType.BaseType;
+            }
+
+            var newProp = (Modifier.PropertyBase)Activator.CreateInstance(propType);
+            newProp.state = state;
+            m.properties.Add(newProp);
+            EditorUtility.SetDirty(target);
+        }
+        
+        private void RemoveStateFromModifier(Modifier m, string state)
+        {
+            m.properties.RemoveAll(p => p?.state == state);
+            EditorUtility.SetDirty(target);
+        }
+
+
+        private void ShowNode(HashSet<string> stateNames)
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Modifier._node)));
             var helpboxStyle = new GUIStyle(EditorStyles.helpBox);
@@ -183,15 +226,15 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // move from node to modifier
                 modifier.lastSeenStates.Clear();
-                foreach (var state in sfStates)
+                foreach (var state in stateNames)
                     modifier.lastSeenStates.Add(state);
             }
             else
             {
                 // use cache
-                sfStates.Clear();
+                stateNames.Clear();
                 foreach (var state in modifier.lastSeenStates)
-                    sfStates.Add(state);
+                    stateNames.Add(state);
             }
         }
 
@@ -199,64 +242,21 @@ namespace OneHamsa.Dexterity.Visual
         {
             var updated = false;
 
-            // get property info, iterate through parent classes to support inheritance
-            Type propType = null;
-            var objType = target.GetType();
-            while (propType == null)
-            {
-                var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
-                propType = attr?.propertyType
-                    ?? (!string.IsNullOrEmpty(attr.propertyName) ? objType.GetNestedType(attr.propertyName) : null);
-                    
-                objType = objType.BaseType;
-            }
-
-            var properties = serializedObject.FindProperty(nameof(Modifier.properties));
-
-            // find all existing references to properties by state name, add more entries if needed
-            currentPropStates.Clear();
-            for (var i = 0; i < properties.arraySize; ++i)
-            {
-                var property = properties.GetArrayElementAtIndex(i);
-                var propState = property?.FindPropertyRelative(nameof(Modifier.PropertyBase.state))?.stringValue;
-                currentPropStates.Add(propState);
-            }
-
             var statesList = states.ToList();
             foreach (var state in statesList)
             {
-                if (!currentPropStates.Contains(state))
-                {
-                    var last = properties.arraySize;
-                    properties.arraySize++;
-                    var newElement = properties.GetArrayElementAtIndex(last);
-                    
-                    var newProp = Activator.CreateInstance(propType) as Modifier.PropertyBase;
-                    newProp.state = state;
-                    if (modifier is ISupportPropertyFreeze supportPropertyFreeze) {
-                        supportPropertyFreeze.FreezeProperty(newProp);
-                    }
-
-                    newElement.managedReferenceValue = newProp;
-                }
-
                 if (!foldedStates.ContainsKey(state))
                     foldedStates[state] = true;
             }
             
-            // sort by name
+            var properties = serializedObject.FindProperty(nameof(Modifier.properties));
             sortedStateProps.Clear();
             for (var i = 0; i < properties.arraySize; ++i)
             {
                 var property = properties.GetArrayElementAtIndex(i);
                 var propState = property.FindPropertyRelative(nameof(Modifier.PropertyBase.state)).stringValue;
-
-                if (!statesList.Contains(propState))
-                    continue;
-                
                 sortedStateProps.Add((propState, property, i));
             }
-            sortedStateProps.Sort((a,b) => String.CompareOrdinal(a.stateName, b.stateName));
 
             var node = ((Modifier)target).node;
             var activeState = node != null ? node.activeState : -1;
