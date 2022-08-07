@@ -33,6 +33,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         public override void HandleStateChange(int oldState, int newState) {
+            base.HandleStateChange(oldState, newState);
+            
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
 

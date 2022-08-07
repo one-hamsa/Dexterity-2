@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual
         private double lastUpdateTime;
 
         protected abstract double currentTime { get; }
-        protected abstract int activeState { get; }
+        public abstract int activeState { get; }
         protected abstract double stateChangeTime { get; }
         protected abstract int[] states { get; }
 

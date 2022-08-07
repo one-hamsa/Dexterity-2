@@ -259,7 +259,6 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             var node = ((Modifier)target).node;
-            var activeState = node != null ? node.activeState : -1;
 
             // draw the editor for each value in property
             foreach (var (propState, property, i) in sortedStateProps)
@@ -280,7 +279,7 @@ namespace OneHamsa.Dexterity.Visual
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
-                if (Application.isPlaying && activeState == Core.instance.GetStateID(propState))
+                if (Application.isPlaying && modifier.activeState == Core.instance.GetStateID(propState))
                 {
                     GUI.contentColor = Color.green;
                     suffix = " (current)";

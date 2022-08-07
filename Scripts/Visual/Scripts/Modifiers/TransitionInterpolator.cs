@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual
         
         protected override int[] states => _states;
         protected override double stateChangeTime => _stateChangeTime;
-        protected override int activeState => 1;
+        public override int activeState => 1;
 
         public float target { get; private set; }
         public float value => Mathf.Lerp(previousValue, target, transitionState[1]);

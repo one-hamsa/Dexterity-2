@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -8,6 +9,20 @@ namespace OneHamsa.Dexterity.Visual
     [ModifierPropertyDefinition("Property")]
     public abstract class Modifier : TransitionBehaviour, IReferencesNode
     {
+        public enum DelayDirection
+        {
+            Enter,
+            Exit
+        }
+        [Serializable]
+        public class TransitionDelay
+        {
+            public DelayDirection direction;
+            [State]
+            public string state;
+            public float waitFor = 0;
+        }
+        
         private static Dictionary<DexterityBaseNode, HashSet<Modifier>> nodesToModifiers = new();
         public static IEnumerable<Modifier> GetModifiers(DexterityBaseNode node)
         {
@@ -21,6 +36,9 @@ namespace OneHamsa.Dexterity.Visual
 
         [SerializeReference]
         public List<PropertyBase> properties = new();
+        
+        [SerializeField]
+        public List<TransitionDelay> delays = new();
 
         [HideInInspector] public List<string> lastSeenStates = new();
 
@@ -54,14 +72,28 @@ namespace OneHamsa.Dexterity.Visual
         }
         public PropertyBase activeProperty => GetProperty(node.activeState);
 
-        public virtual void HandleStateChange(int oldState, int newState) { }
+        public virtual void HandleStateChange(int oldState, int newState)
+        {
+            lastState = oldState;
+        }
 
-        private int[] _states;
+        private int[] cachedStates;
+        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays;
+        private int lastState = StateFunction.emptyStateId;
 
-        protected override int[] states => _states;
+        protected override int[] states => cachedStates;
         protected override double currentTime => node.currentTime;
         protected override double stateChangeTime => node.stateChangeTime;
-        protected override int activeState => node.activeState;
+
+        public override int activeState
+        {
+            get
+            {
+                if (currentTime - stateChangeTime >= GetStateDelay(lastState, node.activeState))
+                    return node.activeState;
+                return lastState;
+            }
+        }
 
         [Serializable]
         public abstract class PropertyBase
@@ -100,14 +132,38 @@ namespace OneHamsa.Dexterity.Visual
         {
             HandleStateChange(node.activeState, node.activeState);
 
-            _states = new int[propertiesCache.Count];
+            cachedStates = new int[propertiesCache.Count];
             var keys = propertiesCache.Keys.GetEnumerator();
             var i = 0;
             while (keys.MoveNext())
                 states[i++] = keys.Current;
 
+            CacheDelays();
+
             InitializeTransitionState();
         }
+        
+        private void CacheDelays()
+        {
+            cachedDelays = new();
+            foreach (var delay in delays)
+                cachedDelays[(delay.direction, Core.instance.GetStateID(delay.state))] = delay;
+        }
+
+        public void AddDelay(TransitionDelay delay)
+        {
+            delays.Add(delay);
+            CacheDelays();
+        }
+        
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetStateDelay(int exitingState, int enteringState)
+        {
+            cachedDelays.TryGetValue((DelayDirection.Enter, enteringState), out var enterDelay);
+            cachedDelays.TryGetValue((DelayDirection.Exit, exitingState), out var exitDelay);
+            return Mathf.Max(enterDelay?.waitFor ?? 0f, exitDelay?.waitFor ?? 0f);
+        }
+        
         protected override void OnEnable()
         {
             if (!EnsureValidState())

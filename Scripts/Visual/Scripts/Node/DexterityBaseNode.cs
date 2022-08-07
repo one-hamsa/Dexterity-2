@@ -19,7 +19,7 @@ namespace OneHamsa.Dexterity.Visual
         public string initialState = StateFunction.kDefaultState;
         
         [SerializeField]
-        public List<TransitionDelay> delays = new List<TransitionDelay>();
+        public List<TransitionDelay> delays = new();
 
         [State(allowEmpty: true)]
         public string overrideState;
@@ -91,8 +91,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    var delay = GetExitingStateDelay(activeState);
-                    nextStateChangeTime = currentTime + delay?.waitFor ?? 0;
+                    nextStateChangeTime = currentTime + GetExitingStateDelay(activeState);
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
@@ -180,10 +179,10 @@ namespace OneHamsa.Dexterity.Visual
                 cachedDelays[Core.instance.GetStateID(delay.beforeExitingState)] = delay;
         }
 
-        private TransitionDelay GetExitingStateDelay(int state)
+        private float GetExitingStateDelay(int state)
         {
             cachedDelays.TryGetValue(state, out var value);
-            return value;
+            return value?.waitFor ?? 0f;
         }
 
         public void UpdateStateImmediately()
