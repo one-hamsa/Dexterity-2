@@ -7,6 +7,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class ActivateModifier : Modifier
     {
         private static WaitForEndOfFrame waitForEndOfFrame = new();
+        private Coroutine coro;
         public override bool animatableInEditor => false;
 
         [Serializable]
@@ -22,7 +23,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // don't do anything here, we'll run update loop as a coroutine on node (to keep alive when inactive)
         }
 
-        IEnumerator UpdateAlways()
+        IEnumerator UpdateAlwaysCoro()
         {
             while (true)
             {
@@ -39,14 +40,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Awake();
             
-            // enable anyway, because we might get disabled
-            base.OnEnable();
+            if (enabled && !gameObject.activeInHierarchy)
+                // enable anyway (so that coroutine can be started)
+                base.OnEnable();
         }
 
         public override void HandleNodeEnabled()
         {
             base.HandleNodeEnabled();
-            node.StartCoroutine(UpdateAlways());
+            coro ??= node.StartCoroutine(UpdateAlwaysCoro());
         }
 
         protected override void OnDisable()
