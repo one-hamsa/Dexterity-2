@@ -128,7 +128,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             modifiers.Add(this);
 
-            if (node.enabled)
+            if (node.isActiveAndEnabled)
                 HandleNodeEnabled();
             else
             {
