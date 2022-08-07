@@ -6,8 +6,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ActivateModifier : Modifier
     {
-        private static WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
-        
+        private static WaitForEndOfFrame waitForEndOfFrame = new();
+        public override bool animatableInEditor => false;
+
         [Serializable]
         public class Property : PropertyBase
         {
@@ -38,10 +39,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Awake();
             
-            // don't run on edit time - this might be triggered by an animation
-            if (Application.isPlaying)
-                // enable anyway, because we might get disabled
-                base.OnEnable();
+            // enable anyway, because we might get disabled
+            base.OnEnable();
         }
 
         public override void HandleNodeEnabled()

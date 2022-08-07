@@ -26,6 +26,8 @@ namespace OneHamsa.Dexterity.Visual
 
         public DexterityBaseNode node => TryFindNode();
 
+        public virtual bool animatableInEditor => true;
+
         Dictionary<int, PropertyBase> propertiesCache = null;
 
         public PropertyBase GetProperty(int stateId)

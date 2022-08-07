@@ -289,6 +289,7 @@ namespace OneHamsa.Dexterity.Visual
                         return;
 
                     GUI.contentColor = coro != null ? Color.green : origColor;
+                    GUI.enabled = modifier.animatableInEditor;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                         GUILayout.Width(25)))
                     {
@@ -312,6 +313,7 @@ namespace OneHamsa.Dexterity.Visual
                         }
                     }
                     GUI.contentColor = origColor;
+                    GUI.enabled = true;
                 }
 
                 if (stateProps.Count > 1)
@@ -361,6 +363,13 @@ namespace OneHamsa.Dexterity.Visual
         public static IEnumerator AnimateStateTransition(DexterityBaseNode node, IEnumerable<Modifier> modifiers, 
         string state, float speed = 1f, Action onEnd = null)
         {
+            // make sure it's not called with non-animatable modifiers
+            if (modifiers.Any(m => !m.animatableInEditor))
+            {
+                Debug.LogError($"{nameof(AnimateStateTransition)} called with non-animatable modifiers");
+                yield break;
+            }
+            
             // record all components on modifiers for undo
             foreach (var modifier in modifiers) {
                 Undo.RegisterCompleteObjectUndo(modifier.GetComponents<Component>().ToArray(), "Editor Transition");

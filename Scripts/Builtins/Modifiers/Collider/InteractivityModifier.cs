@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private bool _overrideDisable;
         public bool overrideDisable { set { _overrideDisable = value; HandleStateChange(_node.activeState, _node.activeState); }}
+        public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
 
@@ -32,8 +33,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         public override void HandleStateChange(int oldState, int newState) {
-            if (!Application.isPlaying) return;
-
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
 

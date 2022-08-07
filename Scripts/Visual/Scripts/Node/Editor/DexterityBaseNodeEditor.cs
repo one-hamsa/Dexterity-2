@@ -207,7 +207,14 @@ namespace OneHamsa.Dexterity.Visual
                 // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
                 foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
                     if (modifier.node == baseNode && modifier.isActiveAndEnabled)
+                    {
+                        if (!modifier.animatableInEditor)
+                        {
+                            Debug.LogWarning($"{modifier.GetType().Name} is not animatable in editor. It will not be previewed.", modifier);
+                            continue;
+                        }
                         modifiers.Add(modifier);
+                    }
                 }
 
                 coro = EditorCoroutineUtility.StartCoroutine(
