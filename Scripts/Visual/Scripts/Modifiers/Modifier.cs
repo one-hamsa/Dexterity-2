@@ -78,7 +78,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         private int[] cachedStates;
-        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays;
+        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
         private int lastState = StateFunction.emptyStateId;
 
         protected override int[] states => cachedStates;
