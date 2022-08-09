@@ -190,7 +190,6 @@ namespace OneHamsa.Dexterity.Visual
             // make sure state is up-to-date
             Update();
 
-            var modifiersUpdated = 0;
             foreach (var modifier in Modifier.GetModifiers(this))
             {
                 // create a new transition state that is already pointing to active state
@@ -199,12 +198,7 @@ namespace OneHamsa.Dexterity.Visual
                 modifier.ForceTransitionUpdate();
                 // and actually call update to avoid one frame lag
                 modifier.Update();
-                
-                modifiersUpdated++;
             }
-            
-            if (modifiersUpdated == 0)
-                Debug.LogWarning($"{name}: UpdateStateImmediately: no modifiers found to update", this);
         }
 
         public void UpdateStateImmediately(int state)
