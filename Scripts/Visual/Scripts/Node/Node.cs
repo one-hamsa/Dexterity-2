@@ -487,6 +487,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             var overrideOutput = cachedOverrides[fieldId];
             overrideOutput.value = value;
+            GetOutputField(fieldId).CacheValue();
         }
 
         /// <summary>

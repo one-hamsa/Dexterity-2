@@ -197,6 +197,8 @@ namespace OneHamsa.Dexterity.Visual
                 modifier.InitializeTransitionState();
                 // force updating now
                 modifier.ForceTransitionUpdate();
+                // and actually call update to avoid one frame lag
+                modifier.Update();
                 
                 modifiersUpdated++;
             }
