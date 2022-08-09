@@ -35,14 +35,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override void HandleStateChange(int oldState, int newState) {
             base.HandleStateChange(oldState, newState);
             
+            PruneDeadColliders();
+            
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
-            
-            // in-place cleanup
-            for (var i = cachedColliders.Count - 1; i >= 0; i--) {
-                if (cachedColliders[i] == null) 
-                    cachedColliders.RemoveAt(i);
-            }
 
             foreach (var c in cachedColliders)
             {
@@ -58,8 +54,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
         }
 
+        private void PruneDeadColliders()
+        {
+            // in-place cleanup
+            for (var i = cachedColliders.Count - 1; i >= 0; i--) {
+                if (cachedColliders[i] == null) 
+                    cachedColliders.RemoveAt(i);
+            }
+        }
+
         public override void OnDestroy()
         {
+            PruneDeadColliders();
+            
             foreach (var c in cachedColliders)
             {
                 if (!colliderDisabledBy.TryGetValue(c, out var disablers))
