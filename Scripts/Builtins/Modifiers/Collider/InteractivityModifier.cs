@@ -37,6 +37,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
+            
+            // in-place cleanup
+            for (var i = cachedColliders.Count - 1; i >= 0; i--) {
+                if (cachedColliders[i] == null) 
+                    cachedColliders.RemoveAt(i);
+            }
 
             foreach (var c in cachedColliders)
             {
