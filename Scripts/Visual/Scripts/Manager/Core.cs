@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
 {
+    using Utilities;
+    
     public class Core
     {
         public static Core instance { get; private set; }

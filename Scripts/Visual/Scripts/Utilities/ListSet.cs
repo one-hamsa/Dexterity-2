@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity.Visual.Utilities
 {
 	public class ListSet<T> : List<T> {
 
