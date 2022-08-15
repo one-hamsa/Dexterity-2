@@ -16,11 +16,11 @@ namespace OneHamsa.Dexterity.Visual
     {
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
-        private static HashSet<BaseField> upstreams = new HashSet<BaseField>();
+        private static HashSet<BaseField> upstreams = new();
         Node node;
         bool foldoutOpen;
         
-        private HashSet<Node.OutputOverride> unusedOverrides = new HashSet<Node.OutputOverride>();
+        private HashSet<Node.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
         private StepListView stepListView;
 
@@ -129,12 +129,6 @@ namespace OneHamsa.Dexterity.Visual
                     node, ref foldoutOpen);
         }
 
-
-        private void ShowDelays()
-        {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.delays)));
-        }
-
         protected override void ShowFieldValues()
         {
             if (!(fieldValuesDebugOpen = EditorGUILayout.Foldout(fieldValuesDebugOpen, "Field values", true, EditorStyles.foldoutHeader)))
@@ -195,22 +189,6 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             Repaint();
-        }
-
-        private void ShowActiveState()
-        {
-            var origColor = GUI.color;
-            
-            if (node.activeState != -1)
-            {
-                var style = new GUIStyle(EditorStyles.helpBox);
-                style.alignment = TextAnchor.MiddleCenter;
-                style.fontSize = 14;
-
-                GUI.color = Color.green;
-                GUILayout.Label(Core.instance.GetStateAsString(node.activeState), style);
-                GUI.color = origColor;
-            }
         }
 
         protected override void ShowAllTargetsDebug()

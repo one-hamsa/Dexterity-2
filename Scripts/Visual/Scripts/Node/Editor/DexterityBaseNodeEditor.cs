@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System;
+using System.Collections;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
@@ -22,7 +23,6 @@ namespace OneHamsa.Dexterity.Visual
         private EditorCoroutine coro;
 
         private int previewStateIndex;
-        private HashSet<Modifier> modifiers = new HashSet<Modifier>();
 
         protected virtual void Legacy_OnInspectorGUI()
         {
@@ -53,7 +53,10 @@ namespace OneHamsa.Dexterity.Visual
             ShowOverrides();
 
             EditorGUILayout.Space();
+            var origColor = GUI.contentColor;
+            GUI.contentColor = Color.yellow;
             EditorGUILayout.LabelField("Debug", EditorStyles.whiteLargeLabel);
+            GUI.contentColor = origColor;
             
             if (targets.Length <= 1)
                 ShowSingleTargetDebug();
@@ -107,30 +110,37 @@ namespace OneHamsa.Dexterity.Visual
             {
                 ShowPreviewState();
             }
-            else 
+            
+            ShowModifiers();
+                
+            if (Application.isPlaying)
             {
                 ShowActiveState();
-                ShowModifiers();
                 ShowFieldValues();
             }
         }
 
         private void ShowModifiers()
         {
-            var modifiers = Modifier.GetModifiers(baseNode);
+            var modifiers = GetModifiers();
 
             if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
                 return;
 
+            var origColor = GUI.contentColor;
             foreach (var m in modifiers)
             {
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{m.name}: {m.GetType().Name}");
-                if (GUILayout.Button("Go"))
+                var icon = EditorGUIUtility.ObjectContent(m, m.GetType());
+                EditorGUILayout.LabelField(icon);
+                if (GUILayout.Button(EditorGUIUtility.IconContent("d_Prefab Icon"), GUILayout.MaxWidth(30), GUILayout.MaxHeight(20)))
                 {
                     Selection.activeObject = m;
                 }
                 EditorGUILayout.EndHorizontal();
+                GUI.contentColor = new Color(.75f, .75f, .75f);
+                EditorGUILayout.LabelField(GetPath(m.gameObject), EditorStyles.miniLabel);
+                GUI.contentColor = origColor;
             }
         }
 
@@ -176,17 +186,23 @@ namespace OneHamsa.Dexterity.Visual
                 previewStateNames.Add(state);
             }
 
+            var origColor = GUI.contentColor;
+            var origBgColor = GUI.backgroundColor;
+            GUI.contentColor = new Color(1f, 1f, .75f);
+            GUI.backgroundColor = new Color(1f, 1f, .75f);
+
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             var propDrawer = new StateDrawer();
             GUILayout.Label("Preview");
-            var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray());
+            var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray(),
+                GUILayout.MaxWidth(150));
             if (newIndex != 0)
                 previewStateIndex = newIndex;
 
             var didChange = EditorGUI.EndChangeCheck();
 
-            var origColor = GUI.contentColor;
+            GUI.backgroundColor = origBgColor;
             GUI.contentColor = coro != null ? Color.green : origColor;
 
             var speeds = new [] { 0.1f, 0.25f, 0.5f, 1f, 1.25f, 1.5f, 2f };
@@ -203,18 +219,16 @@ namespace OneHamsa.Dexterity.Visual
                     EditorCoroutineUtility.StopCoroutine(coro);
 
                 // collect all children modifiers
-                modifiers.Clear();
-                // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
-                foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
-                    if (modifier.node == baseNode && modifier.isActiveAndEnabled)
+                var allModifiers = GetModifiers();
+                var modifiers = new HashSet<Modifier>();
+                foreach (var modifier in allModifiers)
+                {
+                    if (!modifier.animatableInEditor)
                     {
-                        if (!modifier.animatableInEditor)
-                        {
-                            Debug.LogWarning($"{modifier.GetType().Name} is not animatable in editor. It will not be previewed.", modifier);
-                            continue;
-                        }
-                        modifiers.Add(modifier);
+                        Debug.LogWarning($"{modifier.GetType().Name} is not animatable in editor. It will not be previewed.", modifier);
+                        continue;
                     }
+                    modifiers.Add(modifier);   
                 }
 
                 coro = EditorCoroutineUtility.StartCoroutine(
@@ -234,6 +248,34 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox($"Some options are hidden in multi-edit mode", MessageType.Warning);
             }
+        }
+        
+        private IEnumerable<Modifier> GetModifiers()
+        {
+            if (Application.isPlaying)
+                return Modifier.GetModifiers(baseNode);
+            
+            var modifiers = new HashSet<Modifier>();
+            
+            // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
+            foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
+                if (modifier.node == baseNode && modifier.isActiveAndEnabled) 
+                    modifiers.Add(modifier);
+            }
+
+            return modifiers;
+        }
+        
+        private static string GetPath(GameObject go)
+        {
+            string name = go.name;
+            while (go.transform.parent != null)
+            {
+
+                go = go.transform.parent.gameObject;
+                name = go.name + "/" + name;
+            }
+            return name;
         }
 
         public static string StrikeThrough(string s)
