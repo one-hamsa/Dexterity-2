@@ -20,6 +20,15 @@ namespace OneHamsa.Dexterity.Visual
         public override void Awake()
         {
             base.Awake();
+            
+            if (!targetMaterial.HasProperty(materialColorName))
+            {
+                Debug.LogError($"Property not found: {materialColorName} for material {targetMaterial.name}", this);
+                if (Application.isPlaying)
+                    enabled = false;
+                return;
+            }
+            
             propertyId = Shader.PropertyToID(materialColorName);
         }
 
