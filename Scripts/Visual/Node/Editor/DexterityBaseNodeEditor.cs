@@ -23,6 +23,9 @@ namespace OneHamsa.Dexterity.Visual
         private EditorCoroutine coro;
 
         private int previewStateIndex;
+        private HashSet<Modifier> modifiers;
+        private bool modifiersCacheInvalidated => modifiers == null || lastModifiersUpdateTime < EditorApplication.timeSinceStartup - 1f;
+        private double lastModifiersUpdateTime;
 
         protected virtual void Legacy_OnInspectorGUI()
         {
@@ -254,8 +257,11 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (Application.isPlaying)
                 return Modifier.GetModifiers(baseNode);
+
+            if (!modifiersCacheInvalidated)
+                return modifiers;
             
-            var modifiers = new HashSet<Modifier>();
+            modifiers = new HashSet<Modifier>();
             
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
@@ -263,6 +269,7 @@ namespace OneHamsa.Dexterity.Visual
                     modifiers.Add(modifier);
             }
 
+            lastModifiersUpdateTime = EditorApplication.timeSinceStartup;
             return modifiers;
         }
         
