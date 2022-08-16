@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 		protected Node node;
 
 		public bool transitioning { get; private set; }
+		public event Action<int, int> onTransitionsStart;
 		public event Action<int> onTransitionsEnd;
 
 		void Awake() {
@@ -36,7 +37,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 		}
 
 		void OnStateChanged(int oldValue, int newValue) {
+			if (transitioning)
+				return;
+			
 			transitioning = true;
+			onTransitionsStart?.Invoke(oldValue, newValue);
 		}
 
 		void OnTransitionEnded(int activeState) {
