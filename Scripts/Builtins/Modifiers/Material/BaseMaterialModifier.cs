@@ -84,6 +84,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 originalMaterial = actions.getSharedMaterial(component);
                 (targetMaterial, shouldDestroyTargetMaterial) = (new Material(originalMaterial), true);
+                targetMaterial.name = $"[Editor] {targetMaterial.name}";
                 targetMaterial.EnableKeyword("_NORMALMAP");
                 targetMaterial.EnableKeyword("_DETAIL_MULX2");
                 actions.setSharedMaterial(component, targetMaterial);
@@ -102,20 +103,50 @@ namespace OneHamsa.Dexterity.Visual
             base.OnDestroy();
             #if UNITY_EDITOR
             if (!Application.isPlaying)
-                actions.setSharedMaterial(component, originalMaterial);
+            {
+                // register for some events
+                UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
+                UnityEditor.Selection.selectionChanged += OnSelectionChanged;
+                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+                UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
+                UnityEditor.Compilation.CompilationPipeline.compilationStarted += OnCompilationStarted;
+
+                return;
+            }
             #endif
 
             if (targetMaterial != null && shouldDestroyTargetMaterial)
             {
-                if (!Application.isPlaying)
-                    DestroyImmediate(targetMaterial);
-                else
-                    Destroy(targetMaterial);
-                
+                Destroy(targetMaterial);
                 targetMaterial = null;
             }
         }
-        
+
+        #if UNITY_EDITOR
+        private void OnSelectionChanged()
+        {
+            if (UnityEditor.Selection.activeGameObject != gameObject)
+                Cleanup();
+        }
+        private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange) => Cleanup();
+        private void OnCompilationStarted(object context) => Cleanup();
+
+        void Cleanup()
+        {
+            UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
+            
+            actions.setSharedMaterial(component, originalMaterial);
+            if (targetMaterial != null)
+            {
+                DestroyImmediate(targetMaterial);
+                targetMaterial = null;
+            }
+        }
+        #endif
+
 
         private void CacheComponent()
         {
