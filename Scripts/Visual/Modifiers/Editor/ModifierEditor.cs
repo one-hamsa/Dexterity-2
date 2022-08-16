@@ -186,6 +186,8 @@ namespace OneHamsa.Dexterity.Visual
             var newProp = (Modifier.PropertyBase)Activator.CreateInstance(propType);
             newProp.state = state;
             m.properties.Add(newProp);
+            if (m is ISupportPropertyFreeze supportPropertyFreeze) 
+                supportPropertyFreeze.FreezeProperty(newProp);
             EditorUtility.SetDirty(target);
         }
         
