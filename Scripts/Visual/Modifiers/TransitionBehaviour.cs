@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Visual
         protected abstract double stateChangeTime { get; }
         protected abstract int[] states { get; }
 
-        public bool IsChanged() => transitionChanged;
+        public virtual bool IsChanged() => transitionChanged;
 
         public event Action<int> onTransitionStarted;
         public event Action<int> onTransitionEnded;

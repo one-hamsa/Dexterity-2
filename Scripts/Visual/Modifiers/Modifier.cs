@@ -48,6 +48,11 @@ namespace OneHamsa.Dexterity.Visual
 
         Dictionary<int, PropertyBase> propertiesCache = null;
 
+        public override bool IsChanged()
+        {
+            return base.IsChanged() || isTransitionDelayed;
+        }
+
         public PropertyBase GetProperty(int stateId)
         {
             // runtime
@@ -85,15 +90,10 @@ namespace OneHamsa.Dexterity.Visual
         protected override double currentTime => node.currentTime;
         protected override double stateChangeTime => node.stateChangeTime;
 
-        public override int activeState
-        {
-            get
-            {
-                if (currentTime - stateChangeTime >= GetStateDelay(lastState, node.activeState))
-                    return node.activeState;
-                return lastState;
-            }
-        }
+        protected bool isTransitionDelayed =>
+            currentTime - stateChangeTime < GetStateDelay(lastState, node.activeState);
+
+        public override int activeState => isTransitionDelayed ? lastState : node.activeState;
 
         [Serializable]
         public abstract class PropertyBase
