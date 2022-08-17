@@ -33,10 +33,9 @@ namespace OneHamsa.Dexterity.Visual
         public int overrideStateId = StateFunction.emptyStateId;
         // don't change this directly
         [NonSerialized]
-        public double stateChangeTime;
-        // don't change this directly
-        [NonSerialized]
-        public double currentTime;
+        public double timeSinceStateChange;
+
+        public double deltaTime => Core.instance.deltaTime;
 
         public event Action onEnabled;
         public event Action<int, int> onStateChanged;
@@ -46,7 +45,7 @@ namespace OneHamsa.Dexterity.Visual
         Dictionary<int, TransitionDelay> cachedDelays;
 
         protected bool stateDirty = true;
-        double nextStateChangeTime;
+        double pendingStateChangeTime;
         int pendingState = -1;
         #endregion Private Properties
 
@@ -71,14 +70,6 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Update()
         {
-            currentTime = 
-                #if UNITY_2020_1_OR_NEWER
-                Time.unscaledTimeAsDouble
-            #else
-                Time.unscaledTime
-            #endif
-            ;
-
             if (stateDirty)
             {
                 // someone marked this dirty, check for new state
@@ -91,23 +82,26 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    nextStateChangeTime = currentTime + GetExitingStateDelay(activeState);
+                    pendingStateChangeTime = GetExitingStateDelay(activeState);
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
                 stateDirty = false;
             }
             // change to next state (delay is accounted for already)
-            if (nextStateChangeTime <= currentTime && pendingState != -1)
+            if (pendingStateChangeTime <= 0 && pendingState != -1)
             {
                 var oldState = activeState; 
 
                 activeState = pendingState;
                 pendingState = -1;
-                stateChangeTime = currentTime;
+                timeSinceStateChange = 0;
 
                 onStateChanged?.Invoke(oldState, activeState);
             }
+
+            pendingStateChangeTime = Math.Max(0d, pendingStateChangeTime - deltaTime);
+            timeSinceStateChange += deltaTime;
         }
 
         #endregion Unity Events

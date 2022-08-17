@@ -87,11 +87,11 @@ namespace OneHamsa.Dexterity.Visual
         private int lastState = StateFunction.emptyStateId;
 
         protected override int[] states => cachedStates;
-        protected override double currentTime => node.currentTime;
-        protected override double stateChangeTime => node.stateChangeTime;
+        protected override double deltaTime => node.deltaTime;
+        protected override double timeSinceStateChange => node.timeSinceStateChange;
 
         protected bool isTransitionDelayed =>
-            currentTime - stateChangeTime < GetStateDelay(lastState, node.activeState);
+            timeSinceStateChange < GetStateDelay(lastState, node.activeState);
 
         public override int activeState => isTransitionDelayed ? lastState : node.activeState;
 

@@ -44,6 +44,9 @@ namespace OneHamsa.Dexterity.Visual
             Uninitialize();
         }
 
+        public double deltaTime => Time.unscaledDeltaTime * timeScale;
+        public double timeScale = 1d;
+        
         public ListSet<string> fieldNames = new ListSet<string>(32);
         public ListSet<string> stateNames = new ListSet<string>(32);
 
