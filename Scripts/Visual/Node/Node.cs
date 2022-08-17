@@ -503,7 +503,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             else
             {
-                Debug.LogWarning($"clearing undefined override {name}");
+                // don't warn - this allows to call it to verify the override does not exist.
             }
         }
         
