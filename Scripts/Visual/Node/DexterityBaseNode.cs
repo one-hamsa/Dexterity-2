@@ -184,8 +184,28 @@ namespace OneHamsa.Dexterity.Visual
             cachedDelays.TryGetValue(state, out var value);
             return value?.waitFor ?? 0f;
         }
+        
+        /// <summary>
+        /// makes sure this node's state is updated and propagated to its modifiers
+        /// </summary>
+        public void UpdateState()
+        {
+            // make sure state is up-to-date
+            Update();
 
-        public void UpdateStateImmediately()
+            foreach (var modifier in Modifier.GetModifiers(this))
+            {
+                // force updating now
+                modifier.ForceTransitionUpdate();
+                // and actually call update to avoid one frame lag
+                modifier.Update();
+            }
+        }
+
+        /// <summary>
+        /// jumps to the end transition state for all modifiers, according to the current state
+        /// </summary>
+        public void JumpToState()
         {
             // make sure state is up-to-date
             Update();
@@ -194,17 +214,19 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // create a new transition state that is already pointing to active state
                 modifier.InitializeTransitionState();
-                // force updating now
-                modifier.ForceTransitionUpdate();
-                // and actually call update to avoid one frame lag
-                modifier.Update();
             }
+            
+            UpdateState();
         }
 
-        public void UpdateStateImmediately(int state)
+        /// <summary>
+        /// jumps to the end transition state for all modifiers, according to the given state
+        /// </summary>
+        /// <param name="state"></param>
+        public void JumpToState(int state)
         {
             SetStateOverride(state);
-            UpdateStateImmediately();
+            JumpToState();
             ClearStateOverride();
         }
         
