@@ -377,6 +377,8 @@ namespace OneHamsa.Dexterity.Visual
         public static IEnumerator AnimateStateTransition(DexterityBaseNode node, IEnumerable<Modifier> modifiers, 
         string state, float speed = 1f, Action onEnd = null)
         {
+            modifiers = modifiers.ToList();
+            
             // make sure it's not called with non-animatable modifiers
             if (modifiers.Any(m => !m.animatableInEditor))
             {
@@ -394,7 +396,9 @@ namespace OneHamsa.Dexterity.Visual
             if (Core.instance != null)
                 Core.Destroy();
             Core.Create(DexteritySettingsProvider.settings);
-            Core.instance.timeScale = speed;
+            
+            // timeScale doesn't behave nicely in editor
+            //Core.instance.timeScale = speed;
 
             // setup
             Core.instance.Register(node);
@@ -430,6 +434,13 @@ namespace OneHamsa.Dexterity.Visual
             do {
                 // immitate a frame
                 yield return null;
+                
+                // stop if something went wrong
+                if (Core.instance == null)
+                    break;
+                
+                node.deltaTime = (EditorApplication.timeSinceStartup - startTime) * speed;
+                node.timeSinceStateChange += node.deltaTime;
 
                 // transition
                 anyChanged = false;

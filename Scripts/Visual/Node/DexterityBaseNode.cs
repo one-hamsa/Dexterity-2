@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
         [NonSerialized]
         public double timeSinceStateChange;
 
-        public double deltaTime => Core.instance.deltaTime;
+        public double deltaTime;
 
         public event Action onEnabled;
         public event Action<int, int> onStateChanged;
@@ -70,6 +70,9 @@ namespace OneHamsa.Dexterity.Visual
 
         protected virtual void Update()
         {
+            // doing this here gives the editor a chance to intervene
+            deltaTime = Core.instance.deltaTime;
+            
             if (stateDirty)
             {
                 // someone marked this dirty, check for new state
