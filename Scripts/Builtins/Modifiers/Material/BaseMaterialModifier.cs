@@ -104,20 +104,34 @@ namespace OneHamsa.Dexterity.Visual
             #if UNITY_EDITOR
             if (!Application.isPlaying)
             {
-                // register for some events
-                UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
-                UnityEditor.Selection.selectionChanged += OnSelectionChanged;
-                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-                UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-                UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
-                UnityEditor.Compilation.CompilationPipeline.compilationStarted += OnCompilationStarted;
+                var selected = UnityEditor.Selection.activeGameObject;
+                var node = this.node;
+                
+                if (selected == gameObject || (node != null && selected == node.gameObject))
+                {
+                    // register for some events
+                    UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
+                    UnityEditor.Selection.selectionChanged += OnSelectionChanged;
+                    UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                    UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+                    UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
+                    UnityEditor.Compilation.CompilationPipeline.compilationStarted += OnCompilationStarted;
 
-                return;
+                    return;
+                }
             }
             #endif
 
             if (targetMaterial != null && shouldDestroyTargetMaterial)
             {
+                #if UNITY_EDITOR
+                if (!Application.isPlaying)
+                {
+                    CleanupEditor();
+                    return;
+                }
+                #endif
+                
                 Destroy(targetMaterial);
                 targetMaterial = null;
             }
@@ -127,20 +141,20 @@ namespace OneHamsa.Dexterity.Visual
         private void OnSelectionChanged()
         {
             if (UnityEditor.Selection.activeGameObject != gameObject)
-                Cleanup();
+                CleanupEditor();
         }
-        private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange) => Cleanup();
-        private void OnCompilationStarted(object context) => Cleanup();
+        private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange) => CleanupEditor();
+        private void OnCompilationStarted(object context) => CleanupEditor();
 
-        void Cleanup()
+        void CleanupEditor()
         {
             UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
             UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
             
-            actions.setSharedMaterial(component, originalMaterial);
             if (targetMaterial != null)
             {
+                actions.setSharedMaterial(component, originalMaterial);
                 DestroyImmediate(targetMaterial);
                 targetMaterial = null;
             }
