@@ -412,7 +412,6 @@ namespace OneHamsa.Dexterity.Visual
             if (node.activeState == -1)
                 node.activeState = Core.instance.GetStateID(state);
 
-            var startTime = EditorApplication.timeSinceStartup;
             node.timeSinceStateChange = 0f;
 
             foreach (var modifier in modifiers) 
@@ -431,6 +430,7 @@ namespace OneHamsa.Dexterity.Visual
 
             bool anyChanged;
 
+            var lastUpdate = EditorApplication.timeSinceStartup;
             do {
                 // immitate a frame
                 yield return null;
@@ -439,8 +439,9 @@ namespace OneHamsa.Dexterity.Visual
                 if (Core.instance == null)
                     break;
                 
-                node.deltaTime = (EditorApplication.timeSinceStartup - startTime) * speed;
+                node.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
                 node.timeSinceStateChange += node.deltaTime;
+                lastUpdate = EditorApplication.timeSinceStartup;
 
                 // transition
                 anyChanged = false;
