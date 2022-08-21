@@ -172,7 +172,7 @@ namespace OneHamsa.Dexterity.Visual
                     stateNamePf.style.flexGrow = 1;
                     rest.Add(stateNamePf);
                     
-                    rest.EnableInClassList("selected", Application.isPlaying 
+                    rest.EnableInClassList("selected", step.initialized 
                         && stepList.lastEvaluationResult == step.GetResultStateID());
                     break;
 
@@ -183,7 +183,7 @@ namespace OneHamsa.Dexterity.Visual
                     refPf.style.flexGrow = 1;
                     rest.Add(refPf);
                     
-                    rest.EnableInClassList("selected", Application.isPlaying 
+                    rest.EnableInClassList("selected", step.initialized
                         && step.reference_stateFunction.lastEvaluationResult != StateFunction.emptyStateId);
                     break;
             }

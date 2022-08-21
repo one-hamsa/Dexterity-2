@@ -28,6 +28,10 @@ namespace OneHamsa.Dexterity.Visual
             public int parent = -1;
             public Type type;
             
+            public bool initialized => type == Type.Reference 
+                                       || (type == Type.Condition && condition_fieldId != -1) 
+                                       || (type == Type.Result && result_stateId != -1);
+            
             // Condition
             [Field]
             public string condition_fieldName;
