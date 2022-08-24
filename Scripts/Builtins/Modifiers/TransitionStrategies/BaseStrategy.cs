@@ -13,15 +13,14 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         protected IDictionary<int, float> result = new Dictionary<int, float>();
         protected IDictionary<int, float> nextResult = new Dictionary<int, float>();
-
-        // before .NET 5.0, modifications will break the dictionary enumerator, so this hack is required.
-        // see https://github.com/dotnet/runtime/pull/34667
-        private List<(int key, float value)> changeList = new List<(int key, float value)>();
+        protected int[] states;
 
         private bool jumpedToFinalState;
 
-        public virtual IDictionary<int, float> Initialize(int[] states, int currentState) 
+        public virtual IDictionary<int, float> Initialize(int[] states, int currentState)
         {
+            this.states = states;
+            
             activityThreshold = Core.instance.settings.GetGlobalFloat("activityThreshold", .999f);
             jumpedToFinalState = false;
 
@@ -45,19 +44,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             prevState.TryGetValue(currentState, out var prevValue);
             if (checkActivityThreshold && prevValue > activityThreshold)
             {
-                // jump to final state
                 changed = !jumpedToFinalState;
                 jumpedToFinalState = true;
 
-                changeList.Clear();
-                foreach (var state in prevState.Keys) {
-                    if (state == currentState)
-                        changeList.Add((state, 1));
-                    else
-                        changeList.Add((state, 0));
-                }
-                foreach (var (key, value) in changeList)
-                    nextResult[key] = value;
+                // jump to state goal
+                foreach (var state in states) 
+                    nextResult[state] = state == currentState ? 1 : 0;
 
                 // swap pointers
                 (result, nextResult) = (nextResult, result);
@@ -81,11 +73,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 total += current;
             }
             // normalize (in case numbers != 1)
-            changeList.Clear();
-            foreach (var kv in nextResult)
-                changeList.Add((kv.Key, Mathf.InverseLerp(0, total, kv.Value)));
-            foreach (var (key, value) in changeList)
-                    nextResult[key] = value;
+            foreach (var state in states)
+                nextResult[state] = Mathf.InverseLerp(0, total, nextResult[state]);
 
             // swap pointers
             (result, nextResult) = (nextResult, result);
