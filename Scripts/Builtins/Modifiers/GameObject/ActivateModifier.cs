@@ -27,7 +27,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             while (true)
             {
-                if (node.isActiveAndEnabled && enabled)
+                if (this != null && node != null && node.isActiveAndEnabled && enabled)
                 {
                     base.Update();
 
@@ -64,8 +64,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // cleanup now
             base.OnDisable();
             
-            if (coro != null)
-                StopCoroutine(coro);
+            if (coro != null && Manager.instance != null)
+                Manager.instance.StopCoroutine(coro);
             
             base.OnDestroy();
         }
