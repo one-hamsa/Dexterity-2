@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override void HandleNodeEnabled()
         {
             base.HandleNodeEnabled();
-            coro ??= node.StartCoroutine(UpdateAlwaysCoro());
+            coro ??= Manager.instance.StartCoroutine(UpdateAlwaysCoro());
         }
 
         protected override void OnDisable()
