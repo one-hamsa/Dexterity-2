@@ -27,10 +27,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             while (true)
             {
-                base.Update();
+                if (node.isActiveAndEnabled && isActiveAndEnabled)
+                {
+                    base.Update();
 
-                if (transitionChanged)
-                    gameObject.SetActive(((Property)GetProperty(node.activeState)).active);
+                    if (transitionChanged)
+                        gameObject.SetActive(((Property)GetProperty(node.activeState)).active);
+                }
 
                 yield return waitForEndOfFrame;
             }
@@ -60,6 +63,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             // cleanup now
             base.OnDisable();
+            
+            if (coro != null)
+                StopCoroutine(coro);
             
             base.OnDestroy();
         }
