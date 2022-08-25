@@ -27,7 +27,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             while (true)
             {
-                if (node.isActiveAndEnabled && isActiveAndEnabled)
+                if (node.isActiveAndEnabled && enabled)
                 {
                     base.Update();
 
