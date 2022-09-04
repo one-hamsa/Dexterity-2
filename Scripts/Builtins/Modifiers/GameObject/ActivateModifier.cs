@@ -6,7 +6,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class ActivateModifier : Modifier
     {
-        private static WaitForEndOfFrame waitForEndOfFrame = new();
         private Coroutine coro;
         public override bool animatableInEditor => false;
 
@@ -35,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                         gameObject.SetActive(((Property)GetProperty(node.activeState)).active);
                 }
 
-                yield return waitForEndOfFrame;
+                yield return null;
             }
         }
 
