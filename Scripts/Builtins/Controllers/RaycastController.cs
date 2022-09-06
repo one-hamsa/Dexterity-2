@@ -81,8 +81,20 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public static void RemoveFilter(RaycastFilter filter)
         {
-            isRaycastReceiverIncluded.Remove(filter);
+	        if (!isRaycastReceiverIncluded.Remove(filter))
+		        Debug.LogWarning($"trying to remove a filter that is no longer registered: {filter}");
         }
+        
+        public static void ClearFilters()
+		{
+			if (isRaycastReceiverIncluded.Count > 0)
+			{
+				// log this, because if we got to clearing filters it means someone didn't clean up after themself...!
+				Debug.LogWarning($"clearing {isRaycastReceiverIncluded.Count} filters");
+				isRaycastReceiverIncluded.Clear();
+			}
+		}
+        
 
         private void OnEnable()
         {
