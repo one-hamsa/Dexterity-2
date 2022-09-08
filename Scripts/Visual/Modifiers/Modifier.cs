@@ -141,6 +141,7 @@ namespace OneHamsa.Dexterity.Visual
             CacheDelays();
 
             InitializeTransitionState();
+            Update();
         }
         
         private void CacheDelays()
