@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
             Uninitialize();
         }
 
-        public double deltaTime => Time.unscaledDeltaTime * timeScale;
+        public double deltaTime => Mathf.Min(Time.maximumDeltaTime, Time.unscaledDeltaTime) * timeScale;
         public double timeScale = 1d;
         
         public ListSet<string> fieldNames = new ListSet<string>(32);
