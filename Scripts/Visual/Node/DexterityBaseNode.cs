@@ -139,7 +139,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
             
-            activeState = initialStateId;
+            activeState = overrideStateId != StateFunction.emptyStateId ? GetState() : initialStateId;
 
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;

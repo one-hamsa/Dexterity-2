@@ -172,6 +172,10 @@ namespace OneHamsa.Dexterity.Visual
             RestartFields();
             // cache overrides to allow quick access internally
             CacheFieldOverrides();
+            
+            // last chance: if there are field overrides, reroute initial state
+            if (cachedOverrides.Count > 0)
+                activeState = GetState();
         }
 
         protected override void Uninitialize()
@@ -516,12 +520,6 @@ namespace OneHamsa.Dexterity.Visual
                 cachedOverrides[o.outputFieldDefinitionId] = o;
             }
             overridesDirtyIncrement++;
-        }
-
-        private void CacheStateOverride()
-        {
-            if (!string.IsNullOrEmpty(overrideState))
-                SetStateOverride(Core.instance.GetStateID(overrideState));
         }
 
         // update overrides when selected to allow setting overrides from editor
