@@ -23,5 +23,17 @@ namespace OneHamsa.Dexterity.Visual.Utilities {
 		internal static T GetOrAddComponent<T>(this Component c) where T : Component {
 			return GetOrAddComponent<T>(c.gameObject);
 		}
+        
+        internal static string GetPath(this GameObject go)
+        {
+            string name = go.name;
+            while (go.transform.parent != null)
+            {
+
+                go = go.transform.parent.gameObject;
+                name = go.name + "/" + name;
+            }
+            return name;
+        }
     }
 }

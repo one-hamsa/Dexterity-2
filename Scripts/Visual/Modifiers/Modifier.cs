@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -230,19 +231,24 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (node == null)
             {
-                Debug.LogError("Node is null", this);
+                Debug.LogError($"Node {node.gameObject.GetPath()} is null", this);
                 return false;
             }
 
             if (!node.enabled)
             {
-                Debug.LogError("Node is disabled", this);
+                // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
+                //. before it is == null, but also call OnEnable on child components. so here we are, not printing
+                //. this warning because unity. 
+                
+                // Debug.LogWarning($"Node {node.gameObject.GetPath()} is disabled, " +
+                //                  $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
                 return false;
             }
 
             if (transitionStrategy == null)
             {
-                Debug.LogError("No transition strategy assigned", this);
+                Debug.LogError($"Node {node.gameObject.GetPath()} has no transition strategy assigned", this);
                 return false;
             }
 
