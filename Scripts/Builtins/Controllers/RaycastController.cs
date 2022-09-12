@@ -11,11 +11,18 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public class RaycastController : MonoBehaviour, IRaycastController
 	{
+		public class PressAnywhereEvent
+		{
+			public bool propagate { get; private set; } = true;
+			public void StopPropagation() { propagate = false; }
+		}
+		
 		const float rayLength = 100f;
 		const int maxHits = 20;
 
         // Raycast Receiver filter
         private static List<RaycastFilter> isRaycastReceiverIncluded = new();
+        public static event Action<PressAnywhereEvent> onAnyPress;
 
 		public LayerMask layerMask = int.MaxValue;
 		public InputAction pressed;
@@ -107,8 +114,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			pressed.performed -= HandlePressed;
 		}
 
-		private void HandlePressed(InputAction.CallbackContext context) 
+		private void HandlePressed(InputAction.CallbackContext context)
 		{
+			if (onAnyPress != null)
+			{
+				var args = new PressAnywhereEvent();
+				onAnyPress.Invoke(args);
+				if (!args.propagate)
+					return;
+			}
+
 			pressStartFrame = Time.frameCount;
 			
 			lastControllerPressed = this;
