@@ -68,7 +68,9 @@ namespace OneHamsa.Dexterity.Visual
         {
         }
 
-        protected virtual void Update()
+        protected void Update() => UpdateInternal(ignoreDelays: false);
+
+        protected virtual void UpdateInternal(bool ignoreDelays)
         {
             // doing this here gives the editor a chance to intervene
             deltaTime = Core.instance.deltaTime;
@@ -85,7 +87,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    pendingStateChangeTime = GetExitingStateDelay(activeState);
+                    pendingStateChangeTime = ignoreDelays ? 0f : GetExitingStateDelay(activeState);
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
@@ -188,7 +190,7 @@ namespace OneHamsa.Dexterity.Visual
         public void UpdateState()
         {
             // make sure state is up-to-date
-            Update();
+            UpdateInternal(ignoreDelays: true);
 
             foreach (var modifier in Modifier.GetModifiers(this))
             {
@@ -205,7 +207,7 @@ namespace OneHamsa.Dexterity.Visual
         public void JumpToState()
         {
             // make sure state is up-to-date
-            Update();
+            UpdateInternal(ignoreDelays: true);
 
             foreach (var modifier in Modifier.GetModifiers(this))
             {

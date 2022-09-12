@@ -64,12 +64,12 @@ namespace OneHamsa.Dexterity.Visual
             return enumToStateId[GetEnumValueAsString()];
         }
 
-        protected override void Update()
+        protected override void UpdateInternal(bool ignoreDelays)
         {
             // since this type of node is using a data source, state should always be considered dirty
             stateDirty = true;
             
-            base.Update();
+            base.UpdateInternal(ignoreDelays);
         }
 
         protected override void OnValidate() {
