@@ -255,6 +255,14 @@ namespace OneHamsa.Dexterity.Visual
             return true;
         }
 
+        /// <summary>
+        /// jumps to current state (skips delays)
+        /// </summary>
+        public void JumpToState()
+        {
+            lastState = node.activeState;
+        }
+
         protected virtual void Reset() {
             if (this is ISupportValueFreeze supportValueFreeze) {
                 supportValueFreeze.FreezeValue();

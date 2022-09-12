@@ -185,7 +185,7 @@ namespace OneHamsa.Dexterity.Visual
         }
         
         /// <summary>
-        /// makes sure this node's state is updated and propagated to its modifiers
+        /// makes sure this node's state is updated and propagated to its modifiers (ignores node delays)
         /// </summary>
         public void UpdateState()
         {
@@ -196,13 +196,11 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // force updating now
                 modifier.ForceTransitionUpdate();
-                // and actually call update to avoid one frame lag
-                modifier.Update();
             }
         }
 
         /// <summary>
-        /// jumps to the end transition state for all modifiers, according to the current state
+        /// jumps to the end transition state for all modifiers, according to the current state (ignores node & modifier delays)
         /// </summary>
         public void JumpToState()
         {
@@ -213,6 +211,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 // create a new transition state that is already pointing to active state
                 modifier.InitializeTransitionState();
+                // ignore delays
+                modifier.JumpToState();
             }
             
             UpdateState();

@@ -73,7 +73,10 @@ namespace OneHamsa.Dexterity.Visual
         /// Force updating this modifier's transition (even if the transition function reports it's not needed)
         /// </summary>
         /// <param name="frames">How many frames should the update be forced for</param>
-        public void ForceTransitionUpdate(int frames = 1) => forceTransitionChangeFrames = frames;
+        public void ForceTransitionUpdate(int frames = 1)
+        {
+            forceTransitionChangeFrames = frames;
+            Update();
+        }
     }
-
 }
