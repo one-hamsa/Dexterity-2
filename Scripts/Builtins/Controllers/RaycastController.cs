@@ -116,6 +116,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
 		private void HandlePressed(InputAction.CallbackContext context)
 		{
+			lastControllerPressed = this;
+			foreach (var other in otherControllers)
+			{
+				other.HandleOtherPressed(this);
+			}
+			
 			if (onAnyPress != null)
 			{
 				var args = new PressAnywhereEvent();
@@ -125,12 +131,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			}
 
 			pressStartFrame = Time.frameCount;
-			
-			lastControllerPressed = this;
-			foreach (var other in otherControllers)
-			{
-				other.HandleOtherPressed(this);
-			}
 		}
 
 		private void HandleOtherPressed(RaycastController controller) 
