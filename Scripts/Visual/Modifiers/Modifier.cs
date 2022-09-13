@@ -44,6 +44,7 @@ namespace OneHamsa.Dexterity.Visual
         [HideInInspector] public List<string> lastSeenStates = new();
 
         public DexterityBaseNode node => TryFindNode();
+        public float transitionProgress => transitionState[node.activeState];
 
         public virtual bool animatableInEditor => true;
 

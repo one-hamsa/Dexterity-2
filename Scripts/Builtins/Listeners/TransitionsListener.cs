@@ -8,6 +8,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 		[SerializeField]
 		protected Node node;
 
+		[Range(0, 1)] 
+		public float transitionProgressToConsiderDone = .99f;
+
 		public bool transitioning { get; private set; }
 		public event Action<int, int> onTransitionsStart;
 		public event Action<int> onTransitionsEnd;
@@ -44,15 +47,24 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 			onTransitionsStart?.Invoke(oldValue, newValue);
 		}
 
-		void OnTransitionEnded(int activeState) {
+		private void Update()
+		{
+			if (!transitioning)
+				return;
+			
 			foreach (var modifier in Modifier.GetModifiers(node)) {
-				if (modifier.IsChanged())
+				if (modifier.IsChanged() && modifier.transitionProgress < transitionProgressToConsiderDone)
 					return; // still not all done
 			}
 
 			// all transitions done
 			transitioning = false;
-			onTransitionsEnd?.Invoke(activeState);
+			onTransitionsEnd?.Invoke(node.activeState);
+		}
+
+		void OnTransitionEnded(int activeState)
+		{
+			Update();
 		}
 	}
 }
