@@ -122,6 +122,11 @@ namespace OneHamsa.Dexterity.Visual
                     // those properties are kept serialized in order to maintain history, no biggie
                     continue;
                 }
+                if (propertiesCache.ContainsKey(id))
+                {
+                    Debug.LogError($"Duplicate property for state {prop.state} in Modifier", this);
+                    continue;
+                }
                 propertiesCache.Add(id, prop);
             }
         }
