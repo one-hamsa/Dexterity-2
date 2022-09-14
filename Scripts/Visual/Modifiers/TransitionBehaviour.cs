@@ -65,7 +65,8 @@ namespace OneHamsa.Dexterity.Visual
                 transitionState = transitionStrategy.Initialize(states, activeState);
             } catch (ITransitionStrategy.TransitionInitializationException e) {
                 Debug.LogException(e, this);
-                enabled = false;
+                if (Application.isPlaying)
+                    enabled = false;
             }
         }
 
