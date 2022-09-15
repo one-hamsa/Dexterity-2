@@ -237,7 +237,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (node == null)
             {
-                Debug.LogError($"Node {node.gameObject.GetPath()} is null", this);
+                Debug.LogError($"Node is null", this);
                 return false;
             }
 
