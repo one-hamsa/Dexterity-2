@@ -105,10 +105,6 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void Awake()
         {
-            if (propertiesCache != null)
-                // this can be called manually by modifier managers that work even when node is inactive
-                return;
-            
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
