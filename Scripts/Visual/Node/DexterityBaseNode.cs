@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         // don't change this directly
         [NonSerialized]
         public double timeSinceStateChange;
-
+        [NonSerialized]
         public double deltaTime;
 
         public event Action onEnabled;

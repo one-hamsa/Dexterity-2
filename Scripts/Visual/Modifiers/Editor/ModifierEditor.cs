@@ -163,7 +163,7 @@ namespace OneHamsa.Dexterity.Visual
 
             serializedObject.ApplyModifiedProperties();
 
-            if (propertiesUpdated) {
+            if (propertiesUpdated && Application.isPlaying) {
                 foreach (var target in targets)
                     (target as Modifier).ForceTransitionUpdate();
             }

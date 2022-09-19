@@ -27,9 +27,30 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUI.LabelField(position, label.text, "Dexterity Settings not found.");
                 return;
             }
+            
+            var attr = (StateAttribute)attribute;
+            
+            var obj = property.serializedObject.targetObject;
+            if (!string.IsNullOrEmpty(attr.objectFieldName))
+            {
+                var path = attr.objectFieldName;
+                var dotPos = property.propertyPath.LastIndexOf('.');
+                if (dotPos != -1)
+                {
+                    var parentPath = property.propertyPath.Substring(0, dotPos);
+                    path = $"{parentPath}.{path}";
+                }
+                
+                obj = property.serializedObject.FindProperty(path).objectReferenceValue;
+                if (obj == null)
+                {
+                    EditorGUI.LabelField(position, label.text,
+                            $"Object not found for [State] attribute");
+                    return;
+                }
+            }
 
-            var statesSet = Utils.GetStatesFromObject(property.serializedObject.targetObject);
-
+            var statesSet = Utils.GetStatesFromObject(obj);
             if (statesSet == null)
             {
                 EditorGUI.LabelField(position, label.text,
@@ -40,8 +61,7 @@ namespace OneHamsa.Dexterity.Visual
             states.Clear();
             stateNames.Clear();
 
-            var allowEmpty = (attribute as StateAttribute).allowEmpty;
-            if (allowEmpty)
+            if (attr.allowEmpty)
             {
                 states.Add(null);
                 stateNames.Add("(None)");

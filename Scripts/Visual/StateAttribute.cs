@@ -5,9 +5,11 @@ namespace OneHamsa.Dexterity.Visual
     public class StateAttribute : PropertyAttribute
     {
         public readonly bool allowEmpty;
-        public StateAttribute(bool allowEmpty = false)
+        public readonly string objectFieldName;
+        public StateAttribute(bool allowEmpty = false, string objectFieldName = null)
         {
             this.allowEmpty = allowEmpty;
+            this.objectFieldName = objectFieldName;
         }
     }
 }
