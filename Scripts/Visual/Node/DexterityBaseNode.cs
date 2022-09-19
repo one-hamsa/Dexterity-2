@@ -224,6 +224,11 @@ namespace OneHamsa.Dexterity.Visual
         /// <param name="state"></param>
         public void JumpToState(int state)
         {
+            if (state == StateFunction.emptyStateId)
+            {
+                Debug.LogError($"JumpToState: state == {StateFunction.emptyStateId}", this);
+                return;
+            }
             SetStateOverride(state);
             JumpToState();
             ClearStateOverride();
