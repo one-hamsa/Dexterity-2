@@ -33,7 +33,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             if (!foundState)
-                throw new ITransitionStrategy.TransitionInitializationException($"did not find state {currentState} in states");
+                throw new ITransitionStrategy.TransitionInitializationException($"did not find state " +
+                    $"{currentState} ({Core.instance.GetStateAsString(currentState)}) in states");
             
             return result;
         }

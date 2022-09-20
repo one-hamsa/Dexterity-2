@@ -201,18 +201,14 @@ namespace OneHamsa.Dexterity.Visual
             base.Uninitialize();
         }
 
-        private IEnumerable<int> GetFieldIDs()
+        public IEnumerable<int> GetFieldIDs()
         {
             foreach (var name in GetFieldNames())
             {
                 yield return Core.instance.GetFieldID(name);
             }
         }
-        private IEnumerable<int> GetStateIDs()
-        {
-            foreach (var stateName in GetStateNames())
-                yield return Core.instance.GetStateID(stateName);
-        }
+        
         public override IEnumerable<string> GetStateNames() {
             namesSet.Clear();
             

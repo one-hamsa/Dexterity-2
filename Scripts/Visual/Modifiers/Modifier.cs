@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
@@ -135,11 +136,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             HandleStateChange(node.activeState, node.activeState);
 
-            cachedStates = new int[propertiesCache.Count];
-            var keys = propertiesCache.Keys.GetEnumerator();
-            var i = 0;
-            while (keys.MoveNext())
-                states[i++] = keys.Current;
+            cachedStates = node.GetStateIDs().ToArray();
 
             CacheDelays();
 

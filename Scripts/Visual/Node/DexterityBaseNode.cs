@@ -151,7 +151,7 @@ namespace OneHamsa.Dexterity.Visual
         {
         }
 
-        private IEnumerable<int> GetStateIDs()
+        public IEnumerable<int> GetStateIDs()
         {
             foreach (var stateName in GetStateNames())
                 yield return Core.instance.GetStateID(stateName);
@@ -229,6 +229,12 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogError($"JumpToState: state == {StateFunction.emptyStateId}", this);
                 return;
             }
+            if (!GetStateIDs().Contains(state))
+            {
+                Debug.LogError($"JumpToState: state {state} is not part of node's states", this);
+                return;
+            }
+            
             SetStateOverride(state);
             JumpToState();
             ClearStateOverride();
