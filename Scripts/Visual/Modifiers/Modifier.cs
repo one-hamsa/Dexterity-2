@@ -45,7 +45,8 @@ namespace OneHamsa.Dexterity.Visual
         [HideInInspector] public List<string> lastSeenStates = new();
 
         public DexterityBaseNode node => TryFindNode();
-        public float transitionProgress => transitionState[node.activeState];
+        public float transitionProgress => GetTransitionProgress(node.activeState);
+        public float GetTransitionProgress(int state) => transitionState[state];
 
         public virtual bool animatableInEditor => true;
 
@@ -63,7 +64,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (!propertiesCache.ContainsKey(stateId))
                 {
-                    Debug.LogWarning($"property for state = {Core.instance.GetStateAsString(stateId)} not found", this);
+                    Debug.LogWarning($"property for state = {Core.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
+                                     $" (probably states were added to node {node.name} without updating modifier)", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)
                         return p;

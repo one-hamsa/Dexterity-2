@@ -281,10 +281,21 @@ namespace OneHamsa.Dexterity.Visual
                 // name 
                 var origColor = GUI.contentColor;
                 var suffix = "";
-                if (Application.isPlaying && modifier.activeState == Core.instance.GetStateID(propState))
+                if (Application.isPlaying)
                 {
-                    GUI.contentColor = Color.green;
-                    suffix = " (current)";
+                    var stateId = Core.instance.GetStateID(propState);
+                    if (stateId != StateFunction.emptyStateId)
+                    {
+                        if (modifier.activeState == stateId)
+                        {
+                            GUI.contentColor = Color.green;
+                            suffix = $" (current, {Mathf.RoundToInt(modifier.transitionProgress * 100)}%)";
+                        }
+                        else
+                        {
+                            suffix = $" ({Mathf.RoundToInt(modifier.GetTransitionProgress(stateId) * 100)}%)";
+                        }
+                    }
                 }
 
                 void UtilityButtons()
