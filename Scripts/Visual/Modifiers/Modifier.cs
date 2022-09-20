@@ -48,6 +48,8 @@ namespace OneHamsa.Dexterity.Visual
         public float transitionProgress => GetTransitionProgress(node.activeState);
         public float GetTransitionProgress(int state)
         {
+            if (transitionState == null)
+                return default;
             transitionState.TryGetValue(state, out var result);
             return result;
         }
