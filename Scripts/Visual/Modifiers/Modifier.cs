@@ -46,7 +46,11 @@ namespace OneHamsa.Dexterity.Visual
 
         public DexterityBaseNode node => TryFindNode();
         public float transitionProgress => GetTransitionProgress(node.activeState);
-        public float GetTransitionProgress(int state) => transitionState[state];
+        public float GetTransitionProgress(int state)
+        {
+            transitionState.TryGetValue(state, out var result);
+            return result;
+        }
 
         public virtual bool animatableInEditor => true;
 
