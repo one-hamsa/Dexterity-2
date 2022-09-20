@@ -28,8 +28,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 		void OnEnable() {
 			transitioning = false;
 			node.onStateChanged += OnStateChanged;
+			
+			var anyTransitioning = false;
 			foreach (var modifier in Modifier.GetModifiers(node))
+			{
 				modifier.onTransitionEnded += OnTransitionEnded;
+				if (modifier.IsChanged())
+					anyTransitioning = true;
+			}
+			
+			if (anyTransitioning)
+				OnStateChanged(StateFunction.emptyStateId, node.activeState);
 		}
 
 		void OnDisable() {
