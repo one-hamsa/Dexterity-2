@@ -428,9 +428,15 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var modifier in modifiers)
                 modifier.Awake();
 
-            // if it's the first run (didn't run an editor transition before), reset to same state (won't show animation)
-            if (node.activeState == -1)
-                node.activeState = Core.instance.GetStateID(state);
+            if (
+                // it's the first run (didn't run an editor transition before)
+                node.activeState == StateFunction.emptyStateId
+                // activeState might be invalid at that point
+                || !node.GetStateIDs().Contains(node.activeState))
+            {
+                // reset to initial state 
+                node.activeState = Core.instance.GetStateID(node.initialState);
+            }
 
             node.timeSinceStateChange = 0f;
 
