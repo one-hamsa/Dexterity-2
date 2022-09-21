@@ -5,10 +5,10 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Visual
 {
     [AddComponentMenu("Dexterity/Dexterity Manager")]
-    [DefaultExecutionOrder(Manager.managerExecutionPriority)]
+    [DefaultExecutionOrder(Manager.graphExecutionPriority)]
     public class Manager : MonoBehaviour
     {
-        internal const int managerExecutionPriority = -20;
+        internal const int graphExecutionPriority = -20;
         internal const int nodeExecutionPriority = -15;
         internal const int modifierExecutionPriority = -10;
 

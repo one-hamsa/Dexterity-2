@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Visual
     //. nodes (here) = BaseFields,
     //. edges (here) = UpstreamFields (dependencies).
     //. Don't confuse the nodes mentioned here with Dexterity.Visual.Node.
+    [DefaultExecutionOrder(Manager.graphExecutionPriority)]
     public class Graph : MonoBehaviour
     {
         public const int throttleOperationsPerFrame = 3000;
@@ -33,6 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         
         public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } = new();
 
+        public event Action onGraphUpdated;
         public event Action<int> onGraphColorUpdated;
 
         /// <summary>
@@ -214,6 +216,9 @@ namespace OneHamsa.Dexterity.Visual
 
                 // invoke general update
                 RefreshNodeValues();
+                
+                onGraphUpdated?.Invoke();
+
             }
             finally
             {
