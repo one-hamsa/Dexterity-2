@@ -32,21 +32,25 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private int GetValueBeforeNegation() {
             switch (takeValueWhen) {
                 case TakeValueWhen.AnyEqualsTrue:
-                    foreach (var field in outputFields) {
+                    foreach (var field in outputFields)
+                    {
+                        if (field.node == null || !field.node.isActiveAndEnabled)
+                            continue;
+                        
                         if (field.GetBooleanValue())
                             return 1;
                     }
                     return 0;
                 case TakeValueWhen.AnyEqualsFalse:
                     foreach (var field in outputFields) {
-                        if (field.GetBooleanValue())
+                        if (field.node != null && field.node.isActiveAndEnabled && field.GetBooleanValue())
                             return 0;
                     }
                     return 1;
                 case TakeValueWhen.AllEqual:
                     int? prevValue = null;
                     foreach (var field in outputFields) {
-                        var value = field.GetValue();
+                        var value = field.node == null || !field.node.isActiveAndEnabled ? 0 : field.GetValue();
                         if (prevValue.HasValue && prevValue.Value != value)
                             return 0;
 
