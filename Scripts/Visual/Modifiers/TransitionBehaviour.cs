@@ -61,6 +61,9 @@ namespace OneHamsa.Dexterity.Visual
 
         public void InitializeTransitionState()
         {
+            // create default if doesn't exist
+            transitionStrategy ??= Core.instance.settings.CreateDefaultTransitionStrategy();
+
             try {
                 transitionState = transitionStrategy.Initialize(states, activeState);
             } catch (ITransitionStrategy.TransitionInitializationException e) {

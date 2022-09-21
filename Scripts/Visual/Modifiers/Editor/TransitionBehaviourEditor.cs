@@ -97,25 +97,10 @@ namespace OneHamsa.Dexterity.Visual
                 strategyProp.managedReferenceValue = Activator.CreateInstance(type);
             } else if (string.IsNullOrEmpty(strategyProp.managedReferenceFullTypename) 
                 && DexteritySettingsProvider.settings.defaultTransitionStrategy != null) {
-                strategyProp.managedReferenceValue = DeepClone(DexteritySettingsProvider.settings.defaultTransitionStrategy);
+                strategyProp.managedReferenceValue = DexteritySettingsProvider.settings.CreateDefaultTransitionStrategy();
             }
 
             return !string.IsNullOrEmpty(className);
-        }
-
-        // Return a deep clone of an object of type T.
-        private static T DeepClone<T>(T obj)
-        {
-            using (MemoryStream memory_stream = new MemoryStream())
-            {
-                // Serialize the object into the memory stream.
-                BinaryFormatter formatter = new BinaryFormatter();
-                formatter.Serialize(memory_stream, obj);
-
-                // Rewind the stream and use it to create a new object.
-                memory_stream.Position = 0;
-                return (T)formatter.Deserialize(memory_stream);
-            }
         }
     }
 }

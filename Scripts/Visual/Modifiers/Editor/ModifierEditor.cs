@@ -19,12 +19,24 @@ namespace OneHamsa.Dexterity.Visual
         private EditorCoroutine coro;
         private List<SerializedProperty> customProps = new();
         private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
+        private bool hasUpdateOverride;
 
         private bool propertiesUpdated { get; set; } 
 
         private void OnEnable() 
         {
-            modifier = target as Modifier;
+            modifier = (Modifier)target;
+            
+            var myUpdateType = modifier.GetType() 
+                .GetMethod(nameof(Modifier.Update), 
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+                .DeclaringType;
+            
+            var baseUpdateType = typeof(Modifier).GetMethod(nameof(Modifier.Update), 
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+                .DeclaringType;
+            
+            hasUpdateOverride = myUpdateType != baseUpdateType;
         }
 
         public override void OnInspectorGUI()
@@ -92,8 +104,12 @@ namespace OneHamsa.Dexterity.Visual
                         // show later
                         break;
                     case nameof(Modifier.transitionStrategy):
-                        var p = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
-                        strategyExists = ShowStrategy(target, p);
+                        if (hasUpdateOverride)
+                        {
+                            var p = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
+                            strategyExists = ShowStrategy(target, p);
+                        }
+
                         break;
 
                     default:
@@ -144,15 +160,8 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.HelpBox("Node has no states", MessageType.Error);
             }
-            if (!strategyExists)
+            if (!strategyExists && hasUpdateOverride)
             {
-                var strategyProp = serializedObject.FindProperty(nameof(Modifier.transitionStrategy));
-                var className = Utils.GetClassName(strategyProp);
-                var types = TypeCache.GetTypesDerivedFrom<ITransitionStrategy>();
-                var typesNames = types
-                    .Select(t => t.ToString())
-                    .ToArray();
-
                 EditorGUILayout.HelpBox("Must select Transition Strategy", MessageType.Error);
             }
             

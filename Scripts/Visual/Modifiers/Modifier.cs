@@ -253,12 +253,6 @@ namespace OneHamsa.Dexterity.Visual
                 return false;
             }
 
-            if (transitionStrategy == null)
-            {
-                Debug.LogError($"Node {node.gameObject.GetPath()} has no transition strategy assigned", this);
-                return false;
-            }
-
             return true;
         }
 
