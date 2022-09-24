@@ -87,12 +87,17 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    pendingStateChangeTime = ignoreDelays ? 0f : GetExitingStateDelay(activeState);
+                    pendingStateChangeTime = GetExitingStateDelay(activeState);
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
+                
                 stateDirty = false;
             }
+            
+            if (ignoreDelays)
+                pendingStateChangeTime = 0f; 
+            
             // change to next state (delay is accounted for already)
             if (pendingStateChangeTime <= 0 && pendingState != -1)
             {
@@ -189,6 +194,8 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         public void UpdateState()
         {
+            stateDirty = true;
+            
             // make sure state is up-to-date
             UpdateInternal(ignoreDelays: true);
 

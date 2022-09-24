@@ -256,9 +256,17 @@ namespace OneHamsa.Dexterity.Visual
                 // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
                 //. before it is == null, but also call OnEnable on child components. so here we are, not printing
                 //. this warning because unity. 
-                
-                // Debug.LogWarning($"Node {node.gameObject.GetPath()} is disabled, " +
-                //                  $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
+
+                try
+                {
+                    Debug.LogWarning($"Node {node.gameObject.GetPath()} is disabled, " +
+                                     $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
+
                 return false;
             }
 
