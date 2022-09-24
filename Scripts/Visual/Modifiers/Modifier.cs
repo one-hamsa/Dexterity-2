@@ -218,6 +218,15 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        public override void Update()
+        {
+            // wait for node to be enabled
+            if (!node.isActiveAndEnabled)
+                return;
+            
+            base.Update();
+        }
+
         DexterityBaseNode TryFindNode()
         {
             DexterityBaseNode current = _node;
@@ -242,7 +251,7 @@ namespace OneHamsa.Dexterity.Visual
                 return false;
             }
 
-            if (!node.enabled)
+            if (!node.isActiveAndEnabled)
             {
                 // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
                 //. before it is == null, but also call OnEnable on child components. so here we are, not printing
