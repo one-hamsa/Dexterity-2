@@ -20,9 +20,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public override IDictionary<int, float> Initialize(int[] states, int currentState)
         {
             definition.Initialize();
-            lastMatrixRow = definition.GetRow(lastState, currentState);
-            lastEasingCurve = lastMatrixRow.easingCurve;
-            lastTotalTransitionTime = lastMatrixRow.time;
+            var initialRow = definition.GetRow(lastState, currentState);
+            lastEasingCurve = initialRow.easingCurve;
+            lastTotalTransitionTime = initialRow.time;
             lastState = currentState;
 
             foreach (var state in states)
@@ -57,10 +57,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     {
                         transitionStartValues[kv.Key] = kv.Value;
                     }
-
-                    lastMatrixRow = newRow;
-                    lastState = currentState;
                 }
+
+                lastMatrixRow = newRow;
+                lastState = currentState;
             }
             // manually progress clock
             timeSinceRowChange += deltaTime;
