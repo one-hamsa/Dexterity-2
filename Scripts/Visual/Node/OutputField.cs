@@ -64,6 +64,8 @@ namespace OneHamsa.Dexterity.Visual
             /// </summary>
             public event Action<OutputField, string, string> onEnumValueChanged;
 
+            private bool registered;
+
             protected OutputOverride fieldOverride
             {
                 get 
@@ -84,11 +86,12 @@ namespace OneHamsa.Dexterity.Visual
                 // save reference to node
                 node = context;
                 originalNodeName = node.name;
-                // register this field in manager to get updates from graph
-                Manager.instance.RegisterField(this);
                 
                 node.onEnabled += OnNodeEnabled;
                 node.onDisabled += OnNodeDisabled;
+                
+                if (node.isActiveAndEnabled)
+                    OnNodeEnabled();
             }
 
             public override void Finalize(Node context)
@@ -97,8 +100,10 @@ namespace OneHamsa.Dexterity.Visual
 
                 // notify that the output field's value is no longer used
                 InvokeEvents(cachedValue, defaultFieldValue);
-                // unregister this field from manager
-                Manager.instance?.UnregisterField(this);
+                
+                if (Manager.instance != null && registered)
+                    // unregister this field from manager
+                    Manager.instance.UnregisterField(this);
 
                 if (node != null)
                 {
@@ -109,6 +114,13 @@ namespace OneHamsa.Dexterity.Visual
 
             private void OnNodeEnabled()
             {
+                if (!registered)
+                {
+                    // register this field in manager to get updates from graph
+                    Manager.instance.RegisterField(this);
+                    registered = true;
+                }
+
                 // if the node is enabled, we might need to update the value
                 CacheValue();
             }

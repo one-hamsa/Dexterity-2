@@ -42,13 +42,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             switch (takeValueWhen)
             {
                 case TakeValueWhen.AnyEqualsTrue:
-                    foreach (var child in children) {
+                    foreach (var child in children)
+                    {
+                        if (child == null)
+                            continue;
                         if (child.GetOutputField(fieldId).GetBooleanValue())
                             return 1;
                     }
                     return 0;
                 case TakeValueWhen.AnyEqualsFalse:
-                    foreach (var child in children) {
+                    foreach (var child in children)
+                    {
+                        if (child == null)
+                            return 0;
                         if (!child.GetOutputField(fieldId).GetBooleanValue())
                             return 0;
                     }
@@ -56,7 +62,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 case TakeValueWhen.AllEqual:
                     int? prevValue = null;
                     foreach (var child in children) {
-                        var value = child.GetOutputField(fieldId).GetValue();
+                        var value = child == null ? 0 : child.GetOutputField(fieldId).GetValue();
                         if (prevValue.HasValue && prevValue.Value != value)
                             return 0;
 
