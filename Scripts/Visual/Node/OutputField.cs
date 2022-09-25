@@ -86,7 +86,11 @@ namespace OneHamsa.Dexterity.Visual
                 originalNodeName = node.name;
                 // register this field in manager to get updates from graph
                 Manager.instance.RegisterField(this);
+                
+                node.onEnabled += OnNodeEnabled;
+                node.onDisabled += OnNodeDisabled;
             }
+
             public override void Finalize(Node context)
             {
                 base.Finalize(context);
@@ -95,6 +99,24 @@ namespace OneHamsa.Dexterity.Visual
                 InvokeEvents(cachedValue, defaultFieldValue);
                 // unregister this field from manager
                 Manager.instance?.UnregisterField(this);
+
+                if (node != null)
+                {
+                    node.onEnabled -= OnNodeEnabled;
+                    node.onDisabled -= OnNodeDisabled;
+                }
+            }
+
+            private void OnNodeEnabled()
+            {
+                // if the node is enabled, we might need to update the value
+                CacheValue();
+            }
+            
+            private void OnNodeDisabled()
+            {
+                // if the node is disabled, we might need to reset the value
+                CacheValue();
             }
 
             /// <summary>
@@ -237,7 +259,12 @@ namespace OneHamsa.Dexterity.Visual
             public override void CacheValue()
             {
                 var originalValue = cachedValue;
-                if (!allUpstreamFieldsAreOutputOrProxy || areUpstreamOutputOrProxyFieldsDirty)
+                if (node == null || !node.isActiveAndEnabled)
+                {
+                    // if the node is disabled, it's always 0
+                    cachedValueWithoutOverride = 0;
+                }
+                else if (!allUpstreamFieldsAreOutputOrProxy || areUpstreamOutputOrProxyFieldsDirty)
                 {
                     // merge it with the other gate according to the field's type
                     if (definition.type == FieldType.Boolean)
@@ -279,7 +306,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // if there's an override, just use it
                 var outputOverride = fieldOverride;
-                if (outputOverride != null) 
+                if (outputOverride != null && node != null && node.isActiveAndEnabled) 
                 {
                     cachedValue = outputOverride.value;
                 }

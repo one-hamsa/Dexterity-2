@@ -38,6 +38,7 @@ namespace OneHamsa.Dexterity.Visual
         public double deltaTime;
 
         public event Action onEnabled;
+        public event Action onDisabled;
         public event Action<int, int> onStateChanged;
         #endregion Public Properties
 
@@ -62,6 +63,8 @@ namespace OneHamsa.Dexterity.Visual
         protected void OnDisable()
         {
             Uninitialize();
+
+            onDisabled?.Invoke();
         }
 
         protected virtual void OnDestroy()
