@@ -110,6 +110,7 @@ namespace OneHamsa.Dexterity.Visual
                     node.onEnabled -= OnNodeEnabled;
                     node.onDisabled -= OnNodeDisabled;
                 }
+                fieldsToNodes.Remove(this);
             }
 
             private void OnNodeEnabled()
@@ -118,6 +119,7 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     // register this field in manager to get updates from graph
                     Manager.instance.RegisterField(this);
+                    fieldsToNodes[this] = node;
                     registered = true;
                 }
 

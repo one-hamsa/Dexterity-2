@@ -360,11 +360,12 @@ namespace OneHamsa.Dexterity.Visual
         private void AuditField(BaseField field)
         {
             if (!(field is OutputField o))
+            {
                 nonOutputFields.Add(field);
+                fieldsToNodes[field] = this;
+            }
             else
                 outputFields.Add(o.definitionId, o);
-
-            fieldsToNodes[field] = this;
         }
         private void RemoveAudit(BaseField field)
         {
