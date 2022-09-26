@@ -265,6 +265,10 @@ namespace OneHamsa.Dexterity.Visual
                 while (dfs.Count > 0)
                 {
                     var current = dfs.Pop();
+                    
+                    // it's possible to get a dependency to a node that was removed
+                    if (!nodesForCurrentSortIteration.Contains(current.node))
+                        continue;
 
                     yield return current.node;
 
