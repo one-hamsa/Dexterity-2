@@ -29,6 +29,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             AddSupportedComponent<SpriteRenderer>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<TMP_Text>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<CanvasGroup>((c) => new Color(1f, 1f, 1f, c.alpha), (c, color) => c.alpha = color.a);
+            AddSupportedComponent<LineRenderer>((c) => new Color(1f, 1f, 1f, c.startColor.a), (c, color) =>
+            {
+                c.startColor = color;
+                c.endColor = color;
+            });
+
         }
 
         [Serializable]
