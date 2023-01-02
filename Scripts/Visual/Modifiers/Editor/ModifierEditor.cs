@@ -471,7 +471,12 @@ namespace OneHamsa.Dexterity.Visual
 
                 // transition
                 anyChanged = false;
-                foreach (var modifier in modifiers) {
+                foreach (var modifier in modifiers)
+                {
+                    // guard for async changes that might result in reference loss
+                    if (modifier == null)
+                        continue;
+                    
                     modifier.Update();
                     if (modifier.IsChanged()) {
                         anyChanged = true;
