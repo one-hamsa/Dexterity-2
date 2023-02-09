@@ -85,6 +85,29 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			AddFilter(Filter);
 			return Filter;
         }
+        public static RaycastFilter AddBlockingFilter(Transform root)
+        {
+			// cache all transforms
+			var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
+			bool Filter(IRaycastReceiver r)
+			{
+				if (childReceivers.Contains(r))
+					return false;
+				
+				var t = ((Component)r).transform;
+				while (t != null)
+				{
+					if (t == root)
+						return false;
+					t = t.parent;
+				}
+
+				return true;
+			}
+
+			AddFilter(Filter);
+			return Filter;
+        }
 
         public static void RemoveFilter(RaycastFilter filter)
         {
