@@ -53,7 +53,11 @@ namespace OneHamsa.Dexterity.Visual
         public override IEnumerable<string> GetStateNames() => enumToStateId.Keys;
         
         public int GetEnumValue() => Convert.ToInt32(targetEnumValue);
-        public string GetEnumValueAsString() => enumOptions[GetEnumValue()];
+        public string GetEnumValueAsString()
+        {
+            enumOptions.TryGetValue(GetEnumValue(), out var value);
+            return value;
+        }
 
         protected override int GetState()
         {
@@ -61,7 +65,15 @@ namespace OneHamsa.Dexterity.Visual
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
-            return enumToStateId[GetEnumValueAsString()];
+            var enumValue = GetEnumValueAsString();
+            if (string.IsNullOrEmpty(enumValue))
+            {
+                Debug.LogError($"internal error: enumValue == null after initialization", this);
+                enabled = false;
+                return StateFunction.emptyStateId;
+            }
+
+            return enumToStateId[enumValue];
         }
 
         protected override void UpdateInternal(bool ignoreDelays)
