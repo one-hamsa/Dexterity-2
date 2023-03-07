@@ -16,19 +16,20 @@ namespace OneHamsa.Dexterity.Visual
             this.fieldType = fieldType;
         }
 
-        public static Context<T> CreateContext<T>(object callerObject, string propertyFieldName)
+        public static Context CreateContext(object callerObject, string propertyFieldName)
         {
             var field = callerObject.GetType().GetField(propertyFieldName);
             var attr = (ObjectValueAttribute)field.GetCustomAttribute(typeof(ObjectValueAttribute));
 
-            return new Context<T>(callerObject, attr.objectFieldName, propertyFieldName);
+            return new Context(callerObject, attr.objectFieldName, propertyFieldName);
         }
 
-        public class Context<T>
+        public class Context
         {            
             private readonly UnityEngine.Object unityObject;
             private readonly MemberInfo memberInfo;
-            private Func<T> compiledExpression;
+            private Func<bool> compiledBoolExpression;
+            private Func<Enum> compiledEnumExpression;
             public readonly Type type;
 
             public Context(object callerObject, string objectFieldName, string propertyFieldName) 
@@ -58,25 +59,58 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            public T GetValue()
+            public bool GetBooleanValue()
             {
-                if (compiledExpression == null)
+                if (compiledBoolExpression == null)
                 {
                     // use expressions to avoid allocations
                     var methodInfo = memberInfo as MethodInfo;
                     if (methodInfo != null)
-                        compiledExpression = Expression.Lambda<Func<T>>(Expression.Call(Expression.Constant(unityObject), methodInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Call(Expression.Constant(unityObject), methodInfo)).Compile();
 
                     var fieldInfo = memberInfo as FieldInfo;
                     if (fieldInfo != null)
-                        compiledExpression = Expression.Lambda<Func<T>>(Expression.Field(Expression.Constant(unityObject), fieldInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Field(Expression.Constant(unityObject), fieldInfo)).Compile();
 
                     var propertyInfo = memberInfo as PropertyInfo;
                     if (propertyInfo != null)
-                        compiledExpression = Expression.Lambda<Func<T>>(Expression.Property(Expression.Constant(unityObject), propertyInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Property(Expression.Constant(unityObject), propertyInfo)).Compile();
                 }
                 
-                return compiledExpression != null ? compiledExpression() : default;
+                return compiledBoolExpression?.Invoke() ?? default;
+            }
+            
+            public Enum GetEnumValue()
+            {
+                if (compiledEnumExpression == null)
+                {
+                    // use expressions to avoid allocations
+                    var methodInfo = memberInfo as MethodInfo;
+                    if (methodInfo != null)
+                    {
+                        // we need to first cast the result to generic enum
+                        var castToEnum = Expression.Convert(Expression.Call(Expression.Constant(unityObject), methodInfo), typeof(Enum));
+                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                    }
+                    
+                    var fieldInfo = memberInfo as FieldInfo;
+                    if (fieldInfo != null)
+                    {
+                        // we need to first cast the result to generic enum
+                        var castToEnum = Expression.Convert(Expression.Field(Expression.Constant(unityObject), fieldInfo), typeof(Enum));
+                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                    }
+                    
+                    var propertyInfo = memberInfo as PropertyInfo;
+                    if (propertyInfo != null)
+                    {
+                        // we need to first cast the result to generic enum
+                        var castToEnum = Expression.Convert(Expression.Property(Expression.Constant(unityObject), propertyInfo), typeof(Enum));
+                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                    }
+                }
+
+                return compiledEnumExpression?.Invoke();
             }
         }
     }
