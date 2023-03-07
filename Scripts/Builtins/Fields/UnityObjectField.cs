@@ -13,13 +13,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public string targetProperty;
         public bool negate;
 
-        ObjectValueAttribute.Context objectCtx;
+        ObjectValueAttribute.Context<bool> objectCtx;
 
         protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
-            objectCtx = ObjectValueAttribute.CreateContext(this, nameof(targetProperty));
+            objectCtx = ObjectValueAttribute.CreateContext<bool>(this, nameof(targetProperty));
         }
 
         public override int GetValue() 
@@ -27,7 +27,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             if (objectCtx == null)
                 return Node.defaultFieldValue;
 
-            var value = objectCtx.GetValue<bool>() ? 1 : 0;
+            var value = objectCtx.GetValue() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;
         }
     }
