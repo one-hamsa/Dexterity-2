@@ -34,6 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public DexteritySettings settings;
+        private List<Modifier> modifiers = new();
 
         public Graph graph { get; private set; }
         /// <summary>
@@ -51,6 +52,18 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         /// <param name="field">BaseField to mark as dirty</param>
         public void SetDirty(BaseField field) => graph.SetDirty(field);
+        
+        /// <summary>
+        /// Adds a modifier to the update pool
+        /// </summary>
+        /// <param name="modifier">modifier to add</param>
+        public void AddModifier(Modifier modifier) => modifiers.Add(modifier);
+        
+        /// <summary>
+        /// Removes a modifier from the update pool
+        /// </summary>
+        /// <param name="modifier">modifier to remove</param>
+        public void RemoveModifier(Modifier modifier) => modifiers.Remove(modifier);
 
         protected void Awake()
         {
@@ -64,6 +77,16 @@ namespace OneHamsa.Dexterity.Visual
         {
             // enable on start to let all nodes register to graph during OnEnable
             graph.started = true;
+        }
+        
+        protected void Update()
+        {
+            // update graph
+            graph.Refresh();
+            
+            // update all modifiers
+            foreach (var modifier in modifiers)
+                modifier.Refresh();
         }
     }
 }

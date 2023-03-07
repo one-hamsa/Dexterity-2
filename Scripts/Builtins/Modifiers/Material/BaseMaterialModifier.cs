@@ -105,7 +105,7 @@ namespace OneHamsa.Dexterity.Visual
             if (!Application.isPlaying)
             {
                 var selected = UnityEditor.Selection.activeGameObject;
-                var node = this.node;
+                var node = this.GetNode();
                 
                 if (selected == gameObject || (node != null && selected == node.gameObject))
                 {

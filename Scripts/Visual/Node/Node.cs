@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual
     {
         #region Static Functions
         // mainly for debugging graph problems
-        private static Dictionary<BaseField, Node> fieldsToNodes = new Dictionary<BaseField, Node>();
+        private static Dictionary<BaseField, Node> fieldsToNodes = new();
         internal static Node ByField(BaseField f)
         {
             fieldsToNodes.TryGetValue(f, out var node);
@@ -68,8 +68,8 @@ namespace OneHamsa.Dexterity.Visual
         public NodeReference reference { get; private set; }
 
         // output fields of this node
-        public Dictionary<int, OutputField> outputFields = new Dictionary<int, OutputField>();
-        public Dictionary<int, OutputOverride> cachedOverrides = new Dictionary<int, OutputOverride>();
+        public Dictionary<int, OutputField> outputFields = new();
+        public Dictionary<int, OutputOverride> cachedOverrides = new();
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
@@ -621,7 +621,7 @@ namespace OneHamsa.Dexterity.Visual
 
         Node IGateContainer.node => this;
 
-        public int lastEvaluationResult => activeState;
+        public int GetLastEvaluationResult() => GetActiveState();
         List<StateFunction.Step> IStepList.steps => customSteps;
         #endregion Interface Implementation (Editor)
     }

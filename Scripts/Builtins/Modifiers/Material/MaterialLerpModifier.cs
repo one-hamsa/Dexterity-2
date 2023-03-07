@@ -13,9 +13,9 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // Update is called once per frame
-        public override void Update()
+        public override void Refresh()
         {
-            base.Update();
+            base.Refresh();
 
             if (!transitionChanged)
                 return;

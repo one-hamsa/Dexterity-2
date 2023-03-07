@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual
         protected override double timeSinceStateChange => _timeSinceStateChange;
         
         protected override int[] states => _states;
-        public override int activeState => 1;
+        public override int GetActiveState() => 1;
 
         public float target { get; private set; }
         public float value => Mathf.Lerp(previousValue, target, transitionState[1]);
@@ -57,11 +57,13 @@ namespace OneHamsa.Dexterity.Visual
             transitionState[1] = 0;
         }
 
-        public override void Update()
+        public override void Refresh()
         {
-            base.Update();
+            base.Refresh();
             _timeSinceStateChange += deltaTime;
         }
+
+        private void Update() => Refresh();
     }
 
 }

@@ -38,7 +38,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 			}
 			
 			if (anyTransitioning)
-				OnStateChanged(StateFunction.emptyStateId, node.activeState);
+				OnStateChanged(StateFunction.emptyStateId, node.GetActiveState());
 		}
 
 		void OnDisable() {
@@ -68,7 +68,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins {
 
 			// all transitions done
 			transitioning = false;
-			onTransitionsEnd?.Invoke(node.activeState);
+			onTransitionsEnd?.Invoke(node.GetActiveState());
 		}
 
 		void OnTransitionEnded(int activeState)

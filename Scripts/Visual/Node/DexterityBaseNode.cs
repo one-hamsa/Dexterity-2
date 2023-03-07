@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -25,14 +26,6 @@ namespace OneHamsa.Dexterity.Visual
         public string overrideState;
 
         #region Public Properties
-        // don't change this directly, use fields
-        [NonSerialized]
-        public int activeState = StateFunction.emptyStateId;
-        // don't change this directly, use SetStateOverride
-        [NonSerialized]
-        public int overrideStateId = StateFunction.emptyStateId;
-        // don't change this directly
-        [NonSerialized]
         public double timeSinceStateChange;
         [NonSerialized]
         public double deltaTime;
@@ -43,6 +36,8 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Public Properties
 
         #region Private Properties
+        protected int activeState = StateFunction.emptyStateId;
+        private int overrideStateId = StateFunction.emptyStateId;
         Dictionary<int, TransitionDelay> cachedDelays;
 
         protected bool stateDirty = true;
@@ -159,11 +154,16 @@ namespace OneHamsa.Dexterity.Visual
         {
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<int> GetStateIDs()
         {
             foreach (var stateName in GetStateNames())
                 yield return Core.instance.GetStateID(stateName);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetActiveState() => activeState;
+        public void SetActiveState_Editor(int newState) => activeState = newState;
         #endregion General Methods
 
         #region State Reduction

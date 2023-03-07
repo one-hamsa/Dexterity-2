@@ -105,7 +105,7 @@ namespace OneHamsa.Dexterity.Visual
 
             foreach (var stateProxy in stateProxies)
             {
-                if (stateProxy.sourceNode.activeState == stateProxy.inStateId)
+                if (stateProxy.sourceNode.GetActiveState() == stateProxy.inStateId)
                     return stateProxy.outStateId;
             }
 

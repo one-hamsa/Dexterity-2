@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private List<Collider> cachedColliders;
 
         private bool _overrideDisable;
-        public bool overrideDisable { set { _overrideDisable = value; HandleStateChange(_node.activeState, _node.activeState); }}
+        public bool overrideDisable { set { _overrideDisable = value; HandleStateChange(_node.GetActiveState(), _node.GetActiveState()); }}
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();

@@ -6,12 +6,12 @@ namespace OneHamsa.Dexterity.Visual
 {
     public interface IReferencesNode : IHasStates
     {
-        DexterityBaseNode node { get; }
+        DexterityBaseNode GetNode();
 
         IEnumerable<string> IHasStates.GetStateNames()
-            => node != null ? node.GetStateNames() : Enumerable.Empty<string>();
+            => GetNode() != null ? GetNode().GetStateNames() : Enumerable.Empty<string>();
 
         IEnumerable<string> IHasStates.GetFieldNames()
-            => node != null ? node.GetFieldNames() : Enumerable.Empty<string>();
+            => GetNode() != null ? GetNode().GetFieldNames() : Enumerable.Empty<string>();
     }
 }

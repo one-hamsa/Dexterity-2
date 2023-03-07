@@ -160,14 +160,14 @@ namespace OneHamsa.Dexterity.Visual
         {
             var origColor = GUI.color;
             
-            if (baseNode.activeState != -1)
+            if (baseNode.GetActiveState() != -1)
             {
                 var style = new GUIStyle(EditorStyles.helpBox);
                 style.alignment = TextAnchor.MiddleCenter;
                 style.fontSize = 14;
 
                 GUI.color = Color.green;
-                GUILayout.Label(Core.instance.GetStateAsString(baseNode.activeState), style);
+                GUILayout.Label(Core.instance.GetStateAsString(baseNode.GetActiveState()), style);
                 GUI.color = origColor;
             }
         }
@@ -196,7 +196,6 @@ namespace OneHamsa.Dexterity.Visual
 
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
-            var propDrawer = new StateDrawer();
             GUILayout.Label("Preview");
             var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray(),
                 GUILayout.MaxWidth(150));
@@ -265,7 +264,7 @@ namespace OneHamsa.Dexterity.Visual
             
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
-                if (modifier.node == baseNode && modifier.isActiveAndEnabled) 
+                if (modifier.GetNode() == baseNode && modifier.isActiveAndEnabled) 
                     modifiers.Add(modifier);
             }
 

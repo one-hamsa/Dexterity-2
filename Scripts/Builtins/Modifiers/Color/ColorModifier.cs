@@ -44,9 +44,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public Color color;
         }
 
-        public override void Update()
+        public override void Refresh()
         {
-            base.Update();
+            base.Refresh();
 
             if (!transitionChanged)
                 return;

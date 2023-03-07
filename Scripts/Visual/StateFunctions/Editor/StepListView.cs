@@ -173,7 +173,7 @@ namespace OneHamsa.Dexterity.Visual
                     rest.Add(stateNamePf);
                     
                     rest.EnableInClassList("selected", step.initialized 
-                        && stepList.lastEvaluationResult == step.GetResultStateID());
+                        && stepList.GetLastEvaluationResult() == step.GetResultStateID());
                     break;
 
                 case StateFunction.Step.Type.Reference:
@@ -184,7 +184,7 @@ namespace OneHamsa.Dexterity.Visual
                     rest.Add(refPf);
                     
                     rest.EnableInClassList("selected", step.initialized
-                        && step.reference_stateFunction.lastEvaluationResult != StateFunction.emptyStateId);
+                        && step.reference_stateFunction.GetLastEvaluationResult() != StateFunction.emptyStateId);
                     break;
             }
 

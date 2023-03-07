@@ -44,8 +44,9 @@ namespace OneHamsa.Dexterity.Visual
 
         [HideInInspector] public List<string> lastSeenStates = new();
 
-        public DexterityBaseNode node => TryFindNode();
-        public float transitionProgress => GetTransitionProgress(node.activeState);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public DexterityBaseNode GetNode() => TryFindNode();
+        public float transitionProgress => GetTransitionProgress(GetNode().GetActiveState());
         public float GetTransitionProgress(int state)
         {
             if (transitionState == null)
@@ -56,11 +57,12 @@ namespace OneHamsa.Dexterity.Visual
 
         public virtual bool animatableInEditor => true;
 
-        Dictionary<int, PropertyBase> propertiesCache = null;
+        private Dictionary<int, PropertyBase> propertiesCache = null;
+        private bool foundNode;
 
         public override bool IsChanged()
         {
-            return base.IsChanged() || isTransitionDelayed;
+            return base.IsChanged() || IsTransitionDelayed();
         }
 
         public PropertyBase GetProperty(int stateId)
@@ -71,7 +73,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (!propertiesCache.ContainsKey(stateId))
                 {
                     Debug.LogWarning($"property for state = {Core.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
-                                     $" (probably states were added to node {node.name} without updating modifier)", this);
+                                     $" (probably states were added to node {GetNode().name} without updating modifier)", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)
                         return p;
@@ -86,7 +88,9 @@ namespace OneHamsa.Dexterity.Visual
 
             return null;
         }
-        public PropertyBase activeProperty => GetProperty(node.activeState);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public PropertyBase GetActiveProperty() => GetProperty(GetNode().GetActiveState());
 
         public virtual void HandleStateChange(int oldState, int newState)
         {
@@ -98,13 +102,14 @@ namespace OneHamsa.Dexterity.Visual
         private int lastState = StateFunction.emptyStateId;
 
         protected override int[] states => cachedStates;
-        protected override double deltaTime => node.deltaTime;
-        protected override double timeSinceStateChange => node.timeSinceStateChange;
+        protected override double deltaTime => GetNode().deltaTime;
+        protected override double timeSinceStateChange => GetNode().timeSinceStateChange;
 
-        protected bool isTransitionDelayed =>
-            timeSinceStateChange < GetStateDelay(lastState, node.activeState);
-
-        public override int activeState => isTransitionDelayed ? lastState : node.activeState;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool IsTransitionDelayed() => timeSinceStateChange < GetStateDelay(lastState, GetNode().GetActiveState());
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override int GetActiveState() => IsTransitionDelayed() ? lastState : GetNode().GetActiveState();
 
         [Serializable]
         public abstract class PropertyBase
@@ -142,14 +147,15 @@ namespace OneHamsa.Dexterity.Visual
 
         public virtual void HandleNodeEnabled()
         {
-            HandleStateChange(node.activeState, node.activeState);
+            var activeState = GetNode().GetActiveState();
+            HandleStateChange(activeState, activeState);
 
-            cachedStates = node.GetStateIDs().ToArray();
+            cachedStates = GetNode().GetStateIDs().ToArray();
 
             CacheDelays();
 
             InitializeTransitionState();
-            Update();
+            Refresh();
         }
         
         private void CacheDelays()
@@ -175,60 +181,65 @@ namespace OneHamsa.Dexterity.Visual
         
         protected override void OnEnable()
         {
+            TryFindNode();
             if (!EnsureValidState())
             {
                 enabled = false;
                 return;
             }
-
-            if ((_node = TryFindNode()) == null)
+            
+            Manager.instance.AddModifier(this);
+            if (!nodesToModifiers.TryGetValue(_node, out var modifiers))
             {
-                Debug.LogError($"Node not found for modifier ({gameObject.name})");
-                enabled = false;
-                return;
-            }
-            if (!nodesToModifiers.TryGetValue(node, out var modifiers))
-            {
-                modifiers = nodesToModifiers[node] = new HashSet<Modifier>();
+                modifiers = nodesToModifiers[_node] = new HashSet<Modifier>();
             }
             modifiers.Add(this);
 
-            if (node.isActiveAndEnabled)
+            if (_node.isActiveAndEnabled)
                 HandleNodeEnabled();
             else
             {
-                node.onEnabled -= HandleNodeEnabled;
-                node.onEnabled += HandleNodeEnabled;
+                _node.onEnabled -= HandleNodeEnabled;
+                _node.onEnabled += HandleNodeEnabled;
             }
 
-            node.onStateChanged -= HandleStateChange;
-            node.onStateChanged += HandleStateChange;
+            _node.onStateChanged -= HandleStateChange;
+            _node.onStateChanged += HandleStateChange;
 
             base.OnEnable();
         }
         protected override void OnDisable()
         {
             base.OnDisable();
-
-            if (node != null) {
-                node.onEnabled -= HandleNodeEnabled;
-                node.onStateChanged -= HandleStateChange;
-                if (nodesToModifiers.TryGetValue(node, out var modifiers))
+            
+            if (Manager.instance != null)
+                Manager.instance.RemoveModifier(this);
+            
+            if (_node != null) {
+                _node.onEnabled -= HandleNodeEnabled;
+                _node.onStateChanged -= HandleStateChange;
+                if (nodesToModifiers.TryGetValue(_node, out var modifiers))
                     modifiers.Remove(this);
             }
+            
+            foundNode = false;
         }
 
-        public override void Update()
+        public override void Refresh()
         {
             // wait for node to be enabled
-            if (!node.isActiveAndEnabled)
+            if (!_node.isActiveAndEnabled)
                 return;
             
-            base.Update();
+            base.Refresh();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         DexterityBaseNode TryFindNode()
         {
+            if (foundNode)
+                return _node;
+            
             DexterityBaseNode current = _node;
             Transform parent = transform;
             while (current == null && parent != null)
@@ -240,18 +251,24 @@ namespace OneHamsa.Dexterity.Visual
                 parent = parent.parent;
             }
 
+            if (current != null)
+            {
+                foundNode = true;
+                _node = current;
+            }
+
             return current;
         }
 
         protected bool EnsureValidState()
         {
-            if (node == null)
+            if (_node == null)
             {
-                Debug.LogError($"Node is null", this);
+                Debug.LogError($"Node not found for modifier {name} ({GetType().Name})", this);
                 return false;
             }
 
-            if (!node.enabled)
+            if (!_node.enabled)
             {
                 // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
                 //. before it is == null, but also call OnEnable on child components. so here we are, not printing
@@ -259,7 +276,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 try
                 {
-                    Debug.LogWarning($"Node {node.gameObject.GetPath()} is disabled, " +
+                    Debug.LogWarning($"Node {_node.gameObject.GetPath()} is disabled, " +
                                      $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
                 }
                 catch (Exception)
@@ -278,7 +295,7 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         public void JumpToState()
         {
-            lastState = node.activeState;
+            lastState = _node.GetActiveState();
         }
 
         protected virtual void Reset() {

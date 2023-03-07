@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 if (!modifier.gameObject.activeInHierarchy)
                 {
                     // just make sure the modifier finds its node before we reparent and enable it
-                    modifier._node = modifier.node;
+                    modifier._node = modifier.GetNode();
                     ForceAwake(modifier.gameObject);
                 }
             }

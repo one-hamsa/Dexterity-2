@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual
         private double timeSinceUpdate;
 
         protected abstract double deltaTime { get; }
-        public abstract int activeState { get; }
+        public abstract int GetActiveState();
         protected abstract double timeSinceStateChange { get; }
         protected abstract int[] states { get; }
 
@@ -39,12 +39,12 @@ namespace OneHamsa.Dexterity.Visual
 
         }
 
-        public virtual void Update()
+        public virtual void Refresh()
         {
             var prevTransitionChanged = transitionChanged;
 
             transitionState = transitionStrategy.GetTransition(transitionState,
-                activeState, timeSinceStateChange, deltaTime, out transitionChanged);
+                GetActiveState(), timeSinceStateChange, deltaTime, out transitionChanged);
 
             if (forceTransitionChangeFrames > 0)
             {
@@ -53,9 +53,9 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             if (transitionChanged && !prevTransitionChanged) {
-                onTransitionStarted?.Invoke(activeState);
+                onTransitionStarted?.Invoke(GetActiveState());
             } else if (!transitionChanged && prevTransitionChanged) {
-                onTransitionEnded?.Invoke(activeState);
+                onTransitionEnded?.Invoke(GetActiveState());
             }
         }
 
@@ -65,7 +65,7 @@ namespace OneHamsa.Dexterity.Visual
             transitionStrategy ??= Core.instance.settings.CreateDefaultTransitionStrategy();
 
             try {
-                transitionState = transitionStrategy.Initialize(states, activeState);
+                transitionState = transitionStrategy.Initialize(states, GetActiveState());
             } catch (ITransitionStrategy.TransitionInitializationException e) {
                 Debug.LogException(e, this);
                 if (Application.isPlaying)
@@ -80,7 +80,7 @@ namespace OneHamsa.Dexterity.Visual
         public void ForceTransitionUpdate(int frames = 1)
         {
             forceTransitionChangeFrames = frames;
-            Update();
+            Refresh();
         }
     }
 }

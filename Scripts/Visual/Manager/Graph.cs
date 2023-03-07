@@ -109,7 +109,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         // updates the graph (if needed), then invokes the update functions for each field
-        void Update()
+        public void Refresh()
         {
             if (!started || updating)
                 return;

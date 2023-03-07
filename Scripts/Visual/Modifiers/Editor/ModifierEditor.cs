@@ -28,11 +28,11 @@ namespace OneHamsa.Dexterity.Visual
             modifier = (Modifier)target;
             
             var myUpdateType = modifier.GetType() 
-                .GetMethod(nameof(Modifier.Update), 
+                .GetMethod(nameof(Modifier.Refresh), 
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
                 .DeclaringType;
             
-            var baseUpdateType = typeof(Modifier).GetMethod(nameof(Modifier.Update), 
+            var baseUpdateType = typeof(Modifier).GetMethod(nameof(Modifier.Refresh), 
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
                 .DeclaringType;
             
@@ -219,17 +219,17 @@ namespace OneHamsa.Dexterity.Visual
             var hasNode = true;
             if (modifier._node == null)
             {
-                if (modifier.node == null)
+                if (modifier.GetNode() == null)
                 {
                     hasNode = false;
                     EditorGUILayout.HelpBox($"Could not find parent node, showing latest states found",
                         MessageType.Warning);
                 }
                 else
-                    if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.node.name}</color></b>)",
+                    if (GUILayout.Button($"Automatically selecting parent (<b><color=cyan>{modifier.GetNode().name}</color></b>)",
                         helpboxStyle))
                 {
-                    EditorGUIUtility.PingObject(modifier.node);
+                    EditorGUIUtility.PingObject(modifier.GetNode());
                 }
             }
 
@@ -269,7 +269,7 @@ namespace OneHamsa.Dexterity.Visual
                 sortedStateProps.Add((propState, property, i));
             }
 
-            var node = ((Modifier)target).node;
+            var node = ((Modifier)target).GetNode();
 
             // draw the editor for each value in property
             foreach (var (propState, property, i) in sortedStateProps)
@@ -295,7 +295,7 @@ namespace OneHamsa.Dexterity.Visual
                     var stateId = Core.instance.GetStateID(propState);
                     if (stateId != StateFunction.emptyStateId)
                     {
-                        if (modifier.activeState == stateId)
+                        if (modifier.GetActiveState() == stateId)
                         {
                             GUI.contentColor = Color.green;
                             suffix = $" (current, {Mathf.RoundToInt(modifier.transitionProgress * 100)}%)";
@@ -331,7 +331,7 @@ namespace OneHamsa.Dexterity.Visual
                             if (coro != null)
                                 EditorCoroutineUtility.StopCoroutine(coro);
                             coro = EditorCoroutineUtility.StartCoroutine(
-                                AnimateStateTransition(modifier.node, new Modifier[] { modifier }, propState, speed, () => coro = null), this);
+                                AnimateStateTransition(modifier.GetNode(), new Modifier[] { modifier }, propState, speed, () => coro = null), this);
                         }
 
                         if (Event.current.button == 1) {
@@ -430,12 +430,12 @@ namespace OneHamsa.Dexterity.Visual
 
             if (
                 // it's the first run (didn't run an editor transition before)
-                node.activeState == StateFunction.emptyStateId
+                node.GetActiveState() == StateFunction.emptyStateId
                 // activeState might be invalid at that point
-                || !node.GetStateIDs().Contains(node.activeState))
+                || !node.GetStateIDs().Contains(node.GetActiveState()))
             {
                 // reset to initial state 
-                node.activeState = Core.instance.GetStateID(node.initialState);
+                node.SetActiveState_Editor(Core.instance.GetStateID(node.initialState));
             }
 
             node.timeSinceStateChange = 0f;
@@ -447,11 +447,11 @@ namespace OneHamsa.Dexterity.Visual
                 modifier.ForceTransitionUpdate();
             }
 
-            var oldState = node.activeState;
-            node.activeState = Core.instance.GetStateID(state);
+            var oldState = node.GetActiveState();
+            node.SetActiveState_Editor(Core.instance.GetStateID(state));
             foreach (var modifier in modifiers)
             {
-                modifier.HandleStateChange(oldState, node.activeState);
+                modifier.HandleStateChange(oldState, node.GetActiveState());
             }
 
             bool anyChanged;
@@ -477,7 +477,7 @@ namespace OneHamsa.Dexterity.Visual
                     if (modifier == null)
                         continue;
                     
-                    modifier.Update();
+                    modifier.Refresh();
                     if (modifier.IsChanged()) {
                         anyChanged = true;
                         EditorUtility.SetDirty(modifier);

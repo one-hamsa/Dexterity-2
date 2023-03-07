@@ -108,7 +108,8 @@ namespace OneHamsa.Dexterity.Visual
 
         public List<Step> steps = new List<Step>();
         private StepEvaluationCache stepEvalCache;
-        public int lastEvaluationResult { get; private set; } = emptyStateId;
+        private int lastEvaluationResult = emptyStateId;
+        public int GetLastEvaluationResult() => lastEvaluationResult;
 
         List<Step> IStepList.steps => steps;
 

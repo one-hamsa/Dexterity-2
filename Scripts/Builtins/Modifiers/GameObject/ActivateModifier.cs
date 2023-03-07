@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
 
-        public override void Update()
+        public override void Refresh()
         {
             // don't do anything here, we'll run update loop as a coroutine on node (to keep alive when inactive)
         }
@@ -26,12 +26,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             while (true)
             {
-                if (this != null && node != null && node.isActiveAndEnabled && enabled)
+                if (this != null && GetNode() != null && GetNode().isActiveAndEnabled && enabled)
                 {
-                    base.Update();
+                    base.Refresh();
 
                     if (transitionChanged)
-                        gameObject.SetActive(((Property)GetProperty(node.activeState)).active);
+                        gameObject.SetActive(((Property)GetProperty(GetNode().GetActiveState())).active);
                 }
 
                 yield return null;
