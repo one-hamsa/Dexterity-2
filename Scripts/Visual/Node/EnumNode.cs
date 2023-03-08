@@ -22,6 +22,7 @@ namespace OneHamsa.Dexterity.Visual
         public Type targetEnumType => objectCtx?.type;
 
         public void InitializeObjectContext() {
+            objectCtx = null;
             if (targetObject != null && !string.IsNullOrEmpty(targetProperty))
                 objectCtx = new ObjectEnumContext(this, nameof(targetProperty));
         }
@@ -34,20 +35,29 @@ namespace OneHamsa.Dexterity.Visual
             //registers them
             base.Initialize();
             //gets the state IDs from the manager
-            CacheEnumOptions();
+            CacheEnumToStateID();
         }
 
         private void CacheEnumOptions()
         {
             enumNames.Clear();
             enumIntOptions.Clear();
-            enumToStateId.Clear();
             if (targetEnumType == null)
                 return;
 
             foreach (var enumOption in Enum.GetNames(targetEnumType)) {
                 enumNames.Add(enumOption);
                 enumIntOptions.Add((int)Enum.Parse(targetEnumType, enumOption), enumOption);
+            }
+        }
+
+        private void CacheEnumToStateID()
+        {
+            enumToStateId.Clear();
+            if (targetEnumType == null)
+                return;
+            
+            foreach (var enumOption in Enum.GetNames(targetEnumType)) {
                 enumToStateId.Add(enumOption, Core.instance?.GetStateID(enumOption) ?? -1);
             }
         }
@@ -100,6 +110,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             
             // cache for sake of showing options in editor (enumToStateId.Keys)
+            InitializeObjectContext();
             CacheEnumOptions();
         }
     }

@@ -228,7 +228,7 @@ namespace OneHamsa.Dexterity.Visual
         public override void Refresh()
         {
             // wait for node to be enabled
-            if (!_node.isActiveAndEnabled)
+            if (!GetNode().isActiveAndEnabled)
                 return;
             
             base.Refresh();
@@ -237,7 +237,7 @@ namespace OneHamsa.Dexterity.Visual
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         DexterityBaseNode TryFindNode()
         {
-            if (foundNode)
+            if (Application.isPlaying && foundNode) 
                 return _node;
             
             DexterityBaseNode current = _node;
@@ -251,7 +251,7 @@ namespace OneHamsa.Dexterity.Visual
                 parent = parent.parent;
             }
 
-            if (current != null)
+            if (current != null && Application.isPlaying)
             {
                 foundNode = true;
                 _node = current;
