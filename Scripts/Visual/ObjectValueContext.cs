@@ -61,6 +61,8 @@ namespace OneHamsa.Dexterity.Visual
     public class ObjectBooleanContext : ObjectValueContext
     {
         private bool booleanValue;
+        private delegate bool GetDelegate();
+        private GetDelegate get;
         
         public ObjectBooleanContext(object callerObject, string attributeFieldName) 
             : base(callerObject, attributeFieldName)
@@ -72,14 +74,13 @@ namespace OneHamsa.Dexterity.Visual
             assign();
             return booleanValue;
         }
+        
+        private void Assign() => booleanValue = get();
 
         protected override AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
         {
-            var expr = Expression.Call(Expression.Constant(unityObject), methodInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(booleanValue));
-            var assignExpr = Expression.Assign(field, expr);
-
-            return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
+            return Assign;
         }
 
         protected override AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
@@ -93,17 +94,16 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
-            var expr = Expression.Property(Expression.Constant(unityObject), propertyInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(booleanValue));
-            var assignExpr = Expression.Assign(field, expr);
-            
-            return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
+            return Assign;
         }
     }
     
     public class ObjectEnumContext : ObjectValueContext
     {
         private int enumValue;
+        private delegate object GetDelegate();
+        private GetDelegate get;
         
         public ObjectEnumContext(object callerObject, string attributeFieldName) 
             : base(callerObject, attributeFieldName)
@@ -115,15 +115,13 @@ namespace OneHamsa.Dexterity.Visual
             assign();
             return enumValue;
         }
+        
+        private void Assign() => enumValue = (int)get();
 
         protected override AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
         {
-            var expr = Expression.Call(Expression.Constant(unityObject), methodInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
-            var convertExpr = Expression.Convert(expr, typeof(int));
-            var assignExpr = Expression.Assign(field, convertExpr);
-            
-            return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
+            return Assign;
         }
 
         protected override AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
@@ -138,12 +136,8 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
-            var expr = Expression.Property(Expression.Constant(unityObject), propertyInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
-            var convertExpr = Expression.Convert(expr, typeof(int));
-            var assignExpr = Expression.Assign(field, convertExpr);
-            
-            return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
+            return Assign;
         }
     }
 }
