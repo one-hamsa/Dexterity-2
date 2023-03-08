@@ -15,9 +15,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private float lastTotalTransitionTime;
         private double timeSinceRowChange;
         protected override bool checkActivityThreshold => false;
-        private IDictionary<int, float> transitionStartValues = new Dictionary<int, float>();
+        private Dictionary<int, float> transitionStartValues = new Dictionary<int, float>();
 
-        public override IDictionary<int, float> Initialize(int[] states, int currentState)
+        public override Dictionary<int, float> Initialize(int[] states, int currentState)
         {
             definition.Initialize();
             var initialRow = definition.GetRow(lastState, currentState);
@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return base.Initialize(states, currentState);
         }
 
-        public override IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
+        public override Dictionary<int, float> GetTransition(Dictionary<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             // manually track state changes

@@ -11,13 +11,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected virtual bool checkActivityThreshold => true;
         protected float activityThreshold;
 
-        protected IDictionary<int, float> result = new Dictionary<int, float>();
-        protected IDictionary<int, float> nextResult = new Dictionary<int, float>();
+        protected Dictionary<int, float> result = new Dictionary<int, float>();
+        protected Dictionary<int, float> nextResult = new Dictionary<int, float>();
         protected int[] states;
 
         private bool jumpedToFinalState;
 
-        public virtual IDictionary<int, float> Initialize(int[] states, int currentState)
+        public virtual Dictionary<int, float> Initialize(int[] states, int currentState)
         {
             this.states = states;
             
@@ -38,7 +38,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             return result;
         }
-        public virtual IDictionary<int, float> GetTransition(IDictionary<int, float> prevState, 
+        public virtual Dictionary<int, float> GetTransition(Dictionary<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;

@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private Dictionary<int, float> currentVelocities = new Dictionary<int, float>(); 
 
-        public override IDictionary<int, float> Initialize(int[] states, int currentState)  
+        public override Dictionary<int, float> Initialize(int[] states, int currentState)  
         {
             foreach (var state in states)
                 currentVelocities[state] = 0f;

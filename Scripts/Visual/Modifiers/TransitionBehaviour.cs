@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual
         protected bool transitionChanged;
         protected int forceTransitionChangeFrames;
 
-        protected IDictionary<int, float> transitionState;
+        protected Dictionary<int, float> transitionState;
         private double timeSinceUpdate;
 
         protected abstract double deltaTime { get; }
