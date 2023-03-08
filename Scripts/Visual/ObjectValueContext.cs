@@ -4,6 +4,14 @@ using System.Reflection;
 
 namespace OneHamsa.Dexterity.Visual
 {
+    /// <summary>
+    /// class that is paired with the ObjectValueAttribute to read a value from a Unity Object.
+    /// it comes with a dropdown drawer that allows to select the field to read from the object.
+    /// 
+    /// this wrapper takes care of reflection substitute in form of Expression Trees.
+    /// it is AOT safe and can be used in builds. some work required to make it possible - AOT
+    /// does not support all types of delegates, so a void delegate is used instead of a generic Func<T> one.
+    /// </summary>
     public abstract class ObjectValueContext
     {
         protected delegate void AssignDelegate();
