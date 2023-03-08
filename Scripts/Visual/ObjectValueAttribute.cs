@@ -63,6 +63,9 @@ namespace OneHamsa.Dexterity.Visual
 
             public bool GetBooleanValue()
             {
+                return GetValue<bool>();
+                
+                // TODO - this fails in AOT
                 if (compiledBoolExpression == null)
                 {
                     // use expressions to avoid allocations
@@ -84,6 +87,9 @@ namespace OneHamsa.Dexterity.Visual
             
             public Enum GetEnumValue()
             {
+                return GetValue<Enum>();
+                
+                // TODO - this fails in AOT
                 if (compiledEnumExpression == null)
                 {
                     // use expressions to avoid allocations
@@ -113,6 +119,23 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 return compiledEnumExpression?.Invoke();
+            }
+
+            T GetValue<T>()
+            {
+                var method = memberInfo as MethodInfo;
+                if (method != null)
+                    return (T)method.Invoke(unityObject, null);
+
+                var field = memberInfo as FieldInfo;
+                if (field != null)
+                    return (T)field.GetValue(unityObject);
+
+                var prop = memberInfo as PropertyInfo;
+                if (prop != null)
+                    return (T)prop.GetValue(unityObject);
+
+                return default;
             }
         }
     }
