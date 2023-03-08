@@ -102,7 +102,7 @@ namespace OneHamsa.Dexterity.Visual
     public class ObjectEnumContext : ObjectValueContext
     {
         private int enumValue;
-        private delegate object GetDelegate();
+        private delegate int GetDelegate();
         private GetDelegate get;
         
         public ObjectEnumContext(object callerObject, string attributeFieldName) 
@@ -116,12 +116,25 @@ namespace OneHamsa.Dexterity.Visual
             return enumValue;
         }
         
-        private void Assign() => enumValue = (int)get();
+        private void Assign() => enumValue = get();
 
         protected override AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
         {
-            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
-            return Assign;
+            try
+            {
+                get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
+                return Assign;
+            }
+            catch (Exception)
+            {
+                // can happen when the enum is not an int (flags)
+                var expr = Expression.Call(Expression.Constant(unityObject), methodInfo);
+                var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
+                var convertExpr = Expression.Convert(expr, typeof(int));
+                var assignExpr = Expression.Assign(field, convertExpr);
+                
+                return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            }
         }
 
         protected override AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
@@ -136,8 +149,21 @@ namespace OneHamsa.Dexterity.Visual
 
         protected override AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
-            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
-            return Assign;
+            try
+            {
+                get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
+                return Assign;
+            }
+            catch (Exception)
+            {
+                // can happen when the enum is not an int (flags)
+                var expr = Expression.Property(Expression.Constant(unityObject), propertyInfo);
+                var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
+                var convertExpr = Expression.Convert(expr, typeof(int));
+                var assignExpr = Expression.Assign(field, convertExpr);
+                
+                return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
+            }
         }
     }
 }
