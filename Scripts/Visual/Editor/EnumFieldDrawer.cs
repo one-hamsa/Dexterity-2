@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity.Visual
                 // just take current value
                 try
                 {
-                    enumPrevValue = enumNode.targetEnumValue;
+                    enumPrevValue = (Enum)Enum.ToObject(enumNode.targetEnumType, enumNode.targetEnumValue);
                 }
                 catch (Exception)
                 {

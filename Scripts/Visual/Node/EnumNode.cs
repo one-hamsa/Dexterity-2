@@ -13,17 +13,17 @@ namespace OneHamsa.Dexterity.Visual
         [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(Enum))]
         public string targetProperty;
 
-        private ObjectValueAttribute.Context objectCtx;
+        private ObjectEnumContext objectCtx;
         private HashSet<string> enumNames = new();
-        private Dictionary<int, string> enumOptions = new();
+        private Dictionary<int, string> enumIntOptions = new();
         private Dictionary<string, int> enumToStateId = new();
 
-        public Enum targetEnumValue => objectCtx?.GetEnumValue();
+        public int targetEnumValue => objectCtx?.GetValue() ?? 0;
         public Type targetEnumType => objectCtx?.type;
 
         public void InitializeObjectContext() {
             if (targetObject != null && !string.IsNullOrEmpty(targetProperty))
-                objectCtx = ObjectValueAttribute.CreateContext(this, nameof(targetProperty));
+                objectCtx = new ObjectEnumContext(this, nameof(targetProperty));
         }
 
         protected override void Initialize()
@@ -40,14 +40,14 @@ namespace OneHamsa.Dexterity.Visual
         private void CacheEnumOptions()
         {
             enumNames.Clear();
-            enumOptions.Clear();
+            enumIntOptions.Clear();
             enumToStateId.Clear();
             if (targetEnumType == null)
                 return;
 
             foreach (var enumOption in Enum.GetNames(targetEnumType)) {
                 enumNames.Add(enumOption);
-                enumOptions.Add((int)Enum.Parse(targetEnumType, enumOption), enumOption);
+                enumIntOptions.Add((int)Enum.Parse(targetEnumType, enumOption), enumOption);
                 enumToStateId.Add(enumOption, Core.instance?.GetStateID(enumOption) ?? -1);
             }
         }
@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity.Visual
         public int GetEnumValue() => Convert.ToInt32(targetEnumValue);
         public string GetEnumValueAsString()
         {
-            enumOptions.TryGetValue(GetEnumValue(), out var value);
+            enumIntOptions.TryGetValue(GetEnumValue(), out var value);
             return value;
         }
 
