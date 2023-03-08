@@ -3,7 +3,6 @@
     "rootNamespace": "OneHamsa.Dexterity.Visual",
     "references": [
         "Unity.InputSystem",
-        "com.alelievr.NodeGraphProcessor.Runtime",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
