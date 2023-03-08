@@ -25,11 +25,13 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         public class Context
-        {            
+        {
+            delegate bool GetBoolDelegate();
+            delegate Enum GetEnumDelegate();
             private readonly UnityEngine.Object unityObject;
             private readonly MemberInfo memberInfo;
-            private Func<bool> compiledBoolExpression;
-            private Func<Enum> compiledEnumExpression;
+            private GetBoolDelegate compiledBoolExpression;
+            private GetEnumDelegate compiledEnumExpression;
             public readonly Type type;
 
             public Context(object callerObject, string objectFieldName, string propertyFieldName) 
@@ -66,15 +68,15 @@ namespace OneHamsa.Dexterity.Visual
                     // use expressions to avoid allocations
                     var methodInfo = memberInfo as MethodInfo;
                     if (methodInfo != null)
-                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Call(Expression.Constant(unityObject), methodInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<GetBoolDelegate>(Expression.Call(Expression.Constant(unityObject), methodInfo)).Compile();
 
                     var fieldInfo = memberInfo as FieldInfo;
                     if (fieldInfo != null)
-                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Field(Expression.Constant(unityObject), fieldInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<GetBoolDelegate>(Expression.Field(Expression.Constant(unityObject), fieldInfo)).Compile();
 
                     var propertyInfo = memberInfo as PropertyInfo;
                     if (propertyInfo != null)
-                        compiledBoolExpression = Expression.Lambda<Func<bool>>(Expression.Property(Expression.Constant(unityObject), propertyInfo)).Compile();
+                        compiledBoolExpression = Expression.Lambda<GetBoolDelegate>(Expression.Property(Expression.Constant(unityObject), propertyInfo)).Compile();
                 }
                 
                 return compiledBoolExpression?.Invoke() ?? default;
@@ -90,7 +92,7 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         // we need to first cast the result to generic enum
                         var castToEnum = Expression.Convert(Expression.Call(Expression.Constant(unityObject), methodInfo), typeof(Enum));
-                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                        compiledEnumExpression = Expression.Lambda<GetEnumDelegate>(castToEnum).Compile();
                     }
                     
                     var fieldInfo = memberInfo as FieldInfo;
@@ -98,7 +100,7 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         // we need to first cast the result to generic enum
                         var castToEnum = Expression.Convert(Expression.Field(Expression.Constant(unityObject), fieldInfo), typeof(Enum));
-                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                        compiledEnumExpression = Expression.Lambda<GetEnumDelegate>(castToEnum).Compile();
                     }
                     
                     var propertyInfo = memberInfo as PropertyInfo;
@@ -106,7 +108,7 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         // we need to first cast the result to generic enum
                         var castToEnum = Expression.Convert(Expression.Property(Expression.Constant(unityObject), propertyInfo), typeof(Enum));
-                        compiledEnumExpression = Expression.Lambda<Func<Enum>>(castToEnum).Compile();
+                        compiledEnumExpression = Expression.Lambda<GetEnumDelegate>(castToEnum).Compile();
                     }
                 }
 
