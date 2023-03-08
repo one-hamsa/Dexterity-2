@@ -83,18 +83,14 @@ namespace OneHamsa.Dexterity.Visual
 
         FieldMask fieldMask = new FieldMask(32);
         int[] stateFieldIds;
-        private HashSet<string> namesSet = new HashSet<string>();
+        private HashSet<string> fieldNames;
+        private HashSet<string> stateNames;
         private StateFunction.StepEvaluationCache stepEvalCache;
+        
+        private static List<Gate> emptyGateList = new(0);
 
-        public IEnumerable<Gate> allGates
-        {
-            get
-            {
-                if (reference != null)
-                    foreach (var gate in reference.gates)
-                        yield return gate;
-            }
-        }
+        public List<Gate> GetAllGates() => reference != null ? reference.gates : emptyGateList;
+
         #endregion Private Properties
 
         #region Unity Events
@@ -181,7 +177,7 @@ namespace OneHamsa.Dexterity.Visual
         protected override void Uninitialize()
         {
             // cleanup gates
-            foreach (var gate in allGates.ToArray())
+            foreach (var gate in GetAllGates().ToArray())
             {
                 FinalizeGate(gate);
             }
@@ -209,23 +205,27 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
         
-        public override IEnumerable<string> GetStateNames() {
-            namesSet.Clear();
+        public override HashSet<string> GetStateNames() {
+            if (stateNames == null)
+            {
+                stateNames = new HashSet<string>();
+                
+                foreach (var name in (this as IStepList).GetStepListStateNames())
+                    stateNames.Add(name);
+            }
             
-            foreach (var name in (this as IStepList).GetStepListStateNames()) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
-            }
+            return stateNames;
         }
-        public override IEnumerable<string> GetFieldNames() {
-            namesSet.Clear();
+        public override HashSet<string> GetFieldNames() {
+            if (fieldNames == null)
+            {
+                fieldNames = new HashSet<string>();
 
-            foreach (var name in (this as IStepList).GetStepListFieldNames()) {
-                if (namesSet.Add(name)) {
-                    yield return name;
-                }
+                foreach (var name in (this as IStepList).GetStepListFieldNames())
+                    fieldNames.Add(name);
             }
+            
+            return fieldNames;
         }
         #endregion General Methods
 
@@ -238,7 +238,7 @@ namespace OneHamsa.Dexterity.Visual
             //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
             FinalizeFields(nonOutputFields.ToArray());
             // re-register all gates
-            foreach (var gate in allGates.ToArray())  // might manipulate gates within the loop
+            foreach (var gate in GetAllGates().ToArray())  // might manipulate gates within the loop
                 InitializeGate(gate);
             // cache all outputs
             foreach (var output in outputFields.Values) {

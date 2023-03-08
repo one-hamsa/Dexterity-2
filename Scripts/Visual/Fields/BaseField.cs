@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Visual
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
         /// </summary>
-        private readonly HashSet<BaseField> upstreamFields = new HashSet<BaseField>();
+        private readonly HashSet<BaseField> upstreamFields = new();
 
         /// <summary>
         /// adds an upstream field
@@ -83,7 +83,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// returns the field this provider relies on. 
         /// </summary>
-        public IEnumerable<BaseField> GetUpstreamFields() => upstreamFields;
+        public HashSet<BaseField> GetUpstreamFields() => upstreamFields;
 
         /// <summary>
         /// returns the field value calculated by the provider

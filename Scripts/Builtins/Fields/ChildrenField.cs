@@ -22,8 +22,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public bool negate;
         public bool updateChildrenReference;
 
-        HashSet<Node> children, prevChildren = new HashSet<Node>();
-        HashSet<string> childrenPath = new HashSet<string>();
+        HashSet<Node> children, prevChildren = new();
+        HashSet<string> childrenPath = new();
+        private static Queue<Transform> workQueue = new();
+        private static IEqualityComparer<HashSet<Node>> comparer = HashSet<Node>.CreateSetComparer();
         int fieldId;
 
         // only proxy when children are found
@@ -133,7 +135,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 }
             }
 
-            if (!children.SetEquals(prevChildren)) {
+            if (!comparer.Equals(children, prevChildren)) {
                 ClearUpstreamFields();
                 foreach (var child in children)
                     AddUpstreamField(child.GetOutputField(fieldId));
@@ -146,17 +148,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private IEnumerable<Node> GetNodesInChildrenRecursive()
         {
             // all children, but stop recursing when finding nodes
-            var queue = new Queue<Transform>();
-            queue.Enqueue(parent);
+            workQueue.Clear();
+            workQueue.Enqueue(parent);
 
-            while (queue.Count > 0) {
-                var transform = queue.Dequeue();
+            while (workQueue.Count > 0) {
+                var transform = workQueue.Dequeue();
                 var node = transform.GetComponent<Node>();
                 if (transform != parent && node != null)
                     yield return node;
                 else
                     foreach (Transform child in transform)
-                        queue.Enqueue(child);
+                        workQueue.Enqueue(child);
             }
         }
 

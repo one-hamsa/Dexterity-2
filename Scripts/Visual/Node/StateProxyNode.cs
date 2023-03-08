@@ -27,6 +27,7 @@ namespace OneHamsa.Dexterity.Visual
         public List<StateProxy> stateProxies = new();
         public string defaultStateName = StateFunction.kDefaultState;
         private int defaultStateId;
+        private HashSet<string> stateNames;
         
         public void HandleNodesEnabled()
         {
@@ -112,15 +113,22 @@ namespace OneHamsa.Dexterity.Visual
             return defaultStateId;
         }
 
-        public override IEnumerable<string> GetStateNames()
+        public override HashSet<string> GetStateNames()
         {
-            foreach (var stateProxy in stateProxies)
+            if (stateNames == null)
             {
-                yield return stateProxy.outStateName;
+                stateNames = new HashSet<string>();
+                foreach (var stateProxy in stateProxies)
+                {
+                    stateNames.Add(stateProxy.outStateName);
+                }
+
+                stateNames.Add(defaultStateName);
             }
-            yield return defaultStateName;
+            
+            return stateNames;
         }
 
-        public override IEnumerable<string> GetFieldNames() => Enumerable.Empty<string>();
+        public override HashSet<string> GetFieldNames() => IHasStates.emptySet;
     }
 }

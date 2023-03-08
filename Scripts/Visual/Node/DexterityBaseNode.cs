@@ -174,8 +174,8 @@ namespace OneHamsa.Dexterity.Visual
 
             return StateFunction.emptyStateId;
         }
-        public abstract IEnumerable<string> GetStateNames();
-        public abstract IEnumerable<string> GetFieldNames();
+        public abstract HashSet<string> GetStateNames();
+        public abstract HashSet<string> GetFieldNames();
         #endregion State Reduction
 
         #region Transitions

@@ -47,11 +47,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private Row defaultRow;
 
 
-        IEnumerable<string> IHasStates.GetStateNames()
-        => StateFunction.EnumerateStateNames(stateFunctionAssets);
+        HashSet<string> IHasStates.GetStateNames()
+        => StateFunction.EnumerateStateNames(stateFunctionAssets).ToHashSet();
 
-        IEnumerable<string> IHasStates.GetFieldNames()
-        => StateFunction.EnumerateFieldNames(stateFunctionAssets);
+        HashSet<string> IHasStates.GetFieldNames()
+        => StateFunction.EnumerateFieldNames(stateFunctionAssets).ToHashSet();
 
         public void Initialize()
         {

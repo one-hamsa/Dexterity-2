@@ -65,6 +65,8 @@ namespace OneHamsa.Dexterity.Visual
             public event Action<OutputField, string, string> onEnumValueChanged;
 
             private bool registered;
+            // apparently subscribing to events is garbage intensive, so we'd do this internally with a list
+            private List<OutputField> upstreamSubscribers = new();
 
             protected OutputOverride fieldOverride
             {
@@ -165,7 +167,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // find whether this output field is dependent only on other output fields
                 allUpstreamFieldsAreOutputOrProxy = true;
-                foreach (var gate in node.allGates)
+                foreach (var gate in node.GetAllGates())
                 {
                     if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;
@@ -219,7 +221,10 @@ namespace OneHamsa.Dexterity.Visual
 
             private void InvokeEvents(int oldValue, int newValue)
             {
+                foreach (var subscriber in upstreamSubscribers)
+                    subscriber.UpstreamOutputChanged(this, oldValue, newValue);
                 onValueChanged?.Invoke(this, oldValue, newValue);
+
                 switch (definition.type)
                 {
                     case FieldType.Boolean:
@@ -244,16 +249,16 @@ namespace OneHamsa.Dexterity.Visual
             }
             private void RegisterUpstreamOutput(BaseField field)
             {
-                if (field is OutputField)
-                    (field as OutputField).onValueChanged += UpstreamOutputChanged;
+                if (field is OutputField outputField)
+                    outputField.upstreamSubscribers.Add(this);
                 else if (field.proxy)
                     foreach (var f in field.GetUpstreamFields())
                         RegisterUpstreamOutput(f);
             }
             private void UnregisterUpstreamOutput(BaseField field)
             {
-                if (field is OutputField)
-                    (field as OutputField).onValueChanged -= UpstreamOutputChanged;
+                if (field is OutputField outputField)
+                    outputField.upstreamSubscribers.Remove(this);
                 else if (field.proxy)
                     foreach (var f in field.GetUpstreamFields())
                         UnregisterUpstreamOutput(f);

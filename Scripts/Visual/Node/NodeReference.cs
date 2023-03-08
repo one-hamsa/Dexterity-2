@@ -65,6 +65,8 @@ namespace OneHamsa.Dexterity.Visual
         HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
 
         private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
+        private HashSet<string> stateNames;
+        private HashSet<string> fieldNames;
 
         public void Initialize(IEnumerable<Gate> gates, HashSet<NodeReference> parentReferences = null)
         {
@@ -155,11 +157,17 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        public IEnumerable<string> GetStateNames()
-        => StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingParents());
+        public HashSet<string> GetStateNames()
+        {
+            stateNames ??= StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingParents()).ToHashSet();
+            return stateNames;
+        }
 
-        public IEnumerable<string> GetFieldNames()
-        => StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents());
+        public HashSet<string> GetFieldNames()
+        {
+            fieldNames ??= StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents()).ToHashSet();
+            return fieldNames;
+        }
 
         internal int Evaluate(FieldMask fieldMask)
         {

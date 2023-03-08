@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -106,6 +107,8 @@ namespace OneHamsa.Dexterity.Visual
         public List<Step> steps = new List<Step>();
         private StepEvaluationCache stepEvalCache;
         private int lastEvaluationResult = emptyStateId;
+        private HashSet<string> stateNames;
+        private HashSet<string> fieldNames;
         public int GetLastEvaluationResult() => lastEvaluationResult;
 
         List<Step> IStepList.steps => steps;
@@ -154,7 +157,16 @@ namespace OneHamsa.Dexterity.Visual
 
         // XXX this proxy code is stupid and unnecessary in theory, but something about interface inheritance 
         //. + default implementation is not working well. so here we go.
-        IEnumerable<string> IHasStates.GetFieldNames() => (this as IStepList).GetStepListFieldNames();
-        IEnumerable<string> IHasStates.GetStateNames() => (this as IStepList).GetStepListStateNames();
+        HashSet<string> IHasStates.GetFieldNames()
+        {
+            fieldNames ??= (this as IStepList).GetStepListFieldNames().ToHashSet();
+            return fieldNames;
+        }
+
+        HashSet<string> IHasStates.GetStateNames()
+        {
+            stateNames ??= (this as IStepList).GetStepListStateNames().ToHashSet();
+            return stateNames;
+        }
     }
 }

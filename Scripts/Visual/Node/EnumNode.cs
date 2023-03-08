@@ -14,6 +14,7 @@ namespace OneHamsa.Dexterity.Visual
         public string targetProperty;
 
         private ObjectValueAttribute.Context objectCtx;
+        private HashSet<string> enumNames = new();
         private Dictionary<int, string> enumOptions = new();
         private Dictionary<string, int> enumToStateId = new();
 
@@ -38,19 +39,21 @@ namespace OneHamsa.Dexterity.Visual
 
         private void CacheEnumOptions()
         {
+            enumNames.Clear();
             enumOptions.Clear();
             enumToStateId.Clear();
             if (targetEnumType == null)
                 return;
 
             foreach (var enumOption in Enum.GetNames(targetEnumType)) {
+                enumNames.Add(enumOption);
                 enumOptions.Add((int)Enum.Parse(targetEnumType, enumOption), enumOption);
                 enumToStateId.Add(enumOption, Core.instance?.GetStateID(enumOption) ?? -1);
             }
         }
 
-        public override IEnumerable<string> GetFieldNames() => enumToStateId.Keys;
-        public override IEnumerable<string> GetStateNames() => enumToStateId.Keys;
+        public override HashSet<string> GetFieldNames() => enumNames;
+        public override HashSet<string> GetStateNames() => enumNames;
         
         public int GetEnumValue() => Convert.ToInt32(targetEnumValue);
         public string GetEnumValueAsString()

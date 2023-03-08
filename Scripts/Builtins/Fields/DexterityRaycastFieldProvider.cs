@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public bool GetHover(string castTag = null) 
         {
             foreach (var ctrl in controllers) {
-                if (!string.IsNullOrEmpty(castTag) && ctrl.tag != castTag)
+                if (!string.IsNullOrEmpty(castTag) && !ctrl.CompareTag(castTag))
                     continue;
                 return true;
             }
@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public bool GetPress(string castTag = null)
         {
                 foreach (var ctrl in controllers) {
-                    if (!string.IsNullOrEmpty(castTag) && ctrl.tag != castTag)
+                    if (!string.IsNullOrEmpty(castTag) && !ctrl.CompareTag(castTag))
                         continue;
 
                     if (ctrl.isPressed && receivedPressStart.Contains(ctrl))

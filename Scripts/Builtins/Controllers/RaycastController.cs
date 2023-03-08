@@ -293,7 +293,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			return true;
 		}
 
-		string IRaycastController.tag => tag;
+		bool IRaycastController.CompareTag(string other) => gameObject.CompareTag(other);
         bool IRaycastController.isPressed => (pressed.phase == InputActionPhase.Started);
 		bool IRaycastController.wasPressedThisFrame => (pressStartFrame == Time.frameCount);
 		Vector3 IRaycastController.position => transform.position;

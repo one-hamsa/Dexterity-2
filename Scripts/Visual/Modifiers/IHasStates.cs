@@ -5,7 +5,9 @@ namespace OneHamsa.Dexterity.Visual
 {
     public interface IHasStates
     {
-        IEnumerable<string> GetStateNames();
-        IEnumerable<string> GetFieldNames();
+        static readonly HashSet<string> emptySet = new(0);
+        
+        HashSet<string> GetStateNames();
+        HashSet<string> GetFieldNames();
     }
 }

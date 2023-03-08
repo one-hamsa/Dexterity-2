@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 {
     public interface IRaycastController
     {
-        string tag { get; }
+        bool CompareTag(string tag);
         bool isPressed { get; }
         bool wasPressedThisFrame { get; }
         Vector3 position { get; }

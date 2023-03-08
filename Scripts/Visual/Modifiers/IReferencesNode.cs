@@ -8,10 +8,10 @@ namespace OneHamsa.Dexterity.Visual
     {
         DexterityBaseNode GetNode();
 
-        IEnumerable<string> IHasStates.GetStateNames()
-            => GetNode() != null ? GetNode().GetStateNames() : Enumerable.Empty<string>();
+        HashSet<string> IHasStates.GetStateNames()
+            => GetNode() != null ? GetNode().GetStateNames() : emptySet;
 
-        IEnumerable<string> IHasStates.GetFieldNames()
-            => GetNode() != null ? GetNode().GetFieldNames() : Enumerable.Empty<string>();
+        HashSet<string> IHasStates.GetFieldNames()
+            => GetNode() != null ? GetNode().GetFieldNames() : emptySet;
     }
 }
