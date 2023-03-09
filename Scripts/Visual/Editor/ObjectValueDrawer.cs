@@ -36,21 +36,33 @@ namespace OneHamsa.Dexterity.Visual
             var objType = obj.GetType();
 
             var options = new List<MemberInfo>();
-            foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            if (attr.showMethods)
             {
-                if (method.GetParameters().Length == 0 && attr.fieldType.IsAssignableFrom(method.ReturnType))
-                    options.Add(method);
+                foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (method.GetParameters().Length == 0 && attr.fieldType.IsAssignableFrom(method.ReturnType))
+                        options.Add(method);
+                }
             }
-            foreach (var field in objType.GetFields(BindingFlags.Public | BindingFlags.Instance))
+
+            if (attr.showProperties)
             {
-                if (attr.fieldType.IsAssignableFrom(field.FieldType))
-                    options.Add(field);
+                foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (attr.fieldType.IsAssignableFrom(prop.PropertyType))
+                        options.Add(prop);
+                }
             }
-            foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+
+            if (attr.showFields)
             {
-                if (attr.fieldType.IsAssignableFrom(prop.PropertyType))
-                    options.Add(prop);
+                foreach (var field in objType.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (attr.fieldType.IsAssignableFrom(field.FieldType))
+                        options.Add(field);
+                }
             }
+            
             var stringOptions = options.Select(o => o.Name).ToList();
 
             EditorGUI.BeginChangeCheck();
