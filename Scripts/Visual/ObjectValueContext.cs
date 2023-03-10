@@ -21,11 +21,23 @@ namespace OneHamsa.Dexterity.Visual
 
         protected ObjectValueContext(object callerObject, string attributeFieldName) 
         {
+            if (callerObject == null)
+                throw new ArgumentException($"caller object is null");
+            
             var fieldWithAttribute = callerObject.GetType().GetField(attributeFieldName);
+            if (fieldWithAttribute == null)
+                throw new ArgumentException($"could not find field {attributeFieldName} in {callerObject.GetType().Name}");
+            
             var attr = (ObjectValueAttribute)fieldWithAttribute.GetCustomAttribute(typeof(ObjectValueAttribute));
             
             var targetFieldInfo = callerObject.GetType().GetField(attr.objectFieldName);
-            unityObject = (UnityEngine.Object)targetFieldInfo.GetValue(callerObject);
+            if (targetFieldInfo == null)
+                throw new ArgumentException($"could not find field {attr.objectFieldName} in {callerObject.GetType().Name}");
+            
+            unityObject = targetFieldInfo.GetValue(callerObject) as UnityEngine.Object;
+            if (unityObject == null)
+                throw new ArgumentException($"field {attr.objectFieldName} in {callerObject.GetType().Name} is null or not a Unity Object");
+            
             var field = (string)callerObject.GetType().GetField(attributeFieldName).GetValue(callerObject);
 
             var methodInfo = unityObject.GetType().GetMethod(field, BindingFlags.Public | BindingFlags.Instance);

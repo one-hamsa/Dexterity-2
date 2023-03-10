@@ -19,7 +19,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            objectCtx = new ObjectBooleanContext(this, nameof(targetProperty));
+            try
+            {
+                objectCtx = new ObjectBooleanContext(this, nameof(targetProperty));
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogException(e, context);
+                objectCtx = null;
+            }
         }
 
         public override int GetValue() 
