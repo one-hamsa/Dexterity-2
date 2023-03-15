@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
@@ -25,7 +23,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public static event Action<PressAnywhereEvent> onAnyPress;
 
 		public LayerMask layerMask = int.MaxValue;
-		public InputAction pressed;
 
 		public RaycastController[] otherControllers;
 		public bool defaultController;
@@ -42,8 +39,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public RaycastHit hit { get; private set; }
 		public bool isLocked => lockedOn != null;
 		private IRaycastReceiver lockedOn;
-		private int pressStartFrame = -1;
-		private RaycastController lastControllerPressed;
+		protected int pressStartFrame = -1;
+		protected RaycastController lastControllerPressed;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
 		List<IRaycastReceiver> lastReceivers = new(4), 
@@ -125,19 +122,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			}
 		}
         
-
-        private void OnEnable()
-        {
-			pressed.Enable();			
-			pressed.performed += HandlePressed;
-		}
-		private void OnDisable()
-        {
-			pressed.Disable();
-			pressed.performed -= HandlePressed;
-		}
-
-		private void HandlePressed(InputAction.CallbackContext context)
+		protected void HandlePressed()
 		{
 			lastControllerPressed = this;
 			foreach (var other in otherControllers)
@@ -293,8 +278,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			return true;
 		}
 
+		protected virtual bool isPressed => false;
+        bool IRaycastController.isPressed => isPressed;
 		bool IRaycastController.CompareTag(string other) => gameObject.CompareTag(other);
-        bool IRaycastController.isPressed => (pressed.phase == InputActionPhase.Started);
 		bool IRaycastController.wasPressedThisFrame => (pressStartFrame == Time.frameCount);
 		Vector3 IRaycastController.position => transform.position;
 		Vector3 IRaycastController.forward => transform.forward;
