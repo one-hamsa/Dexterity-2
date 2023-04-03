@@ -9,5 +9,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         void ReceiveHit(IRaycastController controller, RaycastHit hit);
         void ClearHit(IRaycastController controller);
+        IRaycastReceiver Resolve() => this;
     }
 }

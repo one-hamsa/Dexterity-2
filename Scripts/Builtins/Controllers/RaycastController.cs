@@ -181,9 +181,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 					potentialReceiversA.Clear();
 					foreach (var receiver in receiversBeforeFilter)
 					{
-						if (isRaycastReceiverIncluded.Count > 0 && !isRaycastReceiverIncluded[^1](receiver))
+						var r = receiver.Resolve();
+						if (isRaycastReceiverIncluded.Count > 0 && !isRaycastReceiverIncluded[^1](r))
 							continue;
-						potentialReceiversA.Add(receiver);
+						potentialReceiversA.Add(r);
 					}
 
 					if (potentialReceiversA.Count == 0)

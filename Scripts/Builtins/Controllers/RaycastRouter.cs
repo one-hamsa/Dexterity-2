@@ -10,28 +10,32 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     /// </summary>
     public class RaycastRouter : MonoBehaviour, IRaycastReceiver
     {
-        private readonly List<IRaycastReceiver> receivers = new List<IRaycastReceiver>();
-        public bool hasReceivers => receivers.Count > 0;
+        private IRaycastReceiver receiver;
+        public bool hasReceivers => receiver != null;
 
-        public void AddReceiver(IRaycastReceiver receiver)
+        public void SetReceiver(IRaycastReceiver receiver)
         {
-            receivers.Add(receiver);
+            if (this.receiver != null)
+                Debug.LogError($"RaycastRouter.SetReceiver() called when receiver was already set.", this);
+            this.receiver = receiver;
         }
         public void RemoveReceiver(IRaycastReceiver receiver)
         {
-            receivers.Remove(receiver);
+            if (this.receiver != receiver)
+                Debug.LogError($"RaycastRouter.RemoveReceiver() called with a receiver that was not set.", this);
+            this.receiver = null;
+        }
+        
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, RaycastHit hit)
+        {
+            Debug.LogError($"RaycastRouter.ReceiveHit() should never be called.", this);
         }
         
         void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
-            foreach (var receiver in receivers)
-                receiver.ClearHit(controller);
+            Debug.LogError($"RaycastRouter.ClearHit() should never be called.", this);
         }
 
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, RaycastHit hit)
-        {
-            foreach (var receiver in receivers)
-                receiver.ReceiveHit(controller, hit);
-        }
+        public IRaycastReceiver Resolve() => receiver;
     }
 }
