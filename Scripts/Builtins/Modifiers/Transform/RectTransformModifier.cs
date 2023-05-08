@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class RectTransformModifier : ComponentModifier<RectTransform>, ISupportValueFreeze, ISupportPropertyFreeze
     {
         public Vector2 baseSize;
+        public bool syncScale;
 
         [Serializable]
         public class Property : PropertyBase
@@ -55,6 +56,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
 
             component.sizeDelta = sizeDelta;
+            
+            if (syncScale)
+            {
+                transform.localScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
+            }
 
             // update UI layout
             if (updateParentReference)

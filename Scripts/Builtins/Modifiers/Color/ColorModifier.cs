@@ -9,13 +9,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class ColorModifier : Modifier, ISupportPropertyFreeze
     {
         private struct SupportedComponentActions {
-            public Func<Component, Color> getColor;
-            public Action<Component, Color> setColor;
+            public Func<object, Color> getColor;
+            public Action<object, Color> setColor;
         }
 
         private static Dictionary<Type, SupportedComponentActions> supportedComponents = new();
         
-        static void AddSupportedComponent<T>(Func<T, Color> getColor, Action<T, Color> setColor) where T : Component
+        static void AddSupportedComponent<T>(Func<T, Color> getColor, Action<T, Color> setColor)
         {
             supportedComponents.Add(typeof(T), new SupportedComponentActions {
                 getColor = (c) => getColor((T)c),
@@ -26,6 +26,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         static ColorModifier()
         {
             AddSupportedComponent<Image>((c) => c.color, (c, color) => c.color = color);
+            AddSupportedComponent<IColorModifierSupport>((c)=> c.GetColor(), (c, color)=> c.SetColor(color));
             AddSupportedComponent<SpriteRenderer>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<TMP_Text>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<CanvasGroup>((c) => new Color(1f, 1f, 1f, c.alpha), (c, color) => c.alpha = color.a);
@@ -116,5 +117,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             prop.color = actions.getColor(component);
         }
+    }
+    public interface IColorModifierSupport
+    {
+        void SetColor(Color color);
+        Color GetColor(); 
     }
 }
