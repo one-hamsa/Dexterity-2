@@ -42,7 +42,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             if (!node)
             {
-                Debug.LogWarning($"Node not found for listener ({gameObject.name})");
+                Debug.LogWarning($"Node not found for listener ({gameObject.name})", this);
                 enabled = false;
                 return;
             }
@@ -62,7 +62,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
         void OnDisable()
         {
-            pressedField.onBooleanValueChanged -= HandlePress;
+            if (pressedField != null)
+                pressedField.onBooleanValueChanged -= HandlePress;
         }
 
         private void HandlePress(Node.OutputField field, bool oldValue, bool newValue)
