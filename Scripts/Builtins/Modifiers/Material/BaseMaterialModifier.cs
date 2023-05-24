@@ -140,7 +140,7 @@ namespace OneHamsa.Dexterity.Visual
         #if UNITY_EDITOR
         private void OnSelectionChanged()
         {
-            if (UnityEditor.Selection.activeGameObject != gameObject)
+            if (this == null || UnityEditor.Selection.activeGameObject != gameObject)
                 CleanupEditor();
         }
         private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange) => CleanupEditor();
