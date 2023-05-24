@@ -206,7 +206,7 @@ namespace OneHamsa.Dexterity.Visual
         }
         
         public override HashSet<string> GetStateNames() {
-            if (stateNames == null)
+            if (!Application.isPlaying || stateNames == null)
             {
                 stateNames = new HashSet<string>();
                 
@@ -217,7 +217,7 @@ namespace OneHamsa.Dexterity.Visual
             return stateNames;
         }
         public override HashSet<string> GetFieldNames() {
-            if (fieldNames == null)
+            if (!Application.isPlaying || fieldNames == null)
             {
                 fieldNames = new HashSet<string>();
 
