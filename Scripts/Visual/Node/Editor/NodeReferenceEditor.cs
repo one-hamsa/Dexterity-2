@@ -319,6 +319,9 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(child);
                     updated |= EditorGUI.EndChangeCheck();
+                    // XXX unity has some weird bug here when it's a bool (NodeField's negate for instance)
+                    //. (this only half solves it, the toggle still feels weird)
+                    updated |= child.propertyType == SerializedPropertyType.Boolean;
                 }
             }
             EditorGUI.indentLevel--;

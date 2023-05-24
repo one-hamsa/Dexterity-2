@@ -81,7 +81,7 @@ namespace OneHamsa.Dexterity.Visual
             var enumValue = GetEnumValueAsString();
             if (string.IsNullOrEmpty(enumValue))
             {
-                Debug.LogError($"internal error: enumValue == null after initialization", this);
+                Debug.LogError($"Could not find enum value (int value is {GetEnumValue()}, did the enum change?)", this);
                 enabled = false;
                 return StateFunction.emptyStateId;
             }
