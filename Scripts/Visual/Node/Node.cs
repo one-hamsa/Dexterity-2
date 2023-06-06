@@ -142,9 +142,13 @@ namespace OneHamsa.Dexterity.Visual
                 reference.name = $"{name} (Live Reference)";
                 // copy all references from this node to the runtime instance
                 reference.extends.AddRange(referenceAssets);
-                // initialize reference (this will create the runtime version with all the inherited gates)
-                reference.Initialize(customGates);
             }
+            else
+            {
+                reference.Uninitialize();
+            }
+            // initialize reference (this will create the runtime version with all the inherited gates)
+            reference.Initialize(customGates);
 
             // run base initialize after registering states
             base.Initialize();
@@ -379,13 +383,14 @@ namespace OneHamsa.Dexterity.Visual
 
             fieldsToNodes.Remove(field);
         }
-        void IGateContainer.AddGate(Gate gate)
+
+        public void AddGate(Gate gate)
         {
             customGates.Add(gate);
             onGateAdded?.Invoke(gate);
         }
 
-        void IGateContainer.RemoveGate(Gate gate)
+        public void RemoveGate(Gate gate)
         {
             customGates.Remove(gate);
             onGateRemoved?.Invoke(gate);

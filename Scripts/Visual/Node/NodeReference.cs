@@ -111,6 +111,11 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
+        public void Uninitialize()
+        {
+            gates.Clear();
+        }
+
         public void AddGate(Gate gate)
         {
             gates.Add(gate);
