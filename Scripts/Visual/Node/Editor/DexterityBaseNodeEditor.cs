@@ -130,9 +130,36 @@ namespace OneHamsa.Dexterity.Visual
             // make sure all are up to date
             foreach (var modifier in modifiers)
                 ModifierEditor.SyncModifierStates(modifier);
-
+            
             if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
                 return;
+            
+            if (GUILayout.Button("Save Current As..."))
+            {
+                // show menu to select which state to save
+                var menu = new GenericMenu();
+                foreach (var state in states)
+                {
+                    menu.AddItem(new GUIContent(state), false, () => SaveModifiers(state));
+                }
+                menu.ShowAsContext();
+                
+                void SaveModifiers(string state)
+                {
+                    foreach (var modifier in modifiers)
+                    {
+                        if (modifier is ISupportPropertyFreeze freeze)
+                        {
+                            var activeProp = modifier.properties.First(p => p.state == state);
+                            freeze.FreezeProperty(activeProp);
+                        }
+                        else 
+                        {
+                            Debug.LogWarning($"Modifier {modifier.name} does not support property freeze, skipping.", modifier);
+                        }
+                    }
+                }
+            }
 
             var origColor = GUI.contentColor;
             foreach (var m in modifiers)
