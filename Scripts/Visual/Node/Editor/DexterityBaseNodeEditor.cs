@@ -125,7 +125,11 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowModifiers()
         {
-            var modifiers = GetModifiers();
+            var modifiers = GetModifiers().ToList();
+            
+            // make sure all are up to date
+            foreach (var modifier in modifiers)
+                ModifierEditor.SyncModifierStates(modifier);
 
             if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
                 return;

@@ -46,31 +46,10 @@ namespace OneHamsa.Dexterity.Visual
             
             foreach (var m in targets.Cast<Modifier>())
             {
-                var targetStates = m.properties.Select(p => p?.state).ToList();
-                var changed = false;
-                foreach (var state in alphabetically)
-                {
-                    if (!targetStates.Contains(state))
-                    {
-                        AddStateToModifier(m, state);
-                        changed = true;
-                    }
-                }
-                
-                foreach (var state in targetStates)
-                {
-                    if (state == null || !alphabetically.Contains(state))
-                    {
-                        RemoveStateFromModifier(m, state);
-                        changed = true;
-                    }
-                }
-
-                if (changed)
-                {
+                if (SyncModifierStates(m))
                     serializedObject.Update();
-                    targetStates = m.properties.Select(p => p.state).ToList();
-                }
+                
+                var targetStates = m.properties.Select(p => p.state).ToList();
                 
                 if (targetStates.Count != alphabetically.Count || !targetStates.ToHashSet().SetEquals(states)) {
                     EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
@@ -178,11 +157,36 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        private void AddStateToModifier(Modifier m, string state)
+        public static bool SyncModifierStates(Modifier m)
+        {
+            var states = ((IHasStates)m).GetStateNames().ToHashSet();
+            var targetStates = m.properties.Select(p => p?.state).ToList();
+            var changed = false;
+            foreach (var state in states)
+            {
+                if (!targetStates.Contains(state))
+                {
+                    AddStateToModifier(m, state);
+                    changed = true;
+                }
+            }
+            
+            foreach (var state in targetStates)
+            {
+                if (state == null || !states.Contains(state))
+                {
+                    RemoveStateFromModifier(m, state);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+        private static void AddStateToModifier(Modifier m, string state)
         {
             // get property info, iterate through parent classes to support inheritance
             Type propType = null;
-            var objType = target.GetType();
+            var objType = m.GetType();
             while (propType == null)
             {
                 var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
@@ -197,13 +201,13 @@ namespace OneHamsa.Dexterity.Visual
             m.properties.Add(newProp);
             if (m is ISupportPropertyFreeze supportPropertyFreeze) 
                 supportPropertyFreeze.FreezeProperty(newProp);
-            EditorUtility.SetDirty(target);
+            EditorUtility.SetDirty(m);
         }
         
-        private void RemoveStateFromModifier(Modifier m, string state)
+        private static void RemoveStateFromModifier(Modifier m, string state)
         {
             m.properties.RemoveAll(p => p?.state == state);
-            EditorUtility.SetDirty(target);
+            EditorUtility.SetDirty(m);
         }
 
 
