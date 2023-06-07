@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -33,7 +34,13 @@ namespace OneHamsa.Dexterity.Visual
         static BaseMaterialModifier()
         {
             AddSupportedComponent<Renderer>(
-                c => (c.material, false), 
+                c =>
+                {
+                    return !Application.isPlaying 
+                        // this is handled by the AnimationEditorContext
+                        ? (c.sharedMaterial, false) 
+                        : (c.material, false);
+                }, 
                 c => c.sharedMaterial, 
                 (c, m) => c.sharedMaterial = m
                 );
@@ -77,89 +84,8 @@ namespace OneHamsa.Dexterity.Visual
         public override void Awake()
         {
             base.Awake();
-
-            #if UNITY_EDITOR
-            // support editor transitions
-            if (!Application.isPlaying && targetMaterial == null)
-            {
-                originalMaterial = actions.getSharedMaterial(component);
-                (targetMaterial, shouldDestroyTargetMaterial) = (new Material(originalMaterial), true);
-                targetMaterial.name = $"[Editor] {targetMaterial.name}";
-                targetMaterial.EnableKeyword("_NORMALMAP");
-                targetMaterial.EnableKeyword("_DETAIL_MULX2");
-                actions.setSharedMaterial(component, targetMaterial);
-            }
-            else
-            {
-                (targetMaterial, shouldDestroyTargetMaterial) = actions.getMaterial(component);
-            }
-            #else
             (targetMaterial, shouldDestroyTargetMaterial) = actions.getMaterial(component);
-            #endif
         }
-
-        public void OnDestroy()
-        {
-            #if UNITY_EDITOR
-            if (!Application.isPlaying)
-            {
-                var selected = UnityEditor.Selection.activeGameObject;
-                var node = this.GetNode();
-                
-                if (selected == gameObject || (node != null && selected == node.gameObject))
-                {
-                    // register for some events
-                    UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
-                    UnityEditor.Selection.selectionChanged += OnSelectionChanged;
-                    UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-                    UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-                    UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
-                    UnityEditor.Compilation.CompilationPipeline.compilationStarted += OnCompilationStarted;
-
-                    return;
-                }
-            }
-            #endif
-
-            if (targetMaterial != null && shouldDestroyTargetMaterial)
-            {
-                #if UNITY_EDITOR
-                if (!Application.isPlaying)
-                {
-                    CleanupEditor();
-                    return;
-                }
-                #endif
-                
-                Destroy(targetMaterial);
-                targetMaterial = null;
-            }
-        }
-
-        #if UNITY_EDITOR
-        private void OnSelectionChanged()
-        {
-            if (this == null || UnityEditor.Selection.activeGameObject != gameObject)
-                CleanupEditor();
-        }
-        private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange) => CleanupEditor();
-        private void OnCompilationStarted(object context) => CleanupEditor();
-
-        void CleanupEditor()
-        {
-            UnityEditor.Selection.selectionChanged -= OnSelectionChanged;
-            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            UnityEditor.Compilation.CompilationPipeline.compilationStarted -= OnCompilationStarted;
-            
-            if (targetMaterial != null)
-            {
-                actions.setSharedMaterial(component, originalMaterial);
-                DestroyImmediate(targetMaterial);
-                targetMaterial = null;
-            }
-        }
-        #endif
-
 
         private void CacheComponent()
         {
@@ -182,5 +108,116 @@ namespace OneHamsa.Dexterity.Visual
         {
             CacheComponent();
         }
+        public void OnDestroy()
+        {
+            if (targetMaterial != null && shouldDestroyTargetMaterial)
+            {
+                Destroy(targetMaterial);
+                targetMaterial = null;
+            }
+        }
+        
+        #if UNITY_EDITOR
+        public class MaterialModifierEditorAnimationContext : EditorAnimationContext
+        {
+            private GameObject newGo;
+            private readonly Material[] materials;
+            private readonly Component originalComponent;
+
+            public MaterialModifierEditorAnimationContext(BaseMaterialModifier modifier) : base(modifier)
+            {
+                var go = modifier.gameObject;
+                originalComponent = modifier.component;
+                
+                newGo = Instantiate(go, go.transform.parent);
+                DisableOriginalComponent();
+                newGo.transform.localPosition = go.transform.localPosition;
+                newGo.transform.localRotation = go.transform.localRotation;
+                newGo.transform.localScale = go.transform.localScale;
+                newGo.hideFlags = HideFlags.HideAndDontSave;
+                newGo.name = $"[Editor] {go.name}";
+
+                var tempModifier = newGo.GetComponent<BaseMaterialModifier>();
+                this.modifier = tempModifier;
+                tempModifier.CacheComponent();
+                
+                var renderer = newGo.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    materials = UnityEditorInternal.InternalEditorUtility.InstantiateMaterialsInEditMode(renderer);
+                    foreach (var material in materials)
+                    {
+                        material.name = $"[Editor] {material.name}";
+                        material.EnableKeyword("_NORMALMAP");
+                        material.EnableKeyword("_DETAIL_MULX2");
+                    }
+                    renderer.sharedMaterials = materials;
+                }
+                
+                UnityEditor.SceneView.RepaintAll();
+            }
+
+            private void DisableOriginalComponent()
+            {
+                switch (originalComponent)
+                {
+                    case Renderer renderer:
+                        renderer.enabled = false;
+                        break;
+                    case MaskableGraphic graphic:
+                        graphic.enabled = false;
+                        break;
+                    case MonoBehaviour monoBehaviour:
+                        monoBehaviour.enabled = false;
+                        break;
+                    default:
+                        throw new Exception($"Unsupported component type {originalComponent.GetType()}");
+                }
+            }
+            
+            private void EnableOriginalComponent()
+            {
+                switch (originalComponent)
+                {
+                    case Renderer renderer:
+                        renderer.enabled = true;
+                        break;
+                    case MaskableGraphic graphic:
+                        graphic.enabled = true;
+                        break;
+                    case MonoBehaviour monoBehaviour:
+                        monoBehaviour.enabled = true;
+                        break;
+                    default:
+                        throw new Exception($"Unsupported component type {originalComponent.GetType()}");
+                }
+            }
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                
+                if (originalComponent != null) 
+                    EnableOriginalComponent();
+
+                if (materials != null)
+                {
+                    foreach (var material in materials)
+                    {
+                        DestroyImmediate(material);
+                    }
+                }
+               
+                if (newGo != null)
+                {
+                    DestroyImmediate(newGo);
+                    newGo = null;
+                }
+            }
+        }
+
+        public override EditorAnimationContext GetEditorAnimationContext() 
+            => new MaterialModifierEditorAnimationContext(this);
+#endif
     }
 }

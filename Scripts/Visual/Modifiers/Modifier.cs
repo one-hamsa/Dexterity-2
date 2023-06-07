@@ -303,7 +303,7 @@ namespace OneHamsa.Dexterity.Visual
         #if UNITY_EDITOR
         public class EditorAnimationContext : IDisposable
         {
-            private readonly Modifier modifier;
+            protected Modifier modifier;
 
             public EditorAnimationContext(Modifier modifier)
             {
@@ -342,7 +342,7 @@ namespace OneHamsa.Dexterity.Visual
             {
             }
         }
-        public EditorAnimationContext GetEditorAnimationContext() => new(this);
+        public virtual EditorAnimationContext GetEditorAnimationContext() => new(this);
 #endif
     }
 
