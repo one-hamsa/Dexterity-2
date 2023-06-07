@@ -29,8 +29,9 @@ namespace OneHamsa.Dexterity.Visual
         public bool started { get; set; }
         public bool updating { get; private set; }
 
-        public HashSet<BaseField> nodes { get; } = new();
-        public HashSet<BaseField> nodesForCurrentSortIteration { get; } = new();
+        private readonly HashSet<BaseField> nodes = new();
+        private readonly HashSet<BaseField> nodesForCurrentSortIteration = new();
+        private readonly HashSet<BaseField> nodesForRefreshIteration = new();
         
         public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } = new();
 
@@ -152,7 +153,10 @@ namespace OneHamsa.Dexterity.Visual
 
         void RefreshEdges()
         {
-            foreach (var node in nodes)
+            nodesForRefreshIteration.Clear();
+            nodesForRefreshIteration.UnionWith(nodes);
+            
+            foreach (var node in nodesForRefreshIteration)
             {
                 try
                 {
