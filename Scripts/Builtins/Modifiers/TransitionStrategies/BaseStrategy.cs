@@ -25,6 +25,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             jumpedToFinalState = false;
 
             result.Clear();
+            nextResult.Clear();
             var foundState = false;
             foreach (var state in states)
             {
