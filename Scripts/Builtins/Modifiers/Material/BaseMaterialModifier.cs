@@ -98,9 +98,8 @@ namespace OneHamsa.Dexterity.Visual
             #endif
         }
 
-        public override void OnDestroy()
+        public void OnDestroy()
         {
-            base.OnDestroy();
             #if UNITY_EDITOR
             if (!Application.isPlaying)
             {

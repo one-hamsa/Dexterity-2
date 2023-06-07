@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             this.states = states;
             
-            activityThreshold = Core.instance.settings.GetGlobalFloat("activityThreshold", .999f);
+            activityThreshold = Database.instance.settings.GetGlobalFloat("activityThreshold", .999f);
             jumpedToFinalState = false;
 
             result.Clear();
@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             if (!foundState)
                 throw new ITransitionStrategy.TransitionInitializationException($"did not find state " +
-                    $"{currentState} ({Core.instance.GetStateAsString(currentState)}) in states");
+                    $"{currentState} ({Database.instance.GetStateAsString(currentState)}) in states");
             
             return result;
         }

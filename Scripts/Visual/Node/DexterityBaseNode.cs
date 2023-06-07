@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual
         protected virtual void UpdateInternal(bool ignoreDelays)
         {
             // doing this here gives the editor a chance to intervene
-            deltaTime = Core.instance.deltaTime;
+            deltaTime = Database.instance.deltaTime;
             
             if (stateDirty)
             {
@@ -118,7 +118,7 @@ namespace OneHamsa.Dexterity.Visual
         protected virtual void Initialize()
         {
             // register my states 
-            Core.instance.Register(this);
+            Database.instance.Register(this);
             
             // cache delays (from string to int)
             CacheDelays();
@@ -135,7 +135,7 @@ namespace OneHamsa.Dexterity.Visual
             else
             {
                 // find default state and define initial state
-                initialStateId = Core.instance.GetStateID(initialState);
+                initialStateId = Database.instance.GetStateID(initialState);
             }
             if (initialStateId == -1)
             {
@@ -158,7 +158,7 @@ namespace OneHamsa.Dexterity.Visual
         public IEnumerable<int> GetStateIDs()
         {
             foreach (var stateName in GetStateNames())
-                yield return Core.instance.GetStateID(stateName);
+                yield return Database.instance.GetStateID(stateName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -183,7 +183,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             cachedDelays = new Dictionary<int, TransitionDelay>();
             foreach (var delay in delays)
-                cachedDelays[Core.instance.GetStateID(delay.beforeExitingState)] = delay;
+                cachedDelays[Database.instance.GetStateID(delay.beforeExitingState)] = delay;
         }
 
         private float GetExitingStateDelay(int state)
@@ -264,7 +264,7 @@ namespace OneHamsa.Dexterity.Visual
 
 #if UNITY_EDITOR
             // in editor, write to the overrideState string (this can be called in edit time)
-            overrideState = Core.instance.GetStateAsString(state);
+            overrideState = Database.instance.GetStateAsString(state);
 #else
             // in runtime, clear the string
             overrideState = null;
@@ -279,7 +279,7 @@ namespace OneHamsa.Dexterity.Visual
         private void CacheStateOverride()
         {
             if (!string.IsNullOrEmpty(overrideState))
-                SetStateOverride(Core.instance.GetStateID(overrideState));
+                SetStateOverride(Database.instance.GetStateID(overrideState));
         }
         #endregion Overrides
 

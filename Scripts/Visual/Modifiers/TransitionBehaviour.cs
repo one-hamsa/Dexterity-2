@@ -62,7 +62,7 @@ namespace OneHamsa.Dexterity.Visual
         public void InitializeTransitionState()
         {
             // create default if doesn't exist
-            transitionStrategy ??= Core.instance.settings.CreateDefaultTransitionStrategy();
+            transitionStrategy ??= Database.instance.settings.CreateDefaultTransitionStrategy();
 
             try {
                 transitionState = transitionStrategy.Initialize(states, GetActiveState());

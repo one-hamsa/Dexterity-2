@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             
             foreach (var enumOption in Enum.GetNames(targetEnumType)) {
-                enumToStateId.Add(enumOption, Core.instance?.GetStateID(enumOption) ?? -1);
+                enumToStateId.Add(enumOption, Database.instance?.GetStateID(enumOption) ?? -1);
             }
         }
 

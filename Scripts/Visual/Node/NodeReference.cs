@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
-                return (outputFieldDefinitionId = Core.instance.GetFieldID(outputFieldName)) != -1;
+                return (outputFieldDefinitionId = Database.instance.GetFieldID(outputFieldName)) != -1;
             }
 
             public override string ToString()
@@ -78,7 +78,7 @@ namespace OneHamsa.Dexterity.Visual
             // register all functions
             stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
             for (int i = 0; i < stateFunctions.Length; i++) {
-                Core.instance.Register(stateFunctions[i]);
+                Database.instance.Register(stateFunctions[i]);
             }
 
             // copy from parents

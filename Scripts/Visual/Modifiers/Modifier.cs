@@ -72,7 +72,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (!propertiesCache.ContainsKey(stateId))
                 {
-                    Debug.LogWarning($"property for state = {Core.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
+                    Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
                                      $" (probably states were added to node {GetNode().name} without updating modifier)", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)
@@ -83,7 +83,7 @@ namespace OneHamsa.Dexterity.Visual
 
             // editor
             foreach (var prop in properties)
-                if (Core.instance.GetStateID(prop.state) == stateId)
+                if (Database.instance.GetStateID(prop.state) == stateId)
                     return prop;
 
             return null;
@@ -126,7 +126,7 @@ namespace OneHamsa.Dexterity.Visual
                     Debug.LogError("Null property in Modifier", this);
                     continue;
                 }
-                var id = Core.instance.GetStateID(prop.state);
+                var id = Database.instance.GetStateID(prop.state);
                 if (id == -1)
                 {
                     // those properties are kept serialized in order to maintain history, no biggie
@@ -139,10 +139,6 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 propertiesCache.Add(id, prop);
             }
-        }
-        public virtual void OnDestroy() 
-        {
-
         }
 
         public virtual void HandleNodeEnabled()
@@ -162,7 +158,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             cachedDelays = new();
             foreach (var delay in delays)
-                cachedDelays[(delay.direction, Core.instance.GetStateID(delay.state))] = delay;
+                cachedDelays[(delay.direction, Database.instance.GetStateID(delay.state))] = delay;
         }
 
         public void AddDelay(TransitionDelay delay)
@@ -303,6 +299,51 @@ namespace OneHamsa.Dexterity.Visual
                 supportValueFreeze.FreezeValue();
             }
         }
+
+        #if UNITY_EDITOR
+        public class EditorAnimationContext : IDisposable
+        {
+            private readonly Modifier modifier;
+
+            public EditorAnimationContext(Modifier modifier)
+            {
+                this.modifier = modifier;
+            }
+            
+            public bool IsValid() => modifier != null;
+            
+            public virtual void Initialize()
+            {
+                modifier.Awake();
+            }
+
+            public virtual void OnNodeEnabled()
+            {
+                modifier.HandleNodeEnabled();
+                // force updating at least once
+                modifier.ForceTransitionUpdate();
+            }
+
+            public virtual void HandleStateChange(int oldState, int newState)
+            {
+                modifier.HandleStateChange(oldState, newState);
+            }
+
+            public virtual bool Refresh()
+            {
+                modifier.Refresh();
+                if (!modifier.IsChanged()) 
+                    return false;
+                UnityEditor.EditorUtility.SetDirty(modifier);
+                return true;
+            }
+
+            public virtual void Dispose()
+            {
+            }
+        }
+        public EditorAnimationContext GetEditorAnimationContext() => new(this);
+#endif
     }
 
 }

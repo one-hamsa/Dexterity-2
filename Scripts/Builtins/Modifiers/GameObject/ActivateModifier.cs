@@ -58,15 +58,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             // actually, don't cleanup just yet
         }
 
-        public override void OnDestroy()
+        public void OnDestroy()
         {
             // cleanup now
             base.OnDisable();
             
             if (coro != null && Manager.instance != null)
                 Manager.instance.StopCoroutine(coro);
-            
-            base.OnDestroy();
         }
     }
 }

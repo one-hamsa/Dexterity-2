@@ -63,7 +63,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
         }
 
-        public override void OnDestroy()
+        public void OnDestroy()
         {
             PruneDeadColliders();
             

@@ -167,7 +167,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(Core.instance.GetFieldDefinition(field.definitionId).name);
+                EditorGUILayout.LabelField(Database.instance.GetFieldDefinition(field.definitionId).name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();

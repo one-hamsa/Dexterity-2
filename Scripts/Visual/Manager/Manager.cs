@@ -67,12 +67,18 @@ namespace OneHamsa.Dexterity.Visual
 
         protected void Awake()
         {
-            if (Core.instance == null)
-                Core.Create(settings);
+            if (Database.instance == null)
+                Database.Create(settings);
          
             // create graph instance
             graph = gameObject.AddComponent<Graph>();
         }
+        
+        protected void OnDestroy()
+        {
+            Database.Destroy();
+        }
+        
         protected void Start()
         {
             // enable on start to let all nodes register to graph during OnEnable

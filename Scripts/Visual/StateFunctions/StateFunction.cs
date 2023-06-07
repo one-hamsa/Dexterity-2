@@ -76,10 +76,10 @@ namespace OneHamsa.Dexterity.Visual
             {
                 switch (type) {
                     case Type.Condition:
-                        condition_fieldId = Core.instance.GetFieldID(condition_fieldName);
+                        condition_fieldId = Database.instance.GetFieldID(condition_fieldName);
                         break;
                     case Type.Result:
-                        result_stateId = Core.instance.GetStateID(result_stateName);
+                        result_stateId = Database.instance.GetStateID(result_stateName);
                         break;
                     case Type.Reference:
                         if (reference_stateFunction == null)

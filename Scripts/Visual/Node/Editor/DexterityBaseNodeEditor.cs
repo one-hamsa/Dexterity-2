@@ -102,7 +102,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (string.IsNullOrEmpty(overrideStateProp.stringValue))
                     baseNode.ClearStateOverride();
                 else
-                    baseNode.SetStateOverride(Core.instance.GetStateID(overrideStateProp.stringValue));
+                    baseNode.SetStateOverride(Database.instance.GetStateID(overrideStateProp.stringValue));
             }
             GUI.enabled = true;
         }
@@ -167,7 +167,7 @@ namespace OneHamsa.Dexterity.Visual
                 style.fontSize = 14;
 
                 GUI.color = Color.green;
-                GUILayout.Label(Core.instance.GetStateAsString(baseNode.GetActiveState()), style);
+                GUILayout.Label(Database.instance.GetStateAsString(baseNode.GetActiveState()), style);
                 GUI.color = origColor;
             }
         }

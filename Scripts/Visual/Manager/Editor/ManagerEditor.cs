@@ -20,14 +20,14 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             GUILayout.Label("Field IDs (runtime)", EditorStyles.whiteLargeLabel);
-            for (var i = 0; i < Core.instance.fieldNames.Count; ++i) {
-                var field = Core.instance.fieldNames[i];
+            for (var i = 0; i < Database.instance.fieldNames.Count; ++i) {
+                var field = Database.instance.fieldNames[i];
                 EditorGUILayout.LabelField(field, i.ToString());
             }
 
             GUILayout.Label("State IDs (runtime)", EditorStyles.whiteLargeLabel);
-            for (var i = 0; i < Core.instance.stateNames.Count; ++i) {
-                var state = Core.instance.stateNames[i];
+            for (var i = 0; i < Database.instance.stateNames.Count; ++i) {
+                var state = Database.instance.stateNames[i];
                 EditorGUILayout.LabelField(state, i.ToString());
             }
         }

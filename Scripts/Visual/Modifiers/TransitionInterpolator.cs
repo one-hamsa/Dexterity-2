@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual
         private double _timeSinceStateChange;
 
         // time scale won't affect this
-        protected override double deltaTime => Core.instance.deltaTime;
+        protected override double deltaTime => Database.instance.deltaTime;
         protected override double timeSinceStateChange => _timeSinceStateChange;
         
         protected override int[] states => _states;

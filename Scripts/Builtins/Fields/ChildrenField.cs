@@ -175,7 +175,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             base.Initialize(context);
 
-            fieldId = Core.instance.GetFieldID(fieldName);
+            fieldId = Database.instance.GetFieldID(fieldName);
             if (parent == null)
                 parent = context.transform;
             RefreshReferences();

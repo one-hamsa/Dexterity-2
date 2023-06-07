@@ -351,12 +351,12 @@ namespace OneHamsa.Dexterity.Visual
             public override string ToShortString() {
                 if (node == null) {
                     if (!string.IsNullOrEmpty(originalNodeName)) {
-                        return $"(Destroyed) {originalNodeName}::{Core.instance.GetFieldDefinition(definitionId).name}";
+                        return $"(Destroyed) {originalNodeName}::{Database.instance.GetFieldDefinition(definitionId).name}";
                     }
                     return "(Uninitialized)";
                 }
 
-                return $"{node.name}::{Core.instance.GetFieldDefinition(definitionId).name}";
+                return $"{node.name}::{Database.instance.GetFieldDefinition(definitionId).name}";
             }
 
             public void SetOverride(bool value) {

@@ -227,7 +227,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 					// repeat-hit cooldown
 					if (_recentlyHitReceivers.ContainsKey(receiver)) {
 						float cooldown = (float)(now - _recentlyHitReceivers[receiver]) / Stopwatch.Frequency;
-						if (cooldown < Core.instance.settings.repeatHitCooldown)
+						if (cooldown < Database.instance.settings.repeatHitCooldown)
 							continue;
 					}
 

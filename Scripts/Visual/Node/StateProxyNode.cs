@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity.Visual
             // all enabled
             foreach (var stateProxy in stateProxies)
             {
-                stateProxy.inStateId = Core.instance.GetStateID(stateProxy.inStateName);
+                stateProxy.inStateId = Database.instance.GetStateID(stateProxy.inStateName);
                 if (stateProxy.inStateId == -1)
                 {
                     Debug.LogError($"State {stateProxy.inStateName} not registered in Dexterity", this);
@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity.Visual
                     return;
                 }
                 
-                stateProxy.outStateId = Core.instance.GetStateID(stateProxy.outStateName);
+                stateProxy.outStateId = Database.instance.GetStateID(stateProxy.outStateName);
                 if (stateProxy.outStateId == -1)
                 {
                     Debug.LogError($"State {stateProxy.outStateName} not registered in Dexterity", this);
@@ -86,7 +86,7 @@ namespace OneHamsa.Dexterity.Visual
             base.Initialize();
             HandleNodesEnabled();
             
-            defaultStateId = Core.instance.GetStateID(defaultStateName);
+            defaultStateId = Database.instance.GetStateID(defaultStateName);
         }
         
         protected override void UpdateInternal(bool ignoreDelays)

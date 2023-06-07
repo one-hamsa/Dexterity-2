@@ -292,7 +292,7 @@ namespace OneHamsa.Dexterity.Visual
                 var suffix = "";
                 if (Application.isPlaying)
                 {
-                    var stateId = Core.instance.GetStateID(propState);
+                    var stateId = Database.instance.GetStateID(propState);
                     if (stateId != StateFunction.emptyStateId)
                     {
                         if (modifier.GetActiveState() == stateId)
@@ -398,101 +398,98 @@ namespace OneHamsa.Dexterity.Visual
         string state, float speed = 1f, Action onEnd = null)
         {
             modifiers = modifiers.ToList();
-            
             // make sure it's not called with non-animatable modifiers
             if (modifiers.Any(m => !m.animatableInEditor))
             {
                 Debug.LogError($"{nameof(AnimateStateTransition)} called with non-animatable modifiers");
                 yield break;
             }
-            
+
             // record all components on modifiers for undo
             foreach (var modifier in modifiers) {
                 Undo.RegisterCompleteObjectUndo(modifier.GetComponents<Component>().ToArray(), "Editor Transition");
             }
             Undo.FlushUndoRecordObjects();
-
-            // destroy previous instance, it's ok because it's editor time
-            if (Core.instance != null)
-                Core.Destroy();
-            Core.Create(DexteritySettingsProvider.settings);
             
-            // timeScale doesn't behave nicely in editor
-            //Core.instance.timeScale = speed;
-
-            // setup
-            Core.instance.Register(node);
-            if (node is IStepList stepList)
-                stepList.InitializeSteps();
-
-            foreach (var modifier in modifiers)
-                modifier.Awake();
-
-            if (
-                // it's the first run (didn't run an editor transition before)
-                node.GetActiveState() == StateFunction.emptyStateId
-                // activeState might be invalid at that point
-                || !node.GetStateIDs().Contains(node.GetActiveState()))
+            var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
+            try
             {
-                // reset to initial state 
-                node.SetActiveState_Editor(Core.instance.GetStateID(node.initialState));
-            }
 
-            node.timeSinceStateChange = 0f;
+                // destroy previous instance, it's ok because it's editor time
+                Database.Destroy();
+                using var db = Database.Create(DexteritySettingsProvider.settings);
 
-            foreach (var modifier in modifiers) 
-            {
-                modifier.HandleNodeEnabled();
-                // force updating at least once
-                modifier.ForceTransitionUpdate();
-            }
+                // timeScale doesn't behave nicely in editor
+                //Core.instance.timeScale = speed;
 
-            var oldState = node.GetActiveState();
-            node.SetActiveState_Editor(Core.instance.GetStateID(state));
-            foreach (var modifier in modifiers)
-            {
-                modifier.HandleStateChange(oldState, node.GetActiveState());
-            }
+                // setup
+                db.Register(node);
+                if (node is IStepList stepList)
+                    stepList.InitializeSteps();
 
-            bool anyChanged;
+                foreach (var ctx in animationContexts)
+                    ctx.Initialize();
 
-            var lastUpdate = EditorApplication.timeSinceStartup;
-            do {
-                // immitate a frame
-                yield return null;
-                
-                // stop if something went wrong
-                if (Core.instance == null)
-                    break;
-                
-                node.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
-                node.timeSinceStateChange += node.deltaTime;
-                lastUpdate = EditorApplication.timeSinceStartup;
-
-                // transition
-                anyChanged = false;
-                foreach (var modifier in modifiers)
+                if (
+                    // it's the first run (didn't run an editor transition before)
+                    node.GetActiveState() == StateFunction.emptyStateId
+                    // activeState might be invalid at that point
+                    || !node.GetStateIDs().Contains(node.GetActiveState()))
                 {
-                    // guard for async changes that might result in reference loss
-                    if (modifier == null)
-                        continue;
-                    
-                    modifier.Refresh();
-                    if (modifier.IsChanged()) {
-                        anyChanged = true;
-                        EditorUtility.SetDirty(modifier);
+                    // reset to initial state 
+                    node.SetActiveState_Editor(db.GetStateID(node.initialState));
+                }
+
+                node.timeSinceStateChange = 0f;
+
+                foreach (var ctx in animationContexts)
+                    ctx.OnNodeEnabled();
+
+                var oldState = node.GetActiveState();
+                node.SetActiveState_Editor(db.GetStateID(state));
+                foreach (var ctx in animationContexts)
+                    ctx.HandleStateChange(oldState, node.GetActiveState());
+
+                bool anyChanged;
+
+                var lastUpdate = EditorApplication.timeSinceStartup;
+                do
+                {
+                    // immitate a frame
+                    yield return null;
+
+                    // stop if something went wrong
+                    if (Database.instance == null)
+                        break;
+
+                    node.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
+                    node.timeSinceStateChange += node.deltaTime;
+                    lastUpdate = EditorApplication.timeSinceStartup;
+
+                    // transition
+                    anyChanged = false;
+                    foreach (var ctx in animationContexts)
+                    {
+                        // guard for async changes that might result in reference loss
+                        if (!ctx.IsValid())
+                            continue;
+
+                        anyChanged |= ctx.Refresh();
                     }
-                }
-                if (anyChanged) {
-                    SceneView.RepaintAll();
-                }
-            } while (anyChanged);
 
-            foreach (var modifier in modifiers)
-                modifier.OnDestroy();
+                    if (anyChanged)
+                    {
+                        SceneView.RepaintAll();
+                    }
+                } while (anyChanged);
+            }
+            finally
+            {
+                foreach (var ctx in animationContexts)
+                    ctx.Dispose();
+            }
 
-            Core.Destroy();
-
+            Database.Destroy();
             onEnd?.Invoke();
         }
 

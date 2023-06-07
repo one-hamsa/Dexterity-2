@@ -6,32 +6,33 @@ namespace OneHamsa.Dexterity.Visual
 {
     using Utilities;
     
-    public class Core
+    public class Database : IDisposable
     {
-        public static Core instance { get; private set; }
+        public static Database instance { get; private set; }
 
         public readonly DexteritySettings settings;
 
-        public static Core Create(DexteritySettings settings)
+        public static Database Create(DexteritySettings settings)
         {
             if (instance != null)
             {
-                Debug.LogError("Core already exists");
+                Debug.LogError("Database already exists");
                 return null;
             }
 
-            instance = new Core(settings);
+            instance = new Database(settings);
             return instance;
         }
         public static void Destroy()
         {
+            instance?.Dispose();
             instance = null;
         }
         
-        private Core(DexteritySettings settings)
+        private Database(DexteritySettings settings)
         {
             if (instance != null) {
-                throw new Exception("Core already exists");
+                throw new Exception("Database already exists");
             }
             instance = this;
 
@@ -40,7 +41,8 @@ namespace OneHamsa.Dexterity.Visual
             Initialize();
         }
 
-        ~Core() {
+        public void Dispose()
+        {
             Uninitialize();
         }
 
