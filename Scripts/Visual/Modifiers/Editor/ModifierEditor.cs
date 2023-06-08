@@ -294,17 +294,19 @@ namespace OneHamsa.Dexterity.Visual
             
                 var origColor = GUI.contentColor;
                 var propertyBase = modifier.properties[i];
-                void UtilityButtons()
+                void UtilityButtons(bool canEdit)
                 {
                     if (targets.Length > 1)
                         return;
 
+                    GUI.enabled = canEdit;
                     if (modifier is ISupportPropertyFreeze propFreeze
                         && GUILayout.Button(EditorGUIUtility.IconContent("RotateTool On", "Freeze"), GUILayout.Width(25)))
                     {
                         Undo.RecordObject(modifier, "Freeze value");
                         propFreeze.FreezeProperty(propertyBase);
                     }
+                    GUI.enabled = true;
 
                     if (Application.isPlaying)
                         return;
@@ -348,6 +350,13 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     var menu = new GenericMenu();
                     DexteritySettingsProvider.settings.BuildCache();
+                    
+                    if (!string.IsNullOrEmpty(propertyBase.savedPropertyKey))
+                    {
+                        menu.AddDisabledItem(new GUIContent($"Bind: {propertyBase.savedPropertyKey}"));
+                        menu.AddSeparator("");
+                    }
+                    
                     foreach (var savedProp in DexteritySettingsProvider.settings.GetSavedPropertiesForType(
                                  propertyBase.GetType()))
                     {
@@ -370,6 +379,14 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         SaveProperty(modifier, propertyBase.state);
                     });
+                    
+                    menu.AddSeparator("");
+                    
+                    menu.AddItem(new GUIContent("Open Settings (Popup)"), false, () =>
+                    {
+                        var settings = DexteritySettingsProvider.settings;
+                        PopUpAssetInspector.Create(settings);
+                    });
                     menu.ShowAsContext();
                 }
 
@@ -377,6 +394,13 @@ namespace OneHamsa.Dexterity.Visual
                     propertyBase.state, UtilityButtons, Menu, suffix);
             }
             DrawSeparator();
+                
+            var scriptableIcon = EditorGUIUtility.IconContent("SettingsIcon");
+            scriptableIcon.text = "Open Settings";
+            if (GUILayout.Button(scriptableIcon))
+            {
+                // open new inspector with settings
+            }
 
             if (Application.isPlaying) // debug view
                 Repaint();
@@ -387,37 +411,56 @@ namespace OneHamsa.Dexterity.Visual
         public static bool ShowSingleStateFields(SerializedProperty serializedProperty,
             Type propertyType,
             string propertyKey,
-            Action utilityUiFunction = null,
+            Action<bool> utilityUiFunction = null,
             Action menuFunction = null, string suffix = "")
         {
             var updated = false;
             var origColor = GUI.contentColor;
 
-            string savedPropKey = null;
-            stateProps.Clear();
+            var savedProperty = serializedProperty.FindPropertyRelative(nameof(Modifier.PropertyBase.savedPropertyKey));
+            var savedPropKey = string.Empty;
+            if (!string.IsNullOrEmpty(savedProperty.stringValue))
+            {
+                DexteritySettingsProvider.settings.BuildCache();
+                var savedProp =
+                    DexteritySettingsProvider.settings.GetSavedProperty(propertyType, savedProperty.stringValue);
+                if (savedProp == null)
+                {
+                    Debug.LogError($"Saved property {savedPropKey} not found for {propertyType}, clearing");
+                    savedProperty.stringValue = "";
+                }
+                else
+                {
+                    savedPropKey = savedProperty.stringValue;
+                
+                    var index = DexteritySettingsProvider.settings.namedProperties
+                        .FindIndex(p => p.name == savedPropKey && p.property.GetType() == propertyType);
 
+                    if (index == -1)
+                        Debug.LogError($"Saved property {savedPropKey} not found for {propertyType.Name}");
+                    else
+                    {
+                        var serializedObject = new SerializedObject(DexteritySettingsProvider.settings);
+                        serializedProperty = serializedObject.FindProperty(nameof(DexteritySettings.namedProperties))
+                            .GetArrayElementAtIndex(index)
+                            .FindPropertyRelative(nameof(DexteritySettings.SavedProperty.property));
+                    }
+                }
+            }
+            
+            stateProps.Clear();
             // fields
             foreach (var field in Utils.GetChildren(serializedProperty))
             {
-                if (field.name is nameof(Modifier.PropertyBase.savedPropertyKey))
+                switch (field.name)
                 {
-                    savedPropKey = field.stringValue;
-                    if (!string.IsNullOrEmpty(savedPropKey))
-                    {
-                        DexteritySettingsProvider.settings.BuildCache();
-                        if (DexteritySettingsProvider.settings.GetSavedProperty(propertyType, savedPropKey) == null)
-                        {
-                            Debug.LogError($"Saved property {savedPropKey} not found for {propertyType}, clearing");
-                            field.stringValue = "";
-                            savedPropKey = null;
-                        }
-                    }
-                    continue;
+                    case nameof(Modifier.PropertyBase.savedPropertyKey):
+                    case nameof(Modifier.PropertyBase.state):
+                        continue;
+                    default:
+                        stateProps.Add(field.Copy());
+                        break;
                 }
-                if (field.name is nameof(Modifier.PropertyBase.state))
-                    continue;
-
-                stateProps.Add(field.Copy());
             }
 
 
@@ -433,29 +476,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
-            bool ShowBindIfExists()
-            {
-                if (string.IsNullOrEmpty(savedPropKey)) 
-                    return false;
-                
-                EditorGUILayout.BeginHorizontal();
-                GUI.contentColor = Color.yellow;
-                EditorGUILayout.LabelField($"[{savedPropKey}]{suffix}", GUILayout.MinWidth(30));
-                GUI.contentColor = origColor;
-
-                var scriptableIcon = EditorGUIUtility.IconContent("SettingsIcon");
-                scriptableIcon.text = "Open Settings";
-                if (GUILayout.Button(scriptableIcon))
-                {
-                    // open new inspector with settings
-                    var settings = DexteritySettingsProvider.settings;
-                    PopUpAssetInspector.Create(settings);
-                }
-                EditorGUILayout.EndHorizontal();
-
-                return true;
-            }
-
+            var isSaved = !string.IsNullOrEmpty(savedPropKey);
             if (stateProps.Count > 1)
             {
                 // multiple - fold
@@ -468,23 +489,32 @@ namespace OneHamsa.Dexterity.Visual
                 ShowMenuIfRightClick();
                 GUI.contentColor = origColor;
 
-                utilityUiFunction?.Invoke();
+                if (isSaved)
+                {
+                    GUI.contentColor = Color.yellow;
+                    GUILayout.Space(10);
+                    EditorGUILayout.LabelField($"[{savedPropKey}]", GUILayout.MinWidth(50));
+                    GUI.contentColor = origColor;
+                }
+
+                utilityUiFunction?.Invoke(!isSaved);
 
                 EditorGUILayout.EndHorizontal();
 
                 // show fields
-                if (foldedStates[propertyKey])
+                if (!foldedStates[propertyKey]) 
+                    return false;
+                
+                if (isSaved)
+                    GUI.enabled = false;
+                foreach (var field in stateProps)
                 {
-                    if (!ShowBindIfExists())
-                    {
-                        foreach (var field in stateProps)
-                        {
-                            EditorGUI.BeginChangeCheck();
-                            EditorGUILayout.PropertyField(field);
-                            updated |= EditorGUI.EndChangeCheck();
-                        }
-                    }
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(field);
+                    updated |= EditorGUI.EndChangeCheck();
                 }
+
+                GUI.enabled = true;
             }
             else if (stateProps.Count == 1)
             {
@@ -492,15 +522,23 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.LabelField($"{propertyKey}{suffix}", GUILayout.MinWidth(30));
                 ShowMenuIfRightClick();
                 GUI.contentColor = origColor;
-
-                if (!ShowBindIfExists())
+                
+                if (isSaved)
                 {
-                    EditorGUI.BeginChangeCheck();
-                    EditorGUILayout.PropertyField(stateProps[0], GUIContent.none, GUILayout.MinWidth(30));
-                    updated |= EditorGUI.EndChangeCheck();
+                    GUI.contentColor = Color.yellow;
+                    GUILayout.Space(10);
+                    EditorGUILayout.LabelField($"[{savedPropKey}]", GUILayout.MinWidth(50));
+                    GUI.contentColor = origColor;
+                    GUI.enabled = false;
                 }
 
-                utilityUiFunction?.Invoke();
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(stateProps[0], GUIContent.none, GUILayout.MinWidth(30));
+                updated |= EditorGUI.EndChangeCheck();
+                
+                GUI.enabled = true;
+
+                utilityUiFunction?.Invoke(!isSaved);
 
                 EditorGUILayout.EndHorizontal();
             }
@@ -635,6 +673,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             private Object asset;
             private Editor assetEditor;
+            private Vector2 scrollPos;
 
             public static PopUpAssetInspector Create(Object asset)
             {
@@ -650,9 +689,10 @@ namespace OneHamsa.Dexterity.Visual
                 asset = EditorGUILayout.ObjectField("Asset", asset, asset.GetType(), false);
                 GUI.enabled = true;
 
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                // make scrollable inspector
+                scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
                 assetEditor.OnInspectorGUI();
-                EditorGUILayout.EndVertical();
+                EditorGUILayout.EndScrollView();
             }
         }
     }
