@@ -144,8 +144,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		private void HandleOtherPressed(RaycastController controller) 
 		{
 			lastControllerPressed = controller;
-			foreach (var receiver in lastReceivers)
-            {
+			// foreach enumerator not cached for interfaces on IL2CPP
+			for (var i = 0; i < lastReceivers.Count; i++)
+			{
+				var receiver = lastReceivers[i];
 				receiver?.ClearHit(this);
 			}
 			lastReceivers.Clear();
@@ -179,8 +181,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 				{
 					// filter hit
 					potentialReceiversA.Clear();
-					foreach (var receiver in receiversBeforeFilter)
+					// foreach enumerator not cached for interfaces on IL2CPP
+					for (var j = 0; j < receiversBeforeFilter.Count; j++)
 					{
+						var receiver = receiversBeforeFilter[j];
 						var r = receiver.Resolve();
 						if (isRaycastReceiverIncluded.Count > 0 && !isRaycastReceiverIncluded[^1](r))
 							continue;
@@ -199,8 +203,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 				}
 			}
 
-			foreach (var receiver in lastReceivers)
-            {
+			// foreach enumerator not cached for interfaces on IL2CPP
+			for (var i = 0; i < lastReceivers.Count; i++)
+			{
+				var receiver = lastReceivers[i];
 	            if (
 		            // no new receivers
 		            closestReceivers == null
@@ -218,15 +224,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			if (closestReceivers != null)
             {
 				didHit = true;
-				foreach (var receiver in closestReceivers)
+				// foreach enumerator not cached for interfaces on IL2CPP
+				for (var i = 0; i < closestReceivers.Count; i++)
 				{
+					var receiver = closestReceivers[i];
 					if (isLocked && lockedOn != receiver)
 						// this controller is locked, but not by this receiver
 						continue;
 
 					// repeat-hit cooldown
-					if (_recentlyHitReceivers.ContainsKey(receiver)) {
-						float cooldown = (float)(now - _recentlyHitReceivers[receiver]) / Stopwatch.Frequency;
+					if (_recentlyHitReceivers.TryGetValue(receiver, out var lastHit)) {
+						float cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
 						if (cooldown < Database.instance.settings.repeatHitCooldown)
 							continue;
 					}
