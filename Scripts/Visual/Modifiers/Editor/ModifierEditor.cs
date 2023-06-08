@@ -120,8 +120,10 @@ namespace OneHamsa.Dexterity.Visual
                     propertiesUpdated |= EditorGUI.EndChangeCheck();
                 }
 
+                var icon = EditorGUIUtility.IconContent("d_RotateTool");
+                icon.text = "  Sync component value(s)";
                 if (targets.Length == 1 &&
-                    modifier is ISupportValueFreeze valueFreeze && GUILayout.Button("Freeze Values"))
+                    modifier is ISupportValueFreeze valueFreeze && GUILayout.Button(icon))
                 {
                     Undo.RecordObject(modifier, "Freeze value");
                     valueFreeze.FreezeValue();
@@ -134,8 +136,11 @@ namespace OneHamsa.Dexterity.Visual
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
                 propertiesUpdated |= ShowProperties();
 
+                var icon = EditorGUIUtility.IconContent("d_RotateTool");
+                icon.text = "  Sync all states value(s)";
+                
                 if (targets.Length == 1 && 
-                    modifier is ISupportPropertyFreeze propFreeze && GUILayout.Button("Freeze Properties")) 
+                    modifier is ISupportPropertyFreeze propFreeze && GUILayout.Button(icon)) 
                 {
                     Undo.RecordObject(modifier, "Freeze properties");
                     foreach (var prop in modifier.properties) {
@@ -403,13 +408,6 @@ namespace OneHamsa.Dexterity.Visual
                     propertyBase.state, UtilityButtons, Menu, suffix);
             }
             DrawSeparator();
-                
-            var scriptableIcon = EditorGUIUtility.IconContent("SettingsIcon");
-            scriptableIcon.text = "Open Settings";
-            if (GUILayout.Button(scriptableIcon))
-            {
-                // open new inspector with settings
-            }
 
             if (Application.isPlaying) // debug view
                 Repaint();
