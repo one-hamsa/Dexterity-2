@@ -361,6 +361,8 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
         public virtual EditorAnimationContext GetEditorAnimationContext() => new(this);
+        
+        public virtual string GetEditorComment() => null;
 #endif
     }
 

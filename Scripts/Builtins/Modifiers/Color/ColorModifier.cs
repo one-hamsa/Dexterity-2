@@ -110,6 +110,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             CacheComponent();
         }
+        
+        #if UNITY_EDITOR
+        public override string GetEditorComment()
+        {
+            if (component is CanvasGroup)
+                return "Only alpha will be applied to CanvasGroup's alpha";
+
+            return null;
+        }
+        #endif
 
         void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
         {

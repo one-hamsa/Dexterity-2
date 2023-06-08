@@ -42,6 +42,15 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void OnInspectorGUI()
         {
+            if (targets.Length == 1)
+            {
+                var comment = modifier.GetEditorComment();
+                if (!string.IsNullOrEmpty(comment))
+                {
+                    EditorGUILayout.HelpBox(comment, MessageType.Info);
+                }
+            }
+            
             var alphabetically = ((IHasStates)target).GetStateNames().OrderBy(x => x).ToList();
             var states = alphabetically.ToHashSet();
             
