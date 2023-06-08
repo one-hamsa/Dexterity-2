@@ -296,7 +296,6 @@ namespace OneHamsa.Dexterity.Visual
                     {
                         if (modifier.GetActiveState() == stateId)
                         {
-                            GUI.contentColor = Color.green;
                             suffix = $" (current, {Mathf.RoundToInt(modifier.transitionProgress * 100)}%)";
                         }
                         else
