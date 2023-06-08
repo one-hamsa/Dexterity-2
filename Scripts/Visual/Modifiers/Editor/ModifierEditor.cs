@@ -6,6 +6,7 @@ using System;
 using System.Reflection;
 using System.Collections;
 using Unity.EditorCoroutines.Editor;
+using Object = UnityEngine.Object;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -15,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual
         static Dictionary<string, bool> foldedStates = new();
         bool strategyExists { get; set; }
         Modifier modifier { get; set; }
-        List<SerializedProperty> stateProps = new(8);
+        static List<SerializedProperty> stateProps = new(8);
         private EditorCoroutine coro;
         private List<SerializedProperty> customProps = new();
         private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
@@ -122,7 +123,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("States", EditorStyles.whiteLargeLabel);
-                propertiesUpdated |= ShowProperties(states);
+                propertiesUpdated |= ShowProperties();
 
                 if (targets.Length == 1 && 
                     modifier is ISupportPropertyFreeze propFreeze && GUILayout.Button("Freeze Properties")) 
@@ -253,17 +254,9 @@ namespace OneHamsa.Dexterity.Visual
             }
         }
 
-        bool ShowProperties(IEnumerable<string> states)
+        bool ShowProperties()
         {
             var updated = false;
-
-            var statesList = states.ToList();
-            foreach (var state in statesList)
-            {
-                if (!foldedStates.ContainsKey(state))
-                    foldedStates[state] = true;
-            }
-            
             var properties = serializedObject.FindProperty(nameof(Modifier.properties));
             sortedStateProps.Clear();
             for (var i = 0; i < properties.arraySize; ++i)
@@ -280,19 +273,7 @@ namespace OneHamsa.Dexterity.Visual
             {
                 DrawSeparator();
 
-                stateProps.Clear();
-
-                // fields
-                foreach (var field in Utils.GetChildren(property))
-                {
-                    if (field.name == nameof(Modifier.PropertyBase.state))
-                        continue;
-
-                    stateProps.Add(field.Copy());
-                }
-
                 // name 
-                var origColor = GUI.contentColor;
                 var suffix = "";
                 if (Application.isPlaying)
                 {
@@ -310,17 +291,19 @@ namespace OneHamsa.Dexterity.Visual
                         }
                     }
                 }
-
+            
+                var origColor = GUI.contentColor;
+                var propertyBase = modifier.properties[i];
                 void UtilityButtons()
                 {
                     if (targets.Length > 1)
-                        return; 
+                        return;
 
                     if (modifier is ISupportPropertyFreeze propFreeze
                         && GUILayout.Button(EditorGUIUtility.IconContent("RotateTool On", "Freeze"), GUILayout.Width(25)))
                     {
                         Undo.RecordObject(modifier, "Freeze value");
-                        propFreeze.FreezeProperty(modifier.properties[i]);
+                        propFreeze.FreezeProperty(propertyBase);
                     }
 
                     if (Application.isPlaying)
@@ -329,66 +312,69 @@ namespace OneHamsa.Dexterity.Visual
                     GUI.contentColor = coro != null ? Color.green : origColor;
                     GUI.enabled = modifier.animatableInEditor;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
-                        GUILayout.Width(25)))
+                            GUILayout.Width(25)))
                     {
-                        void Animate(float speed) {
+                        void Animate(float speed)
+                        {
                             if (coro != null)
                                 EditorCoroutineUtility.StopCoroutine(coro);
                             coro = EditorCoroutineUtility.StartCoroutine(
-                                AnimateStateTransition(modifier.GetNode(), new Modifier[] { modifier }, propState, speed, () => coro = null), this);
+                                AnimateStateTransition(modifier.GetNode(), new Modifier[] { modifier }, propertyBase.state, speed,
+                                    () => coro = null), this);
                         }
 
-                        if (Event.current.button == 1) {
+                        if (Event.current.button == 1)
+                        {
                             // right click
                             var menu = new GenericMenu();
-                            foreach (var speed in new [] { .1f, .25f, .5f, 1f, 1.25f, 1.5f, 2f })
+                            foreach (var speed in new[] { .1f, .25f, .5f, 1f, 1.25f, 1.5f, 2f })
                             {
                                 menu.AddItem(new GUIContent($"x{speed}"), false, () => Animate(speed));
                             }
+
                             menu.ShowAsContext();
-                        } else {
+                        }
+                        else
+                        {
                             Animate(1f);
                         }
                     }
+
                     GUI.contentColor = origColor;
                     GUI.enabled = true;
                 }
 
-                if (stateProps.Count > 1)
+                void Menu()
                 {
-                    // multiple - fold
-                    EditorGUILayout.BeginHorizontal();
-                    foldedStates[propState] = EditorGUILayout.Foldout(foldedStates[propState],
-                        $"{propState}{suffix}", true, EditorStyles.foldoutHeader);
-                    GUI.contentColor = origColor;
-
-                    UtilityButtons();
-
-                    EditorGUILayout.EndHorizontal();
-
-                    // show fields
-                    if (foldedStates[propState])
-                        foreach (var field in stateProps)
+                    var menu = new GenericMenu();
+                    DexteritySettingsProvider.settings.BuildCache();
+                    foreach (var savedProp in DexteritySettingsProvider.settings.GetSavedPropertiesForType(
+                                 propertyBase.GetType()))
+                    {
+                        menu.AddItem(new GUIContent($"Bind To/{savedProp}"), false, () =>
                         {
-                            EditorGUI.BeginChangeCheck();
-                            EditorGUILayout.PropertyField(field);
-                            updated |= EditorGUI.EndChangeCheck();
-                        }
+                            propertyBase.savedPropertyKey = savedProp;
+                            EditorUtility.SetDirty(modifier);
+                        });
+                    }
+                    if (!string.IsNullOrEmpty(propertyBase.savedPropertyKey))
+                    {
+                        menu.AddItem(new GUIContent("Unbind"), false, () =>
+                        {
+                            propertyBase.savedPropertyKey = "";
+                            EditorUtility.SetDirty(modifier);
+                        });
+                    }
+
+                    menu.AddItem(new GUIContent("Save As..."), false, () =>
+                    {
+                        SaveProperty(modifier, propertyBase.state);
+                    });
+                    menu.ShowAsContext();
                 }
-                else if (stateProps.Count == 1)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"{propState}{suffix}", GUILayout.MinWidth(30));
-                    GUI.contentColor = origColor;
 
-                    EditorGUI.BeginChangeCheck();
-                    EditorGUILayout.PropertyField(stateProps[0], GUIContent.none, GUILayout.MinWidth(30));
-                    updated |= EditorGUI.EndChangeCheck();
-
-                    UtilityButtons();
-
-                    EditorGUILayout.EndHorizontal();
-                }
+                updated = ShowSingleStateFields(property, propertyBase.GetType(),
+                    propertyBase.state, UtilityButtons, Menu, suffix);
             }
             DrawSeparator();
 
@@ -396,6 +382,144 @@ namespace OneHamsa.Dexterity.Visual
                 Repaint();
 
             return updated;
+        }
+
+        public static bool ShowSingleStateFields(SerializedProperty serializedProperty,
+            Type propertyType,
+            string propertyKey,
+            Action utilityUiFunction = null,
+            Action menuFunction = null, string suffix = "")
+        {
+            var updated = false;
+            var origColor = GUI.contentColor;
+
+            string savedPropKey = null;
+            stateProps.Clear();
+
+            // fields
+            foreach (var field in Utils.GetChildren(serializedProperty))
+            {
+                if (field.name is nameof(Modifier.PropertyBase.savedPropertyKey))
+                {
+                    savedPropKey = field.stringValue;
+                    if (!string.IsNullOrEmpty(savedPropKey))
+                    {
+                        DexteritySettingsProvider.settings.BuildCache();
+                        if (DexteritySettingsProvider.settings.GetSavedProperty(propertyType, savedPropKey) == null)
+                        {
+                            Debug.LogError($"Saved property {savedPropKey} not found for {propertyType}, clearing");
+                            field.stringValue = "";
+                            savedPropKey = null;
+                        }
+                    }
+                    continue;
+                }
+                if (field.name is nameof(Modifier.PropertyBase.state))
+                    continue;
+
+                stateProps.Add(field.Copy());
+            }
+
+
+            void ShowMenuIfRightClick()
+            {
+                if (Event.current != null 
+                    && Event.current.type == EventType.MouseDown
+                    && Event.current.button == 1 
+                    && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+                {
+                    menuFunction?.Invoke();
+                    Event.current.Use();
+                }
+            }
+
+            bool ShowBindIfExists()
+            {
+                if (string.IsNullOrEmpty(savedPropKey)) 
+                    return false;
+                
+                EditorGUILayout.BeginHorizontal();
+                GUI.contentColor = Color.yellow;
+                EditorGUILayout.LabelField($"[{savedPropKey}]{suffix}", GUILayout.MinWidth(30));
+                GUI.contentColor = origColor;
+
+                var scriptableIcon = EditorGUIUtility.IconContent("SettingsIcon");
+                scriptableIcon.text = "Open Settings";
+                if (GUILayout.Button(scriptableIcon))
+                {
+                    // open new inspector with settings
+                    var settings = DexteritySettingsProvider.settings;
+                    PopUpAssetInspector.Create(settings);
+                }
+                EditorGUILayout.EndHorizontal();
+
+                return true;
+            }
+
+            if (stateProps.Count > 1)
+            {
+                // multiple - fold
+                EditorGUILayout.BeginHorizontal();
+                var isOpen = true;
+                if (foldedStates.TryGetValue(propertyKey, out var state))
+                    isOpen = state;
+                foldedStates[propertyKey] = EditorGUILayout.Foldout(isOpen,
+                    $"{propertyKey}{suffix}", true, EditorStyles.foldoutHeader);
+                ShowMenuIfRightClick();
+                GUI.contentColor = origColor;
+
+                utilityUiFunction?.Invoke();
+
+                EditorGUILayout.EndHorizontal();
+
+                // show fields
+                if (foldedStates[propertyKey])
+                {
+                    if (!ShowBindIfExists())
+                    {
+                        foreach (var field in stateProps)
+                        {
+                            EditorGUI.BeginChangeCheck();
+                            EditorGUILayout.PropertyField(field);
+                            updated |= EditorGUI.EndChangeCheck();
+                        }
+                    }
+                }
+            }
+            else if (stateProps.Count == 1)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{propertyKey}{suffix}", GUILayout.MinWidth(30));
+                ShowMenuIfRightClick();
+                GUI.contentColor = origColor;
+
+                if (!ShowBindIfExists())
+                {
+                    EditorGUI.BeginChangeCheck();
+                    EditorGUILayout.PropertyField(stateProps[0], GUIContent.none, GUILayout.MinWidth(30));
+                    updated |= EditorGUI.EndChangeCheck();
+                }
+
+                utilityUiFunction?.Invoke();
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            return updated;
+        }
+
+        private static void SaveProperty(Modifier modifier, string state)
+        {
+            var prop = modifier.properties.FirstOrDefault(p => p.state == state);
+            if (prop == null)
+                return;
+            
+            var key = EditorInputStringDialog.Show("Save Property", "Name this binding", 
+                $"{modifier.name}.{state}");
+
+            var settings = DexteritySettingsProvider.settings;
+            settings.SavePropertyAs(prop, key);
+            EditorUtility.SetDirty(settings);
         }
 
         public static IEnumerator AnimateStateTransition(DexterityBaseNode node, IEnumerable<Modifier> modifiers, 
@@ -505,6 +629,31 @@ namespace OneHamsa.Dexterity.Visual
             Handles.DrawLine(new Vector2(rect.x - 15, rect.y), new Vector2(rect.width + 15, rect.y));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
+        }
+
+        public class PopUpAssetInspector : EditorWindow
+        {
+            private Object asset;
+            private Editor assetEditor;
+
+            public static PopUpAssetInspector Create(Object asset)
+            {
+                var window = CreateWindow<PopUpAssetInspector>($"{asset.name} | {asset.GetType().Name}");
+                window.asset = asset;
+                window.assetEditor = CreateEditor(asset);
+                return window;
+            }
+
+            private void OnGUI()
+            {
+                GUI.enabled = false;
+                asset = EditorGUILayout.ObjectField("Asset", asset, asset.GetType(), false);
+                GUI.enabled = true;
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                assetEditor.OnInspectorGUI();
+                EditorGUILayout.EndVertical();
+            }
         }
     }
 }

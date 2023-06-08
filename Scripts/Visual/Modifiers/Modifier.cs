@@ -115,6 +115,13 @@ namespace OneHamsa.Dexterity.Visual
         public abstract class PropertyBase
         {
             public string state;
+            public string savedPropertyKey;
+            
+            public virtual PropertyBase Clone()
+            {
+                var clone = (PropertyBase) MemberwiseClone();
+                return clone;
+            }
         }
 
         public override void Awake()
@@ -137,7 +144,18 @@ namespace OneHamsa.Dexterity.Visual
                     Debug.LogError($"Duplicate property for state {prop.state} in Modifier", this);
                     continue;
                 }
-                propertiesCache.Add(id, prop);
+
+                var chosen = prop;
+                if (!string.IsNullOrEmpty(prop.savedPropertyKey))
+                {
+                    var saved = Database.instance.settings.GetSavedProperty(prop.GetType(), prop.savedPropertyKey);
+                    if (saved == null)
+                        Debug.LogError($"Saved property {prop.savedPropertyKey} not found in Modifier {name}, using old value", this);
+                    else
+                        chosen = saved;
+                }
+
+                propertiesCache.Add(id, chosen);
             }
         }
 

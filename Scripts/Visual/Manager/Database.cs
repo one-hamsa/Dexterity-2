@@ -37,6 +37,7 @@ namespace OneHamsa.Dexterity.Visual
             instance = this;
 
             this.settings = settings;
+            settings.BuildCache();
 
             Initialize();
         }

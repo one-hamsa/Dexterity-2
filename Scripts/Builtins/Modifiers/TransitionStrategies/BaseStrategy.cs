@@ -9,10 +9,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public abstract class BaseStrategy : ITransitionStrategy
     {
         protected virtual bool checkActivityThreshold => true;
-        protected float activityThreshold;
+        protected virtual float activityThreshold => 0.999f;
 
-        protected Dictionary<int, float> result = new Dictionary<int, float>();
-        protected Dictionary<int, float> nextResult = new Dictionary<int, float>();
+        protected Dictionary<int, float> result = new();
+        protected Dictionary<int, float> nextResult = new();
         protected int[] states;
 
         private bool jumpedToFinalState;
@@ -21,7 +21,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             this.states = states;
             
-            activityThreshold = Database.instance.settings.GetGlobalFloat("activityThreshold", .999f);
             jumpedToFinalState = false;
 
             result.Clear();

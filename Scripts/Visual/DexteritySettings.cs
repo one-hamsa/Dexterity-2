@@ -10,28 +10,21 @@ namespace OneHamsa.Dexterity.Visual
     public class DexteritySettings : ScriptableObject
     {
         [Serializable]
-        public class GlobalFloatValue
+        public class SavedProperty
         {
             public string name;
-            public float value;
+            [SerializeReference] 
+            public Modifier.PropertyBase property;
         }
 
         public FieldDefinition[] fieldDefinitions;
 
         [SerializeReference]
         public ITransitionStrategy defaultTransitionStrategy;
+        public List<SavedProperty> namedProperties = new();
 
-        public GlobalFloatValue[] globalFloatValues;
+        private Dictionary<(Type, string), Modifier.PropertyBase> namedPropertiesCache = new();
 
-        public float GetGlobalFloat(string name, float defaultValue = default)
-        {
-            foreach (var g in globalFloatValues)
-                if (g.name == name)
-                    return g.value;
-
-            return defaultValue;
-        }
-        
         public ITransitionStrategy CreateDefaultTransitionStrategy()
         {
             if (defaultTransitionStrategy == null)
@@ -40,6 +33,45 @@ namespace OneHamsa.Dexterity.Visual
                 return null;
             }
             return DeepClone(defaultTransitionStrategy);
+        }
+        
+        public void SavePropertyAs(Modifier.PropertyBase property, string name)
+        {
+            var newProperty = property.Clone();
+            property.savedPropertyKey = name;
+            namedProperties.Add(new SavedProperty
+            {
+                name = name,
+                property = newProperty
+            });
+        }
+
+        public void BuildCache()
+        {
+            namedPropertiesCache.Clear();
+            foreach (var savedProperty in namedProperties)
+            {
+                namedPropertiesCache[(savedProperty.property.GetType(), savedProperty.name)] 
+                    = savedProperty.property;
+            }
+        }
+        
+        public Modifier.PropertyBase GetSavedProperty(Type type, string name)
+        {
+            if (namedPropertiesCache.TryGetValue((type, name), out var property))
+            {
+                return property;
+            }
+            return null;
+        }
+        
+        public IEnumerable<string> GetSavedPropertiesForType(Type type)
+        {
+            foreach (var (t, name) in namedPropertiesCache.Keys)
+            {
+                if (t == type)
+                    yield return name;
+            }
         }
 
 		[Tooltip("Min time in seconds between hitting the same receiver (0 to disable)")]
