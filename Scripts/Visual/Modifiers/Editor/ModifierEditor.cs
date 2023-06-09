@@ -334,7 +334,7 @@ namespace OneHamsa.Dexterity.Visual
                             if (coro != null)
                                 EditorCoroutineUtility.StopCoroutine(coro);
                             coro = EditorCoroutineUtility.StartCoroutine(
-                                AnimateStateTransition(modifier.GetNode(), new Modifier[] { modifier }, propertyBase.state, speed,
+                                AnimateStateTransition(new[] { modifier }, propertyBase.state, speed,
                                     () => coro = null), this);
                         }
 
@@ -566,7 +566,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorUtility.SetDirty(settings);
         }
 
-        public static IEnumerator AnimateStateTransition(DexterityBaseNode node, IEnumerable<Modifier> modifiers, 
+        public static IEnumerator AnimateStateTransition(IEnumerable<Modifier> modifiers, 
         string state, float speed = 1f, Action onEnd = null)
         {
             modifiers = modifiers.ToList();
@@ -584,9 +584,10 @@ namespace OneHamsa.Dexterity.Visual
             Undo.FlushUndoRecordObjects();
             
             var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
+            IEnumerable<DexterityBaseNode> getNodes() 
+                => animationContexts.Select(c => c.GetNode()).ToHashSet();
             try
             {
-
                 // destroy previous instance, it's ok because it's editor time
                 Database.Destroy();
                 using var db = Database.Create(DexteritySettingsProvider.settings);
@@ -595,32 +596,41 @@ namespace OneHamsa.Dexterity.Visual
                 //Core.instance.timeScale = speed;
 
                 // setup
-                db.Register(node);
-                if (node is IStepList stepList)
-                    stepList.InitializeSteps();
-
-                foreach (var ctx in animationContexts)
-                    ctx.Initialize();
-
-                if (
-                    // it's the first run (didn't run an editor transition before)
-                    node.GetActiveState() == StateFunction.emptyStateId
-                    // activeState might be invalid at that point
-                    || !node.GetStateIDs().Contains(node.GetActiveState()))
+                foreach (var n in getNodes())
                 {
-                    // reset to initial state 
-                    node.SetActiveState_Editor(db.GetStateID(node.initialState));
+                    db.Register(n);
+                    n.InitializeEditor();
                 }
 
-                node.timeSinceStateChange = 0f;
+                // 
+                foreach (var ctx in animationContexts)
+                    ctx.Awake();
+
+                foreach (var n in getNodes())
+                {
+                    if (
+                        // it's the first run (didn't run an editor transition before)
+                        n.GetActiveState() == StateFunction.emptyStateId
+                        // activeState might be invalid at that point
+                        || !n.GetStateIDs().Contains(n.GetActiveState()))
+                    {
+                        // reset to initial state 
+                        n.SetActiveState_Editor(db.GetStateID(n.initialState));
+                    }
+
+                    n.timeSinceStateChange = 0f;
+                }
 
                 foreach (var ctx in animationContexts)
                     ctx.OnNodeEnabled();
 
-                var oldState = node.GetActiveState();
-                node.SetActiveState_Editor(db.GetStateID(state));
-                foreach (var ctx in animationContexts)
-                    ctx.HandleStateChange(oldState, node.GetActiveState());
+                foreach (var n in getNodes())
+                {
+                    var oldState = n.GetActiveState();
+                    n.SetActiveState_Editor(db.GetStateID(state));
+                    foreach (var ctx in animationContexts)
+                        ctx.HandleStateChange(oldState, n.GetActiveState());
+                }
 
                 bool anyChanged;
 
@@ -634,8 +644,12 @@ namespace OneHamsa.Dexterity.Visual
                     if (Database.instance == null)
                         break;
 
-                    node.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
-                    node.timeSinceStateChange += node.deltaTime;
+                    foreach (var n in getNodes())
+                    {
+                        n.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
+                        n.timeSinceStateChange += n.deltaTime;
+                    }
+
                     lastUpdate = EditorApplication.timeSinceStartup;
 
                     // transition

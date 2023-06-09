@@ -299,5 +299,9 @@ namespace OneHamsa.Dexterity.Visual
                 initialState = states[0];
             }
         }
+        
+        #if UNITY_EDITOR
+        public virtual void InitializeEditor() { }
+        #endif
     }
 }

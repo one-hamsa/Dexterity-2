@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
@@ -11,10 +12,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 	{
 		public class PressAnywhereEvent
 		{
-			public bool propagate { get; private set; } = true;
+			public bool propagate;
 			public void StopPropagation() { propagate = false; }
 		}
-		
+
 		const float rayLength = 100f;
 		const int maxHits = 20;
 
@@ -37,10 +38,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		public Ray ray { get; private set; }
 		public bool didHit { get; private set; }
 		public RaycastHit hit { get; private set; }
-		public bool isLocked => lockedOn != null;
-		private IRaycastReceiver lockedOn;
-		protected int pressStartFrame = -1;
-		protected RaycastController lastControllerPressed;
+		private int pressStartFrame = -1;
+		private RaycastController lastControllerPressed;
 
 		RaycastHit[] hits = new RaycastHit[maxHits];
 		List<IRaycastReceiver> lastReceivers = new(4), 
@@ -48,8 +47,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			potentialReceiversB = new(4),
 			receiversBeforeFilter = new(1);
 
-		Dictionary<IRaycastReceiver, long> _recentlyHitReceivers = new();
-		
+		private readonly Dictionary<IRaycastReceiver, long> recentlyHitReceivers = new();
+		private IRaycastController.RaycastEvent.Result lastEventResult;
+		[Preserve]
+		public IRaycastController.RaycastEvent.Result GetLastEventResult() => lastEventResult;
+
 		public delegate bool RaycastFilter(IRaycastReceiver receiver);
         /// <summary>
         /// Set Global Raycast Receiver filter
@@ -132,7 +134,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			
 			if (onAnyPress != null)
 			{
-				var args = new PressAnywhereEvent();
+				var args = new PressAnywhereEvent { propagate = true };
 				onAnyPress.Invoke(args);
 				if (!args.propagate)
 					return;
@@ -211,16 +213,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 		            // no new receivers
 		            closestReceivers == null
 		            // this receiver is no longer relevant
-		            || !closestReceivers.Contains(receiver)
-		            // this controller is locked, but not by this receiver
-		            || (isLocked && lockedOn != receiver))
+		            || !closestReceivers.Contains(receiver))
 	            {
-					_recentlyHitReceivers[receiver] = now;
+					recentlyHitReceivers[receiver] = now;
 		            receiver?.ClearHit(this);
 	            }
             }
 			lastReceivers.Clear();
 
+			lastEventResult = IRaycastController.RaycastEvent.Result.Default;
 			if (closestReceivers != null)
             {
 				didHit = true;
@@ -228,18 +229,23 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 				for (var i = 0; i < closestReceivers.Count; i++)
 				{
 					var receiver = closestReceivers[i];
-					if (isLocked && lockedOn != receiver)
-						// this controller is locked, but not by this receiver
-						continue;
 
 					// repeat-hit cooldown
-					if (_recentlyHitReceivers.TryGetValue(receiver, out var lastHit)) {
-						float cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
+					if (recentlyHitReceivers.TryGetValue(receiver, out var lastHit)) {
+						var cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
 						if (cooldown < Database.instance.settings.repeatHitCooldown)
 							continue;
 					}
 
-					receiver.ReceiveHit(this, hit);
+					var hitEvent = new IRaycastController.RaycastEvent
+					{
+						hit = hit,
+						result = IRaycastController.RaycastEvent.Result.Default
+					};
+					receiver.ReceiveHit(this, ref hitEvent);
+					if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default)
+						lastEventResult = hitEvent.result;
+					
 					lastReceivers.Add(receiver);
 				}
 			}
@@ -260,32 +266,20 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			DrawCollider(hit.collider);
 		}
 
-        private void DrawCollider(Collider collider)
+        private void DrawCollider(Collider c)
         {
-            if (collider is BoxCollider box)
-				Gizmos.DrawWireCube(box.center, box.size);
-			else if (collider is SphereCollider sphere)
-				Gizmos.DrawWireSphere(sphere.center, sphere.radius);
+	        switch (c)
+	        {
+		        case BoxCollider box:
+			        Gizmos.DrawWireCube(box.center, box.size);
+			        break;
+		        case SphereCollider sphere:
+			        Gizmos.DrawWireSphere(sphere.center, sphere.radius);
+			        break;
+	        }
 
-			// TODO more, maybe with collider.bounds, just need to understand in what space
+	        // TODO more, maybe with collider.bounds, just need to understand in what space
         }
-
-		public bool Lock(IRaycastReceiver receiver) 
-		{
-			if (lockedOn != null)
-				return false;
-
-			lockedOn = receiver;
-			return true;
-		}
-		public bool Unlock(IRaycastReceiver receiver)
-		{
-			if (lockedOn != receiver)
-				return false;
-
-			lockedOn = null;
-			return true;
-		}
 
 		protected virtual bool isPressed => false;
         bool IRaycastController.isPressed => isPressed;

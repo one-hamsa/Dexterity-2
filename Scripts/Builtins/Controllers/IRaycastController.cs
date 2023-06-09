@@ -13,9 +13,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         bool wasPressedThisFrame { get; }
         Vector3 position { get; }
         Vector3 forward { get; }
-
-        bool Lock(IRaycastReceiver receiver);
-        bool Unlock(IRaycastReceiver receiver);
-        bool isLocked { get; }
+        
+		public ref struct RaycastEvent
+		{
+			public enum Result
+			{
+				Default,
+				CanAccept,
+				CannotAccept,
+				Accepted,
+			}
+			
+			public RaycastHit hit;
+			public Result result;
+		}
     }
 }

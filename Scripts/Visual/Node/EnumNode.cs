@@ -113,5 +113,9 @@ namespace OneHamsa.Dexterity.Visual
             InitializeObjectContext();
             CacheEnumOptions();
         }
+        
+        #if UNITY_EDITOR
+        public override void InitializeEditor() => Initialize();
+        #endif
     }
 }

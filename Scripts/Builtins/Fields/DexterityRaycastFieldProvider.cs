@@ -31,14 +31,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 return false;
         }
 
-        public void ReceiveHit(IRaycastController controller, RaycastHit hit)
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
         {
             controllers.Add(controller);
             if (controller.wasPressedThisFrame)
                 receivedPressStart.Add(controller);
+
+            raycastEvent.result = IRaycastController.RaycastEvent.Result.CanAccept;
         }
 
-        public void ClearHit(IRaycastController controller)
+        void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
             controllers.Remove(controller);
             receivedPressStart.Remove(controller);

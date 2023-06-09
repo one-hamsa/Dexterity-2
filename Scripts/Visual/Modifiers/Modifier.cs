@@ -322,7 +322,8 @@ namespace OneHamsa.Dexterity.Visual
         public class EditorAnimationContext : IDisposable
         {
             protected Modifier modifier;
-
+            
+            public DexterityBaseNode GetNode() => modifier.GetNode();
             public EditorAnimationContext(Modifier modifier)
             {
                 this.modifier = modifier;
@@ -330,7 +331,7 @@ namespace OneHamsa.Dexterity.Visual
             
             public bool IsValid() => modifier != null;
             
-            public virtual void Initialize()
+            public virtual void Awake()
             {
                 modifier.Awake();
             }

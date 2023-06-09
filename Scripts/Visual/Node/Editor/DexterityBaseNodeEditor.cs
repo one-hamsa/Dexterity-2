@@ -265,7 +265,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
 
                 coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(baseNode, modifiers, previewStates[previewStateIndex]
+                    ModifierEditor.AnimateStateTransition(modifiers, previewStates[previewStateIndex]
                     , speeds[speedIndex], () => coro = null), this);
             }
             EditorGUILayout.EndHorizontal();

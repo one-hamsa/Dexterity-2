@@ -16,13 +16,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public readonly HashSet<IRaycastController> controllers = new();
         public IRaycastController pressingController { get; private set; }
         private RaycastHit lastHit;
-        
-        public void ReceiveHit(IRaycastController controller, RaycastHit hit)
+
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
         {
             controllers.Add(controller);
         }
 
-        public void ClearHit(IRaycastController controller)
+        void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
             controllers.Remove(controller);
         }

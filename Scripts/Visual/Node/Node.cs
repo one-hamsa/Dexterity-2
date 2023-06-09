@@ -629,5 +629,14 @@ namespace OneHamsa.Dexterity.Visual
         public int GetLastEvaluationResult() => GetActiveState();
         List<StateFunction.Step> IStepList.steps => customSteps;
         #endregion Interface Implementation (Editor)
+        
+        #region Misc (Editor)
+#if UNITY_EDITOR
+        public override void InitializeEditor()
+        {
+            ((IStepList)this).InitializeSteps();
+        }
+#endif
+        #endregion
     }
 }
