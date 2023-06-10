@@ -1,9 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Visual
 {
     /// <summary>
     /// Sends raycast hits to the specified controller.
@@ -11,7 +8,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class RaycastRouter : MonoBehaviour, IRaycastReceiver
     {
         private IRaycastReceiver receiver;
-        public bool hasReceivers => receiver != null;
 
         public void SetReceiver(IRaycastReceiver receiver)
         {

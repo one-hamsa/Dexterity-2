@@ -5,17 +5,26 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     public class RaycastPressField : BaseField
     {
         [TagSelector] public string tag = "Untagged";
-        DexterityRaycastFieldProvider provider = null;
+        DexterityRaycastFieldProvider provider;
+        private NodeRaycastRouter router;
 
         protected override void Initialize(Node context)
         {
             base.Initialize(context);
 
-            provider = context.gameObject.GetOrAddComponent<DexterityRaycastFieldProvider>();
+            provider = new DexterityRaycastFieldProvider();
+            router = context.GetRaycastRouter();
+            router.AddReceiver(provider);
         }
 
-        // don't destroy on finalize - component might be shared
+        public override void Finalize(Node context)
+        {
+            base.Finalize(context);
+            router.RemoveReceiver(provider);
+            router = null;
+            provider = null;
+        }
 
-        public override int GetValue() => (provider && provider.GetPress(tag)) ? 1 : 0;
+        public override int GetValue() => context != null && provider.GetPress(tag) ? 1 : 0;
     }
 }

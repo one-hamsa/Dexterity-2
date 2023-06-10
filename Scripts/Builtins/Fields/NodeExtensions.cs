@@ -1,10 +1,16 @@
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
-    public static class OutputFieldExtensions
+    public static class NodeExtensions
     {
+        public static NodeRaycastRouter GetRaycastRouter(this DexterityBaseNode node)
+        {
+            return node.GetOrAddComponent<NodeRaycastRouter>();
+        }
+        
         public static void AddUpstream(this Node.OutputField field, Node.OutputField other, 
             NodeReference.Gate.OverrideType overrideType = NodeReference.Gate.OverrideType.Additive)
         {
