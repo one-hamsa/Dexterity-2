@@ -20,6 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             public float time = .2f;
             public AnimationCurve easingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+            public float minTimeBeforeExit;
 
             [NonSerialized]
             public int[] fromIds, toIds;
@@ -40,18 +41,20 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         public StateFunction[] stateFunctionAssets;
+        public List<string> customStates = new();
 
         public List<Row> rows;
         public float defaultTime = .2f;
         public AnimationCurve defaultEasingCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         private Row defaultRow;
 
+        HashSet<string> GetStates() 
+            => StateFunction.EnumerateStateNames(stateFunctionAssets)
+                .Concat(customStates)
+                .ToHashSet();
 
-        HashSet<string> IHasStates.GetStateNames()
-        => StateFunction.EnumerateStateNames(stateFunctionAssets).ToHashSet();
-
-        HashSet<string> IHasStates.GetFieldNames()
-        => StateFunction.EnumerateFieldNames(stateFunctionAssets).ToHashSet();
+        HashSet<string> IHasStates.GetStateNames() => GetStates();
+        HashSet<string> IHasStates.GetFieldNames() => GetStates();
 
         public void Initialize()
         {
@@ -70,9 +73,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         private void OnValidate() {
-            foreach (var row in rows)
+            for (var i = 0; i < rows.Count; ++i)
             {
-                row.name = $"{row}";
+                var row = rows[i];
+                row.name = row.ToString();
                 // fix default values
                 if (row.time == 0f)
                     row.time = defaultTime;

@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Visual
         [Serializable]
         public class StateProxy
         {
-            public Node sourceNode;
+            public DexterityBaseNode sourceNode;
             
             [State(objectFieldName: nameof(sourceNode))]
             public string inStateName;
