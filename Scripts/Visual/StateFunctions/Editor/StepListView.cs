@@ -183,7 +183,7 @@ namespace OneHamsa.Dexterity.Visual
                     refPf.style.flexGrow = 1;
                     rest.Add(refPf);
                     
-                    rest.EnableInClassList("selected", step.initialized
+                    rest.EnableInClassList("selected", step.initialized && step.reference_stateFunction != null
                         && step.reference_stateFunction.GetLastEvaluationResult() != StateFunction.emptyStateId);
                     break;
             }

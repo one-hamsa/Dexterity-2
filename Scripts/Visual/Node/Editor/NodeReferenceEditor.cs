@@ -306,9 +306,10 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel++;
             foreach (var child in Utils.GetChildren(property))
             {
-                if (child.name == nameof(BaseField.relatedFieldName) && child.stringValue != fieldName)
+                if (child.name == nameof(BaseField.relatedFieldName))
                 {
-                    child.stringValue = fieldName;
+                    if (child.stringValue != fieldName)
+                        child.stringValue = fieldName;
                 }
                 else if (child.propertyType == SerializedPropertyType.ManagedReference)
                 {
