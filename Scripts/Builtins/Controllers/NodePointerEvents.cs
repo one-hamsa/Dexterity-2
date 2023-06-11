@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private int pressedStateId = StateFunction.emptyStateId;
         private int disabledStateId = StateFunction.emptyStateId;
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             node = GetNode();
             router = node.GetRaycastRouter();
@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 disabledStateId = Database.instance.GetStateID(disabledState);
         }
 
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
+        public virtual void ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
         {
             var activeState = node.GetActiveState();
             
@@ -46,7 +46,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 hitEvent.result = IRaycastController.RaycastEvent.Result.Accepted;
         }
 
-        void IRaycastReceiver.ClearHit(IRaycastController controller)
+        public virtual void ClearHit(IRaycastController controller)
         {
         }
 
