@@ -13,12 +13,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         [State]
         public string disabledState = "Disabled";
 
-        private DexterityBaseNode node;
+        protected DexterityBaseNode node;
         private NodeRaycastRouter router;
 
-        private int hoverStateId = StateFunction.emptyStateId;
-        private int pressedStateId = StateFunction.emptyStateId;
-        private int disabledStateId = StateFunction.emptyStateId;
+        protected int hoverStateId = StateFunction.emptyStateId;
+        protected int pressedStateId = StateFunction.emptyStateId;
+        protected int disabledStateId = StateFunction.emptyStateId;
 
         protected virtual void OnEnable()
         {

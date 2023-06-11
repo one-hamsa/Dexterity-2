@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         Node.OutputField disabledField;
         Node.OutputField visibleField;
 
-        void Awake()
+        protected virtual void Awake()
         {
             if (!node)
                 node = GetComponentInParent<Node>();
@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         }
 
-        void OnEnable()
+        protected virtual void OnEnable()
         {
             pressedField = node.GetOutputField(settings.pressedFieldName);
             hoverField = node.GetOutputField(settings.hoverFieldName);
@@ -60,7 +60,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             pressedField.onBooleanValueChanged += HandlePress;
         }
-        void OnDisable()
+        protected virtual void OnDisable()
         {
             if (pressedField != null)
                 pressedField.onBooleanValueChanged -= HandlePress;
