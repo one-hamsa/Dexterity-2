@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
@@ -8,8 +7,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     [Serializable]
     public abstract class BaseStrategy : ITransitionStrategy
     {
-        protected virtual bool checkActivityThreshold => true;
-        protected virtual float activityThreshold => 0.999f;
+        protected const float activityThreshold = 0.999f;
 
         protected Dictionary<int, float> result = new();
         protected Dictionary<int, float> nextResult = new();
@@ -43,7 +41,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             changed = false;
             prevState.TryGetValue(currentState, out var prevValue);
-            if (checkActivityThreshold && prevValue > activityThreshold)
+            if (prevValue > activityThreshold)
             {
                 changed = !jumpedToFinalState;
                 jumpedToFinalState = true;

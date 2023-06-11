@@ -14,7 +14,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private AnimationCurve currentEasingCurve;
         private float currentTotalTransitionTime;
         private double timeSinceRowChange;
-        protected override bool checkActivityThreshold => false;
         private Dictionary<int, float> transitionStartValues = new();
 
         public override Dictionary<int, float> Initialize(int[] states, int currentState)

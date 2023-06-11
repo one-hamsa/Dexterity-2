@@ -586,6 +586,19 @@ namespace OneHamsa.Dexterity.Visual
             var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
             IEnumerable<DexterityBaseNode> getNodes() 
                 => animationContexts.Select(c => c.GetNode()).ToHashSet();
+
+            void SetDirtyAll()
+            {
+                foreach (var modifier in modifiers)
+                {
+                    foreach (var obj in modifier.GetComponents<Component>().Cast<Object>()
+                                 .Concat(modifiers.Select(m => m.gameObject)))
+                    {
+                        EditorUtility.SetDirty(obj);
+                    }
+                }
+            }
+
             try
             {
                 // destroy previous instance, it's ok because it's editor time
@@ -632,8 +645,8 @@ namespace OneHamsa.Dexterity.Visual
                         ctx.HandleStateChange(oldState, n.GetActiveState());
                 }
 
+                SetDirtyAll();
                 bool anyChanged;
-
                 var lastUpdate = EditorApplication.timeSinceStartup;
                 do
                 {
@@ -668,6 +681,8 @@ namespace OneHamsa.Dexterity.Visual
                         SceneView.RepaintAll();
                     }
                 } while (anyChanged);
+                
+                SetDirtyAll();
             }
             finally
             {
