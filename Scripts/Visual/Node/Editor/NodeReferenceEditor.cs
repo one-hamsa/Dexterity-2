@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System;
+using System.Globalization;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -305,7 +306,7 @@ namespace OneHamsa.Dexterity.Visual
             EditorGUI.indentLevel++;
             foreach (var child in Utils.GetChildren(property))
             {
-                if (child.name == nameof(BaseField.relatedFieldName))
+                if (child.name == nameof(BaseField.relatedFieldName) && child.stringValue != fieldName)
                 {
                     child.stringValue = fieldName;
                 }
@@ -319,9 +320,22 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(child);
                     updated |= EditorGUI.EndChangeCheck();
+                    
                     // XXX unity has some weird bug here when it's a bool (NodeField's negate for instance)
-                    //. (this only half solves it, the toggle still feels weird)
-                    updated |= child.propertyType == SerializedPropertyType.Boolean;
+                    //. toggling with the keyboard (space) works (?!), but clicking doesn't - feels like
+                    //. something is taking control over this UI but I couldn't find what. so here's another Unity HACK
+                    if (!updated 
+                        && child.propertyType == SerializedPropertyType.Boolean 
+                        && Event.current?.type == EventType.MouseDown)
+                    {
+                        var lastRect = GUILayoutUtility.GetLastRect();
+                        if (Event.current.button == 0 && lastRect.Contains(Event.current.mousePosition))
+                        {
+                            child.boolValue = !child.boolValue;
+                            updated = true;
+                            Event.current.Use();
+                        }
+                    }
                 }
             }
             EditorGUI.indentLevel--;
