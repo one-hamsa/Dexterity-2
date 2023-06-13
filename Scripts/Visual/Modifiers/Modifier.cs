@@ -43,6 +43,7 @@ namespace OneHamsa.Dexterity.Visual
         public List<TransitionDelay> delays = new();
 
         [HideInInspector] public List<string> lastSeenStates = new();
+        [HideInInspector] public bool manualStateEditing = false;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DexterityBaseNode GetNode() => TryFindNode();
@@ -59,6 +60,12 @@ namespace OneHamsa.Dexterity.Visual
 
         private Dictionary<int, PropertyBase> propertiesCache = null;
         private bool foundNode;
+        
+        [ContextMenu("Toggle Manual State Editing")]
+        public void ToggleManualStateEditing()
+        {
+            manualStateEditing = !manualStateEditing;
+        }
 
         public override bool IsChanged()
         {
@@ -72,8 +79,9 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (!propertiesCache.ContainsKey(stateId))
                 {
-                    Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
-                                     $" (probably states were added to node {GetNode().name} without updating modifier)", this);
+                    if (!manualStateEditing)
+                        Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
+                                         $" (probably states were added to node {GetNode().name} without updating modifier)", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)
                         return p;

@@ -6,11 +6,11 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     [RequireComponent(typeof(DexterityBaseNode))]
     public class NodePointerEvents : MonoBehaviour, IRaycastReceiver, IReferencesNode
     {
-        [State]
+        [State(allowEmpty: true)]
         public string hoverState = "Hover";
-        [State]
+        [State(allowEmpty: true)]
         public string pressedState = "Pressed";
-        [State]
+        [State(allowEmpty: true)]
         public string disabledState = "Disabled";
 
         protected DexterityBaseNode node;

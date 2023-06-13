@@ -58,17 +58,26 @@ namespace OneHamsa.Dexterity.Visual
             {
                 if (SyncModifierStates(m))
                     serializedObject.Update();
-                
+
                 var targetStates = m.properties.Select(p => p.state).ToList();
-                
-                if (targetStates.Count != alphabetically.Count || !targetStates.ToHashSet().SetEquals(states)) {
-                    EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.", MessageType.Error);
-                    return;
-                }
-                if (!targetStates.SequenceEqual(alphabetically))
+                if (!m.manualStateEditing)
                 {
-                    m.properties = m.properties.OrderBy(x => x.state).ToList();
-                    EditorUtility.SetDirty(target);
+                    if (targetStates.Count != alphabetically.Count || !targetStates.ToHashSet().SetEquals(states))
+                    {
+                        EditorGUILayout.HelpBox("Can't multi-edit modifiers with different state lists.",
+                            MessageType.Error);
+                        return;
+                    }
+
+                    if (!targetStates.SequenceEqual(alphabetically))
+                    {
+                        m.properties = m.properties.OrderBy(x => x.state).ToList();
+                        EditorUtility.SetDirty(target);
+                    }
+                }
+                else
+                {
+                    states.UnionWith(targetStates);
                 }
             }
 
@@ -149,6 +158,16 @@ namespace OneHamsa.Dexterity.Visual
                 }
             }
 
+            if (targets.Length == 1 && modifier.manualStateEditing)
+            {
+                var icon = EditorGUIUtility.IconContent("d_Toolbar Plus");
+                icon.text = "New State";
+                if (GUILayout.Button(icon))
+                {
+                    AddStateToModifier(modifier, "New State");
+                }
+            }
+
             // warnings
             if (states.Count == 0)
             {
@@ -174,6 +193,20 @@ namespace OneHamsa.Dexterity.Visual
 
         public static bool SyncModifierStates(Modifier m)
         {
+            if (m.manualStateEditing)
+            {
+                if (m.properties.FindIndex(p => p.state == StateFunction.kDefaultState) != -1)
+                    return false;
+
+                RemoveStateFromModifier(m, StateFunction.kDefaultState);
+                var newProp = AddStateToModifier(m, StateFunction.kDefaultState);
+                // move to be the first (because first is the fallback in case of missing state)
+                m.properties.Remove(newProp);
+                m.properties.Insert(0, newProp);
+                
+                return true;
+            }
+            
             var states = ((IHasStates)m).GetStateNames().ToHashSet();
             var targetStates = m.properties.Select(p => p?.state).ToList();
             var changed = false;
@@ -197,7 +230,7 @@ namespace OneHamsa.Dexterity.Visual
 
             return changed;
         }
-        private static void AddStateToModifier(Modifier m, string state)
+        private static Modifier.PropertyBase AddStateToModifier(Modifier m, string state)
         {
             // get property info, iterate through parent classes to support inheritance
             Type propType = null;
@@ -217,6 +250,8 @@ namespace OneHamsa.Dexterity.Visual
             if (m is ISupportPropertyFreeze supportPropertyFreeze) 
                 supportPropertyFreeze.FreezeProperty(newProp);
             EditorUtility.SetDirty(m);
+            
+            return newProp;
         }
         
         private static void RemoveStateFromModifier(Modifier m, string state)
@@ -238,10 +273,11 @@ namespace OneHamsa.Dexterity.Visual
             var hasNode = true;
             if (modifier._node == null)
             {
+                
                 if (modifier.GetNode() == null)
                 {
                     hasNode = false;
-                    EditorGUILayout.HelpBox($"Could not find parent node, showing latest states found",
+                    EditorGUILayout.HelpBox($"Could not find parent node automatically",
                         MessageType.Warning);
                 }
                 else
@@ -250,7 +286,15 @@ namespace OneHamsa.Dexterity.Visual
                 {
                     EditorGUIUtility.PingObject(modifier.GetNode());
                 }
+
+                if (modifier.manualStateEditing)
+                {
+                    EditorGUILayout.HelpBox($"Manual state editing is enabled", MessageType.Warning);
+                }
             }
+
+            if (modifier.manualStateEditing)
+                return;
 
             if (hasNode)
             {
@@ -400,11 +444,24 @@ namespace OneHamsa.Dexterity.Visual
                         var settings = DexteritySettingsProvider.settings;
                         PopUpAssetInspector.Create(settings);
                     });
+
+                    if (targets.Length == 1 && modifier.manualStateEditing)
+                    {
+                        menu.AddSeparator("");
+                        menu.AddItem(new GUIContent("Delete"), false, () =>
+                        {
+                            Undo.RecordObject(modifier, "Delete property");
+                            modifier.properties.RemoveAt(i);
+                            EditorUtility.SetDirty(modifier);
+                        });
+                    }
+                    
                     menu.ShowAsContext();
                 }
 
                 updated = ShowSingleStateFields(property, propertyBase.GetType(),
-                    propertyBase.state, UtilityButtons, Menu, suffix);
+                    propertyBase.state, UtilityButtons, Menu, suffix, 
+                    targets.Length == 1 && modifier.manualStateEditing);
             }
             DrawSeparator();
 
@@ -418,7 +475,7 @@ namespace OneHamsa.Dexterity.Visual
             Type propertyType,
             string propertyKey,
             Action<bool> utilityUiFunction = null,
-            Action menuFunction = null, string suffix = "")
+            Action menuFunction = null, string suffix = "", bool manualStateEditing = false)
         {
             var updated = false;
             var origColor = GUI.contentColor;
@@ -461,7 +518,7 @@ namespace OneHamsa.Dexterity.Visual
                 switch (field.name)
                 {
                     case nameof(Modifier.PropertyBase.savedPropertyKey):
-                    case nameof(Modifier.PropertyBase.state):
+                    case nameof(Modifier.PropertyBase.state) when !manualStateEditing:
                         continue;
                     default:
                         stateProps.Add(field.Copy());
