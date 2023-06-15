@@ -195,7 +195,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (m.manualStateEditing)
             {
-                if (m.properties.FindIndex(p => p.state == StateFunction.kDefaultState) != -1)
+                if (m.properties.FindIndex(p => p.state == StateFunction.kDefaultState) == 0)
                     return false;
 
                 RemoveStateFromModifier(m, StateFunction.kDefaultState);
@@ -277,7 +277,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (modifier.GetNode() == null)
                 {
                     hasNode = false;
-                    EditorGUILayout.HelpBox($"Could not find parent node automatically",
+                    EditorGUILayout.HelpBox($"Could not find parent node automatically, editor animations are disabled.",
                         MessageType.Warning);
                 }
                 else
@@ -289,7 +289,8 @@ namespace OneHamsa.Dexterity.Visual
 
                 if (modifier.manualStateEditing)
                 {
-                    EditorGUILayout.HelpBox($"Manual state editing is enabled", MessageType.Warning);
+                    EditorGUILayout.HelpBox($"Manual state editing is enabled, " +
+                                            $"{StateFunction.kDefaultState} will be used if active state is not defined here.", MessageType.Warning);
                 }
             }
 
@@ -369,7 +370,7 @@ namespace OneHamsa.Dexterity.Visual
                         return;
 
                     GUI.contentColor = coro != null ? Color.green : origColor;
-                    GUI.enabled = modifier.animatableInEditor;
+                    GUI.enabled = modifier.animatableInEditor && modifier.GetNode() != null;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                             GUILayout.Width(25)))
                     {
