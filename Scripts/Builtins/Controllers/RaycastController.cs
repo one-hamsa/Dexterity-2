@@ -168,7 +168,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 			ray = new Ray(origin, direction);
 			Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
 					
-			int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask);
+			int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
 
 			float minDist = float.PositiveInfinity;
 			hit = new RaycastHit();
