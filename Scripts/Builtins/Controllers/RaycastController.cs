@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         public class PressAnywhereEvent
         {
+            public RaycastController controller;
             public bool propagate;
 
             public void StopPropagation()
@@ -24,7 +25,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         const int maxHits = 20;
 
         // Raycast Receiver filter
-        private static readonly List<RaycastFilter> isRaycastReceiverIncluded = new();
+        private static readonly List<RaycastFilter> filters = new();
         public static event Action<PressAnywhereEvent> onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
@@ -63,7 +64,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         /// </summary>
         public static RaycastFilter AddFilter(RaycastFilter filter)
         {
-            isRaycastReceiverIncluded.Add(filter);
+            filters.Add(filter);
             return filter;
         }
 
@@ -119,17 +120,17 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public static void RemoveFilter(RaycastFilter filter)
         {
-            if (!isRaycastReceiverIncluded.Remove(filter))
+            if (!filters.Remove(filter))
                 Debug.LogWarning($"trying to remove a filter that is no longer registered: {filter}");
         }
 
         public static void ClearFilters()
         {
-            if (isRaycastReceiverIncluded.Count > 0)
+            if (filters.Count > 0)
             {
                 // log this, because if we got to clearing filters it means someone didn't clean up after themself...!
-                Debug.LogWarning($"clearing {isRaycastReceiverIncluded.Count} filters");
-                isRaycastReceiverIncluded.Clear();
+                Debug.LogWarning($"clearing {filters.Count} filters");
+                filters.Clear();
             }
         }
 
@@ -143,7 +144,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
             if (onAnyPress != null)
             {
-                var args = new PressAnywhereEvent { propagate = true };
+                var args = new PressAnywhereEvent { controller = this, propagate = true };
                 onAnyPress.Invoke(args);
                 if (!args.propagate)
                     return;
@@ -199,7 +200,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     {
                         var receiver = receiversBeforeFilter[j];
                         var r = receiver.Resolve();
-                        if (isRaycastReceiverIncluded.Count > 0 && !isRaycastReceiverIncluded[^1](r))
+                        if (filters.Count > 0 && !filters[^1](r))
                             continue;
                         potentialReceiversA.Add(r);
                     }
