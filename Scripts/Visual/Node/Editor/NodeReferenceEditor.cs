@@ -6,7 +6,7 @@ using System.Reflection;
 using System;
 using System.Globalization;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 

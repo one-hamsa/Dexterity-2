@@ -8,7 +8,7 @@ using Unity.EditorCoroutines.Editor;
 using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
 
     [CustomEditor(typeof(Node)), CanEditMultipleObjects]

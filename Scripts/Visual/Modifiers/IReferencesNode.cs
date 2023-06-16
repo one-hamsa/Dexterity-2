@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public interface IReferencesNode : IHasStates
     {

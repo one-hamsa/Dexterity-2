@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Utilities;
     

@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public static class Utils
     {

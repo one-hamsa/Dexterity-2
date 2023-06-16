@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(FieldAttribute))]
     public class FieldDrawer : PropertyDrawer

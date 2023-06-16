@@ -1,6 +1,6 @@
 ﻿using UnityEditor;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
 
     [CustomEditor(typeof(EnumNode)), CanEditMultipleObjects]

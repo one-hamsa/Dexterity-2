@@ -7,7 +7,7 @@ using System.Reflection;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(TransitionBehaviour), true)]
     public class TransitionBehaviourEditor : Editor

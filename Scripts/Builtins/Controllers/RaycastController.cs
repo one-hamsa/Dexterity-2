@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastController : MonoBehaviour, IRaycastController
     {

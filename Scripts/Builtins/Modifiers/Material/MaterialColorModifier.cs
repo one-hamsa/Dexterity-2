@@ -4,7 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class MaterialColorModifier : BaseMaterialModifier, ISupportPropertyFreeze
     {

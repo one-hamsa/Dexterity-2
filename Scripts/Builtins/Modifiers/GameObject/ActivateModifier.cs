@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class ActivateModifier : Modifier
     {

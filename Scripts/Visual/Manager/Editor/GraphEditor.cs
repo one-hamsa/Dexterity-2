@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Collections;
 using Unity.EditorCoroutines.Editor;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(Graph), true)]
     public class GraphEditor : Editor

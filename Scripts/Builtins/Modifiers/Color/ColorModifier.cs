@@ -4,7 +4,7 @@ using System;
 using UnityEngine.UI;
 using TMPro;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class ColorModifier : Modifier, ISupportPropertyFreeze
     {

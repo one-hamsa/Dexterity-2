@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [Serializable]
     public struct FieldDefinition

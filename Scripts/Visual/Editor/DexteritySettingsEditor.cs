@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEditorInternal;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(DexteritySettings))]
     public class DexteritySettingsEditor : Editor

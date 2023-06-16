@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// class that is paired with the ObjectValueAttribute to read a value from a Unity Object.

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [AddComponentMenu("Dexterity/Dexterity Enum Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]

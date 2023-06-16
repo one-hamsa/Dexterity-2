@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CreateAssetMenu(menuName = "Dexterity/Settings", fileName = "Dexterity Settings")]
     public class DexteritySettings : ScriptableObject

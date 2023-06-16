@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class AndField : BaseField
     {

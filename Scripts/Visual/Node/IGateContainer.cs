@@ -1,4 +1,4 @@
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using System.Collections.Generic;
     using Gate = NodeReference.Gate;

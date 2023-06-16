@@ -1,6 +1,6 @@
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastPressField : BaseField
     {

@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]

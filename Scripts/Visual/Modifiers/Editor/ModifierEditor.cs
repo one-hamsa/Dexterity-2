@@ -8,7 +8,7 @@ using System.Collections;
 using Unity.EditorCoroutines.Editor;
 using Object = UnityEngine.Object;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(Modifier), true), CanEditMultipleObjects]
     public class ModifierEditor : TransitionBehaviourEditor

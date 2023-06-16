@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     [Serializable]
     public class SimpleStrategy : BaseStrategy

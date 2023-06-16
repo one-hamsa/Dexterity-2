@@ -6,7 +6,7 @@ using System;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class StepListView : ListView
     {

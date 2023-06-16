@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEditorInternal;
 using System;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public static class DexteritySettingsProvider
     {

@@ -10,7 +10,7 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(StateFunction))]
     public class StateFunctionEditor : Editor

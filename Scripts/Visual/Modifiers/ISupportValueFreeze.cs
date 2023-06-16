@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public interface ISupportValueFreeze
     {

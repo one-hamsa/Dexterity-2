@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class NodeReferenceEditorWindow : EditorWindow
     {

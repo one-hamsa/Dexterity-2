@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "Dexterity/Matrix Definition", order = 100)]
     public class MatrixDefinition : ScriptableObject, IHasStates {

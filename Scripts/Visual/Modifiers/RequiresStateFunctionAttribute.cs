@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class RequiresStateFunctionAttribute : Attribute

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Builtins {
+namespace OneHamsa.Dexterity.Builtins {
 	[RequireComponent(typeof(Node))]
 	public class TransitionsListener : MonoBehaviour {
 		[Tooltip("Optional. Will look for any Node on object or its parents")]

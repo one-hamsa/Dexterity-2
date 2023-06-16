@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Utilities {
+namespace OneHamsa.Dexterity.Utilities {
 
 	public static class Extensions {
 		internal static Component GetOrAddComponent(this GameObject obj, Type type) {

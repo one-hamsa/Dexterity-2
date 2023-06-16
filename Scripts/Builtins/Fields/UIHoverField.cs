@@ -1,8 +1,8 @@
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class UIHoverField : BaseField
     {

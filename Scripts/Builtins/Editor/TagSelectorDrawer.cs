@@ -2,7 +2,7 @@
  using UnityEditor;
  using System.Collections.Generic; 
  
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(TagSelectorAttribute))]
     public class TagSelectorDrawer : PropertyDrawer

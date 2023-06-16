@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     // will automatically serialize fields under "parameters" to custom editor
     public abstract class BaseField

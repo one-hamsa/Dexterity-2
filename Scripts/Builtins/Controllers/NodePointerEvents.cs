@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     [RequireComponent(typeof(DexterityBaseNode))]
     public class NodePointerEvents : MonoBehaviour, IRaycastReceiver, IReferencesNode

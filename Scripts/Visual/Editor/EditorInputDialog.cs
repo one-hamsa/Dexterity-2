@@ -3,7 +3,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
  
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public abstract class EditorInputDialog<T> : EditorWindow
     {

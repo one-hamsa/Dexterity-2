@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(StateAttribute))]
     public class StateDrawer : PropertyDrawer

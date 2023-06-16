@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class NodeRaycastRouter : MonoBehaviour, IRaycastReceiver
     {

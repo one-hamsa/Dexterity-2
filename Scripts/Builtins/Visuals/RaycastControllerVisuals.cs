@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     [RequireComponent(typeof(RaycastController))]
     public class RaycastControllerVisuals : MonoBehaviour
