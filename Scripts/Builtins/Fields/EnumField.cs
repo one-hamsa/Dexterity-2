@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public class EnumField : BaseField
     {
-        public EnumNode targetNode;
+        public ObjectSourceEnumNode targetNode;
         [EnumField(nameof(targetNode))]
         public string targetField;
         public bool negate;

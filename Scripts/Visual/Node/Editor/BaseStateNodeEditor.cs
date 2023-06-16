@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class DexterityBaseNodeEditor : Editor
+    public abstract class BaseStateNodeEditor : Editor
     {
         static bool modifiersDebugOpen;
         private static int speedIndex = -1;

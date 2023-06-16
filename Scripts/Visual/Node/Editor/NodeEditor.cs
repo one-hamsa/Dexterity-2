@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity
 {
 
     [CustomEditor(typeof(Node)), CanEditMultipleObjects]
-    public class NodeEditor : DexterityBaseNodeEditor
+    public class NodeEditor : BaseStateNodeEditor
     {
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
