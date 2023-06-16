@@ -642,7 +642,7 @@ namespace OneHamsa.Dexterity
             Undo.FlushUndoRecordObjects();
             
             var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
-            IEnumerable<DexterityBaseNode> getNodes() 
+            IEnumerable<BaseStateNode> getNodes() 
                 => animationContexts.Select(c => c.GetNode()).ToHashSet();
 
             void SetDirtyAll()

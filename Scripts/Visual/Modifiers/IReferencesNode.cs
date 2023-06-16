@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity
 {
     public interface IReferencesNode : IHasStates
     {
-        DexterityBaseNode GetNode();
+        BaseStateNode GetNode();
 
         HashSet<string> IHasStates.GetStateNames()
             => GetNode() != null ? GetNode().GetStateNames() : emptySet;

@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public static class NodeExtensions
     {
-        public static NodeRaycastRouter GetRaycastRouter(this DexterityBaseNode node)
+        public static NodeRaycastRouter GetRaycastRouter(this BaseStateNode node)
         {
             return node.GetOrAddComponent<NodeRaycastRouter>();
         }

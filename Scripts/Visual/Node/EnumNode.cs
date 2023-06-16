@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity
 {
     [AddComponentMenu("Dexterity/Dexterity Enum Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class EnumNode : DexterityBaseNode
+    public class EnumNode : BaseStateNode
     {
         public UnityEngine.Object targetObject;
         [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(Enum))]

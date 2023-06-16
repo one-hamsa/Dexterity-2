@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [RequireComponent(typeof(DexterityBaseNode))]
+    [RequireComponent(typeof(BaseStateNode))]
     public class NodePointerEvents : MonoBehaviour, IRaycastReceiver, IReferencesNode
     {
         [State(allowEmpty: true)]
@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Builtins
         [State(allowEmpty: true)]
         public string disabledState = "Disabled";
 
-        protected DexterityBaseNode node;
+        protected BaseStateNode node;
         private NodeRaycastRouter router;
 
         protected int hoverStateId = StateFunction.emptyStateId;
@@ -50,6 +50,6 @@ namespace OneHamsa.Dexterity.Builtins
         {
         }
 
-        public DexterityBaseNode GetNode() => GetComponent<DexterityBaseNode>();
+        public BaseStateNode GetNode() => GetComponent<BaseStateNode>();
     }
 }

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class DexterityBaseNode : MonoBehaviour, IHasStates
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates
     {
         [Serializable]
         public class TransitionDelay

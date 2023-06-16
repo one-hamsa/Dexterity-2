@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : DexterityBaseNode, IGateContainer, IStepList
+    public partial class Node : BaseStateNode, IGateContainer, IStepList
     {
         #region Static Functions
         // mainly for debugging graph problems
