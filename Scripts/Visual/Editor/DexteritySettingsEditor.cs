@@ -87,8 +87,6 @@ namespace OneHamsa.Dexterity.Visual
             var strategyDefined = TransitionBehaviourEditor.ShowStrategy(target, p);
 
             EditorGUILayout.Space(15);
-
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.repeatHitCooldown)));
             
             var namedProperties = serializedObject.FindProperty(nameof(DexteritySettings.namedProperties));
             var settings = (DexteritySettings)target;

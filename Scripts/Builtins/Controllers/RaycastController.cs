@@ -29,6 +29,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public static event Action<PressAnywhereEvent> onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
+        public float repeatHitCooldown = 0f;
 
         public RaycastController[] otherControllers;
         public bool defaultController;
@@ -247,7 +248,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     if (recentlyHitReceivers.TryGetValue(receiver, out var lastHit))
                     {
                         var cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
-                        if (cooldown < Database.instance.settings.repeatHitCooldown)
+                        if (cooldown < repeatHitCooldown)
                             continue;
                     }
 
