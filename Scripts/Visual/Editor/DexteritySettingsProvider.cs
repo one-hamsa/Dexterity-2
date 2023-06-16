@@ -11,14 +11,10 @@ namespace OneHamsa.Dexterity.Visual
     {
         static UnityEngine.Object FindAssetByType(Type t)
         {
-            List<UnityEngine.Object> assets = new List<UnityEngine.Object>();
-            string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", t));
+            var guids = AssetDatabase.FindAssets($"t:{t}");
 
             if (guids.Length == 0)
-            {
-                Debug.LogError("no DexteritySettings found in project");
                 return null;
-            }
 
             if (guids.Length > 1)
             {
@@ -39,18 +35,29 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         private static DexteritySettings cachedSettings;
+
+        public static DexteritySettings TryGetSettings()
+        {
+            if (cachedSettings == null)
+            {
+                var s = (DexteritySettings)FindAssetByType(typeof(DexteritySettings));
+                if (s == null)
+                {
+                    return s;
+                }
+                cachedSettings = s;
+            }
+
+            return cachedSettings;
+        }
         public static DexteritySettings settings {
             get
             {
-                if (cachedSettings == null)
-                {
-                    var s = (DexteritySettings)FindAssetByType(typeof(DexteritySettings));
-                    if (s == null)
-                        return s;
-
-                    cachedSettings = s;
-                }
-                return cachedSettings;
+                var s = TryGetSettings();
+                if (s == null)
+                    Debug.LogError("no DexteritySettings found in project");
+                
+                return s;
             }
         }
 
