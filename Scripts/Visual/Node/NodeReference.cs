@@ -8,9 +8,6 @@ namespace OneHamsa.Dexterity
     [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
     public class NodeReference : ScriptableObject, IGateContainer, IHasStates
     {
-        private static Dictionary<NodeReference, NodeReference> prefabToRuntime
-            = new Dictionary<NodeReference, NodeReference>();
-
         // stores the coupling between input fields and their output name
         [Serializable]
         public class Gate
@@ -44,14 +41,16 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        public List<StateFunction> stateFunctionAssets = new List<StateFunction>();
+        public List<StateFunction> stateFunctionAssets = new();
 
         [SerializeField]
-        public List<NodeReference> extends = new List<NodeReference>();
+        public List<NodeReference> extends = new();
 
         [SerializeField]
-        public List<Gate> gates = new List<Gate>();
-
+        public List<Gate> gates = new();
+        
+        [SerializeField]
+        public List<FieldDefinition> internalFieldDefinitions = new();
 
         [NonSerialized]
         public Node owner;
@@ -62,14 +61,18 @@ namespace OneHamsa.Dexterity
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        HashSet<StateFunction> stateFunctionsSet = new HashSet<StateFunction>();
+        private readonly HashSet<StateFunction> stateFunctionsSet = new();
 
-        private static HashSet<NodeReference> parentReferences = new HashSet<NodeReference>();
+        private static readonly HashSet<NodeReference> parentReferences = new();
         private HashSet<string> stateNames;
         private HashSet<string> fieldNames;
 
         public void Initialize(IEnumerable<Gate> gates, HashSet<NodeReference> parentReferences = null)
         {
+            // register all internal fields
+            foreach (var field in internalFieldDefinitions)
+                Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
+            
             if (parentReferences == null) {
                 parentReferences = NodeReference.parentReferences;
                 parentReferences.Clear();
@@ -174,14 +177,14 @@ namespace OneHamsa.Dexterity
             return fieldNames;
         }
 
-        internal int Evaluate(FieldMask fieldMask)
+        public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
         {
-            foreach (var function in stateFunctions) {
-                var result = function.Evaluate(fieldMask);
-                if (result != StateFunction.emptyStateId)
-                    return result;
-            }
-            return StateFunction.emptyStateId;
+            foreach (var parent in extends)
+                foreach (var field in parent.GetInternalFieldDefinitions())
+                    yield return field;
+            
+            foreach (var field in internalFieldDefinitions)
+                yield return field;
         }
 
         private void OnValidate() {
@@ -197,9 +200,6 @@ namespace OneHamsa.Dexterity
                 }
             }
         }
-
-        IEnumerable<string> IGateContainer.GetStateNames() => (this as IHasStates).GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => (this as IHasStates).GetFieldNames();
 
         Node IGateContainer.node => owner;
     }

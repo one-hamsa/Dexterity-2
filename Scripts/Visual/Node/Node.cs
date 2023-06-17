@@ -52,15 +52,18 @@ namespace OneHamsa.Dexterity
         #endregion Data Definitions
 
         #region Serialized Fields
-        public List<NodeReference> referenceAssets = new List<NodeReference>();
+        public List<NodeReference> referenceAssets = new();
      
         [SerializeField]
-        public List<Gate> customGates = new List<Gate>();
+        public List<Gate> customGates = new();
+        
+        [SerializeField]
+        public List<FieldDefinition> internalFieldDefinitions = new();
 
         [SerializeField]
-        public List<OutputOverride> overrides = new List<OutputOverride>();
+        public List<OutputOverride> overrides = new();
 
-        public List<StateFunction.Step> customSteps = new List<StateFunction.Step>();
+        public List<StateFunction.Step> customSteps = new();
 
         #endregion Serialized Fields
 
@@ -132,6 +135,10 @@ namespace OneHamsa.Dexterity
                 enabled = false;
                 return;
             }
+            
+            // register all internal fields
+            foreach (var field in internalFieldDefinitions)
+                Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
             // only needed once
             if (reference == null) {
@@ -142,6 +149,8 @@ namespace OneHamsa.Dexterity
                 reference.name = $"{name} (Live Reference)";
                 // copy all references from this node to the runtime instance
                 reference.extends.AddRange(referenceAssets);
+                // copy all internal fields to the runtime instance
+                reference.internalFieldDefinitions.AddRange(GetInternalFieldDefinitions());
             }
             else
             {
@@ -231,6 +240,20 @@ namespace OneHamsa.Dexterity
             
             return fieldNames;
         }
+        
+        public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
+        {
+            foreach (var reference in referenceAssets)
+            {
+                if (reference == null)
+                    continue;
+
+                foreach (var fieldDefinition in reference.GetInternalFieldDefinitions())
+                    yield return fieldDefinition;
+            }
+            foreach (var fieldDefinition in internalFieldDefinitions)
+                yield return fieldDefinition;
+        }
         #endregion General Methods
 
         #region Fields & Gates
@@ -241,9 +264,11 @@ namespace OneHamsa.Dexterity
             // unregister all fields. this might be triggered by editor, so go through this list
             //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
             FinalizeFields(nonOutputFields.ToArray());
+
             // re-register all gates
             foreach (var gate in GetAllGates().ToArray())  // might manipulate gates within the loop
                 InitializeGate(gate);
+            
             // cache all outputs
             foreach (var output in outputFields.Values) {
                 output.RefreshReferences();
@@ -256,7 +281,7 @@ namespace OneHamsa.Dexterity
             // initialize all fields
             fields.ToList().ForEach(f =>
             {
-                if (f == null || f is OutputField)  // OutputFields are self-initialized 
+                if (f is null or OutputField)  // OutputFields are self-initialized 
                     return;
 
                 Manager.instance.RegisterField(f);
@@ -302,8 +327,9 @@ namespace OneHamsa.Dexterity
             {
                 InitializeFields(gate.outputFieldDefinitionId, new[] { gate.field });
             }
-            catch (BaseField.FieldInitializationException)
+            catch (BaseField.FieldInitializationException e)
             {
+                Debug.LogException(e, this);
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
                 FinalizeGate(gate);
             }
@@ -621,8 +647,11 @@ namespace OneHamsa.Dexterity
         #endregion Overrides
 
         #region Interface Implementation (Editor)
-        IEnumerable<string> IGateContainer.GetStateNames() => GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => GetFieldNames();
+        IEnumerable<FieldDefinition> IGateContainer.GetInternalFieldDefinitions() 
+            => GetInternalFieldDefinitions();
+
+        IEnumerable<string> IGateContainer.GetWhitelistedFieldNames()
+            => GetFieldNames();
 
         Node IGateContainer.node => this;
 

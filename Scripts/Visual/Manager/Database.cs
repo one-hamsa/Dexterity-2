@@ -50,10 +50,12 @@ namespace OneHamsa.Dexterity
         public double deltaTime => Mathf.Min(Time.maximumDeltaTime, Time.unscaledDeltaTime) * timeScale;
         public double timeScale = 1d;
         
-        public ListSet<string> fieldNames = new ListSet<string>(32);
-        public ListSet<string> stateNames = new ListSet<string>(32);
+        public ListSet<string> fieldNames = new(32);
+        public ListSet<string> stateNames = new(32);
+        public ListSet<string> internalFieldNames = new(32);
+        public Dictionary<int, FieldDefinition> internalFields = new(32);
 
-        private HashSet<IHasStates> stateHolders = new HashSet<IHasStates>();
+        private HashSet<IHasStates> stateHolders = new();
 
         /// <summary>
         /// returns the field ID, useful for quickly getting the field definition.
@@ -66,7 +68,16 @@ namespace OneHamsa.Dexterity
             if (fieldNames.Count == 0)
                 Debug.LogWarning($"tried to get field id of {name} but fieldNames is empty");
 
-            return fieldNames.IndexOf(name);
+            var id = fieldNames.IndexOf(name);
+            if (id == -1)
+            {
+                // try to find in internal
+                var internalId = internalFieldNames.IndexOf(name);
+                if (internalId != -1)
+                    // internal fields are negative and start from -2
+                    id = -2 - internalId;
+            }
+            return id;
         }
 
         /// <summary>
@@ -94,6 +105,13 @@ namespace OneHamsa.Dexterity
             {
                 throw new Exception("asked for field id == -1");
             }
+            if (id < -1)
+            {
+                // internal field
+                if (!internalFields.TryGetValue(id, out var field))
+                    throw new Exception($"internal field {id} not found");
+                return field;
+            }
             return settings.fieldDefinitions[id];
         }
 
@@ -119,11 +137,37 @@ namespace OneHamsa.Dexterity
         {
             stateHolders.Add(stateHolder);
 
-            foreach (var field in stateHolder.GetFieldNames())
-                RegisterField(field);
+            foreach (var fieldName in stateHolder.GetFieldNames())
+            {
+                if (!FieldDefinition.IsInternalName(fieldName))
+                    RegisterField(fieldName);
+            }
 
             foreach (var state in stateHolder.GetStateNames())
                 RegisterState(state);
+        }
+
+        /// <summary>
+        /// Registers an internal field, adding it to the internal field list
+        /// </summary>
+        /// <param name="fieldDefinition"></param>
+        public void RegisterInternalFieldDefinition(FieldDefinition fieldDefinition)
+        {
+            internalFieldNames.Add(fieldDefinition.GetInternalName());
+            
+            var fieldId = GetFieldID(fieldDefinition.GetInternalName());
+            if (internalFields.TryGetValue(fieldId, out var existingField))
+            {
+                if (!existingField.Equals(fieldDefinition))
+                {
+                    Debug.LogError($"internal field {fieldDefinition.GetInternalName()} already exists " +
+                                   $"with different definition, this is currently not supported");
+                }
+            }
+            else
+            {
+                internalFields.Add(fieldId, fieldDefinition);
+            }
         }
 
         /// <summary>
@@ -135,21 +179,15 @@ namespace OneHamsa.Dexterity
                 RegisterField(settings.fieldDefinitions[i].name);
         }
 
-        private void RegisterField(string fieldName)
-        {
-            fieldNames.Add(fieldName);
-        }
-
-        private void RegisterState(string stateName)
-        {
-            stateNames.Add(stateName);
-        }
+        private void RegisterField(string fieldName) => fieldNames.Add(fieldName);
+        private void RegisterState(string stateName) => stateNames.Add(stateName);
 
         /// <summary>
         /// Uninitializes state (useful for editor)
         /// </summary>
         private void Uninitialize() {
             fieldNames = null;
+            internalFieldNames.Clear();
             stateNames.Clear();
             stateHolders.Clear();
         }

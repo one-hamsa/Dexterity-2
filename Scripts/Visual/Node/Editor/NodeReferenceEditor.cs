@@ -15,8 +15,7 @@ namespace OneHamsa.Dexterity
     {
         NodeReference reference;
         bool foldoutOpen = true;
-        private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField
-        = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
+        private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField = new();
 
         public override void OnInspectorGUI()
         {
@@ -30,6 +29,9 @@ namespace OneHamsa.Dexterity
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.internalFieldDefinitions)));
+            
             ShowWarnings();
 
             serializedObject.ApplyModifiedProperties();
@@ -60,9 +62,6 @@ namespace OneHamsa.Dexterity
 
         internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer, ref bool foldoutOpen)
         {
-            if (gateContainer.GetFieldNames() == null)
-                return false;
-
             var rect = EditorGUILayout.BeginVertical();
             EditorGUI.BeginProperty(rect, GUIContent.none, gatesProp);
 
@@ -97,18 +96,23 @@ namespace OneHamsa.Dexterity
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                bool fieldExistsInFunction = gateContainer.GetFieldNames().Contains(kv.Key);
+                var whitelist = gateContainer.GetWhitelistedFieldNames();
+                var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(fd => fd.name)
+                    .Where(f => whitelist == null || whitelist.Contains(f))
+                    .Concat(gateContainer.GetInternalFieldDefinitions().Select(fd => fd.GetInternalName()))
+                    .ToArray();
+                
+                var fieldExistsInFunction = fields.Contains(kv.Key);
+                var fieldIsInternal = FieldDefinition.IsInternalName(kv.Key);
 
                 if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
                     GUI.color = Color.yellow;
                 else
-                    GUI.color = Color.green;
+                    GUI.color = !fieldIsInternal ? Color.green : Color.cyan;
 
                 GUILayout.Label(!string.IsNullOrEmpty(kv.Key) ? kv.Key : "<unassigned>", EditorStyles.largeLabel);
 
-                var definition = !string.IsNullOrEmpty(kv.Key)
-                    ? DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key)
-                    : default;
+                var definition = ExtractDefinition(gateContainer, kv.Key);
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
                     if (definition.name != null)
@@ -153,8 +157,6 @@ namespace OneHamsa.Dexterity
                     // show output field dropdown
                     var outputProp = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName));
                     var output = outputProp.stringValue;
-                    // TODO check if manager exists!
-                    var fields = gateContainer.GetFieldNames().ToArray();
 
                     rect = EditorGUILayout.BeginHorizontal();
                     EditorGUI.BeginProperty(rect, GUIContent.none, outputProp);
@@ -263,6 +265,13 @@ namespace OneHamsa.Dexterity
                 EditorUtility.SetDirty(gatesProp.serializedObject.targetObject);
 
             return updated;
+        }
+
+        private static FieldDefinition ExtractDefinition(IGateContainer gateContainer, string fieldName)
+        {
+            return !string.IsNullOrEmpty(fieldName)
+                ? DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, fieldName)
+                : default;
         }
 
         static double lastReferenceRefreshTime = double.NegativeInfinity;

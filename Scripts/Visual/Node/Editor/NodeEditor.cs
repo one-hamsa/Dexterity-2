@@ -2,10 +2,6 @@
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
-using System;
-using Unity.EditorCoroutines.Editor;
-using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity
@@ -48,6 +44,9 @@ namespace OneHamsa.Dexterity
             }
             
             foldout.Add(stepListView);
+            
+            // disallow editing in play mode - this would require re-initialization of StepList
+            foldout.SetEnabled(!Application.isPlaying);
             root.Add(foldout);
             
             // TODO 
@@ -114,7 +113,10 @@ namespace OneHamsa.Dexterity
             // add nice name for all overrides
             foreach (var o in node.overrides)
             {
-                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(o.outputFieldName);
+                if (string.IsNullOrEmpty(o.outputFieldName))
+                    continue;
+                
+                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(node, o.outputFieldName);
                 o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
             }
 
@@ -127,6 +129,8 @@ namespace OneHamsa.Dexterity
             if (targets.Length <= 1)
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
                     node, ref foldoutOpen);
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.internalFieldDefinitions)));
         }
 
         protected override void ShowFieldValues()
@@ -158,16 +162,15 @@ namespace OneHamsa.Dexterity
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.definitionId))
+                if (overrides.TryGetValue(field.definitionId, out var valueOverride))
                 {
-                    var outputOverride = overrides[field.definitionId];
                     GUI.color = Color.magenta;
-                    strValue = $"{Utils.ConvertFieldValueToText(outputOverride.value, field.definition)} ({StrikeThrough(strValue)})";
-                    unusedOverrides.Remove(outputOverride);
+                    strValue = $"{Utils.ConvertFieldValueToText(valueOverride.value, field.definition)} ({StrikeThrough(strValue)})";
+                    unusedOverrides.Remove(valueOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(Database.instance.GetFieldDefinition(field.definitionId).name);
+                EditorGUILayout.LabelField(field.definition.name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();

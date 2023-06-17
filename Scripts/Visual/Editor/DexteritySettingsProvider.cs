@@ -62,11 +62,19 @@ namespace OneHamsa.Dexterity
         }
 
 
-        /**
-         * returns field definition by name - slow.
-         */
-        public static FieldDefinition GetFieldDefinitionByName(string name)
+        /// <summary>
+        /// returns field definition by name - slow.
+        /// </summary>
+        public static FieldDefinition GetFieldDefinitionByName(IGateContainer gateContainer, string name)
         {
+            // we can't use Database here since it's not initialized in edit mode, so we have to do it manually
+            
+            var internalField = gateContainer?.GetInternalFieldDefinitions()
+                .FirstOrDefault(fd => fd.GetInternalName() == name);
+
+            if (!string.IsNullOrEmpty(internalField?.name))
+                return internalField.Value;
+
             foreach (var fd in settings.fieldDefinitions)
                 if (fd.name == name)
                     return fd;

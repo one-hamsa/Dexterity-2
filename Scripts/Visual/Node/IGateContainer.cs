@@ -5,8 +5,14 @@ namespace OneHamsa.Dexterity
 
     public interface IGateContainer
     {
-        IEnumerable<string> GetStateNames();
-        IEnumerable<string> GetFieldNames();
+        IEnumerable<FieldDefinition> GetInternalFieldDefinitions();
+        
+        /// <summary>
+        /// Returns a list of field names that are allowed to be used in the context of this node,
+        /// or null if all fields are allowed.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<string> GetWhitelistedFieldNames() => null;
         Node node { get; }
 
         void AddGate(Gate gate);

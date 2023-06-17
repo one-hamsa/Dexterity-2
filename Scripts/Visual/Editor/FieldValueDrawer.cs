@@ -49,7 +49,8 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            var definition = DexteritySettingsProvider.GetFieldDefinitionByName(actualFieldName);
+            var gateContainer = property.serializedObject.targetObject as IGateContainer;
+            var definition = DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, actualFieldName);
             if (string.IsNullOrEmpty(definition.name)) {
                 EditorGUI.LabelField(position, label.text, $"Field {actualFieldName} not found.");
                 return;
