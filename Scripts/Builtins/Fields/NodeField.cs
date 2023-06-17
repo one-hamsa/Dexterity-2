@@ -66,10 +66,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             if (targetNodes.Count == 0)
-            {
-                Debug.LogError($"target nodes empty", context);
-                throw new FieldInitializationException();
-            }
+                targetNodes.Add(context);
 
             ClearUpstreamFields();
             foreach (var node in targetNodes) {
