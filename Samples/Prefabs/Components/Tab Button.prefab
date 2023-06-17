@@ -115,7 +115,7 @@ PrefabInstance:
     - target: {fileID: 9099520360643962214, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
       propertyPath: timeSinceStateChange
-      value: 0.6730867999503971
+      value: 0.633278400026029
       objectReference: {fileID: 0}
     - target: {fileID: 9099520360643962214, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
@@ -165,7 +165,7 @@ PrefabInstance:
     - target: {fileID: 9099520360643962236, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
       propertyPath: m_Name
-      value: Tab Variant
+      value: Tab Button
       objectReference: {fileID: 0}
     - target: {fileID: 9099520361348912194, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
