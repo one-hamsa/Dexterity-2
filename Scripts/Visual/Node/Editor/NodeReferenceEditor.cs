@@ -31,8 +31,6 @@ namespace OneHamsa.Dexterity
                 reference, ref foldoutOpen);
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.internalFieldDefinitions)));
-            
-            ShowWarnings();
 
             serializedObject.ApplyModifiedProperties();
 
@@ -43,15 +41,6 @@ namespace OneHamsa.Dexterity
             // always update if it's a live view
             if (reference.owner != null)
                 this.Repaint();
-        }
-
-        private void ShowWarnings()
-        {
-            var sf = reference.GetStateFunctionAssetsIncludingParents();
-            if (sf.Count() == 0)
-            {
-                EditorGUILayout.HelpBox($"No state functions selected (either by reference or its parents)", MessageType.Error);
-            }
         }
 
         private void ShowExtends()

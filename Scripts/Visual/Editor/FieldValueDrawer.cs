@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            var attr = attribute as FieldValueAttribute;
+            var attr = (FieldValueAttribute)attribute;
             string actualFieldName;
             if (attr.proxy)
             {
