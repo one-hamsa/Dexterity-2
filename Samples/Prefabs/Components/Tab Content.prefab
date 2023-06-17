@@ -1,0 +1,406 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1774343971361441265
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6254915533556824669}
+  - component: {fileID: 5234149954798898702}
+  - component: {fileID: 5582877761681161886}
+  m_Layer: 0
+  m_Name: Content
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6254915533556824669
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774343971361441265}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 184033359911546945}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &5234149954798898702
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774343971361441265}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &5582877761681161886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774343971361441265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c797ad6364d9b6449bde7ac73e8d2e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866623977
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443120866623976
+  - rid: 7862443120866623975
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Hidden
+  manualStateEditing: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623975
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hidden
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 7862443120866623976
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 1}
+    - rid: 7862443120866623977
+      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        transitionSpeed: 10
+        transitionTime: 1
+        style: 0
+--- !u!1 &3063453402633914014
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 184033359911546945}
+  - component: {fileID: 1331368821886688260}
+  - component: {fileID: 5871908666273799364}
+  - component: {fileID: 4911745733066645157}
+  m_Layer: 5
+  m_Name: Background
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &184033359911546945
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3063453402633914014}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6254915533556824669}
+  m_Father: {fileID: 517651723677352095}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 1}
+--- !u!222 &1331368821886688260
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3063453402633914014}
+  m_CullTransparentMesh: 1
+--- !u!114 &5871908666273799364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3063453402633914014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.9916292, b: 0.8726415, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4911745733066645157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3063453402633914014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc5ff6cfc5d37e84588851518dacac70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866623988
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443120866623985
+  - rid: 7862443120866623984
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Hidden
+  manualStateEditing: 0
+  baseScale: {x: 1, y: 1, z: 1}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623984
+      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hidden
+        savedPropertyKey: 
+        scale: {x: 1, y: 0, z: 1}
+    - rid: 7862443120866623985
+      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        scale: {x: 1, y: 1, z: 1}
+    - rid: 7862443120866623988
+      type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        smoothTime: 0.167
+        maxSpeed: Infinity
+--- !u!1 &6497273456770809630
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 517651723677352095}
+  - component: {fileID: 1013670011825079378}
+  - component: {fileID: 3571494187326893343}
+  - component: {fileID: 2398238482040965231}
+  - component: {fileID: 1203963062875108111}
+  m_Layer: 5
+  m_Name: Tab Content
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &517651723677352095
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 184033359911546945}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1013670011825079378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f2926e61c85a7c4287096e708878906, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  initialState: Hidden
+  delays: []
+  overrideState: 
+  timeSinceStateChange: 0.6680404999933671
+  referenceAssets:
+  - {fileID: 11400000, guid: 94a20921bdc576740889f779960a6512, type: 2}
+  customGates:
+  - outputFieldName: visible
+    overrideType: 1
+    field:
+      rid: 7862443120866623971
+  internalFieldDefinitions: []
+  overrides: []
+  customSteps:
+  - id: 5
+    parent: -1
+    type: 2
+    condition_fieldName: hover
+    condition_fieldValue: 0
+    condition_negate: 0
+    result_stateName: <Default>
+    reference_stateFunction: {fileID: 11400000, guid: b24cd29b1bfad5d41bcbad772cc8b6bf,
+      type: 2}
+  - id: 6
+    parent: -1
+    type: 1
+    condition_fieldName: 
+    condition_fieldValue: 0
+    condition_negate: 0
+    result_stateName: <Default>
+    reference_stateFunction: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623971
+      type: {class: NodeField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        relatedFieldName: visible
+        targetNodes:
+        - {fileID: 0}
+        fieldName: focused
+        takeValueWhen: 0
+        negate: 0
+--- !u!114 &3571494187326893343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cff3c06d5b6e9c42a3005145ee7a75a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  node: {fileID: 0}
+  onClick:
+    m_PersistentCalls:
+      m_Calls: []
+  settings:
+    pressedFieldName: pressed
+    hoverFieldName: hover
+    disabledFieldName: 
+    visibleFieldName: 
+--- !u!114 &2398238482040965231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: 1000
+  m_LayoutPriority: 1
+--- !u!114 &1203963062875108111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2168b075369242099e1de3bc30b2bd9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866623987
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443120866623982
+  - rid: 7862443120866623981
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Hidden
+  manualStateEditing: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623981
+      type: {class: LayoutElementModifier/Property, ns: OneHamsa.Dexterity.Builtins,
+        asm: Dexterity}
+      data:
+        state: Hidden
+        savedPropertyKey: 
+        preferredWidth: -1
+        preferredHeight: -1
+        flexibleWidth: -1
+        flexibleHeight: 0
+    - rid: 7862443120866623982
+      type: {class: LayoutElementModifier/Property, ns: OneHamsa.Dexterity.Builtins,
+        asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        preferredWidth: -1
+        preferredHeight: -1
+        flexibleWidth: -1
+        flexibleHeight: 1000
+    - rid: 7862443120866623987
+      type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        smoothTime: 0.1
+        maxSpeed: Infinity
