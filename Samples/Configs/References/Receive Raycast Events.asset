@@ -15,27 +15,11 @@ MonoBehaviour:
   stateFunctionAssets:
   - {fileID: 11400000, guid: fae38c62d57f63e4b892957f3468500b, type: 2}
   - {fileID: 11400000, guid: 574abed7a5f40834cb4e8354dbae5752, type: 2}
-  extends: []
-  gates:
-  - outputFieldName: hover
-    overrideType: 1
-    field:
-      rid: 7862443120866623539
-  - outputFieldName: pressed
-    overrideType: 1
-    field:
-      rid: 7862443120866623540
+  extends:
+  - {fileID: 11400000, guid: 1f299beb971e6654890308e042bccd60, type: 2}
+  - {fileID: 11400000, guid: 2cd5f8a8b83de0d4697edb1f5638bfb2, type: 2}
+  gates: []
   internalFieldDefinitions: []
   references:
     version: 2
-    RefIds:
-    - rid: 7862443120866623539
-      type: {class: RaycastHoverField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        relatedFieldName: hover
-        tag: Untagged
-    - rid: 7862443120866623540
-      type: {class: RaycastPressField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        relatedFieldName: pressed
-        tag: Untagged
+    RefIds: []

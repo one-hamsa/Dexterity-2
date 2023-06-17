@@ -10,16 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f62afd052bde8664f96fbcf73b8c645f, type: 3}
-  m_Name: Receive UI Events
+  m_Name: Receive Raycast Hover
   m_EditorClassIdentifier: 
   stateFunctionAssets:
-  - {fileID: 11400000, guid: fae38c62d57f63e4b892957f3468500b, type: 2}
   - {fileID: 11400000, guid: 574abed7a5f40834cb4e8354dbae5752, type: 2}
-  extends:
-  - {fileID: 11400000, guid: 8aae22df7c5c41146b497d3f867e2f59, type: 2}
-  - {fileID: 11400000, guid: 8dc5365fb058c2647b98f82541871090, type: 2}
-  gates: []
+  extends: []
+  gates:
+  - outputFieldName: hover
+    overrideType: 1
+    field:
+      rid: 7862443120866623539
   internalFieldDefinitions: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 7862443120866623539
+      type: {class: RaycastHoverField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        relatedFieldName: hover
+        tag: Untagged
