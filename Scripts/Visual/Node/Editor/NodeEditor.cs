@@ -117,6 +117,9 @@ namespace OneHamsa.Dexterity
                     continue;
                 
                 var definition = DexteritySettingsProvider.GetFieldDefinitionByName(node, o.outputFieldName);
+                if (string.IsNullOrEmpty(definition.name))
+                    definition.name = $"(unknown: {o.outputFieldName})";
+                    
                 o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
             }
 
