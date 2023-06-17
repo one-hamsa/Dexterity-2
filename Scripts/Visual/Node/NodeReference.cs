@@ -180,9 +180,13 @@ namespace OneHamsa.Dexterity
         public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
         {
             foreach (var parent in extends)
+            {
+                if (parent == null)
+                    continue;
                 foreach (var field in parent.GetInternalFieldDefinitions())
                     yield return field;
-            
+            }
+
             foreach (var field in internalFieldDefinitions)
                 yield return field;
         }

@@ -35,10 +35,10 @@ namespace OneHamsa.Dexterity.Builtins
         Node.OutputField hoverField;
         Node.OutputField disabledField;
         Node.OutputField visibleField;
-        private bool wasPressedThisFrame;
+        private int pressFrame = -1;
         
         [Preserve]
-        public bool WasPressedThisFrame() => wasPressedThisFrame;
+        public bool WasPressedThisFrame() => pressFrame == Time.frameCount - 1;
 
         protected virtual void Awake()
         {
@@ -92,14 +92,9 @@ namespace OneHamsa.Dexterity.Builtins
                 Click();
         }
 
-        protected virtual void LateUpdate()
-        {
-            wasPressedThisFrame = false;
-        }
-
         public void Click()
         {
-            wasPressedThisFrame = true;
+            pressFrame = Time.frameCount;
             onClick?.Invoke();
         }
     }

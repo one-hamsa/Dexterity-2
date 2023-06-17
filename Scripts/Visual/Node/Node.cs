@@ -37,6 +37,9 @@ namespace OneHamsa.Dexterity
 
             public bool Initialize(int fieldId = -1)
             {
+                if (fieldId == -1 && outputFieldDefinitionId != -1)
+                    fieldId = outputFieldDefinitionId;
+                
                 if (fieldId != -1)
                 {
                     outputFieldDefinitionId = fieldId;
