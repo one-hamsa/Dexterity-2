@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity.Builtins
         public LayerMask layerMask = int.MaxValue;
         public float repeatHitCooldown = 0f;
 
-        public RaycastController[] otherControllers;
+        public RaycastController[] mutuallyExclusiveControllers;
         public bool defaultController;
 
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
@@ -138,7 +138,7 @@ namespace OneHamsa.Dexterity.Builtins
         protected void HandlePressed()
         {
             lastControllerPressed = this;
-            foreach (var other in otherControllers)
+            foreach (var other in mutuallyExclusiveControllers)
             {
                 other.HandleOtherPressed(this);
             }
