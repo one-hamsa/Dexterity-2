@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -13,6 +14,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public UnityEvent<bool> onToggle;
         
         private ClickListener clickListener;
+        
+        [Preserve]
+        public bool IsToggled() => toggled;
 
         private void Awake()
         {
