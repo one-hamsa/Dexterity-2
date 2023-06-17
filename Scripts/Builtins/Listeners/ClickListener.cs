@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -34,6 +35,10 @@ namespace OneHamsa.Dexterity.Builtins
         Node.OutputField hoverField;
         Node.OutputField disabledField;
         Node.OutputField visibleField;
+        private bool wasPressedThisFrame;
+        
+        [Preserve]
+        public bool WasPressedThisFrame() => wasPressedThisFrame;
 
         protected virtual void Awake()
         {
@@ -87,6 +92,15 @@ namespace OneHamsa.Dexterity.Builtins
                 Click();
         }
 
-        public void Click() => onClick?.Invoke();
+        protected virtual void LateUpdate()
+        {
+            wasPressedThisFrame = false;
+        }
+
+        public void Click()
+        {
+            wasPressedThisFrame = true;
+            onClick?.Invoke();
+        }
     }
 }
