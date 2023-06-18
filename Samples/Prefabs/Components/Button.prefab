@@ -1,5 +1,142 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &637089046531113301
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6654471556674142124}
+  - component: {fileID: 309855319532054320}
+  - component: {fileID: 7765212593904168125}
+  - component: {fileID: 4268302636035997266}
+  m_Layer: 5
+  m_Name: Background Effect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6654471556674142124
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637089046531113301}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4829240479815186127}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &309855319532054320
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637089046531113301}
+  m_CullTransparentMesh: 1
+--- !u!114 &7765212593904168125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637089046531113301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4268302636035997266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637089046531113301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c797ad6364d9b6449bde7ac73e8d2e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866623533
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443120866623532
+  - rid: 7862443120866623529
+  - rid: 7862443120866623531
+  - rid: 7862443120866623530
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Executed
+  - Hover
+  - Press
+  manualStateEditing: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623529
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Executed
+        savedPropertyKey: 
+        color: {r: 0.5133945, g: 0.7355867, b: 0.7830189, a: 0.4627451}
+    - rid: 7862443120866623530
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Press
+        savedPropertyKey: 
+        color: {r: 0.5, g: 0.5, b: 0.5, a: 0.49019608}
+    - rid: 7862443120866623531
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hover
+        savedPropertyKey: 
+        color: {r: 0.7830189, g: 0.7830189, b: 0.7830189, a: 0.49019608}
+    - rid: 7862443120866623532
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 0}
+    - rid: 7862443120866623533
+      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        transitionSpeed: 10
+        transitionTime: 1
+        style: 0
 --- !u!1 &4829240478881230769
 GameObject:
   m_ObjectHideFlags: 0
@@ -174,6 +311,7 @@ RectTransform:
   m_Children:
   - {fileID: 4829240478881230768}
   - {fileID: 4829240480387483633}
+  - {fileID: 6654471556674142124}
   - {fileID: 4829240480527890491}
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -198,7 +336,7 @@ MonoBehaviour:
   initialState: <Default>
   delays: []
   overrideState: 
-  timeSinceStateChange: 0.6680404999933671
+  timeSinceStateChange: 0.6887042999978803
   referenceAssets:
   - {fileID: 11400000, guid: 40f58fa1bd297a545866e0f487c50b3d, type: 2}
   customGates:
@@ -371,9 +509,8 @@ GameObject:
   - component: {fileID: 4829240480387483633}
   - component: {fileID: 4829240480387483631}
   - component: {fileID: 4829240480387483632}
-  - component: {fileID: 4829240480387483630}
   m_Layer: 5
-  m_Name: Background
+  m_Name: Background Base
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -437,66 +574,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &4829240480387483630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4829240480387483634}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c797ad6364d9b6449bde7ac73e8d2e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transitionStrategy:
-    rid: 7862443120866623533
-  _node: {fileID: 0}
-  properties:
-  - rid: 7862443120866623532
-  - rid: 7862443120866623529
-  - rid: 7862443120866623531
-  - rid: 7862443120866623530
-  delays: []
-  lastSeenStates:
-  - <Default>
-  - Executed
-  - Hover
-  - Press
-  manualStateEditing: 0
-  references:
-    version: 2
-    RefIds:
-    - rid: 7862443120866623529
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Executed
-        savedPropertyKey: 
-        color: {r: 0.6039216, g: 0.84313726, b: 0.8980392, a: 1}
-    - rid: 7862443120866623530
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Press
-        savedPropertyKey: 
-        color: {r: 0.6045301, g: 0.8450516, b: 0.8962264, a: 1}
-    - rid: 7862443120866623531
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Hover
-        savedPropertyKey: 
-        color: {r: 0.7783019, g: 0.96045893, b: 1, a: 1}
-    - rid: 7862443120866623532
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: <Default>
-        savedPropertyKey: 
-        color: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7862443120866623533
-      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        transitionSpeed: 10
-        transitionTime: 1
-        style: 0
 --- !u!1 &4829240480527890492
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,7 +606,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4829240479815186127}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}

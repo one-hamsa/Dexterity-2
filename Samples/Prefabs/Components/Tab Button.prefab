@@ -7,6 +7,226 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.size
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[1]
+      value: 7862443146451615793
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[2]
+      value: 7862443120866623529
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[3]
+      value: 7862443146451615790
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[4]
+      value: 7862443120866623531
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[5]
+      value: 7862443146451615792
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[6]
+      value: 7862443120866623530
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: properties.Array.data[7]
+      value: 7862443146451615791
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.size
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[1]
+      value: Default Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[2]
+      value: Executed
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[3]
+      value: Executed Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[4]
+      value: Hover
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[5]
+      value: Hover Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[6]
+      value: Press
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: lastSeenStates.Array.data[7]
+      value: Press Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790]
+      value: Dexterity OneHamsa.Dexterity.Builtins.ColorModifier/Property
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791]
+      value: Dexterity OneHamsa.Dexterity.Builtins.ColorModifier/Property
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792]
+      value: Dexterity OneHamsa.Dexterity.Builtins.ColorModifier/Property
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793]
+      value: Dexterity OneHamsa.Dexterity.Builtins.ColorModifier/Property
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].state
+      value: Executed Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].state
+      value: Press Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].state
+      value: Hover Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].state
+      value: Default Toggled
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].color.a
+      value: 0.4627451
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].color.b
+      value: 0.78431374
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].color.g
+      value: 0.7372549
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].color.r
+      value: 0.5137255
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].color.a
+      value: 0.49019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].color.b
+      value: 0.5019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].color.g
+      value: 0.5019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].color.r
+      value: 0.5019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].color.a
+      value: 0.49019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].color.b
+      value: 0.78431374
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].color.g
+      value: 0.78431374
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].color.r
+      value: 0.78431374
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].color.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615790].savedPropertyKey
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615791].savedPropertyKey
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615792].savedPropertyKey
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 468123182063545854, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: managedReferences[7862443146451615793].savedPropertyKey
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 9099520360643962211, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
       propertyPath: m_Pivot.x
@@ -115,7 +335,7 @@ PrefabInstance:
     - target: {fileID: 9099520360643962214, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
       propertyPath: timeSinceStateChange
-      value: 0.633278400026029
+      value: 0.6870484999963082
       objectReference: {fileID: 0}
     - target: {fileID: 9099520360643962214, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
@@ -291,6 +511,11 @@ PrefabInstance:
         type: 3}
       propertyPath: managedReferences[7862443120866623533].transitionSpeed
       value: 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 9099520361348912220, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9099520361348912220, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
@@ -477,7 +702,120 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4293059298
       objectReference: {fileID: 0}
+    - target: {fileID: 9099520361848585218, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9099520361848585218, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9099520361848585218, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1786308248, guid: c3785f3bb40129f489b2e1f5bca291a0, type: 3}
     - {fileID: 9099520360643962212, guid: c3785f3bb40129f489b2e1f5bca291a0, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: c3785f3bb40129f489b2e1f5bca291a0, type: 3}
+--- !u!1 &7027573757289691599 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9099520361348912222, guid: c3785f3bb40129f489b2e1f5bca291a0,
+    type: 3}
+  m_PrefabInstance: {fileID: 2288119532742061457}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8625097665233666319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7027573757289691599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c797ad6364d9b6449bde7ac73e8d2e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443146451615832
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443146451615831
+  - rid: 7862443146451615827
+  - rid: 7862443146451615828
+  - rid: 7862443146451615824
+  - rid: 7862443146451615830
+  - rid: 7862443146451615826
+  - rid: 7862443146451615829
+  - rid: 7862443146451615825
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Default Toggled
+  - Executed
+  - Executed Toggled
+  - Hover
+  - Hover Toggled
+  - Press
+  - Press Toggled
+  manualStateEditing: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443146451615824
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Executed Toggled
+        savedPropertyKey: 
+        color: {r: 0.039649345, g: 0.070888706, b: 0.254717, a: 1}
+    - rid: 7862443146451615825
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Press Toggled
+        savedPropertyKey: 
+        color: {r: 0.039649345, g: 0.070888706, b: 0.254717, a: 1}
+    - rid: 7862443146451615826
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hover Toggled
+        savedPropertyKey: 
+        color: {r: 0.039649345, g: 0.070888706, b: 0.254717, a: 1}
+    - rid: 7862443146451615827
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Default Toggled
+        savedPropertyKey: 
+        color: {r: 0.039649345, g: 0.070888706, b: 0.254717, a: 1}
+    - rid: 7862443146451615828
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Executed
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 0}
+    - rid: 7862443146451615829
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Press
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 0}
+    - rid: 7862443146451615830
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hover
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 0}
+    - rid: 7862443146451615831
+      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        color: {r: 1, g: 1, b: 1, a: 0}
+    - rid: 7862443146451615832
+      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        transitionSpeed: 10
+        transitionTime: 1
+        style: 0
