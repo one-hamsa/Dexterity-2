@@ -702,6 +702,11 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4293059298
       objectReference: {fileID: 0}
+    - target: {fileID: 9099520361472535446, guid: c3785f3bb40129f489b2e1f5bca291a0,
+        type: 3}
+      propertyPath: m_enableWordWrapping
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9099520361848585218, guid: c3785f3bb40129f489b2e1f5bca291a0,
         type: 3}
       propertyPath: m_Color.a
