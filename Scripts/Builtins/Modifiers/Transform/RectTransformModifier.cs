@@ -16,6 +16,7 @@ namespace OneHamsa.Dexterity.Builtins
         {
             // custom params
             public Vector2 sizeDelta;
+            public Vector2 pivot;
         }
         
         [Tooltip("Check this flag only if the object may be re-parented in runtime")]
@@ -47,15 +48,18 @@ namespace OneHamsa.Dexterity.Builtins
                 return;
 
             Vector2 sizeDelta = baseSize;
+            Vector2 pivot = default;
             foreach (var kv in transitionState)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;
 
                 sizeDelta += Vector2.Lerp(Vector2.zero, property.sizeDelta, value);
+                pivot += Vector2.Lerp(Vector2.zero, property.pivot, value);
             }
 
             component.sizeDelta = sizeDelta;
+            component.pivot = pivot;
             
             if (syncScale)
             {
@@ -76,6 +80,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             var prop = property as Property;
             prop.sizeDelta = component.sizeDelta - baseSize;
+            prop.pivot = component.pivot;
         }
 
         public void FreezeValue()
