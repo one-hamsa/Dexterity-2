@@ -156,7 +156,6 @@ GameObject:
   - component: {fileID: 184033359911546945}
   - component: {fileID: 1331368821886688260}
   - component: {fileID: 5871908666273799364}
-  - component: {fileID: 4911745733066645157}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -223,50 +222,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &4911745733066645157
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3063453402633914014}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc5ff6cfc5d37e84588851518dacac70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transitionStrategy:
-    rid: 7862443120866623988
-  _node: {fileID: 0}
-  properties:
-  - rid: 7862443120866623985
-  - rid: 7862443120866623984
-  delays: []
-  lastSeenStates:
-  - <Default>
-  - Hidden
-  manualStateEditing: 0
-  baseScale: {x: 1, y: 1, z: 1}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7862443120866623984
-      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Hidden
-        savedPropertyKey: 
-        scale: {x: 1, y: 0, z: 1}
-    - rid: 7862443120866623985
-      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: <Default>
-        savedPropertyKey: 
-        scale: {x: 1, y: 1, z: 1}
-    - rid: 7862443120866623988
-      type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        smoothTime: 0.167
-        maxSpeed: Infinity
 --- !u!1 &6497273456770809630
 GameObject:
   m_ObjectHideFlags: 0
@@ -280,6 +235,7 @@ GameObject:
   - component: {fileID: 3571494187326893343}
   - component: {fileID: 2398238482040965231}
   - component: {fileID: 1203963062875108111}
+  - component: {fileID: 3468413792527633571}
   m_Layer: 5
   m_Name: Tab Content
   m_TagString: Untagged
@@ -402,7 +358,7 @@ MonoBehaviour:
   m_PreferredWidth: -1
   m_PreferredHeight: -1
   m_FlexibleWidth: -1
-  m_FlexibleHeight: 1000
+  m_FlexibleHeight: 100
   m_LayoutPriority: 1
 --- !u!114 &1203963062875108111
 MonoBehaviour:
@@ -418,7 +374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transitionStrategy:
     rid: 7862443120866623987
-  _node: {fileID: 0}
+  _node: {fileID: 1013670011825079378}
   properties:
   - rid: 7862443120866623982
   - rid: 7862443120866623981
@@ -439,7 +395,7 @@ MonoBehaviour:
         preferredWidth: -1
         preferredHeight: -1
         flexibleWidth: -1
-        flexibleHeight: 0
+        flexibleHeight: 1
     - rid: 7862443120866623982
       type: {class: LayoutElementModifier/Property, ns: OneHamsa.Dexterity.Builtins,
         asm: Dexterity}
@@ -449,9 +405,56 @@ MonoBehaviour:
         preferredWidth: -1
         preferredHeight: -1
         flexibleWidth: -1
-        flexibleHeight: 1000
+        flexibleHeight: 100
     - rid: 7862443120866623987
       type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
-        smoothTime: 0.1
+        smoothTime: 0.167
+        maxSpeed: Infinity
+--- !u!114 &3468413792527633571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6497273456770809630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc5ff6cfc5d37e84588851518dacac70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866623988
+  _node: {fileID: 1013670011825079378}
+  properties:
+  - rid: 7862443120866623985
+  - rid: 7862443120866623984
+  delays:
+  - direction: 1
+    state: <Default>
+    waitFor: 0.05
+  lastSeenStates:
+  - <Default>
+  - Hidden
+  manualStateEditing: 0
+  baseScale: {x: 1, y: 1, z: 1}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623984
+      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hidden
+        savedPropertyKey: 
+        scale: {x: 1, y: 0, z: 1}
+    - rid: 7862443120866623985
+      type: {class: Scale3DModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        scale: {x: 1, y: 1, z: 1}
+    - rid: 7862443120866623988
+      type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        smoothTime: 0.167
         maxSpeed: Infinity
