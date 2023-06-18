@@ -164,6 +164,7 @@ namespace OneHamsa.Dexterity.Visual
             var origColor = GUI.contentColor;
             foreach (var m in modifiers)
             {
+                GUI.contentColor = m.isActiveAndEnabled ? origColor : Color.gray;
                 EditorGUILayout.BeginHorizontal();
                 var icon = EditorGUIUtility.ObjectContent(m, m.GetType());
                 EditorGUILayout.LabelField(icon);
@@ -256,11 +257,15 @@ namespace OneHamsa.Dexterity.Visual
                 var modifiers = new HashSet<Modifier>();
                 foreach (var modifier in allModifiers)
                 {
+                    if (!modifier.isActiveAndEnabled)
+                        continue;
+                    
                     if (!modifier.animatableInEditor)
                     {
                         Debug.LogWarning($"{modifier.GetType().Name} is not animatable in editor. It will not be previewed.", modifier);
                         continue;
                     }
+                    
                     modifiers.Add(modifier);   
                 }
 
@@ -295,7 +300,9 @@ namespace OneHamsa.Dexterity.Visual
             
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
-                if (modifier.GetNode() == baseNode && modifier.isActiveAndEnabled) 
+                if (modifier.GetNode() == baseNode 
+                    // don't collect hidden modifiers - these are used for non-trivial editor animations
+                    && modifier.gameObject.hideFlags == HideFlags.None) 
                     modifiers.Add(modifier);
             }
 
