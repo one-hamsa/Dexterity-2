@@ -1,8 +1,7 @@
 # Dexterity 2.0
-Dexterity is a declarative visual library that takes the complexity out of managing your animation states. 
-
-Check out the demo here:
 [https://omerpp.itch.io/dexterity-demo](https://omerpp.itch.io/dexterity-demo)
+
+Dexterity is a declarative visual library that takes the complexity out of managing your animation states. 
 
 It utilizes a system of States (like Hidden or Visible), Modifiers (e.g., hidden translates to 0% opacity, hover implies x1.1 scale), and Transitions between states, doing away with the need for extensive manual tweaking and maintaining of your animations.
 
