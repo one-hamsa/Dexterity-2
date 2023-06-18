@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 
-    [AddComponentMenu("Dexterity/Dexterity Node")]
+    [AddComponentMenu("Dexterity/Field Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
     {
