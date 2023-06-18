@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6254915533556824669}
   - component: {fileID: 5234149954798898702}
   - component: {fileID: 5582877761681161886}
+  - component: {fileID: 8604836087969613606}
   m_Layer: 0
   m_Name: Content
   m_TagString: Untagged
@@ -37,7 +38,7 @@ RectTransform:
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!225 &5234149954798898702
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -94,6 +95,56 @@ MonoBehaviour:
         transitionSpeed: 10
         transitionTime: 1
         style: 0
+--- !u!114 &8604836087969613606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774343971361441265}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddfb71a7c12444337876762de9f44edd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443140248240134
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443140248240132
+  - rid: 7862443140248240131
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Hidden
+  manualStateEditing: 0
+  baseSize: {x: 0, y: 0}
+  syncScale: 0
+  updateParentReference: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443140248240131
+      type: {class: RectTransformModifier/Property, ns: OneHamsa.Dexterity.Builtins,
+        asm: Dexterity}
+      data:
+        state: Hidden
+        savedPropertyKey: 
+        sizeDelta: {x: 0, y: 0}
+        pivot: {x: 0.5, y: 0}
+    - rid: 7862443140248240132
+      type: {class: RectTransformModifier/Property, ns: OneHamsa.Dexterity.Builtins,
+        asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        sizeDelta: {x: 0, y: 0}
+        pivot: {x: 0.5, y: 1}
+    - rid: 7862443140248240134
+      type: {class: VelocityStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        smoothTime: 0.1
+        maxSpeed: Infinity
 --- !u!1 &3063453402633914014
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,7 +323,7 @@ MonoBehaviour:
   initialState: Hidden
   delays: []
   overrideState: 
-  timeSinceStateChange: 0.6680404999933671
+  timeSinceStateChange: 0.6856828999966638
   referenceAssets:
   - {fileID: 11400000, guid: 94a20921bdc576740889f779960a6512, type: 2}
   customGates:

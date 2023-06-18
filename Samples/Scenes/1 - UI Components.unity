@@ -1040,7 +1040,6 @@ GameObject:
   - component: {fileID: 211123527}
   - component: {fileID: 211123526}
   - component: {fileID: 211123525}
-  - component: {fileID: 211123524}
   - component: {fileID: 211123523}
   m_Layer: 0
   m_Name: First Button Text (4)
@@ -1123,63 +1122,6 @@ MonoBehaviour:
         transitionSpeed: 10
         transitionTime: 1
         style: 0
---- !u!114 &211123524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 211123521}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5653d09e07d3e4fab95dace74a92e506, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transitionStrategy:
-    rid: 7862443120866624017
-  _node: {fileID: 0}
-  properties:
-  - rid: 7862443120866624016
-  - rid: 7862443120866624015
-  - rid: 7862443120866624014
-  delays: []
-  lastSeenStates:
-  - <Default>
-  - Hover
-  - Press
-  manualStateEditing: 0
-  basePosition: {x: -37, y: 310.576, z: -13}
-  baseRotation: {x: 0, y: 0, z: 0, w: 1}
-  references:
-    version: 2
-    RefIds:
-    - rid: 7862443120866624014
-      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Press
-        savedPropertyKey: 
-        position: {x: 0, y: 0, z: -15}
-        rotation: {x: 0, y: 0, z: -0.24119632, w: 0.9704763}
-    - rid: 7862443120866624015
-      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: Hover
-        savedPropertyKey: 
-        position: {x: 0, y: 0, z: -15}
-        rotation: {x: 0, y: 0, z: -0.24119632, w: 0.9704763}
-    - rid: 7862443120866624016
-      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: <Default>
-        savedPropertyKey: 
-        position: {x: 0, y: 0, z: 0}
-        rotation: {x: 0, y: 0, z: 0, w: 1}
-    - rid: 7862443120866624017
-      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        transitionSpeed: 10
-        transitionTime: 1
-        style: 0
 --- !u!114 &211123525
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1195,7 +1137,7 @@ MonoBehaviour:
   initialState: <Default>
   delays: []
   overrideState: 
-  timeSinceStateChange: 0.0269821999972919
+  timeSinceStateChange: 0.019257099999776983
   referenceAssets:
   - {fileID: 11400000, guid: 40f58fa1bd297a545866e0f487c50b3d, type: 2}
   customGates: []
@@ -1980,6 +1922,7 @@ GameObject:
   - component: {fileID: 392335703}
   - component: {fileID: 392335702}
   - component: {fileID: 392335704}
+  - component: {fileID: 392335705}
   m_Layer: 0
   m_Name: text
   m_TagString: Untagged
@@ -2001,7 +1944,7 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 211123522}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -21.76}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
@@ -2157,6 +2100,63 @@ MonoBehaviour:
       data:
         smoothTime: 0.08
         maxSpeed: Infinity
+--- !u!114 &392335705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 392335700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5653d09e07d3e4fab95dace74a92e506, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transitionStrategy:
+    rid: 7862443120866624017
+  _node: {fileID: 0}
+  properties:
+  - rid: 7862443120866624016
+  - rid: 7862443120866624015
+  - rid: 7862443120866624014
+  delays: []
+  lastSeenStates:
+  - <Default>
+  - Hover
+  - Press
+  manualStateEditing: 0
+  basePosition: {x: 0, y: 0, z: 0}
+  baseRotation: {x: 0, y: 0, z: 0, w: 1}
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866624014
+      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Press
+        savedPropertyKey: 
+        position: {x: 0, y: 0, z: -11}
+        rotation: {x: 0, y: 0, z: -0.1887552, w: 0.98202425}
+    - rid: 7862443120866624015
+      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: Hover
+        savedPropertyKey: 
+        position: {x: 0, y: 0, z: -11}
+        rotation: {x: 0, y: 0, z: -0.1887552, w: 0.98202425}
+    - rid: 7862443120866624016
+      type: {class: TransformModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        state: <Default>
+        savedPropertyKey: 
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0, w: 1}
+    - rid: 7862443120866624017
+      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        transitionSpeed: 10
+        transitionTime: 1
+        style: 0
 --- !u!1 &469850141
 GameObject:
   m_ObjectHideFlags: 0
@@ -2614,7 +2614,7 @@ PrefabInstance:
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
       propertyPath: m_Pivot.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
@@ -2893,7 +2893,7 @@ PrefabInstance:
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
       propertyPath: m_Pivot.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
@@ -7629,6 +7629,8 @@ GameObject:
   - component: {fileID: 1471597596}
   - component: {fileID: 1471597595}
   - component: {fileID: 1471597598}
+  - component: {fileID: 1471597600}
+  - component: {fileID: 1471597599}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -7748,6 +7750,44 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1471597599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471597593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1471597600
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471597593}
+  m_CullTransparentMesh: 1
 --- !u!114 &1535615260 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3829675871560806849, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
@@ -10812,7 +10852,7 @@ PrefabInstance:
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
       propertyPath: m_Pivot.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 517651723677352095, guid: 93febf4d2f149424a979fc8808b40634,
         type: 3}
@@ -10975,12 +11015,22 @@ PrefabInstance:
     - target: {fileID: 3090794795991030243, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
         type: 3}
       propertyPath: m_text
-      value: Basic Uses
+      value: Welcome!
       objectReference: {fileID: 0}
     - target: {fileID: 3090794795991030243, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
         type: 3}
       propertyPath: m_fontSize
-      value: 42.1
+      value: 41
+      objectReference: {fileID: 0}
+    - target: {fileID: 3090794795991030243, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
+        type: 3}
+      propertyPath: m_fontSizeBase
+      value: 41
+      objectReference: {fileID: 0}
+    - target: {fileID: 3090794795991030243, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
+        type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3090794796889200393, guid: cb9ce8fddc715184cb4c97ecac1d96d5,
         type: 3}
