@@ -6646,7 +6646,7 @@ Transform:
   m_Children:
   - {fileID: 2051404084}
   - {fileID: 255686252}
-  - {fileID: 1356118822}
+  - {fileID: 8934208132777495423}
   m_Father: {fileID: 274010161}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -8272,24 +8272,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a0b5913045050de4883bf0c65ec97df7, type: 3}
---- !u!114 &1356118821 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
-    type: 3}
-  m_PrefabInstance: {fileID: 1356118820}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51f48fbb68a241a3b368698971fd99f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &1356118822 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8934208133577797723, guid: a0b5913045050de4883bf0c65ec97df7,
-    type: 3}
-  m_PrefabInstance: {fileID: 1356118820}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1434851624 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4829240479815186128, guid: 809d47f709108f249a141b8db2745367,
@@ -14145,6 +14127,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cb9ce8fddc715184cb4c97ecac1d96d5, type: 3}
+--- !u!114 &7770322105973154263 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+    type: 3}
+  m_PrefabInstance: {fileID: 1356118820}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51f48fbb68a241a3b368698971fd99f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &8211719865727155893
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14171,7 +14165,7 @@ PrefabInstance:
         type: 3}
       propertyPath: mutuallyExclusiveControllers.Array.data[0]
       value: 
-      objectReference: {fileID: 1356118821}
+      objectReference: {fileID: 7770322105973154263}
     - target: {fileID: 8934208133577797723, guid: a0b5913045050de4883bf0c65ec97df7,
         type: 3}
       propertyPath: m_RootOrder
@@ -14247,6 +14241,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51f48fbb68a241a3b368698971fd99f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &8934208132777495423 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8934208133577797723, guid: a0b5913045050de4883bf0c65ec97df7,
+    type: 3}
+  m_PrefabInstance: {fileID: 1356118820}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &9099520360643962219 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9099520360643962219, guid: 290437ed373d0cf4cbd3817ba06a93b6,
