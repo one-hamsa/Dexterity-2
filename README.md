@@ -1,6 +1,9 @@
 # Dexterity 2.0
 Dexterity is a declarative visual library that takes the complexity out of managing your animation states. 
 
+Check out the demo here:
+[https://omerpp.itch.io/dexterity-demo](https://omerpp.itch.io/dexterity-demo)
+
 It utilizes a system of States (like Hidden or Visible), Modifiers (e.g., hidden translates to 0% opacity, hover implies x1.1 scale), and Transitions between states, doing away with the need for extensive manual tweaking and maintaining of your animations.
 
 ## Getting Started
@@ -97,7 +100,8 @@ Implementing Transition Strategies is quite straightforward and will appear auto
 Copy an existing strategy as a baseline and modify it to your needs.
 
 # Examples
-TBD
+- [Online Demo](https://omerpp.itch.io/dexterity-demo)
+- Samples directory in source code
 
 # Architecture / Behind The Scenes
 The Dexterity Manager efficiently manages a dependency graph, updating only the relevant components as needed. Thus, if field A in node X is dependent on field B in node Y, they would form a linked cluster that updates in unison.
