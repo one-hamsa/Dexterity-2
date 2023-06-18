@@ -115,16 +115,14 @@ namespace OneHamsa.Dexterity.Visual
 
         public override HashSet<string> GetStateNames()
         {
-            if (stateNames == null)
+            stateNames ??= new HashSet<string>();
+            stateNames.Clear();
+            foreach (var stateProxy in stateProxies)
             {
-                stateNames = new HashSet<string>();
-                foreach (var stateProxy in stateProxies)
-                {
-                    stateNames.Add(stateProxy.outStateName);
-                }
-
-                stateNames.Add(defaultStateName);
+                stateNames.Add(stateProxy.outStateName);
             }
+
+            stateNames.Add(defaultStateName);
             
             return stateNames;
         }
