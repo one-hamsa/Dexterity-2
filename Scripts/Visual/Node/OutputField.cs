@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 
-    public partial class Node
+    public partial class FieldNode
     {
         public const int emptyFieldValue = -1;
         public const int defaultFieldValue = 0;
@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public class OutputField : BaseField
         {
-            public Node node { get; private set; }
+            public FieldNode node { get; private set; }
             public string originalNodeName { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
@@ -81,7 +81,7 @@ namespace OneHamsa.Dexterity
                     return cachedOverride;
                 }
             }
-            protected override void Initialize(Node context)
+            protected override void Initialize(FieldNode context)
             {
                 base.Initialize(context);
 
@@ -96,7 +96,7 @@ namespace OneHamsa.Dexterity
                     OnNodeEnabled();
             }
 
-            public override void Finalize(Node context)
+            public override void Finalize(FieldNode context)
             {
                 base.Finalize(context);
 

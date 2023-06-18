@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Builtins
         DexterityRaycastFieldProvider provider;
         private NodeRaycastRouter router;
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Builtins
             router.AddReceiver(provider);
         }
 
-        public override void Finalize(Node context)
+        public override void Finalize(FieldNode context)
         {
             base.Finalize(context);
             router.RemoveReceiver(provider);

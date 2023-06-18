@@ -7,16 +7,16 @@ using UnityEngine.UIElements;
 namespace OneHamsa.Dexterity
 {
 
-    [CustomEditor(typeof(Node)), CanEditMultipleObjects]
-    public class NodeEditor : BaseStateNodeEditor
+    [CustomEditor(typeof(FieldNode)), CanEditMultipleObjects]
+    public class FieldNodeEditor : BaseStateNodeEditor
     {
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
         private static HashSet<BaseField> upstreams = new();
-        Node node;
+        FieldNode node;
         bool foldoutOpen;
         
-        private HashSet<Node.OutputOverride> unusedOverrides = new();
+        private HashSet<FieldNode.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
         private StepListView stepListView;
 
@@ -37,8 +37,8 @@ namespace OneHamsa.Dexterity
             foldout.style.marginLeft = 10;
             foldout.contentContainer.style.unityFontStyleAndWeight = FontStyle.Normal;
             
-            stepListView = new StepListView(serializedObject, nameof(Node.customSteps));
-            foreach (var node in targets.OfType<Node>())
+            stepListView = new StepListView(serializedObject, nameof(FieldNode.customSteps));
+            foreach (var node in targets.OfType<FieldNode>())
             {
                 node.onStateChanged += OnNodeStateChanged;
             }
@@ -64,23 +64,23 @@ namespace OneHamsa.Dexterity
 
         private void OnDestroy()
         {
-            foreach (var node in targets.OfType<Node>())
+            foreach (var node in targets.OfType<FieldNode>())
             {
                 node.onStateChanged -= OnNodeStateChanged;
             }
         }
 
         private void Legacy_OnInspectorGUI_ChooseReference() {
-            node = target as Node;
+            node = target as FieldNode;
 
             serializedObject.Update();
             
             // XXX call this from here because adding to customSteps from OnValidate() literally causes editor to crash
             //. when selecting multiple editor targets
-            foreach (var node in targets.Cast<Node>())
+            foreach (var node in targets.Cast<FieldNode>())
                 node.FixSteps();
 
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.referenceAssets)));
 
             // runtime
             if (node.reference != null) {
@@ -105,7 +105,7 @@ namespace OneHamsa.Dexterity
 
         private void ShowChooseInitialState()
         {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.initialState)));
         }
 
         protected override void ShowFieldOverrides()
@@ -123,17 +123,17 @@ namespace OneHamsa.Dexterity
                 o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
             }
 
-            var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
+            var overridesProp = serializedObject.FindProperty(nameof(FieldNode.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
         }
 
         protected override void ShowFields()
         {
             if (targets.Length <= 1)
-                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
+                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(FieldNode.customGates)),
                     node, ref foldoutOpen);
             
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.internalFieldDefinitions)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
         }
 
         protected override void ShowFieldValues()
@@ -155,12 +155,12 @@ namespace OneHamsa.Dexterity
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
-            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
+            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == FieldNode.emptyFieldValue))
             {
                 var value = field.GetValueWithoutOverride();
                 string strValue = Utils.ConvertFieldValueToText(value, field.definition);
 
-                if (value == Node.emptyFieldValue)
+                if (value == FieldNode.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";
@@ -209,12 +209,12 @@ namespace OneHamsa.Dexterity
                 if (targets.Length > 1)
                     EditorGUILayout.LabelField(t.name, EditorStyles.whiteBoldLabel);
 
-                foreach (var output in (t as Node).outputFields.Values)
+                foreach (var output in (t as FieldNode).outputFields.Values)
                 {
                     GUILayout.Label(output.definition.name, EditorStyles.boldLabel);
 
                     upstreams.Clear();
-                    ShowUpstreams(output, t as Node);
+                    ShowUpstreams(output, t as FieldNode);
 
                     GUILayout.Space(5);
                 }
@@ -224,7 +224,7 @@ namespace OneHamsa.Dexterity
             
         }
 
-        private static void ShowUpstreams(BaseField field, Node context)
+        private static void ShowUpstreams(BaseField field, FieldNode context)
         {
             upstreams.Add(field);
 

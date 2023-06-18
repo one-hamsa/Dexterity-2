@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity
         /// </summary>
         /// <returns></returns>
         IEnumerable<string> GetWhitelistedFieldNames() => null;
-        Node node { get; }
+        FieldNode node { get; }
 
         void AddGate(Gate gate);
         void RemoveGate(Gate gate);

@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         ObjectBooleanContext objectCtx;
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Builtins
         public override int GetValue() 
         {
             if (objectCtx == null)
-                return Node.defaultFieldValue;
+                return FieldNode.defaultFieldValue;
 
             var value = objectCtx.GetValue() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;

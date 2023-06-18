@@ -8215,6 +8215,26 @@ PrefabInstance:
       propertyPath: mutuallyExclusiveControllers.Array.data[0]
       value: 
       objectReference: {fileID: 8211719865727155895}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Id
+      value: 20f112be-777e-4832-b038-07c6f2f21746
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Path
+      value: <OculusTouchController>{LeftHand}/triggerPressed
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Action
+      value: Pressed
+      objectReference: {fileID: 0}
     - target: {fileID: 8934208133577797723, guid: a0b5913045050de4883bf0c65ec97df7,
         type: 3}
       propertyPath: m_RootOrder
@@ -14166,6 +14186,26 @@ PrefabInstance:
       propertyPath: mutuallyExclusiveControllers.Array.data[0]
       value: 
       objectReference: {fileID: 7770322105973154263}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Id
+      value: 19687aef-b649-40be-a989-6f64f351501a
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Path
+      value: <OculusTouchController>{RightHand}/triggerPressed
+      objectReference: {fileID: 0}
+    - target: {fileID: 7770322104619211507, guid: a0b5913045050de4883bf0c65ec97df7,
+        type: 3}
+      propertyPath: pressed.m_SingletonActionBindings.Array.data[0].m_Action
+      value: Pressed
+      objectReference: {fileID: 0}
     - target: {fileID: 8934208133577797723, guid: a0b5913045050de4883bf0c65ec97df7,
         type: 3}
       propertyPath: m_RootOrder

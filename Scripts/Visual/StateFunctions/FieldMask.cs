@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity
             foreach (var pair in this)
                 if (pair.field == field)
                     return pair.value;
-            return Node.emptyFieldValue;
+            return FieldNode.emptyFieldValue;
         }
 
         public override string ToString()

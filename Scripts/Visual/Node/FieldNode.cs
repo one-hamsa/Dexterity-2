@@ -9,12 +9,12 @@ namespace OneHamsa.Dexterity
 
     [AddComponentMenu("Dexterity/Dexterity Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : BaseStateNode, IGateContainer, IStepList
+    public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
     {
         #region Static Functions
         // mainly for debugging graph problems
-        private static Dictionary<BaseField, Node> fieldsToNodes = new();
-        internal static Node ByField(BaseField f)
+        private static Dictionary<BaseField, FieldNode> fieldsToNodes = new();
+        internal static FieldNode ByField(BaseField f)
         {
             fieldsToNodes.TryGetValue(f, out var node);
             return node;
@@ -465,7 +465,7 @@ namespace OneHamsa.Dexterity
             return IStepList.Evaluate(stepEvalCache, GenerateFieldMask());
         }
 
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        private void MarkStateDirty(FieldNode.OutputField field, int oldValue, int newValue) => stateDirty = true;
         #endregion State Reduction
 
         #region Overrides
@@ -656,7 +656,7 @@ namespace OneHamsa.Dexterity
         IEnumerable<string> IGateContainer.GetWhitelistedFieldNames()
             => GetFieldNames();
 
-        Node IGateContainer.node => this;
+        FieldNode IGateContainer.node => this;
 
         public int GetLastEvaluationResult() => GetActiveState();
         List<StateFunction.Step> IStepList.steps => customSteps;

@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Builtins
             return negate ? (value + 1) % 2 : value;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 

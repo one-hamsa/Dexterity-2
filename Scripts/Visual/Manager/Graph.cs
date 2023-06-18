@@ -164,7 +164,7 @@ namespace OneHamsa.Dexterity
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e, Node.ByField(node));
+                    Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
         }

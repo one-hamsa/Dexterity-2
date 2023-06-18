@@ -22,10 +22,10 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
         public bool updateChildrenReference;
 
-        HashSet<Node> children, prevChildren = new();
+        HashSet<FieldNode> children, prevChildren = new();
         HashSet<string> childrenPath = new();
         private static Queue<Transform> workQueue = new();
-        private static IEqualityComparer<HashSet<Node>> comparer = HashSet<Node>.CreateSetComparer();
+        private static IEqualityComparer<HashSet<FieldNode>> comparer = HashSet<FieldNode>.CreateSetComparer();
         int fieldId;
 
         // only proxy when children are found
@@ -127,7 +127,7 @@ namespace OneHamsa.Dexterity.Builtins
                 }
 
                 if (children == null)
-                    children = new HashSet<Node>();
+                    children = new HashSet<FieldNode>();
 
                 children.Clear();
                 foreach (var child in nodesIter) {
@@ -145,7 +145,7 @@ namespace OneHamsa.Dexterity.Builtins
             context.SetDirty();
         }
 
-        private IEnumerable<Node> GetNodesInChildrenRecursive()
+        private IEnumerable<FieldNode> GetNodesInChildrenRecursive()
         {
             // all children, but stop recursing when finding nodes
             workQueue.Clear();
@@ -153,7 +153,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             while (workQueue.Count > 0) {
                 var transform = workQueue.Dequeue();
-                var node = transform.GetComponent<Node>();
+                var node = transform.GetComponent<FieldNode>();
                 if (transform != parent && node != null)
                     yield return node;
                 else
@@ -162,16 +162,16 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        private IEnumerable<Node> GetNodesInImmediateChildren()
+        private IEnumerable<FieldNode> GetNodesInImmediateChildren()
         {
             for (var i = 0; i < parent.childCount; i++) {
-                var child = parent.GetChild(i).GetComponent<Node>();
+                var child = parent.GetChild(i).GetComponent<FieldNode>();
                 if (child != null)
                     yield return child;
             }
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 

@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
             
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.internalFieldDefinitions)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
 
             serializedObject.ApplyModifiedProperties();
 
@@ -110,7 +110,7 @@ namespace OneHamsa.Dexterity
                         var liveInstance = Application.isPlaying && gateContainer.node != null;
                         var value = liveInstance
                             ? gateContainer.node.GetOutputField(kv.Key).GetValue()
-                            : Node.defaultFieldValue;
+                            : FieldNode.defaultFieldValue;
 
                         GUILayout.FlexibleSpace();
                         DrawFieldValue(definition, value, liveInstance);
@@ -189,7 +189,7 @@ namespace OneHamsa.Dexterity
                     EditorGUI.EndProperty();
                     EditorGUILayout.EndHorizontal();
 
-                    if (definition.type == Node.FieldType.Boolean) {
+                    if (definition.type == FieldNode.FieldType.Boolean) {
                         GUI.contentColor = new Color(.7f, .7f, .7f);
                         EditorGUILayout.PropertyField(gateProp.FindPropertyRelative(nameof(Gate.overrideType)));
 
@@ -348,7 +348,7 @@ namespace OneHamsa.Dexterity
                 return;
 
             referencesTypes = TypeCache.GetTypesDerivedFrom<BaseField>()
-                            .Where(t => t != typeof(Node.OutputField))
+                            .Where(t => t != typeof(FieldNode.OutputField))
                             .ToArray();
             referencesTypesNames = referencesTypes
                 .Select(t => t.ToString())
@@ -365,16 +365,16 @@ namespace OneHamsa.Dexterity
             {
                 switch (definition.type)
                 {
-                    case Node.FieldType.Boolean when value == 0:
-                    case Node.FieldType.Boolean when value == Node.defaultFieldValue:
+                    case FieldNode.FieldType.Boolean when value == 0:
+                    case FieldNode.FieldType.Boolean when value == FieldNode.defaultFieldValue:
                         GUI.color = Color.red;
                         valueName = "false";
                         break;
-                    case Node.FieldType.Boolean when value == 1:
+                    case FieldNode.FieldType.Boolean when value == 1:
                         GUI.color = Color.green;
                         valueName = "true";
                         break;
-                    case Node.FieldType.Enum:
+                    case FieldNode.FieldType.Enum:
                         GUI.color = new Color(1, .5f, 0);
                         valueName = definition.enumValues[value];
                         break;
@@ -385,10 +385,10 @@ namespace OneHamsa.Dexterity
                 GUI.color = Color.gray;
                 switch (definition.type)
                 {
-                    case Node.FieldType.Boolean:
+                    case FieldNode.FieldType.Boolean:
                         valueName = "Boolean";
                         break;
-                    case Node.FieldType.Enum:
+                    case FieldNode.FieldType.Enum:
                         valueName = "Enum";
                         break;
                 }

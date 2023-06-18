@@ -58,11 +58,11 @@ namespace OneHamsa.Dexterity
 
             switch (definition.type)
             {
-                case Node.FieldType.Boolean:
+                case FieldNode.FieldType.Boolean:
                     property.intValue = EditorGUI.Popup(position, label.text, property.intValue, 
                         new string[] { "false", "true" });
                     break;
-                case Node.FieldType.Enum:
+                case FieldNode.FieldType.Enum:
                     property.intValue = EditorGUI.Popup(position, label.text, property.intValue,
                         definition.enumValues);
                     break;

@@ -53,7 +53,7 @@ namespace OneHamsa.Dexterity
         public List<FieldDefinition> internalFieldDefinitions = new();
 
         [NonSerialized]
-        public Node owner;
+        public FieldNode owner;
 
         public StateFunction[] stateFunctions { get; private set; }
 
@@ -205,6 +205,6 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        Node IGateContainer.node => owner;
+        FieldNode IGateContainer.node => owner;
     }
 }

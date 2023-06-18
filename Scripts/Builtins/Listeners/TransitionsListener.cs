@@ -2,11 +2,11 @@
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins {
-	[RequireComponent(typeof(Node))]
+	[RequireComponent(typeof(FieldNode))]
 	public class TransitionsListener : MonoBehaviour {
 		[Tooltip("Optional. Will look for any Node on object or its parents")]
 		[SerializeField]
-		protected Node node;
+		protected FieldNode node;
 
 		[Range(0, 1)] 
 		public float transitionProgressToConsiderDone = .99f;
@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Builtins {
 
 		void Awake() {
 			if (!node) {
-				node = GetComponentInParent<Node>();
+				node = GetComponentInParent<FieldNode>();
 				if (!node) {
 					Debug.LogWarning($"Node not found for listener ({gameObject.name})");
 					enabled = false;

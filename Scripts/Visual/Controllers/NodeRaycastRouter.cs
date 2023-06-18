@@ -52,7 +52,7 @@ namespace OneHamsa.Dexterity
                     queue.Enqueue(child);
                 }
 
-                if (current.GetComponent<Node>() != null) {
+                if (current.GetComponent<FieldNode>() != null) {
                     continue;
                 }
                 

@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity.Builtins
             return node.GetOrAddComponent<NodeRaycastRouter>();
         }
         
-        public static void AddUpstream(this Node.OutputField field, Node.OutputField other, 
+        public static void AddUpstream(this FieldNode.OutputField field, FieldNode.OutputField other, 
             NodeReference.Gate.OverrideType overrideType = NodeReference.Gate.OverrideType.Additive)
         {
             field.node.enabled = false;
@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Builtins
                 overrideType = overrideType,
                 field = new NodeField
                 {
-                    targetNodes = new List<Node> { other.node },
+                    targetNodes = new List<FieldNode> { other.node },
                     fieldName = other.definition.name
                 }
             });
@@ -29,26 +29,26 @@ namespace OneHamsa.Dexterity.Builtins
         }
         public static string GetEnumValue(this BaseField field)
         {
-            if (field.definition.type != Node.FieldType.Enum)
+            if (field.definition.type != FieldNode.FieldType.Enum)
             {
                 Debug.LogError($"GetEnumValue: {field.definition.name} is not of type enum");
                 return null;
             }
             var value = field.GetValue();
-            if (value == Node.emptyFieldValue)
+            if (value == FieldNode.emptyFieldValue)
                 value = 0;
 
             return field.definition.enumValues[value];
         }
 
         public static string GetValueAsString(this BaseField field) {
-            if (field.GetValue() == Node.emptyFieldValue)
+            if (field.GetValue() == FieldNode.emptyFieldValue)
                 return "(empty)";
 
             switch (field.definition.type) {
-                case Node.FieldType.Boolean:
+                case FieldNode.FieldType.Boolean:
                     return field.GetBooleanValue().ToString();
-                case Node.FieldType.Enum:
+                case FieldNode.FieldType.Enum:
                     return field.GetEnumValue().ToString();
                 default:
                     return field.GetValue().ToString();

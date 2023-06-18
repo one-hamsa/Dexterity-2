@@ -14,13 +14,13 @@ namespace OneHamsa.Dexterity.Builtins
             public void OnPointerUp(PointerEventData eventData) => click = false;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
             provider = context.gameObject.GetOrAddComponent<DexterityUIPressFieldProvider>();
         }
-        public override void Finalize(Node context)
+        public override void Finalize(FieldNode context)
         {
             base.Finalize(context);
 

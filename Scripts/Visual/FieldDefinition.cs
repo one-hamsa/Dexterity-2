@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity
     public struct FieldDefinition
     {
         public string name;
-        public Node.FieldType type;
+        public FieldNode.FieldType type;
         public string[] enumValues;
         
         public string GetInternalName()

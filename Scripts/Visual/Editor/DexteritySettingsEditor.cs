@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity
             );
 
 
-            if (type.intValue == (int)Node.FieldType.Enum)
+            if (type.intValue == (int)FieldNode.FieldType.Enum)
             {
                 var origColor = GUI.color;
                 GUI.color = values.arraySize == 0 ? Color.red : origColor;

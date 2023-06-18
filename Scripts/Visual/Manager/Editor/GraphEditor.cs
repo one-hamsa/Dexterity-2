@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity
         private static bool nodesFoldout;
         private static bool sortedFoldout;
         private Dictionary<int, List<BaseField>> clusters = new();
-        private HashSet<Node> nodes = new();
+        private HashSet<FieldNode> nodes = new();
 
         public override void OnInspectorGUI()
         {
@@ -118,7 +118,7 @@ namespace OneHamsa.Dexterity
                     clusters[actualColor] = list = new List<BaseField>();
 
                 list.Add(kv.Key);
-                if (kv.Key is Node.OutputField outputField) {
+                if (kv.Key is FieldNode.OutputField outputField) {
                     if (outputField.node == null) {
                         Debug.LogError($"Output field {outputField} has node = null!", this);
                     } else {
@@ -131,7 +131,7 @@ namespace OneHamsa.Dexterity
             ShowClusters(clusters);
         }
 
-        private void ShowNodes(HashSet<Node> nodes)
+        private void ShowNodes(HashSet<FieldNode> nodes)
         {
             if (!(nodesFoldout = EditorGUILayout.Foldout(nodesFoldout, $"{nodes.Count} Nodes")))
                 return;
@@ -163,7 +163,7 @@ namespace OneHamsa.Dexterity
                 var color = kv.Key;
                 var list = kv.Value;
 
-                var outputFields = list.Where(f => f is Node.OutputField).Cast<Node.OutputField>()
+                var outputFields = list.Where(f => f is FieldNode.OutputField).Cast<FieldNode.OutputField>()
                     .Select(f => f.ToShortString()).ToList();
 
                 EditorGUILayout.LabelField($"{list.Count} fields [{string.Join(", ", outputFields)}]", EditorStyles.boldLabel);
@@ -186,7 +186,7 @@ namespace OneHamsa.Dexterity
             using (new GUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField(field.ToShortString());
-                if (field is Node.OutputField outField)
+                if (field is FieldNode.OutputField outField)
                 {
                     var origColor = GUI.backgroundColor;
                     if (GUILayout.Button("Go", EditorStyles.miniButton, GUILayout.Width(30)))
