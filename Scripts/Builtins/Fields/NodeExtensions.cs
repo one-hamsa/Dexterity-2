@@ -12,7 +12,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
         
         public static void AddUpstream(this Node.OutputField field, Node.OutputField other, 
-            NodeReference.Gate.OverrideType overrideType = NodeReference.Gate.OverrideType.Additive)
+            NodeReference.Gate.OverrideType overrideType = NodeReference.Gate.OverrideType.Additive,
+            bool negate = false)
         {
             field.node.enabled = false;
             field.node.AddGate(new NodeReference.Gate
@@ -22,7 +23,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 field = new NodeField
                 {
                     targetNodes = new List<Node> { other.node },
-                    fieldName = other.definition.name
+                    fieldName = other.definition.name,
+                    negate = negate
                 }
             });
             field.node.enabled = true;
