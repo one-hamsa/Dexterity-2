@@ -60,7 +60,7 @@ namespace OneHamsa.Dexterity.Visual
                     serializedObject.Update();
 
                 var targetStates = m.properties.Select(p => p.state).ToList();
-                if (!m.manualStateEditing)
+                if (!m.manualStateEditing && targets.Length > 1)
                 {
                     if (targetStates.Count != alphabetically.Count || !targetStates.ToHashSet().SetEquals(states))
                     {
@@ -206,6 +206,10 @@ namespace OneHamsa.Dexterity.Visual
                 
                 return true;
             }
+
+            // don't sync if can't find any node
+            if (m.GetNode() == null)
+                return false;
             
             var states = ((IHasStates)m).GetStateNames().ToHashSet();
             var targetStates = m.properties.Select(p => p?.state).ToList();
