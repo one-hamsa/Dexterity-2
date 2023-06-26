@@ -9,6 +9,7 @@ namespace OneHamsa.Dexterity.Visual
         bool wasPressedThisFrame { get; }
         Vector3 position { get; }
         Vector3 forward { get; }
+        RaycastHit hit { get; }
         
 		public ref struct RaycastEvent
 		{
