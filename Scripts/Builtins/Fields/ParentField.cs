@@ -71,14 +71,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 }
             }
 
-            if (lastParent != parent) {
+            if (lastParent != parent) 
+            {
                 ClearUpstreamFields();
                 if (parent != null)
                     AddUpstreamField(parent.GetOutputField(fieldId));
-            }
 
-            // proxy might have changed - re-calculate node's outputs
-            context.SetDirty();
+                // proxy might have changed - re-calculate node's outputs
+                context.SetDirty();
+            }
         }
         
         public override void RebuildCache() {

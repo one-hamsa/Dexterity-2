@@ -5,10 +5,10 @@ namespace OneHamsa.Dexterity.Visual
 {
     public interface ITransitionStrategy
     {
-        Dictionary<int, float> Initialize(int[] states, int currentState);
+        SortedList<int, float> Initialize(int[] states, int currentState);
 
         // should be called each frame
-        Dictionary<int, float> GetTransition(Dictionary<int, float> prevState, 
+        SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed);
 
         public class TransitionInitializationException : Exception { 

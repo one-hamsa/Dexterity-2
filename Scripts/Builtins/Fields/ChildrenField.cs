@@ -139,10 +139,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 ClearUpstreamFields();
                 foreach (var child in children)
                     AddUpstreamField(child.GetOutputField(fieldId));
-            }
 
-            // proxy might have changed - re-calculate node's outputs
-            context.SetDirty();
+                // proxy might have changed - re-calculate node's outputs
+                context.SetDirty();
+            }
         }
 
         private IEnumerable<Node> GetNodesInChildrenRecursive()

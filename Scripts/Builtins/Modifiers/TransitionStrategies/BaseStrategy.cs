@@ -9,13 +9,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         protected const float activityThreshold = 0.999f;
 
-        protected Dictionary<int, float> result = new();
-        protected Dictionary<int, float> nextResult = new();
+        protected SortedList<int, float> result = new();
+        protected SortedList<int, float> nextResult = new();
         protected int[] states;
 
         private bool jumpedToFinalState;
 
-        public virtual Dictionary<int, float> Initialize(int[] states, int currentState)
+        public virtual SortedList<int, float> Initialize(int[] states, int currentState)
         {
             this.states = states;
             
@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             return result;
         }
-        public virtual Dictionary<int, float> GetTransition(Dictionary<int, float> prevState, 
+        public virtual SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;
@@ -46,12 +46,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 changed = !jumpedToFinalState;
                 jumpedToFinalState = true;
 
-                // jump to state goal
-                foreach (var state in states) 
-                    nextResult[state] = state == currentState ? 1 : 0;
+                if (changed)
+                {
+                    // jump to state goal
+                    foreach (var state in states)
+                        nextResult[state] = state == currentState ? 1 : 0;
 
-                // swap pointers
-                (result, nextResult) = (nextResult, result);
+                    // swap pointers
+                    (result, nextResult) = (nextResult, result);
+                }
 
                 return result;
             }

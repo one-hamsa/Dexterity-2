@@ -68,8 +68,8 @@ namespace OneHamsa.Dexterity.Visual
         public NodeReference reference { get; private set; }
 
         // output fields of this node
-        public Dictionary<int, OutputField> outputFields = new();
-        public Dictionary<int, OutputOverride> cachedOverrides = new();
+        public SortedList<int, OutputField> outputFields = new();
+        public SortedList<int, OutputOverride> cachedOverrides = new();
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;

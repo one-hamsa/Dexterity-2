@@ -67,6 +67,9 @@ namespace OneHamsa.Dexterity.Visual
             private bool registered;
             // apparently subscribing to events is garbage intensive, so we'd do this internally with a list
             private List<OutputField> upstreamSubscribers = new();
+            
+            // cache this to avoid native pointer inequality
+            private bool finalized;
 
             protected OutputOverride fieldOverride
             {
@@ -113,6 +116,7 @@ namespace OneHamsa.Dexterity.Visual
                     node.onDisabled -= OnNodeDisabled;
                 }
                 fieldsToNodes.Remove(this);
+                finalized = true;
             }
 
             private void OnNodeEnabled()
@@ -278,7 +282,7 @@ namespace OneHamsa.Dexterity.Visual
             public override void CacheValue()
             {
                 var originalValue = cachedValue;
-                if (node == null || !node.isActiveAndEnabled)
+                if (finalized || !node.isActiveAndEnabled)
                 {
                     // if the node is disabled, it's always 0
                     cachedValueWithoutOverride = 0;

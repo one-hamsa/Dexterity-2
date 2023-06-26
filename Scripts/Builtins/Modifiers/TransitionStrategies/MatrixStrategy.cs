@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private double timeSinceRowChange;
         private Dictionary<int, float> transitionStartValues = new();
 
-        public override Dictionary<int, float> Initialize(int[] states, int currentState)
+        public override SortedList<int, float> Initialize(int[] states, int currentState)
         {
             definition.Initialize();
             var initialRow = definition.GetRow(trackedCurrentState, currentState);
@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return base.Initialize(states, currentState);
         }
 
-        public override Dictionary<int, float> GetTransition(Dictionary<int, float> prevState, 
+        public override SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             // manually track state changes
