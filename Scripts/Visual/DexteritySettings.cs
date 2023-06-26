@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Visual
                 Debug.LogError($"No default transition strategy set in {name}", this);
                 return null;
             }
-            return DeepClone(defaultTransitionStrategy);
+            return defaultTransitionStrategy.Clone();
         }
         
         public void SavePropertyAs(Modifier.PropertyBase property, string name)

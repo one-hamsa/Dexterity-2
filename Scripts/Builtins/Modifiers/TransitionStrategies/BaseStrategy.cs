@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
@@ -9,13 +10,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
     {
         protected const float activityThreshold = 0.999f;
 
-        protected SortedList<int, float> result = new();
-        protected SortedList<int, float> nextResult = new();
+        protected ListDictionary<int, float> result = new();
+        protected ListDictionary<int, float> nextResult = new();
         protected int[] states;
 
         private bool jumpedToFinalState;
 
-        public virtual SortedList<int, float> Initialize(int[] states, int currentState)
+        public virtual ListDictionary<int, float> Initialize(int[] states, int currentState)
         {
             this.states = states;
             
@@ -36,7 +37,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             
             return result;
         }
-        public virtual SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
+        public virtual ListDictionary<int, float> GetTransition(ListDictionary<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;
@@ -94,5 +95,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
             return state == currentState ? 1 : 0;
         }
+
+        public abstract ITransitionStrategy Clone();
     }
 }

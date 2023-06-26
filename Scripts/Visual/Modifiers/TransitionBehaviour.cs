@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -13,7 +14,7 @@ namespace OneHamsa.Dexterity.Visual
         protected bool transitionChanged;
         protected int forceTransitionChangeFrames;
 
-        protected SortedList<int, float> transitionState;
+        protected ListDictionary<int, float> transitionState;
         private double timeSinceUpdate;
 
         protected abstract double deltaTime { get; }

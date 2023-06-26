@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using OneHamsa.Dexterity.Visual.Utilities;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -12,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         private Dictionary<int, float> currentVelocities = new Dictionary<int, float>(); 
 
-        public override SortedList<int, float> Initialize(int[] states, int currentState)  
+        public override ListDictionary<int, float> Initialize(int[] states, int currentState)  
         {
             foreach (var state in states)
                 currentVelocities[state] = 0f;
@@ -28,6 +29,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 (float)deltaTime);
             currentVelocities[state] = velocity;
             return result;
+        }
+
+        public override ITransitionStrategy Clone()
+        {
+            var clone = new VelocityStrategy
+            {
+                smoothTime = smoothTime,
+                maxSpeed = maxSpeed
+            };
+            return clone;
         }
     }
 }

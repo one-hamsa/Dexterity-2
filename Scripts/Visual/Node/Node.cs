@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Visual.Utilities;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Visual
@@ -68,8 +69,8 @@ namespace OneHamsa.Dexterity.Visual
         public NodeReference reference { get; private set; }
 
         // output fields of this node
-        public SortedList<int, OutputField> outputFields = new();
-        public SortedList<int, OutputOverride> cachedOverrides = new();
+        public ListDictionary<int, OutputField> outputFields = new();
+        public ListDictionary<int, OutputOverride> cachedOverrides = new();
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;

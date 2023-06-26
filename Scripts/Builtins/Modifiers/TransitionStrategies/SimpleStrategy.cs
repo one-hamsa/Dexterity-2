@@ -38,5 +38,16 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             }
             return default;
         }
+        
+        public override ITransitionStrategy Clone()
+        {
+            var clone = new SimpleStrategy
+            {
+                transitionSpeed = transitionSpeed,
+                transitionTime = transitionTime,
+                style = style
+            };
+            return clone;
+        }
     }
 }

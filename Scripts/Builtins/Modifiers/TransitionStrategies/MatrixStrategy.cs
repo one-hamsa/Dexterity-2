@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using OneHamsa.Dexterity.Visual.Utilities;
 
 namespace OneHamsa.Dexterity.Visual.Builtins
 {
@@ -16,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         private double timeSinceRowChange;
         private Dictionary<int, float> transitionStartValues = new();
 
-        public override SortedList<int, float> Initialize(int[] states, int currentState)
+        public override ListDictionary<int, float> Initialize(int[] states, int currentState)
         {
             definition.Initialize();
             var initialRow = definition.GetRow(trackedCurrentState, currentState);
@@ -32,7 +33,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return base.Initialize(states, currentState);
         }
 
-        public override SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
+        public override ListDictionary<int, float> GetTransition(ListDictionary<int, float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             // manually track state changes
@@ -76,6 +77,15 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return Mathf.Lerp(transitionStartValues[state], 
                 state == currentState ? 1 : 0, 
                 currentEasingCurve.Evaluate(timeFraction));
+        }
+        
+        public override ITransitionStrategy Clone()
+        {
+            var clone = new MatrixStrategy
+            {
+                definition = definition
+            };
+            return clone;
         }
     }
 }

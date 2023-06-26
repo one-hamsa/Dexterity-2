@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OneHamsa.Dexterity.Visual.Utilities;
@@ -30,7 +31,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             if (nodesToModifiers.TryGetValue(node, out var modifiers))
                 return modifiers;
-            return System.Linq.Enumerable.Empty<Modifier>();
+            return Enumerable.Empty<Modifier>();
         }
 
         [SerializeField]
@@ -58,7 +59,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public virtual bool animatableInEditor => true;
 
-        private Dictionary<int, PropertyBase> propertiesCache = null;
+        private ListDictionary<int, PropertyBase> propertiesCache = null;
         private bool foundNode;
         
         [ContextMenu("Toggle Manual State Editing")]
@@ -106,7 +107,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         private int[] cachedStates;
-        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
+        private ListDictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
         private int lastState = StateFunction.emptyStateId;
 
         protected override int[] states => cachedStates;
@@ -134,7 +135,7 @@ namespace OneHamsa.Dexterity.Visual
 
         public override void Awake()
         {
-            propertiesCache = new Dictionary<int, PropertyBase>();
+            propertiesCache = new ListDictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
                 if (prop == null) {
