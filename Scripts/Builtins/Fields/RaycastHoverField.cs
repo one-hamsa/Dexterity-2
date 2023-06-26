@@ -25,6 +25,6 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             provider = null;
         }
 
-        public override int GetValue() => context != null && provider.GetHover(tag) ? 1 : 0;
+        public override int GetValue() => provider != null && provider.GetHover(tag) ? 1 : 0;
     }
 }
