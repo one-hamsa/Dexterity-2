@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         public class OutputField : BaseField
         {
-            public Node node { get; private set; }
+            public Node node;
             public string originalNodeName { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
@@ -329,7 +329,7 @@ namespace OneHamsa.Dexterity.Visual
 
                 // if there's an override, just use it
                 var outputOverride = fieldOverride;
-                if (outputOverride != null && node != null && node.isActiveAndEnabled) 
+                if (outputOverride != null && !finalized && node.isActiveAndEnabled) 
                 {
                     cachedValue = outputOverride.value;
                 }
@@ -353,7 +353,7 @@ namespace OneHamsa.Dexterity.Visual
             }
             
             public override string ToShortString() {
-                if (node == null) {
+                if (finalized) {
                     if (!string.IsNullOrEmpty(originalNodeName)) {
                         return $"(Destroyed) {originalNodeName}::{Database.instance.GetFieldDefinition(definitionId).name}";
                     }
