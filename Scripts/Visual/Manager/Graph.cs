@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -153,8 +154,12 @@ namespace OneHamsa.Dexterity.Visual
 
         void RefreshEdges()
         {
+            Profiler.BeginSample("Dexterity: Refresh Graph Edges");
             nodesForRefreshIteration.Clear();
-            nodesForRefreshIteration.UnionWith(nodes);
+            
+            // save IEnumeration cast
+            foreach (var node in nodes)
+                nodesForRefreshIteration.Add(node);
             
             foreach (var node in nodesForRefreshIteration)
             {
@@ -167,10 +172,13 @@ namespace OneHamsa.Dexterity.Visual
                     Debug.LogException(e, Node.ByField(node));
                 }
             }
+            Profiler.EndSample();
         }
 
         void RefreshNodeValues()
         {
+            Profiler.BeginSample("Dexterity: Refresh Node Values");
+            
             // cache - the foreach clause might invoke changes to collection
             sortedNodesCache.Clear();
             foreach (var node in sortedNodes)
@@ -178,6 +186,8 @@ namespace OneHamsa.Dexterity.Visual
 
             foreach (var node in sortedNodesCache)
                 node.CacheValue();
+            
+            Profiler.EndSample();
         }
 
         public IEnumerable<BaseField> GetByColor(int color)
@@ -235,6 +245,8 @@ namespace OneHamsa.Dexterity.Visual
         //. https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         IEnumerator<BaseField> TopologicalSort()
         {
+            Profiler.BeginSample("Dexterity: Topological Sort");
+            
             // first copy all nodes
             nodesForCurrentSortIteration.Clear();
             foreach (var node in nodes)
@@ -352,6 +364,8 @@ namespace OneHamsa.Dexterity.Visual
             }
 
             lastDirtyUpdate = dirtyIncrement;
+            
+            Profiler.EndSample();
         }
     }
 }

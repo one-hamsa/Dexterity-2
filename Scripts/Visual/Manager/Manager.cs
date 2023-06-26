@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace OneHamsa.Dexterity.Visual
 {
@@ -89,10 +90,12 @@ namespace OneHamsa.Dexterity.Visual
         {
             // update graph
             graph.Refresh();
-            
+
+            Profiler.BeginSample("Dexterity: Update Modifiers");
             // update all modifiers
             foreach (var modifier in modifiers)
                 modifier.Refresh();
+            Profiler.EndSample();
         }
     }
 }
