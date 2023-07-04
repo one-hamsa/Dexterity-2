@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
-    [RequireComponent(typeof(DexterityBaseNode))]
+    [RequireComponent(typeof(BaseStateNode))]
     public class NodePointerEvents : MonoBehaviour, IRaycastReceiver, IReferencesNode
     {
         private static Queue<Transform> workQueue = new();
@@ -19,7 +19,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public bool recurseNodes = true;
 
-        protected List<DexterityBaseNode> nodes;
+        protected List<BaseStateNode> nodes;
         private NodeRaycastRouter router;
 
         protected int hoverStateId = StateFunction.emptyStateId;
@@ -76,8 +76,8 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         {
         }
 
-        public DexterityBaseNode GetNode() => GetComponent<DexterityBaseNode>();
-        private IEnumerable<DexterityBaseNode> GetNodesInChildrenRecursive()
+        public BaseStateNode GetNode() => GetComponent<BaseStateNode>();
+        private IEnumerable<BaseStateNode> GetNodesInChildrenRecursive()
         {
             yield return GetNode();
             
@@ -91,7 +91,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             while (workQueue.Count > 0) 
             {
                 var transform = workQueue.Dequeue();
-                var node = transform.GetComponent<DexterityBaseNode>();
+                var node = transform.GetComponent<BaseStateNode>();
                 if (transform != this.transform && node != null)
                 {
                     // only return nodes that don't have a NodePointerEvents component

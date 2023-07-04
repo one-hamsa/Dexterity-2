@@ -2,25 +2,21 @@
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
-using System;
-using Unity.EditorCoroutines.Editor;
-using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
 
-    [CustomEditor(typeof(Node)), CanEditMultipleObjects]
-    public class NodeEditor : DexterityBaseNodeEditor
+    [CustomEditor(typeof(FieldNode)), CanEditMultipleObjects]
+    public class FieldNodeEditor : BaseStateNodeEditor
     {
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
         private static HashSet<BaseField> upstreams = new();
-        Node node;
+        FieldNode node;
         bool foldoutOpen;
         
-        private HashSet<Node.OutputOverride> unusedOverrides = new();
+        private HashSet<FieldNode.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
         private StepListView stepListView;
 
@@ -41,13 +37,16 @@ namespace OneHamsa.Dexterity.Visual
             foldout.style.marginLeft = 10;
             foldout.contentContainer.style.unityFontStyleAndWeight = FontStyle.Normal;
             
-            stepListView = new StepListView(serializedObject, nameof(Node.customSteps));
-            foreach (var node in targets.OfType<Node>())
+            stepListView = new StepListView(serializedObject, nameof(FieldNode.customSteps));
+            foreach (var node in targets.OfType<FieldNode>())
             {
                 node.onStateChanged += OnNodeStateChanged;
             }
             
             foldout.Add(stepListView);
+            
+            // disallow editing in play mode - this would require re-initialization of StepList
+            foldout.SetEnabled(!Application.isPlaying);
             root.Add(foldout);
             
             // TODO 
@@ -65,23 +64,23 @@ namespace OneHamsa.Dexterity.Visual
 
         private void OnDestroy()
         {
-            foreach (var node in targets.OfType<Node>())
+            foreach (var node in targets.OfType<FieldNode>())
             {
                 node.onStateChanged -= OnNodeStateChanged;
             }
         }
 
         private void Legacy_OnInspectorGUI_ChooseReference() {
-            node = target as Node;
+            node = target as FieldNode;
 
             serializedObject.Update();
             
             // XXX call this from here because adding to customSteps from OnValidate() literally causes editor to crash
             //. when selecting multiple editor targets
-            foreach (var node in targets.Cast<Node>())
+            foreach (var node in targets.Cast<FieldNode>())
                 node.FixSteps();
 
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.referenceAssets)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.referenceAssets)));
 
             // runtime
             if (node.reference != null) {
@@ -106,7 +105,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowChooseInitialState()
         {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(Node.initialState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.initialState)));
         }
 
         protected override void ShowFieldOverrides()
@@ -114,19 +113,27 @@ namespace OneHamsa.Dexterity.Visual
             // add nice name for all overrides
             foreach (var o in node.overrides)
             {
-                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(o.outputFieldName);
+                if (string.IsNullOrEmpty(o.outputFieldName))
+                    continue;
+                
+                var definition = DexteritySettingsProvider.GetFieldDefinitionByName(node, o.outputFieldName);
+                if (string.IsNullOrEmpty(definition.name))
+                    definition.name = $"(unknown: {o.outputFieldName})";
+                    
                 o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
             }
 
-            var overridesProp = serializedObject.FindProperty(nameof(Node.overrides));
+            var overridesProp = serializedObject.FindProperty(nameof(FieldNode.overrides));
             EditorGUILayout.PropertyField(overridesProp, new GUIContent("Field Overrides"));
         }
 
         protected override void ShowFields()
         {
             if (targets.Length <= 1)
-                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(Node.customGates)),
+                gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(FieldNode.customGates)),
                     node, ref foldoutOpen);
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
         }
 
         protected override void ShowFieldValues()
@@ -148,26 +155,25 @@ namespace OneHamsa.Dexterity.Visual
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
-            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == Node.emptyFieldValue))
+            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == FieldNode.emptyFieldValue))
             {
                 var value = field.GetValueWithoutOverride();
                 string strValue = Utils.ConvertFieldValueToText(value, field.definition);
 
-                if (value == Node.emptyFieldValue)
+                if (value == FieldNode.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.ContainsKey(field.definitionId))
+                if (overrides.TryGetValue(field.definitionId, out var valueOverride))
                 {
-                    var outputOverride = overrides[field.definitionId];
                     GUI.color = Color.magenta;
-                    strValue = $"{Utils.ConvertFieldValueToText(outputOverride.value, field.definition)} ({StrikeThrough(strValue)})";
-                    unusedOverrides.Remove(outputOverride);
+                    strValue = $"{Utils.ConvertFieldValueToText(valueOverride.value, field.definition)} ({StrikeThrough(strValue)})";
+                    unusedOverrides.Remove(valueOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(Database.instance.GetFieldDefinition(field.definitionId).name);
+                EditorGUILayout.LabelField(field.definition.name);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();
@@ -203,12 +209,12 @@ namespace OneHamsa.Dexterity.Visual
                 if (targets.Length > 1)
                     EditorGUILayout.LabelField(t.name, EditorStyles.whiteBoldLabel);
 
-                foreach (var output in (t as Node).outputFields.Values)
+                foreach (var output in (t as FieldNode).outputFields.Values)
                 {
                     GUILayout.Label(output.definition.name, EditorStyles.boldLabel);
 
                     upstreams.Clear();
-                    ShowUpstreams(output, t as Node);
+                    ShowUpstreams(output, t as FieldNode);
 
                     GUILayout.Space(5);
                 }
@@ -218,7 +224,7 @@ namespace OneHamsa.Dexterity.Visual
             
         }
 
-        private static void ShowUpstreams(BaseField field, Node context)
+        private static void ShowUpstreams(BaseField field, FieldNode context)
         {
             upstreams.Add(field);
 

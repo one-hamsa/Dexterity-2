@@ -1,10 +1,10 @@
 ﻿using UnityEditor;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
 
     [CustomEditor(typeof(StateProxyNode)), CanEditMultipleObjects]
-    public class StateProxyNodeEditor : DexterityBaseNodeEditor
+    public class StateProxyNodeEditor : BaseStateNodeEditor
     {
         public override void OnInspectorGUI() {
             Legacy_OnInspectorGUI();

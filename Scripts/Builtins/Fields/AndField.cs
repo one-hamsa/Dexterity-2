@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class AndField : BaseField
     {
@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return first?.GetValue() == 1 && second?.GetValue() == 1 ? 1 : 0;
         }
 
-        protected override void Initialize(Node context) {
+        protected override void Initialize(FieldNode context) {
             base.Initialize(context);
 
             ClearUpstreamFields();

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     internal class DexterityRaycastFieldProvider : IRaycastReceiver
     {

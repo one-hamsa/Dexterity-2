@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class ParentField : BaseField
     {
@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public bool negate;
         public bool updateParentReference;
 
-        Node parent = null;
+        FieldNode parent = null;
         int fieldId;
 
         // only proxy when parent is found
@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
                 // save new references
                 var transformParent = context.transform.parent;
-                parent = transformParent != null ? transformParent.GetComponentInParent<Node>() : null;
+                parent = transformParent != null ? transformParent.GetComponentInParent<FieldNode>() : null;
                 parentsTransform.Clear();
 
                 {
@@ -86,7 +86,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             parent = null;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 

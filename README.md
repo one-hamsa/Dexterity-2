@@ -1,64 +1,81 @@
 # Dexterity 2.0
+[https://omerpp.itch.io/dexterity-demo](https://omerpp.itch.io/dexterity-demo)
 
-Dexterity is a Unity animation system that uses abstract, high-level concepts for defining transitions and behaviors between animation states.
+Dexterity is a declarative visual library that takes the complexity out of managing your animation states. 
 
-It currently targets Unity 2020 and supports Unity 2019 with a more limited set of features.
+It utilizes a system of States (like Hidden or Visible), Modifiers (e.g., hidden translates to 0% opacity, hover implies x1.1 scale), and Transitions between states, doing away with the need for extensive manual tweaking and maintaining of your animations.
 
-# Concepts
-## Fields & States
-**Fields** are key-value items that store logical information. They are used to store a complex set of parameters about a subject. For instance, `visible` field can indicate whether the element should be shown on screen, where `hover` can indicate a mouse/controller hovering the subject.
+## Getting Started
+Creating a component with Dexterity requires you to define its visual states. 
 
-Fields can either carry a boolean value (`visible`? yes/no) or an enum value (`attention`: low/medium/high).
+For instance, a button may have Default, Disabled, Hover, and Pressed states, while another might not need the Disabled state, and yet another may include a Hidden state. At any given moment, a component can exist in only one state. Dexterity seamlessly manages the transitions, allowing you to focus on the final design.
 
-**States** are strings that represent the desired animation status of a subject. While subjects can have many fields, they can only have one state at a time. Dexterity takes the field a subject holds, and translates them to a final state using user-defined transformations. 
+To create a component possessing unique states, Dexterity uses Nodes. Nodes are available in various flavors but operate on the same principle: every Modifier under a given node shares the same state list and responds identically to state changes.
 
-States define priorities and disambiguate field. For instance, if a subject is not `visible`, it can immediately be given the `Hidden` state - no need to check if it's `disabled` or test its `attention` level, since its animation state should always be hidden. On the other hand, if it is visibile, has high `attention` AND being `hover`ed, maybe this should invoke a `AccentuatedHover` state.
+Dexterity is also equipped with full editor support, and edit-time transitions via EditorCoroutines.
 
-These are just some random example to express how fields can be translated to different states. In the end of the day, when using Dexterity - users will define their own rules based on the developer/designer's decision.
+# Modifiers
+Dexterity comes packed with a variety of most useful modifiers:
 
-## Nodes
-**Nodes are components that hold an animation *state* for other components.**
+[list]
 
-![Node](./Documentation~/Node.png)
+## Modifier Bindings
+Modifiers allow binding their state properties to global values, like a specific color that is consistently used throughout your project. 
+Simply right-click a property in the editor and choose from the binding menu. The bindings are stored in Dexterity Settings and can be shared among Modifiers of the same type.
 
-They have *fields* that represent their logical state, and define how to take those fields and turn them into a final *state*.
+# Transitions
+Dexterity offers three transition strategies:
 
-By default, everything under the hierarchy of a node will be considered a child of this node. For instance, node can be a parent of both a UI Image and a Text object - controlling their animation states as a single unit.
+1. **Simple** - uses Regular Lerp, Continuous Lerp or Discrete (no interpolation) to move between states.
+2. **Velocity** - uses SmoothDamp for transitions.
+3. **Matrix** - detailed in the Advanced section.
 
-### Gates
-The way to control what fields (and what field values) a specific node has, it has to declare a list of gates. Those gates indicate how the values of the fields are calculated.
+# Nodes
+Dexterity provides several types of State Nodes:
 
-For instance, if a button should always be visible, we can add a `Constant` gate and assign it to the `visible` field. If we want it to be hoverable (change its color whenever a mouse/controller hovers it), we can add a `UIHover` or a `RaycastHover` gate and assign it to the `hover` field. 
+## Simple Enum Node
+The most basic node, manually configured with a list of states, and provides a `SetState(string state)` method for code-based state control.
 
-There are many gate types, such as a `Parent` gate (takes a field value from a parent node), `Node` gate (same as Parent but uses a reference), `UnityObject` gate (uses reflection to check a Unity Object's member value), and so forth. 
-Gate types are easy to add, more on that later.
+## Object Source Enum Node
+Uses Reflection to read an enum from a Unity Object, automatically reflecting code changes to a visual state.
 
-## Modifiers
-**Modifiers are components that specialize in transitioning between animation *states*.**
+## Field Node
+The Field Node is the most complex variant in Dexterity. It introduces an additional layer termed "fields," which encapsulate the logical state of a component, as opposed to its visual state. These fields can coexist, meaning they're not mutually exclusive. A State Function, which maps combinations of fields to a specific state, is used to decide the final State.
 
-![Color Modifier](./Documentation~/ColorModifier.png)
+Field Nodes make use of Gates. Gates serve as junctions, combining a list of sources into an Output Field. To illustrate this, if you have a component that should become visible when its parent is hovered over, you'd add a Parent Field to the node’s gates. The Parent Field, in turn, produces a 'true' output to the visible field whenever the parent is being hovered over.
 
-Each modifier is assigned to a *node* (either automatically by hierarchy, or manually using a reference). This node will determine all the possible states this modifier can be at. The modifier will then define how each state looks like - and how would states transition between each other.
+Field Nodes may initially appear complex due to their feature-rich nature, but they provide a robust means to manage your component's visuals. The API of Field Nodes outmatches other types due to its fine-grained control over state (i.e. leveraging OutputFields), and additional customization options like Internal Field Definitions. This makes Field Nodes a versatile tool for handling the diverse and dynamic visual states of your components.
 
-Modifiers are generally placed on the same GameObject as the component they're controlling.
+# Field Types
+Dexterity includes several built-in field types for Field Nodes:
 
-For example, a `Color Modifier` can control an Image component's color. It reads the list of possible states from its parent *node*, and transitions between a `<Default>` state (white), `Hidden` state (invisible), `Hover` state (blue) and`Selected` state (red). 
+[list]
 
-### Transition Strategies
-Each modifier is assigned with a transition strategy - a behavior type (along with a set of parameters) that defines how transitions between different states would look like.  
+# Dexterity Settings
+## Field Definitions
+TBD
+
+# Advanced Features
+
+## State Functions
+State Functions are sequences of instructions that navigate the fields of a Field Node to determine its final State. They facilitate multiple actions:
+1. **If** - Tests the value of a specific field. By left-clicking, you can switch the comparison (==) operator to an inequality (!=) operator.
+2. **Go To** - Makes a conclusive decision on a state. This action shortcircuits further instructions and is added by left-clicking the "If" button.
+3. **Run** - Executes another State Function, allowing references to other assets. Use it by right-clicking the "If" or "Go To" button.
 
 ## Node References
-TBD
-## State Functions
-TBD
-# Editor
-## Node Editor
-![Node - Runtime](./Documentation~/NodeRuntime.png)
+Node References are configuration assets that empower you to share definitions across various components, including state functions and gates.
 
-TBD
+## Matrix Definitions
+Matrix Definitions are assets that enable the most detailed and robust transitions. They allow you to specify individual animation curves, timings, and delays when transitioning between visual states, offering granular control over the behavior of your animations.
 
-# Code APIs
-## `Node.OutputField`s
+# Debugging
+The Dexterity editor is rich with debugging features. By selecting a node, you can view all its associated modifiers. In play time, the selection of a node also reveals its dependencies, enabling you to troubleshoot any configuration issues.
+
+Additionally, the Dexterity Manager component is equipped with an editor that provides comprehensive details on the current status of all active nodes and fields. This feature, coupled with other useful debugging information, is an advanced powerful tool to diagnose and resolve issues.
+
+# API
+## `FieldNode.OutputField`s
 TBD
 ## Listening to state changes
 tbd
@@ -66,27 +83,28 @@ tbd
 TBD
 ## Modifiers
 TBD `ForceTransitionUpdate`
-
-# Advanced Concepts
-## Gate override types
-TBD
-## `TransitionBehaviour` class
-TBD
-## `Manager` class
-TBD
 ## `RaycastController` class and `IRaycastController` interface
 TBD
 
-# Behind the Scenes
-TBD
-
 # Extending Dexterity
-## `Modifier`s
-TBD
-## Field types and `BaseField`
-TBD
+## Modifiers
+Creating new Modifiers in Dexterity is straightforward. Extend `Modifier` or `ComponentModifier<Component>` (if your modifier changes a specific component), and implement your property data and `Refresh()` (transition) logic. Dexterity Editor takes care of the heavy-lifting.
+
+## Field Types and `BaseField`
+Creating a new field type is fairly easy. Upon implementation (inheriting from `BaseField`), it will automatically appear in the Dexterity Editor with all its custom options.
+Consult the BaseField documentation for guidance.
+
 ## Transitions
-TBD
+Implementing Transition Strategies is quite straightforward and will appear automatically when you inherit from BaseStrategy. 
+Copy an existing strategy as a baseline and modify it to your needs.
 
 # Examples
-TBD
+- [Online Demo](https://omerpp.itch.io/dexterity-demo)
+- Samples directory in source code
+
+# Architecture / Behind The Scenes
+The Dexterity Manager efficiently manages a dependency graph, updating only the relevant components as needed. Thus, if field A in node X is dependent on field B in node Y, they would form a linked cluster that updates in unison.
+
+Dexterity is engineered from the ground up with a focus on efficiency, involving almost no allocations, and producing an extremely minimal garbage collection footprint. It only triggers updates to the visual state of objects when required, and reverts to a dormant state once transitions are completed.
+
+One point to note is that the code leans heavily on the [SerializeReference] functionality. This dependency introduces a level of fragility when it comes to renaming types. So, if you plan on creating your own modifiers, strategies, or fields, take caution when renaming them to avoid potential issues.

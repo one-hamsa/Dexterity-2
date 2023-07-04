@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public static class Utils
     {
@@ -81,11 +81,11 @@ namespace OneHamsa.Dexterity.Visual
             string strValue = value.ToString();
             switch (definition.type)
             {
-                case Node.FieldType.Boolean when value != Node.emptyFieldValue:
+                case FieldNode.FieldType.Boolean when value != FieldNode.emptyFieldValue:
                     strValue = value == 1 ? "True" : "False";
                     break;
 
-                case Node.FieldType.Enum when value != Node.emptyFieldValue:
+                case FieldNode.FieldType.Enum when value != FieldNode.emptyFieldValue:
                     strValue = definition.enumValues[(int)value];
                     break;
             }

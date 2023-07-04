@@ -5,20 +5,16 @@ using System.Collections.Generic;
 using UnityEditorInternal;
 using System;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public static class DexteritySettingsProvider
     {
         static UnityEngine.Object FindAssetByType(Type t)
         {
-            List<UnityEngine.Object> assets = new List<UnityEngine.Object>();
-            string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", t));
+            var guids = AssetDatabase.FindAssets($"t:{t}");
 
             if (guids.Length == 0)
-            {
-                Debug.LogError("no DexteritySettings found in project");
                 return null;
-            }
 
             if (guids.Length > 1)
             {
@@ -39,32 +35,50 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         private static DexteritySettings cachedSettings;
+
+        public static DexteritySettings TryGetSettings()
+        {
+            if (cachedSettings == null)
+            {
+                var s = (DexteritySettings)FindAssetByType(typeof(DexteritySettings));
+                if (s == null)
+                {
+                    return s;
+                }
+                cachedSettings = s;
+            }
+
+            return cachedSettings;
+        }
         public static DexteritySettings settings {
             get
             {
-                if (cachedSettings == null)
-                {
-                    var s = (DexteritySettings)FindAssetByType(typeof(DexteritySettings));
-                    if (s == null)
-                        return s;
-
-                    cachedSettings = s;
-                }
-                return cachedSettings;
+                var s = TryGetSettings();
+                if (s == null)
+                    Debug.LogError("no DexteritySettings found in project");
+                
+                return s;
             }
         }
 
 
-        /**
-         * returns field definition by name - slow.
-         */
-        public static FieldDefinition GetFieldDefinitionByName(string name)
+        /// <summary>
+        /// returns field definition by name - slow.
+        /// </summary>
+        public static FieldDefinition GetFieldDefinitionByName(IGateContainer gateContainer, string name)
         {
+            // we can't use Database here since it's not initialized in edit mode, so we have to do it manually
+            
+            var internalField = gateContainer?.GetInternalFieldDefinitions()
+                .FirstOrDefault(fd => fd.GetInternalName() == name);
+
+            if (!string.IsNullOrEmpty(internalField?.name))
+                return internalField.Value;
+
             foreach (var fd in settings.fieldDefinitions)
                 if (fd.name == name)
                     return fd;
 
-            Debug.LogError($"No field definition found for name: {name}");
             return default;
         }
     }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     // will automatically serialize fields under "parameters" to custom editor
     public abstract class BaseField
@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity.Visual
         /// context node
         /// </summary>
         [NonSerialized]
-        public Node context;
+        public FieldNode context;
 
         /// <summary>
         /// related field name (null if not exist), should be set by editor
@@ -93,7 +93,7 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// dispatched by the node when initializing a new field
         /// </summary>
-        public void Initialize(Node context, int definitionId)
+        public void Initialize(FieldNode context, int definitionId)
         {
             this.definitionId = definitionId;
             definition = Database.instance.GetFieldDefinition(definitionId);
@@ -108,12 +108,12 @@ namespace OneHamsa.Dexterity.Visual
         /// <summary>
         /// override for custom initialization
         /// </summary>
-        protected virtual void Initialize(Node context) { }
+        protected virtual void Initialize(FieldNode context) { }
 
         /// <summary>
         /// dispatched by the node when the field is destroyed
         /// </summary>
-        public virtual void Finalize(Node context) { }
+        public virtual void Finalize(FieldNode context) { }
 
         /// <summary>
         /// dispatched by the graph before updating

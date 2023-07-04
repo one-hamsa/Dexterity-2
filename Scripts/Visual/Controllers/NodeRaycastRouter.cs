@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class NodeRaycastRouter : MonoBehaviour, IRaycastReceiver
     {
@@ -52,7 +52,7 @@ namespace OneHamsa.Dexterity.Visual
                     queue.Enqueue(child);
                 }
 
-                if (current.GetComponent<Node>() != null) {
+                if (current.GetComponent<FieldNode>() != null) {
                     continue;
                 }
                 

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// Attribute for modifiers to tell the editor which property type to use (should derive from PropertyBase).

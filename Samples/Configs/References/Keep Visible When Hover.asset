@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f62afd052bde8664f96fbcf73b8c645f, type: 3}
+  m_Name: Keep Visible When Hover
+  m_EditorClassIdentifier: 
+  stateFunctionAssets: []
+  extends: []
+  gates:
+  - outputFieldName: visible
+    overrideType: 1
+    field:
+      rid: 7862443120866623942
+  internalFieldDefinitions: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 7862443120866623942
+      type: {class: NodeField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        relatedFieldName: visible
+        targetNodes: []
+        fieldName: hover
+        takeValueWhen: 0
+        negate: 0

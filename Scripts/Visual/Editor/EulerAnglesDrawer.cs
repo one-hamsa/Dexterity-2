@@ -1,7 +1,7 @@
  using UnityEditor;
  using UnityEngine;
  
- namespace OneHamsa.Dexterity.Visual
+ namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(EulerAnglesAttribute))]
     public class EulerAnglesDrawer : PropertyDrawer {

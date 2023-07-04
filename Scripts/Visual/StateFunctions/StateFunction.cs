@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CreateAssetMenu(menuName = "Dexterity/State Function", fileName = "State Function")]
     public class StateFunction : ScriptableObject, IStepList

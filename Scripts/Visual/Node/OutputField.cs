@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 
-    public partial class Node
+    public partial class FieldNode
     {
         public const int emptyFieldValue = -1;
         public const int defaultFieldValue = 0;
@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Visual
         /// </summary>
         public class OutputField : BaseField
         {
-            public Node node;
+            public FieldNode node;
             public string originalNodeName { get; private set; }
 
             protected int cachedValue = emptyFieldValue;
@@ -84,7 +84,7 @@ namespace OneHamsa.Dexterity.Visual
                     return cachedOverride;
                 }
             }
-            protected override void Initialize(Node context)
+            protected override void Initialize(FieldNode context)
             {
                 base.Initialize(context);
 
@@ -99,7 +99,7 @@ namespace OneHamsa.Dexterity.Visual
                     OnNodeEnabled();
             }
 
-            public override void Finalize(Node context)
+            public override void Finalize(FieldNode context)
             {
                 base.Finalize(context);
 

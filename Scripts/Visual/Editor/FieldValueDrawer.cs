@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(FieldValueAttribute))]
     public class FieldValueDrawer : PropertyDrawer
@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var attr = attribute as FieldValueAttribute;
+            var attr = (FieldValueAttribute)attribute;
             string actualFieldName;
             if (attr.proxy)
             {
@@ -49,7 +49,8 @@ namespace OneHamsa.Dexterity.Visual
                 return;
             }
 
-            var definition = DexteritySettingsProvider.GetFieldDefinitionByName(actualFieldName);
+            var gateContainer = property.serializedObject.targetObject as IGateContainer;
+            var definition = DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, actualFieldName);
             if (string.IsNullOrEmpty(definition.name)) {
                 EditorGUI.LabelField(position, label.text, $"Field {actualFieldName} not found.");
                 return;
@@ -57,11 +58,11 @@ namespace OneHamsa.Dexterity.Visual
 
             switch (definition.type)
             {
-                case Node.FieldType.Boolean:
+                case FieldNode.FieldType.Boolean:
                     property.intValue = EditorGUI.Popup(position, label.text, property.intValue, 
                         new string[] { "false", "true" });
                     break;
-                case Node.FieldType.Enum:
+                case FieldNode.FieldType.Enum:
                     property.intValue = EditorGUI.Popup(position, label.text, property.intValue,
                         definition.enumValues);
                     break;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class NodeField : BaseField
     {
@@ -14,13 +14,13 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             AllEqual = 2,
         }
 
-        public List<Node> targetNodes = new List<Node>();
+        public List<FieldNode> targetNodes = new List<FieldNode>();
         [Field]
         public string fieldName;
         public TakeValueWhen takeValueWhen = TakeValueWhen.AnyEqualsTrue;
         public bool negate;
 
-        List<Node.OutputField> outputFields = new List<Node.OutputField>();
+        List<FieldNode.OutputField> outputFields = new List<FieldNode.OutputField>();
 
         // we always report about someone else's field, so mark as proxy
         public override bool proxy => true;
@@ -61,22 +61,19 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return 0;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
             if (targetNodes.Count == 0)
-            {
-                Debug.LogError($"target nodes empty", context);
-                throw new FieldInitializationException();
-            }
+                targetNodes.Add(context);
 
             ClearUpstreamFields();
             foreach (var node in targetNodes) {
                 if (node == null)
                     continue;
 
-                Node.OutputField outputField = node.GetOutputField(fieldName);
+                FieldNode.OutputField outputField = node.GetOutputField(fieldName);
                 outputFields.Add(outputField);
                 AddUpstreamField(outputField);
             }

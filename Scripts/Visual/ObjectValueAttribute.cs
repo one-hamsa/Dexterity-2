@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Reflection;
 using UnityEngine.Scripting;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class ObjectValueAttribute : PropertyAttribute
     {

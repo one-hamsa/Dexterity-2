@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
@@ -25,8 +25,8 @@ namespace OneHamsa.Dexterity.Visual
             public float waitFor = 0;
         }
         
-        private static Dictionary<DexterityBaseNode, HashSet<Modifier>> nodesToModifiers = new();
-        public static IEnumerable<Modifier> GetModifiers(DexterityBaseNode node)
+        private static Dictionary<BaseStateNode, HashSet<Modifier>> nodesToModifiers = new();
+        public static IEnumerable<Modifier> GetModifiers(BaseStateNode node)
         {
             if (nodesToModifiers.TryGetValue(node, out var modifiers))
                 return modifiers;
@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [SerializeField]
-        public DexterityBaseNode _node;
+        public BaseStateNode _node;
 
         [SerializeReference]
         public List<PropertyBase> properties = new();
@@ -46,7 +46,7 @@ namespace OneHamsa.Dexterity.Visual
         [HideInInspector] public bool manualStateEditing = false;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DexterityBaseNode GetNode() => TryFindNode();
+        public BaseStateNode GetNode() => TryFindNode();
         public float transitionProgress => GetTransitionProgress(GetNode().GetActiveState());
         public float GetTransitionProgress(int state)
         {
@@ -257,18 +257,18 @@ namespace OneHamsa.Dexterity.Visual
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        DexterityBaseNode TryFindNode()
+        BaseStateNode TryFindNode()
         {
             if (Application.isPlaying && foundNode) 
                 return _node;
             
-            DexterityBaseNode current = _node;
+            BaseStateNode current = _node;
             Transform parent = transform;
             while (current == null && parent != null)
             {
                 // include inactive if we're inactive
                 if (!gameObject.activeInHierarchy || parent.gameObject.activeInHierarchy)
-                    current = parent.GetComponent<DexterityBaseNode>();
+                    current = parent.GetComponent<BaseStateNode>();
 
                 parent = parent.parent;
             }
@@ -331,7 +331,7 @@ namespace OneHamsa.Dexterity.Visual
         {
             protected Modifier modifier;
             
-            public DexterityBaseNode GetNode() => modifier.GetNode();
+            public BaseStateNode GetNode() => modifier.GetNode();
             public EditorAnimationContext(Modifier modifier)
             {
                 this.modifier = modifier;

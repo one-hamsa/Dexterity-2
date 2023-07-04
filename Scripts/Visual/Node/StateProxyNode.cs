@@ -3,16 +3,16 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [AddComponentMenu("Dexterity/State Proxy Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class StateProxyNode : DexterityBaseNode
+    public class StateProxyNode : BaseStateNode
     {
         [Serializable]
         public class StateProxy
         {
-            public DexterityBaseNode sourceNode;
+            public BaseStateNode sourceNode;
             
             [State(objectFieldName: nameof(sourceNode))]
             public string inStateName;

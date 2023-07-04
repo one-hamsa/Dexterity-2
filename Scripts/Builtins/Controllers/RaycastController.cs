@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastController : MonoBehaviour, IRaycastController
     {
@@ -29,8 +29,9 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         public static event Action<PressAnywhereEvent> onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
+        public float repeatHitCooldown = 0f;
 
-        public RaycastController[] otherControllers;
+        public RaycastController[] mutuallyExclusiveControllers;
         public bool defaultController;
 
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
@@ -137,7 +138,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected void HandlePressed()
         {
             lastControllerPressed = this;
-            foreach (var other in otherControllers)
+            foreach (var other in mutuallyExclusiveControllers)
             {
                 other.HandleOtherPressed(this);
             }
@@ -247,7 +248,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                     if (recentlyHitReceivers.TryGetValue(receiver, out var lastHit))
                     {
                         var cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
-                        if (cooldown < Database.instance.settings.repeatHitCooldown)
+                        if (cooldown < repeatHitCooldown)
                             continue;
                     }
 

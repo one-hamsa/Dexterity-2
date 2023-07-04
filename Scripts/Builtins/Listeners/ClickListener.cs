@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Scripting;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class ClickListener : MonoBehaviour
     {
@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         }
 
         [SerializeField]
-        protected Node node;
+        protected FieldNode node;
 
         [SerializeField]
         public UnityEvent onClick;
@@ -31,10 +31,10 @@ namespace OneHamsa.Dexterity.Visual.Builtins
 
         public event Action onPressDown;
 
-        Node.OutputField pressedField;
-        Node.OutputField hoverField;
-        Node.OutputField disabledField;
-        Node.OutputField visibleField;
+        FieldNode.OutputField pressedField;
+        FieldNode.OutputField hoverField;
+        FieldNode.OutputField disabledField;
+        FieldNode.OutputField visibleField;
         private int pressFrame = -1;
         
         [Preserve]
@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         protected virtual void Awake()
         {
             if (!node)
-                node = GetComponentInParent<Node>();
+                node = GetComponentInParent<FieldNode>();
 
             if (!node)
             {
@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
                 pressedField.onBooleanValueChanged -= HandlePress;
         }
 
-        private void HandlePress(Node.OutputField field, bool oldValue, bool newValue)
+        private void HandlePress(FieldNode.OutputField field, bool oldValue, bool newValue)
         {
             // don't handle if hidden
             if (visibleField != null && !visibleField.GetBooleanValue())

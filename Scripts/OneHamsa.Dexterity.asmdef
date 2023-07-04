@@ -1,14 +1,11 @@
 {
-    "name": "Dexterity.Editor",
-    "rootNamespace": "OneHamsa.Dexterity.Visual",
+    "name": "Dexterity",
+    "rootNamespace": "OneHamsa.Dexterity",
     "references": [
-        "Dexterity",
         "Unity.InputSystem",
-        "Unity.EditorCoroutines.Editor"
+        "Unity.TextMeshPro"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

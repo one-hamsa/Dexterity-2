@@ -4,15 +4,17 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
-    public abstract class DexterityBaseNode : MonoBehaviour, IHasStates
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates
     {
         [Serializable]
         public class TransitionDelay
         {
-            [State]
+            [State(allowEmpty: true)]
             public string beforeExitingState;
+            [State(allowEmpty: true)]
+            public string beforeEnteringState;
             public float waitFor = 0;
         }
         
@@ -38,7 +40,7 @@ namespace OneHamsa.Dexterity.Visual
         #region Private Properties
         protected int activeState = StateFunction.emptyStateId;
         private int overrideStateId = StateFunction.emptyStateId;
-        Dictionary<int, TransitionDelay> cachedDelays;
+        Dictionary<(int enter, int exit), TransitionDelay> cachedDelays;
 
         protected bool stateDirty = true;
         double pendingStateChangeTime;
@@ -85,7 +87,7 @@ namespace OneHamsa.Dexterity.Visual
                 if (newState != pendingState)
                 {
                     // add delay to change time
-                    pendingStateChangeTime = GetExitingStateDelay(activeState);
+                    pendingStateChangeTime = GetStateDelay(activeState, newState);
                     // don't trigger change if moving back to current state
                     pendingState = newState != activeState ? newState : -1;
                 }
@@ -181,14 +183,21 @@ namespace OneHamsa.Dexterity.Visual
         #region Transitions
         private void CacheDelays()
         {
-            cachedDelays = new Dictionary<int, TransitionDelay>();
+            cachedDelays = new Dictionary<(int enter, int exit), TransitionDelay>();
             foreach (var delay in delays)
-                cachedDelays[Database.instance.GetStateID(delay.beforeExitingState)] = delay;
+                cachedDelays[(
+                    Database.instance.GetStateID(delay.beforeEnteringState),
+                    Database.instance.GetStateID(delay.beforeExitingState)
+                )] = delay;
         }
 
-        private float GetExitingStateDelay(int state)
+        private float GetStateDelay(int exitingState, int enteringState)
         {
-            cachedDelays.TryGetValue(state, out var value);
+            if (!cachedDelays.TryGetValue((enteringState, exitingState), out var value))
+            {
+                if (!cachedDelays.TryGetValue((enteringState, StateFunction.emptyStateId), out value))
+                    cachedDelays.TryGetValue((StateFunction.emptyStateId, exitingState), out value);
+            }
             return value?.waitFor ?? 0f;
         }
         

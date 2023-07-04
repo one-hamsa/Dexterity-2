@@ -1,4 +1,4 @@
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public interface IRaycastReceiver
     {

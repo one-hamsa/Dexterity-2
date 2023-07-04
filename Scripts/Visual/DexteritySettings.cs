@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CreateAssetMenu(menuName = "Dexterity/Settings", fileName = "Dexterity Settings")]
     public class DexteritySettings : ScriptableObject
@@ -73,9 +73,6 @@ namespace OneHamsa.Dexterity.Visual
                     yield return name;
             }
         }
-
-		[Tooltip("Min time in seconds between hitting the same receiver (0 to disable)")]
-		public float repeatHitCooldown = 0f;
         
         // Return a deep clone of an object of type T.
         private static T DeepClone<T>(T obj)

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(TransitionBehaviour), true)]
     public class TransitionBehaviourEditor : Editor
@@ -96,7 +96,8 @@ namespace OneHamsa.Dexterity.Visual
                 var type = types[fieldIdx];
                 strategyProp.managedReferenceValue = Activator.CreateInstance(type);
             } else if (string.IsNullOrEmpty(strategyProp.managedReferenceFullTypename) 
-                && DexteritySettingsProvider.settings.defaultTransitionStrategy != null) {
+                       && DexteritySettingsProvider.TryGetSettings() != null
+                       && DexteritySettingsProvider.settings.defaultTransitionStrategy != null) {
                 strategyProp.managedReferenceValue = DexteritySettingsProvider.settings.CreateDefaultTransitionStrategy();
             }
 

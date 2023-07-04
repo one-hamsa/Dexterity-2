@@ -6,7 +6,7 @@ using System.Reflection;
 using System;
 using System.Globalization;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 
@@ -15,8 +15,7 @@ namespace OneHamsa.Dexterity.Visual
     {
         NodeReference reference;
         bool foldoutOpen = true;
-        private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField
-        = new Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>>();
+        private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField = new();
 
         public override void OnInspectorGUI()
         {
@@ -30,7 +29,8 @@ namespace OneHamsa.Dexterity.Visual
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
-            ShowWarnings();
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
 
             serializedObject.ApplyModifiedProperties();
 
@@ -43,15 +43,6 @@ namespace OneHamsa.Dexterity.Visual
                 this.Repaint();
         }
 
-        private void ShowWarnings()
-        {
-            var sf = reference.GetStateFunctionAssetsIncludingParents();
-            if (sf.Count() == 0)
-            {
-                EditorGUILayout.HelpBox($"No state functions selected (either by reference or its parents)", MessageType.Error);
-            }
-        }
-
         private void ShowExtends()
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(reference.extends)));
@@ -60,9 +51,6 @@ namespace OneHamsa.Dexterity.Visual
 
         internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer, ref bool foldoutOpen)
         {
-            if (gateContainer.GetFieldNames() == null)
-                return false;
-
             var rect = EditorGUILayout.BeginVertical();
             EditorGUI.BeginProperty(rect, GUIContent.none, gatesProp);
 
@@ -97,18 +85,23 @@ namespace OneHamsa.Dexterity.Visual
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                bool fieldExistsInFunction = gateContainer.GetFieldNames().Contains(kv.Key);
+                var whitelist = gateContainer.GetWhitelistedFieldNames();
+                var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(fd => fd.name)
+                    .Where(f => whitelist == null || whitelist.Contains(f))
+                    .Concat(gateContainer.GetInternalFieldDefinitions().Select(fd => fd.GetInternalName()))
+                    .ToArray();
+                
+                var fieldExistsInFunction = fields.Contains(kv.Key);
+                var fieldIsInternal = FieldDefinition.IsInternalName(kv.Key);
 
                 if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
                     GUI.color = Color.yellow;
                 else
-                    GUI.color = Color.green;
+                    GUI.color = !fieldIsInternal ? Color.green : Color.cyan;
 
                 GUILayout.Label(!string.IsNullOrEmpty(kv.Key) ? kv.Key : "<unassigned>", EditorStyles.largeLabel);
 
-                var definition = !string.IsNullOrEmpty(kv.Key)
-                    ? DexteritySettingsProvider.GetFieldDefinitionByName(kv.Key)
-                    : default;
+                var definition = ExtractDefinition(gateContainer, kv.Key);
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
                     if (definition.name != null)
@@ -117,7 +110,7 @@ namespace OneHamsa.Dexterity.Visual
                         var liveInstance = Application.isPlaying && gateContainer.node != null;
                         var value = liveInstance
                             ? gateContainer.node.GetOutputField(kv.Key).GetValue()
-                            : Node.defaultFieldValue;
+                            : FieldNode.defaultFieldValue;
 
                         GUILayout.FlexibleSpace();
                         DrawFieldValue(definition, value, liveInstance);
@@ -153,8 +146,6 @@ namespace OneHamsa.Dexterity.Visual
                     // show output field dropdown
                     var outputProp = gateProp.FindPropertyRelative(nameof(Gate.outputFieldName));
                     var output = outputProp.stringValue;
-                    // TODO check if manager exists!
-                    var fields = gateContainer.GetFieldNames().ToArray();
 
                     rect = EditorGUILayout.BeginHorizontal();
                     EditorGUI.BeginProperty(rect, GUIContent.none, outputProp);
@@ -198,7 +189,7 @@ namespace OneHamsa.Dexterity.Visual
                     EditorGUI.EndProperty();
                     EditorGUILayout.EndHorizontal();
 
-                    if (definition.type == Node.FieldType.Boolean) {
+                    if (definition.type == FieldNode.FieldType.Boolean) {
                         GUI.contentColor = new Color(.7f, .7f, .7f);
                         EditorGUILayout.PropertyField(gateProp.FindPropertyRelative(nameof(Gate.overrideType)));
 
@@ -263,6 +254,13 @@ namespace OneHamsa.Dexterity.Visual
                 EditorUtility.SetDirty(gatesProp.serializedObject.targetObject);
 
             return updated;
+        }
+
+        private static FieldDefinition ExtractDefinition(IGateContainer gateContainer, string fieldName)
+        {
+            return !string.IsNullOrEmpty(fieldName)
+                ? DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, fieldName)
+                : default;
         }
 
         static double lastReferenceRefreshTime = double.NegativeInfinity;
@@ -350,7 +348,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             referencesTypes = TypeCache.GetTypesDerivedFrom<BaseField>()
-                            .Where(t => t != typeof(Node.OutputField))
+                            .Where(t => t != typeof(FieldNode.OutputField))
                             .ToArray();
             referencesTypesNames = referencesTypes
                 .Select(t => t.ToString())
@@ -367,16 +365,16 @@ namespace OneHamsa.Dexterity.Visual
             {
                 switch (definition.type)
                 {
-                    case Node.FieldType.Boolean when value == 0:
-                    case Node.FieldType.Boolean when value == Node.defaultFieldValue:
+                    case FieldNode.FieldType.Boolean when value == 0:
+                    case FieldNode.FieldType.Boolean when value == FieldNode.defaultFieldValue:
                         GUI.color = Color.red;
                         valueName = "false";
                         break;
-                    case Node.FieldType.Boolean when value == 1:
+                    case FieldNode.FieldType.Boolean when value == 1:
                         GUI.color = Color.green;
                         valueName = "true";
                         break;
-                    case Node.FieldType.Enum:
+                    case FieldNode.FieldType.Enum:
                         GUI.color = new Color(1, .5f, 0);
                         valueName = definition.enumValues[value];
                         break;
@@ -387,10 +385,10 @@ namespace OneHamsa.Dexterity.Visual
                 GUI.color = Color.gray;
                 switch (definition.type)
                 {
-                    case Node.FieldType.Boolean:
+                    case FieldNode.FieldType.Boolean:
                         valueName = "Boolean";
                         break;
-                    case Node.FieldType.Enum:
+                    case FieldNode.FieldType.Enum:
                         valueName = "Enum";
                         break;
                 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [AddComponentMenu("Dexterity/Dexterity Manager")]
     [DefaultExecutionOrder(Manager.graphExecutionPriority)]

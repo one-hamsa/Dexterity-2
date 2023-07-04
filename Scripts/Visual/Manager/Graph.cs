@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Profiling;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Utilities;
     
@@ -169,7 +169,7 @@ namespace OneHamsa.Dexterity.Visual
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e, Node.ByField(node));
+                    Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
             Profiler.EndSample();

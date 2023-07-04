@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static OneHamsa.Dexterity.Visual.StateFunction;
+using static OneHamsa.Dexterity.StateFunction;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public interface IStepList : IHasStates
     {

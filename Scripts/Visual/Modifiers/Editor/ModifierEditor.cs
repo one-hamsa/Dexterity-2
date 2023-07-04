@@ -8,7 +8,7 @@ using System.Collections;
 using Unity.EditorCoroutines.Editor;
 using Object = UnityEngine.Object;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(Modifier), true), CanEditMultipleObjects]
     public class ModifierEditor : TransitionBehaviourEditor
@@ -646,7 +646,7 @@ namespace OneHamsa.Dexterity.Visual
             Undo.FlushUndoRecordObjects();
             
             var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
-            IEnumerable<DexterityBaseNode> getNodes() 
+            IEnumerable<BaseStateNode> getNodes() 
                 => animationContexts.Select(c => c.GetNode()).ToHashSet();
 
             void SetDirtyAll()

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class EnumField : BaseField
     {
-        public EnumNode targetNode;
+        public ObjectSourceEnumNode targetNode;
         [EnumField(nameof(targetNode))]
         public string targetField;
         public bool negate;
@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             return negate ? (value + 1) % 2 : value;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 

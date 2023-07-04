@@ -1,6 +1,6 @@
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastPressField : BaseField
     {
@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
         DexterityRaycastFieldProvider provider;
         private NodeRaycastRouter router;
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             router.AddReceiver(provider);
         }
 
-        public override void Finalize(Node context)
+        public override void Finalize(FieldNode context)
         {
             base.Finalize(context);
             router.RemoveReceiver(provider);

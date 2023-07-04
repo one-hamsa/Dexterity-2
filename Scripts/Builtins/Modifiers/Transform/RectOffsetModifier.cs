@@ -4,7 +4,7 @@ using UnityEngine;
 using System;
 using UnityEngine.UI;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class RectOffsetModifier : ComponentModifier<RectTransform>, ISupportValueFreeze, ISupportPropertyFreeze
     {

@@ -1,8 +1,8 @@
-using OneHamsa.Dexterity.Visual.Utilities;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace OneHamsa.Dexterity.Visual.Builtins
+namespace OneHamsa.Dexterity.Builtins
 {
     public class UIHoverField : BaseField
     {
@@ -14,12 +14,12 @@ namespace OneHamsa.Dexterity.Visual.Builtins
             public void OnPointerExit(PointerEventData eventData) => hover = false;
         }
 
-        protected override void Initialize(Node context)
+        protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
             provider = context.gameObject.GetOrAddComponent<DexterityUIHoverFieldProvider>();
         }
-        public override void Finalize(Node context)
+        public override void Finalize(FieldNode context)
         {
             base.Finalize(context);
 

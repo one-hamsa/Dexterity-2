@@ -9,14 +9,14 @@ using Unity.EditorCoroutines.Editor;
 using UnityEditor.SceneManagement;
 using UnityEngine.UIElements;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
-    public abstract class DexterityBaseNodeEditor : Editor
+    public abstract class BaseStateNodeEditor : Editor
     {
         static bool modifiersDebugOpen;
         private static int speedIndex = -1;
         
-        DexterityBaseNode baseNode;
+        BaseStateNode baseNode;
         private HashSet<string> states = new HashSet<string>();
         private List<string> previewStates = new List<string>();
         private List<string> previewStateNames = new List<string>();
@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Visual
             states.Clear();
             var first = true;
             foreach (var t in targets) {
-                foreach (var state in (t as DexterityBaseNode).GetStateNames()) {
+                foreach (var state in (t as BaseStateNode).GetStateNames()) {
                     if (states.Add(state) && !first) {
                         EditorGUILayout.HelpBox("Can't multi-edit nodes with different state lists.", MessageType.Error);
                         return;
@@ -41,7 +41,7 @@ namespace OneHamsa.Dexterity.Visual
                 first = false;
             }
 
-            baseNode = target as DexterityBaseNode;
+            baseNode = target as BaseStateNode;
 
             serializedObject.Update();
 
@@ -73,7 +73,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowChooseInitialState()
         {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexterityBaseNode.initialState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BaseStateNode.initialState)));
         }
 
         void ShowOverrides()
@@ -93,7 +93,7 @@ namespace OneHamsa.Dexterity.Visual
                 return;
 
             GUI.enabled = Application.isPlaying;
-            var overrideStateProp = serializedObject.FindProperty(nameof(DexterityBaseNode.overrideState));
+            var overrideStateProp = serializedObject.FindProperty(nameof(BaseStateNode.overrideState));
 
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField(overrideStateProp, new GUIContent("State Override"));
@@ -181,7 +181,7 @@ namespace OneHamsa.Dexterity.Visual
 
         private void ShowDelays()
         {
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexterityBaseNode.delays)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BaseStateNode.delays)));
         }
 
         protected virtual void ShowFieldValues()

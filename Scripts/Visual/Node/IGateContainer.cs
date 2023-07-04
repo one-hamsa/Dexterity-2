@@ -1,13 +1,19 @@
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using System.Collections.Generic;
     using Gate = NodeReference.Gate;
 
     public interface IGateContainer
     {
-        IEnumerable<string> GetStateNames();
-        IEnumerable<string> GetFieldNames();
-        Node node { get; }
+        IEnumerable<FieldDefinition> GetInternalFieldDefinitions();
+        
+        /// <summary>
+        /// Returns a list of field names that are allowed to be used in the context of this node,
+        /// or null if all fields are allowed.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<string> GetWhitelistedFieldNames() => null;
+        FieldNode node { get; }
 
         void AddGate(Gate gate);
         void RemoveGate(Gate gate);

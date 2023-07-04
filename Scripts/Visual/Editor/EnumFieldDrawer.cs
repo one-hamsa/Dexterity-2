@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(EnumFieldAttribute))]
     public class EnumFieldDrawer : PropertyDrawer
@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity.Visual
             if (unityObjectProp.objectReferenceValue == null)
                 return;
 
-            var enumNode = (EnumNode)unityObjectProp.objectReferenceValue;
+            var enumNode = (ObjectSourceEnumNode)unityObjectProp.objectReferenceValue;
             enumNode.InitializeObjectContext();
 
             Enum enumPrevValue = default;

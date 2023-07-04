@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEditorInternal;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     [CustomEditor(typeof(DexteritySettings))]
     public class DexteritySettingsEditor : Editor
@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity.Visual
             );
 
 
-            if (type.intValue == (int)Node.FieldType.Enum)
+            if (type.intValue == (int)FieldNode.FieldType.Enum)
             {
                 var origColor = GUI.color;
                 GUI.color = values.arraySize == 0 ? Color.red : origColor;
@@ -87,8 +87,6 @@ namespace OneHamsa.Dexterity.Visual
             var strategyDefined = TransitionBehaviourEditor.ShowStrategy(target, p);
 
             EditorGUILayout.Space(15);
-
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(DexteritySettings.repeatHitCooldown)));
             
             var namedProperties = serializedObject.FindProperty(nameof(DexteritySettings.namedProperties));
             var settings = (DexteritySettings)target;

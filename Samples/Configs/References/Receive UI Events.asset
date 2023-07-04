@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f62afd052bde8664f96fbcf73b8c645f, type: 3}
+  m_Name: Receive UI Events
+  m_EditorClassIdentifier: 
+  stateFunctionAssets:
+  - {fileID: 11400000, guid: fae38c62d57f63e4b892957f3468500b, type: 2}
+  - {fileID: 11400000, guid: 574abed7a5f40834cb4e8354dbae5752, type: 2}
+  extends:
+  - {fileID: 11400000, guid: 8aae22df7c5c41146b497d3f867e2f59, type: 2}
+  - {fileID: 11400000, guid: 8dc5365fb058c2647b98f82541871090, type: 2}
+  gates: []
+  internalFieldDefinitions: []
+  references:
+    version: 2
+    RefIds: []

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     public class FieldMask : List<(int field, int value)>
     {
@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity.Visual
             foreach (var pair in this)
                 if (pair.field == field)
                     return pair.value;
-            return Node.emptyFieldValue;
+            return FieldNode.emptyFieldValue;
         }
 
         public override string ToString()

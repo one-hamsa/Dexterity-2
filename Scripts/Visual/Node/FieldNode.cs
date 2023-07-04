@@ -3,18 +3,18 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace OneHamsa.Dexterity.Visual
+namespace OneHamsa.Dexterity
 {
     using Gate = NodeReference.Gate;
 
-    [AddComponentMenu("Dexterity/Dexterity Node")]
+    [AddComponentMenu("Dexterity/Field Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class Node : DexterityBaseNode, IGateContainer, IStepList
+    public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
     {
         #region Static Functions
         // mainly for debugging graph problems
-        private static Dictionary<BaseField, Node> fieldsToNodes = new();
-        internal static Node ByField(BaseField f)
+        private static Dictionary<BaseField, FieldNode> fieldsToNodes = new();
+        internal static FieldNode ByField(BaseField f)
         {
             fieldsToNodes.TryGetValue(f, out var node);
             return node;
@@ -37,6 +37,9 @@ namespace OneHamsa.Dexterity.Visual
 
             public bool Initialize(int fieldId = -1)
             {
+                if (fieldId == -1 && outputFieldDefinitionId != -1)
+                    fieldId = outputFieldDefinitionId;
+                
                 if (fieldId != -1)
                 {
                     outputFieldDefinitionId = fieldId;
@@ -52,15 +55,18 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Data Definitions
 
         #region Serialized Fields
-        public List<NodeReference> referenceAssets = new List<NodeReference>();
+        public List<NodeReference> referenceAssets = new();
      
         [SerializeField]
-        public List<Gate> customGates = new List<Gate>();
+        public List<Gate> customGates = new();
+        
+        [SerializeField]
+        public List<FieldDefinition> internalFieldDefinitions = new();
 
         [SerializeField]
-        public List<OutputOverride> overrides = new List<OutputOverride>();
+        public List<OutputOverride> overrides = new();
 
-        public List<StateFunction.Step> customSteps = new List<StateFunction.Step>();
+        public List<StateFunction.Step> customSteps = new();
 
         #endregion Serialized Fields
 
@@ -132,6 +138,10 @@ namespace OneHamsa.Dexterity.Visual
                 enabled = false;
                 return;
             }
+            
+            // register all internal fields
+            foreach (var field in internalFieldDefinitions)
+                Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
             // only needed once
             if (reference == null) {
@@ -142,6 +152,8 @@ namespace OneHamsa.Dexterity.Visual
                 reference.name = $"{name} (Live Reference)";
                 // copy all references from this node to the runtime instance
                 reference.extends.AddRange(referenceAssets);
+                // copy all internal fields to the runtime instance
+                reference.internalFieldDefinitions.AddRange(GetInternalFieldDefinitions());
             }
             else
             {
@@ -231,6 +243,20 @@ namespace OneHamsa.Dexterity.Visual
             
             return fieldNames;
         }
+        
+        public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
+        {
+            foreach (var reference in referenceAssets)
+            {
+                if (reference == null)
+                    continue;
+
+                foreach (var fieldDefinition in reference.GetInternalFieldDefinitions())
+                    yield return fieldDefinition;
+            }
+            foreach (var fieldDefinition in internalFieldDefinitions)
+                yield return fieldDefinition;
+        }
         #endregion General Methods
 
         #region Fields & Gates
@@ -241,9 +267,11 @@ namespace OneHamsa.Dexterity.Visual
             // unregister all fields. this might be triggered by editor, so go through this list
             //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
             FinalizeFields(nonOutputFields.ToArray());
+
             // re-register all gates
             foreach (var gate in GetAllGates().ToArray())  // might manipulate gates within the loop
                 InitializeGate(gate);
+            
             // cache all outputs
             foreach (var output in outputFields.Values) {
                 output.RefreshReferences();
@@ -256,7 +284,7 @@ namespace OneHamsa.Dexterity.Visual
             // initialize all fields
             fields.ToList().ForEach(f =>
             {
-                if (f == null || f is OutputField)  // OutputFields are self-initialized 
+                if (f is null or OutputField)  // OutputFields are self-initialized 
                     return;
 
                 Manager.instance.RegisterField(f);
@@ -302,8 +330,9 @@ namespace OneHamsa.Dexterity.Visual
             {
                 InitializeFields(gate.outputFieldDefinitionId, new[] { gate.field });
             }
-            catch (BaseField.FieldInitializationException)
+            catch (BaseField.FieldInitializationException e)
             {
+                Debug.LogException(e, this);
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
                 FinalizeGate(gate);
             }
@@ -436,7 +465,7 @@ namespace OneHamsa.Dexterity.Visual
             return IStepList.Evaluate(stepEvalCache, GenerateFieldMask());
         }
 
-        private void MarkStateDirty(Node.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        private void MarkStateDirty(FieldNode.OutputField field, int oldValue, int newValue) => stateDirty = true;
         #endregion State Reduction
 
         #region Overrides
@@ -621,10 +650,13 @@ namespace OneHamsa.Dexterity.Visual
         #endregion Overrides
 
         #region Interface Implementation (Editor)
-        IEnumerable<string> IGateContainer.GetStateNames() => GetStateNames();
-        IEnumerable<string> IGateContainer.GetFieldNames() => GetFieldNames();
+        IEnumerable<FieldDefinition> IGateContainer.GetInternalFieldDefinitions() 
+            => GetInternalFieldDefinitions();
 
-        Node IGateContainer.node => this;
+        IEnumerable<string> IGateContainer.GetWhitelistedFieldNames()
+            => GetFieldNames();
+
+        FieldNode IGateContainer.node => this;
 
         public int GetLastEvaluationResult() => GetActiveState();
         List<StateFunction.Step> IStepList.steps => customSteps;
