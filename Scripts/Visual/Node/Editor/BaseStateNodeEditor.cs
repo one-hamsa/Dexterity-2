@@ -126,11 +126,25 @@ namespace OneHamsa.Dexterity
         private void ShowModifiers()
         {
             var modifiers = GetModifiers().ToList();
-            
-            // make sure all are up to date
-            foreach (var modifier in modifiers)
-                ModifierEditor.SyncModifierStates(modifier);
-            
+
+            if (baseNode.autoSyncModifiersStates)
+            {
+                // make sure all are up to date
+                foreach (var modifier in modifiers)
+                    ModifierEditor.SyncModifierStates(modifier);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox($"Auto-Sync for modifiers states is disabled, " +
+                                        $"states might not be synced", MessageType.Warning);
+                
+                if (GUILayout.Button("Sync Now"))
+                {
+                    foreach (var modifier in modifiers)
+                        ModifierEditor.SyncModifierStates(modifier);
+                }
+            }
+
             if (!(modifiersDebugOpen = EditorGUILayout.Foldout(modifiersDebugOpen, $"Modifiers ({modifiers.Count()})", true, EditorStyles.foldoutHeader)))
                 return;
             

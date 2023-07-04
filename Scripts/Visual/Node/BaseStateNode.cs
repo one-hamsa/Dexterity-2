@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
@@ -23,6 +24,8 @@ namespace OneHamsa.Dexterity
         
         [SerializeField]
         public List<TransitionDelay> delays = new();
+        [HideInInspector]
+        public bool autoSyncModifiersStates = true;
 
         [State(allowEmpty: true)]
         public string overrideState;
@@ -291,6 +294,13 @@ namespace OneHamsa.Dexterity
                 SetStateOverride(Database.instance.GetStateID(overrideState));
         }
         #endregion Overrides
+
+        
+        [ContextMenu("Toggle Auto Sync Modifiers States")]
+        public void ToggleAutoSyncModifiersStates()
+        {
+            autoSyncModifiersStates = !autoSyncModifiersStates;
+        }
 
         protected virtual void OnValidate()
         {
