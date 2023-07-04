@@ -6,16 +6,13 @@ using UnityEngine.UI;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    public class RectTransformModifier : ComponentModifier<RectTransform>, ISupportValueFreeze, ISupportPropertyFreeze
+    public class RectTransformPivotModifier : ComponentModifier<RectTransform>, ISupportPropertyFreeze
     {
-        public Vector2 baseSize;
-        public bool syncScale;
-
         [Serializable]
         public class Property : PropertyBase
         {
             // custom params
-            public Vector2 sizeDelta;
+            public Vector2 pivot;
         }
         
         [Tooltip("Check this flag only if the object may be re-parented in runtime")]
@@ -46,22 +43,17 @@ namespace OneHamsa.Dexterity.Builtins
             if (!transitionChanged)
                 return;
 
-            Vector2 sizeDelta = baseSize;
+            Vector2 pivot = default;
             foreach (var kv in transitionState)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;
 
-                sizeDelta += Vector2.Lerp(Vector2.zero, property.sizeDelta, value);
+                pivot += Vector2.Lerp(Vector2.zero, property.pivot, value);
             }
 
-            component.sizeDelta = sizeDelta;
+            component.pivot = pivot;
             
-            if (syncScale)
-            {
-                transform.localScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
-            }
-
             // update UI layout
             if (updateParentReference)
                 CollectTransformsToUpdate();
@@ -75,15 +67,7 @@ namespace OneHamsa.Dexterity.Builtins
                 return;
 
             var prop = property as Property;
-            prop.sizeDelta = component.sizeDelta - baseSize;
-        }
-
-        public void FreezeValue()
-        {
-            if (component == null)
-                return;
-                
-            baseSize = component.sizeDelta;
+            prop.pivot = component.pivot;
         }
     }
 }
