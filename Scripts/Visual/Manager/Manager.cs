@@ -35,7 +35,8 @@ namespace OneHamsa.Dexterity
         }
 
         public DexteritySettings settings;
-        private List<Modifier> modifiers = new();
+        private HashSet<Modifier> modifiers = new();
+        private List<Modifier> modifiersActiveList = new();
 
         public Graph graph { get; private set; }
         /// <summary>
@@ -58,8 +59,16 @@ namespace OneHamsa.Dexterity
         /// Adds a modifier to the update pool
         /// </summary>
         /// <param name="modifier">modifier to add</param>
-        public void AddModifier(Modifier modifier) => modifiers.Add(modifier);
-        
+        public void AddModifier(Modifier modifier)
+        {
+            if (modifier == null)
+            {
+                Debug.LogError("Cannot add null modifier", modifier);
+                return;
+            }
+            modifiers.Add(modifier);
+        }
+
         /// <summary>
         /// Removes a modifier from the update pool
         /// </summary>
@@ -93,8 +102,20 @@ namespace OneHamsa.Dexterity
 
             Profiler.BeginSample("Dexterity: Update Modifiers");
             // update all modifiers
-            foreach (var modifier in modifiers)
-                modifier.Refresh();
+            modifiersActiveList.Clear();
+            modifiersActiveList.AddRange(modifiers);
+            foreach (var modifier in modifiersActiveList)
+            {
+                try
+                {
+                    modifier.Refresh();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e, modifier);
+                }
+            }
+
             Profiler.EndSample();
         }
     }

@@ -210,6 +210,8 @@ namespace OneHamsa.Dexterity
         public void UpdateState()
         {
             stateDirty = true;
+            if (!isActiveAndEnabled)
+                return;
             
             // make sure state is up-to-date
             UpdateInternal(ignoreDelays: true);
@@ -226,6 +228,9 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public void JumpToState()
         {
+            if (!isActiveAndEnabled)
+                return;
+            
             // make sure state is up-to-date
             UpdateInternal(ignoreDelays: true);
 

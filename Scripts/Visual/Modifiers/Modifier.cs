@@ -102,6 +102,8 @@ namespace OneHamsa.Dexterity
 
         public virtual void HandleStateChange(int oldState, int newState)
         {
+            // subscribe to refreshes (removed when transition ends)
+            Manager.instance.AddModifier(this);
             lastState = oldState;
         }
 
@@ -169,6 +171,9 @@ namespace OneHamsa.Dexterity
 
         public virtual void HandleNodeEnabled()
         {
+            if (!enabled)
+                return;
+            
             var activeState = GetNode().GetActiveState();
             HandleStateChange(activeState, activeState);
 
@@ -254,6 +259,10 @@ namespace OneHamsa.Dexterity
                 return;
             
             base.Refresh();
+            
+            if (!transitionChanged)
+                // unsubscribe from refreshes until state changes
+                Manager.instance.RemoveModifier(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
