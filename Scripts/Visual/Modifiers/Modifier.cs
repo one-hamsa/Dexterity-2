@@ -103,7 +103,8 @@ namespace OneHamsa.Dexterity
         public virtual void HandleStateChange(int oldState, int newState)
         {
             // subscribe to refreshes (removed when transition ends)
-            Manager.instance.AddModifier(this);
+            if (Manager.instance != null)
+                Manager.instance.AddModifier(this);
             lastState = oldState;
         }
 
@@ -260,7 +261,7 @@ namespace OneHamsa.Dexterity
             
             base.Refresh();
             
-            if (!transitionChanged)
+            if (!transitionChanged && Manager.instance != null)
                 // unsubscribe from refreshes until state changes
                 Manager.instance.RemoveModifier(this);
         }
