@@ -101,9 +101,12 @@ namespace OneHamsa.Dexterity.Builtins
                     return;
                 }
             }
-            Debug.LogError("No supported component found for ColorModifier", this);
+
             if (Application.isPlaying)
+            {
+                Debug.LogError("No supported component found for ColorModifier", this);
                 enabled = false;
+            }
         }
 
         protected void Start()
@@ -112,12 +115,13 @@ namespace OneHamsa.Dexterity.Builtins
         }
         
         #if UNITY_EDITOR
-        public override string GetEditorComment()
+        public override (string, LogType) GetEditorComment()
         {
             if (component is CanvasGroup)
-                return "Only alpha will be applied to CanvasGroup's alpha";
-
-            return null;
+                return ("Only alpha will be applied to CanvasGroup's alpha", LogType.Warning);
+            if (component == null) 
+                return ("No supported component found", LogType.Error);
+            return base.GetEditorComment();
         }
         #endif
 

@@ -44,10 +44,17 @@ namespace OneHamsa.Dexterity
         {
             if (targets.Length == 1)
             {
-                var comment = modifier.GetEditorComment();
+                var (comment, type) = modifier.GetEditorComment();
                 if (!string.IsNullOrEmpty(comment))
                 {
-                    EditorGUILayout.HelpBox(comment, MessageType.Info);
+                    EditorGUILayout.HelpBox(comment, type switch
+                    {
+                        LogType.Error => MessageType.Error,
+                        LogType.Assert => MessageType.Error,
+                        LogType.Exception => MessageType.Error,
+                        LogType.Warning => MessageType.Warning,
+                        _ => MessageType.Info
+                    });
                 }
             }
             
