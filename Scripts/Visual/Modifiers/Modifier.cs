@@ -261,7 +261,7 @@ namespace OneHamsa.Dexterity
             
             base.Refresh();
             
-            if (!transitionChanged && Manager.instance != null)
+            if (!IsChanged() && Manager.instance != null)
                 // unsubscribe from refreshes until state changes
                 Manager.instance.RemoveModifier(this);
         }
