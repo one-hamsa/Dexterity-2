@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(SimpleEnumNode.manualStates)));
             
-            EditorGUILayout.HelpBox($"Node's state is controller manually. " +
+            EditorGUILayout.HelpBox($"Node's state is controlled manually. " +
                                     $"Use {nameof(SimpleEnumNode.SetState)}(string) to set the state", MessageType.Info);
         }
     }

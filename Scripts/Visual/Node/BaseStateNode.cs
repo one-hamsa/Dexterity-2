@@ -317,7 +317,7 @@ namespace OneHamsa.Dexterity
             {
                 // only log if initialState is not empty
                 if (!string.IsNullOrEmpty(initialState))
-                    Debug.LogError($"Initial State {initialState} for node {name} is not part of node's states, " +
+                    Debug.Log($"Initial State {initialState} for node {name} is not part of node's states, " +
                                    $"selecting {states[0]} instead", this);
                 
                 initialState = states[0];
