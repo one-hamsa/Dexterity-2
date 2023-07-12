@@ -19,6 +19,10 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
+            objectCtx = null;
+            if (targetObject == null)
+                return;
+            
             try
             {
                 objectCtx = new ObjectBooleanContext(this, nameof(targetProperty));
@@ -26,14 +30,13 @@ namespace OneHamsa.Dexterity.Builtins
             catch (ArgumentException e)
             {
                 Debug.LogException(e, context);
-                objectCtx = null;
             }
         }
 
         public override int GetValue() 
         {
             if (objectCtx == null)
-                return FieldNode.defaultFieldValue;
+                return negate ? 1 : 0;
 
             var value = objectCtx.GetValue() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;
