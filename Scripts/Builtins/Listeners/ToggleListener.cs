@@ -12,6 +12,8 @@ namespace OneHamsa.Dexterity.Builtins
     {
         public bool toggled;
         public UnityEvent<bool> onToggle;
+        public UnityEvent onToggleOn;
+        public UnityEvent onToggleOff;
         
         private ClickListener clickListener;
         
@@ -35,22 +37,31 @@ namespace OneHamsa.Dexterity.Builtins
 
         private void OnClick() => Toggle();
 
+        private void FireEvents()
+        {
+            onToggle.Invoke(toggled);
+            if (toggled)
+                onToggleOn.Invoke();
+            else
+                onToggleOff.Invoke();
+        }
+
         public void Toggle()
         {
             toggled = !toggled;
-            onToggle.Invoke(toggled);
+            FireEvents();
         }
 
         public void ToggleOn()
         {
             toggled = true;
-            onToggle.Invoke(toggled);
+            FireEvents();
         }
 
         public void ToggleOff()
         {
             toggled = false;
-            onToggle.Invoke(toggled);
+            FireEvents();
         }
     }
 }

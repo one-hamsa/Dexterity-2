@@ -14,6 +14,9 @@ namespace OneHamsa.Dexterity
         {
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(ObjectSourceEnumNode.targetObject)));
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(ObjectSourceEnumNode.targetProperty)));
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(ObjectSourceEnumNode.booleanTrueState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(ObjectSourceEnumNode.booleanFalseState)));
         }
     }
 }

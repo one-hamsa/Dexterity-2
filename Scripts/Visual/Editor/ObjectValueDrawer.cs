@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity
             {
                 foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    if (method.GetParameters().Length == 0 && attr.fieldType.IsAssignableFrom(method.ReturnType))
+                    if (method.GetParameters().Length == 0 && attr.supportedTypes.Supports(method.ReturnType))
                         options.Add(method);
                 }
             }
@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity
             {
                 foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    if (attr.fieldType.IsAssignableFrom(prop.PropertyType))
+                    if (attr.supportedTypes.Supports(prop.PropertyType))
                         options.Add(prop);
                 }
             }
@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity
             {
                 foreach (var field in objType.GetFields(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    if (attr.fieldType.IsAssignableFrom(field.FieldType))
+                    if (attr.supportedTypes.Supports(field.FieldType))
                         options.Add(field);
                 }
             }

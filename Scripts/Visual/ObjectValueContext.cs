@@ -12,14 +12,22 @@ namespace OneHamsa.Dexterity
     /// it is AOT safe and can be used in builds. some work required to make it possible - AOT
     /// does not support all types of delegates, so a void delegate is used instead of a generic Func<T> one.
     /// </summary>
-    public abstract class ObjectValueContext
+    public class ObjectValueContext
     {
+        [Flags]
+        public enum ValueType
+        {
+            Boolean = 1 << 0,
+            Enum = 1 << 1,
+        }
+        
         protected delegate void AssignDelegate();
         protected AssignDelegate assign;
         protected readonly UnityEngine.Object unityObject;
         public readonly Type type;
+        protected ValueType actualObjectValueType;
 
-        protected ObjectValueContext(object callerObject, string attributeFieldName) 
+        public ObjectValueContext(object callerObject, string attributeFieldName)
         {
             if (callerObject == null)
                 throw new ArgumentException($"caller object is null");
@@ -44,6 +52,7 @@ namespace OneHamsa.Dexterity
             if (methodInfo != null)
             {
                 type = methodInfo.ReturnType;
+                FindActualValueType(attr.supportedTypes);
                 assign = CreateDelegateForMethod(methodInfo);
                 return;
             }
@@ -51,13 +60,16 @@ namespace OneHamsa.Dexterity
             var fieldInfo = unityObject.GetType().GetField(field, BindingFlags.Public | BindingFlags.Instance);
             if (fieldInfo != null) {
                 type = fieldInfo.FieldType;
+                FindActualValueType(attr.supportedTypes);
                 assign = CreateDelegateForField(fieldInfo);
                 return;
             }
             
             var propertyInfo = unityObject.GetType().GetProperty(field, BindingFlags.Public | BindingFlags.Instance);
-            if (propertyInfo != null) {
+            if (propertyInfo != null) 
+            {
                 type = propertyInfo.PropertyType;
+                FindActualValueType(attr.supportedTypes);
                 assign = CreateDelegateForProperty(propertyInfo);
                 return;
             }
@@ -65,77 +77,111 @@ namespace OneHamsa.Dexterity
             throw new ArgumentException($"could not read reflected property {field} in {unityObject.name}");
         }
 
-        protected abstract AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo);
-        protected abstract AssignDelegate CreateDelegateForField(FieldInfo fieldInfo);
-        protected abstract AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo);
-    }
-
-    public class ObjectBooleanContext : ObjectValueContext
-    {
-        private bool booleanValue;
-        private delegate bool GetDelegate();
-        private GetDelegate get;
-        
-        public ObjectBooleanContext(object callerObject, string attributeFieldName) 
-            : base(callerObject, attributeFieldName)
+        private void FindActualValueType(ValueType valueTypes)
         {
+            if (valueTypes.Supports(type))
+            {
+                actualObjectValueType = type == typeof(bool) ? ValueType.Boolean : ValueType.Enum;
+                return;
+            }
+            
+            throw new ArgumentException($"field of type {type.Name} is not supported by this ObjectValueContext");
+        }
+
+        protected AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
+        {
+            return actualObjectValueType switch 
+            {
+                ValueType.Boolean => Boolean_CreateDelegateForMethod(methodInfo),
+                ValueType.Enum => Enum_CreateDelegateForMethod(methodInfo),
+                _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
+            };
+        }
+
+        protected AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
+        {
+            return actualObjectValueType switch 
+            {
+                ValueType.Boolean => Boolean_CreateDelegateForField(fieldInfo),
+                ValueType.Enum => Enum_CreateDelegateForField(fieldInfo),
+                _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
+            };
+        }
+
+        protected AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
+        {
+            return actualObjectValueType switch 
+            {
+                ValueType.Boolean => Boolean_CreateDelegateForProperty(propertyInfo),
+                ValueType.Enum => Enum_CreateDelegateForProperty(propertyInfo),
+                _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
+            };
+        }
+
+        public int GetValueAsInt()
+        {
+            return actualObjectValueType switch 
+            {
+                ValueType.Boolean => Boolean_GetValue() ? 1 : 0,
+                ValueType.Enum => Enum_GetValue(),
+                _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
+            };
         }
         
-        public bool GetValue()
+        #region Boolean
+        private bool boolean_value;
+        private delegate bool Boolean_GetDelegate();
+        private Boolean_GetDelegate boolean_get;
+        
+        public bool Boolean_GetValue()
         {
             assign();
-            return booleanValue;
+            return boolean_value;
         }
         
-        private void Assign() => booleanValue = get();
+        private void Boolean_Assign() => boolean_value = boolean_get();
 
-        protected override AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
+        protected AssignDelegate Boolean_CreateDelegateForMethod(MethodInfo methodInfo)
         {
-            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
-            return Assign;
+            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), unityObject, methodInfo);
+            return Boolean_Assign;
         }
 
-        protected override AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
+        protected AssignDelegate Boolean_CreateDelegateForField(FieldInfo fieldInfo)
         {
             var expr = Expression.Field(Expression.Constant(unityObject), fieldInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(booleanValue));
+            var field = Expression.Field(Expression.Constant(this), nameof(boolean_value));
             var assignExpr = Expression.Assign(field, expr);
             
             return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
         }
 
-        protected override AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
+        protected AssignDelegate Boolean_CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
-            get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
-            return Assign;
+            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), unityObject, propertyInfo.GetGetMethod());
+            return Boolean_Assign;
         }
-    }
+        #endregion
     
-    public class ObjectEnumContext : ObjectValueContext
-    {
+        #region Enum
         private int enumValue;
-        private delegate int GetDelegate();
-        private GetDelegate get;
+        private delegate int Enum_GetDelegate();
+        private Enum_GetDelegate enum_get;
         
-        public ObjectEnumContext(object callerObject, string attributeFieldName) 
-            : base(callerObject, attributeFieldName)
-        {
-        }
-        
-        public int GetValue()
+        public int Enum_GetValue()
         {
             assign();
             return enumValue;
         }
         
-        private void Assign() => enumValue = get();
+        private void Enum_Assign() => enumValue = enum_get();
 
-        protected override AssignDelegate CreateDelegateForMethod(MethodInfo methodInfo)
+        protected AssignDelegate Enum_CreateDelegateForMethod(MethodInfo methodInfo)
         {
             try
             {
-                get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, methodInfo);
-                return Assign;
+                enum_get = (Enum_GetDelegate)Delegate.CreateDelegate(typeof(Enum_GetDelegate), unityObject, methodInfo);
+                return Enum_Assign;
             }
             catch (Exception)
             {
@@ -149,7 +195,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        protected override AssignDelegate CreateDelegateForField(FieldInfo fieldInfo)
+        protected AssignDelegate Enum_CreateDelegateForField(FieldInfo fieldInfo)
         {
             var expr = Expression.Field(Expression.Constant(unityObject), fieldInfo);
             var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
@@ -159,12 +205,12 @@ namespace OneHamsa.Dexterity
             return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
         }
 
-        protected override AssignDelegate CreateDelegateForProperty(PropertyInfo propertyInfo)
+        protected AssignDelegate Enum_CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
             try
             {
-                get = (GetDelegate)Delegate.CreateDelegate(typeof(GetDelegate), unityObject, propertyInfo.GetGetMethod());
-                return Assign;
+                enum_get = (Enum_GetDelegate)Delegate.CreateDelegate(typeof(Enum_GetDelegate), unityObject, propertyInfo.GetGetMethod());
+                return Enum_Assign;
             }
             catch (Exception)
             {
@@ -176,6 +222,21 @@ namespace OneHamsa.Dexterity
                 
                 return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
             }
+        }
+        #endregion
+    }
+    
+    public static class ObjectValueContextExtensions
+    {
+        public static bool Supports(this ObjectValueContext.ValueType valueTypes, Type type)
+        {
+            if (type == typeof(bool))
+                return valueTypes.HasFlag(ObjectValueContext.ValueType.Boolean);
+
+            if (typeof(Enum).IsAssignableFrom(type) && !type.IsDefined(typeof(FlagsAttribute), false))
+                return valueTypes.HasFlag(ObjectValueContext.ValueType.Enum);
+
+            return false;
         }
     }
 }

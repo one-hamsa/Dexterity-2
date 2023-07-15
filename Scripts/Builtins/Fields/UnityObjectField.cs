@@ -9,11 +9,11 @@ namespace OneHamsa.Dexterity.Builtins
     public class UnityObjectField : BaseField
     {
         public UnityEngine.Object targetObject;
-        [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(bool))]
+        [ObjectValue(objectFieldName: nameof(targetObject), ObjectValueContext.ValueType.Boolean)]
         public string targetProperty;
         public bool negate;
 
-        ObjectBooleanContext objectCtx;
+        ObjectValueContext objectCtx;
 
         protected override void Initialize(FieldNode context)
         {
@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity.Builtins
             
             try
             {
-                objectCtx = new ObjectBooleanContext(this, nameof(targetProperty));
+                objectCtx = new ObjectValueContext(this, nameof(targetProperty));
             }
             catch (ArgumentException e)
             {
@@ -38,7 +38,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (objectCtx == null)
                 return negate ? 1 : 0;
 
-            var value = objectCtx.GetValue() ? 1 : 0;
+            var value = objectCtx.Boolean_GetValue() ? 1 : 0;
             return negate ? (value + 1) % 2 : value;
         }
     }

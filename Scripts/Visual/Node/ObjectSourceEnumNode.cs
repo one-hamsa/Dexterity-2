@@ -10,18 +10,26 @@ namespace OneHamsa.Dexterity
     public class ObjectSourceEnumNode : BaseEnumStateNode
     {
         public UnityEngine.Object targetObject;
-        [ObjectValue(objectFieldName: nameof(targetObject), fieldType: typeof(Enum))]
+
+        [ObjectValue(objectFieldName: nameof(targetObject), 
+            ObjectValueContext.ValueType.Boolean | ObjectValueContext.ValueType.Enum)]
         public string targetProperty;
 
-        private ObjectEnumContext objectCtx;
-        public int targetEnumValue => objectCtx?.GetValue() ?? 0;
+        [Header("Boolean Source")] 
+        public string booleanTrueState = "On";
+        public string booleanFalseState = "Off";
+
+        private ObjectValueContext objectCtx;
+        public int targetEnumValue => objectCtx?.GetValueAsInt() ?? 0;
         public Type targetEnumType => objectCtx?.type;
 
         public void InitializeObjectContext() 
         {
             objectCtx = null;
             if (targetObject != null && !string.IsNullOrEmpty(targetProperty))
-                objectCtx = new ObjectEnumContext(this, nameof(targetProperty));
+            {
+                objectCtx = new ObjectValueContext(this, nameof(targetProperty));
+            }
         }
 
         protected override void Initialize()
@@ -33,7 +41,20 @@ namespace OneHamsa.Dexterity
         protected override IEnumerable<(string enumOption, int enumValue)> GetEnumOptions()
         {
             if (targetEnumType == null)
+            {
+                yield return (initialState, 0);
                 yield break;
+            }
+
+            // bool
+            if (targetEnumType == typeof(bool))
+            {
+                yield return (booleanFalseState, 0);
+                yield return (booleanTrueState, 1);
+                yield break;
+            }
+            
+            // enum
             foreach (var enumOption in Enum.GetNames(targetEnumType)) 
             {
                 yield return (enumOption, (int)Enum.Parse(targetEnumType, enumOption));
