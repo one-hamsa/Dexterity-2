@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using UnityEngine;
 
 namespace OneHamsa.Dexterity
 {
@@ -149,6 +150,7 @@ namespace OneHamsa.Dexterity
 
         protected AssignDelegate Boolean_CreateDelegateForField(FieldInfo fieldInfo)
         {
+            Debug.LogWarning($"using expressions for field {fieldInfo.Name} in {unityObject.name} (slower and more GC)", unityObject);
             var expr = Expression.Field(Expression.Constant(unityObject), fieldInfo);
             var field = Expression.Field(Expression.Constant(this), nameof(boolean_value));
             var assignExpr = Expression.Assign(field, expr);
@@ -186,6 +188,10 @@ namespace OneHamsa.Dexterity
             catch (Exception)
             {
                 // can happen when the enum is not an int (flags)
+                Debug.LogWarning(
+                    $"could not create delegate for method {methodInfo.Name} in {unityObject.name}, " +
+                    $"falling back to expressions (slower and more GC)", unityObject);
+                
                 var expr = Expression.Call(Expression.Constant(unityObject), methodInfo);
                 var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
@@ -197,6 +203,7 @@ namespace OneHamsa.Dexterity
 
         protected AssignDelegate Enum_CreateDelegateForField(FieldInfo fieldInfo)
         {
+            Debug.LogWarning($"using expressions for field {fieldInfo.Name} in {unityObject.name} (slower and more GC)", unityObject);
             var expr = Expression.Field(Expression.Constant(unityObject), fieldInfo);
             var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
             var convertExpr = Expression.Convert(expr, typeof(int));
@@ -215,6 +222,10 @@ namespace OneHamsa.Dexterity
             catch (Exception)
             {
                 // can happen when the enum is not an int (flags)
+                Debug.LogWarning(
+                    $"could not create delegate for property {propertyInfo.Name} in {unityObject.name}, " +
+                    $"falling back to expressions (slower and more GC)", unityObject);
+                
                 var expr = Expression.Property(Expression.Constant(unityObject), propertyInfo);
                 var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
