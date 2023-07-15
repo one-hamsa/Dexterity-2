@@ -21,7 +21,15 @@ namespace OneHamsa.Dexterity.Builtins
                 {
                     // just make sure the modifier finds its node before we reparent and enable it
                     modifier._node = modifier.GetNode();
-                    ForceAwake(modifier.gameObject);
+                    try
+                    {
+                        ForceAwake(modifier.gameObject);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"failed to force awake {modifier.gameObject.name} on {gameObject.name}", this);
+                        Debug.LogException(e);
+                    }
                 }
             }
         }
