@@ -90,6 +90,11 @@ namespace OneHamsa.Dexterity
         {
             if (stateNames.Count == 0)
                 throw new Exception($"tried to get state id of {name} but stateNames is empty");
+            
+            // lazy
+            var indexOf = stateNames.IndexOf(name);
+            if (indexOf == -1)
+                RegisterState(name);
 
             return stateNames.IndexOf(name);
         }
