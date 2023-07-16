@@ -15,6 +15,7 @@ namespace OneHamsa.Dexterity.Builtins
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
+        private static List<Collider> colliderDisabledByTmp = new();
 
         [Serializable]
         public class Property : PropertyBase
@@ -27,8 +28,13 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Awake();
 
-            cachedColliders = recursive 
-                ? GetComponentsInChildren<Collider>(true).Where(c => c.enabled).ToList() 
+            RefreshTrackedColliders();
+        }
+
+        public void RefreshTrackedColliders()
+        {
+            cachedColliders = recursive
+                ? GetComponentsInChildren<Collider>(true).Where(c => c.enabled).ToList()
                 : GetComponents<Collider>().ToList();
         }
 
@@ -61,6 +67,17 @@ namespace OneHamsa.Dexterity.Builtins
                 if (cachedColliders[i] == null) 
                     cachedColliders.RemoveAt(i);
             }
+            
+            // use aux list to avoid allocations
+            colliderDisabledByTmp.Clear();
+            foreach (var c in colliderDisabledBy.Keys)
+            {
+                if (c == null)
+                    colliderDisabledByTmp.Add(c);
+            }
+            
+            foreach (var c in colliderDisabledByTmp)
+                colliderDisabledBy.Remove(c);
         }
 
         public void OnDestroy()
