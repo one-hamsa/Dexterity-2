@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Builtins
                 propagate = false;
             }
         }
-
+        
         const float rayLength = 100f;
         const int maxHits = 20;
 
@@ -30,6 +30,8 @@ namespace OneHamsa.Dexterity.Builtins
 
         public LayerMask layerMask = int.MaxValue;
         public float repeatHitCooldown = 0f;
+        [Tooltip("How far back should the ray be casted from this transform?")]
+        public float backRayLength = .25f;
 
         public RaycastController[] mutuallyExclusiveControllers;
         public bool defaultController;
@@ -177,8 +179,9 @@ namespace OneHamsa.Dexterity.Builtins
                 return;
 
             var t = transform;
-            Vector3 origin = t.position;
-            Vector3 direction = t.forward;
+            var f = t.forward;
+            Vector3 origin = t.position - f * backRayLength;
+            Vector3 direction = f;
 
             ray = new Ray(origin, direction);
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
