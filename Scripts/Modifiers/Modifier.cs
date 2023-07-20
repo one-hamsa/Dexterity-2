@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity
             return result;
         }
 
-        public virtual bool animatableInEditor => true;
+        public virtual bool animatableInEditor => isActiveAndEnabled;
 
         private Dictionary<int, PropertyBase> propertiesCache = null;
         private bool foundNode;
@@ -212,7 +212,8 @@ namespace OneHamsa.Dexterity
             TryFindNode();
             if (!EnsureValidState())
             {
-                enabled = false;
+                if (Application.isPlaying)
+                    enabled = false;
                 return;
             }
             
@@ -267,7 +268,7 @@ namespace OneHamsa.Dexterity
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        BaseStateNode TryFindNode()
+        protected BaseStateNode TryFindNode()
         {
             if (Application.isPlaying && foundNode) 
                 return _node;

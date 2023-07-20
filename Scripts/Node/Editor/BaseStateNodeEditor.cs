@@ -269,19 +269,25 @@ namespace OneHamsa.Dexterity
                 // collect all children modifiers
                 var allModifiers = GetModifiers();
                 var modifiers = new HashSet<Modifier>();
+                var skippedModifiersPaths = "";
+                var skippedModifiersCount = 0;
                 foreach (var modifier in allModifiers)
                 {
-                    if (!modifier.isActiveAndEnabled)
-                        continue;
-                    
                     if (!modifier.animatableInEditor)
                     {
-                        Debug.LogWarning($"{modifier.GetType().Name} is not animatable in editor. It will not be previewed.", modifier);
+                        if (modifier.isActiveAndEnabled)
+                        {
+                            skippedModifiersPaths += $"{GetPath(modifier.gameObject)} ({modifier.GetType().Name})\n";
+                            skippedModifiersCount++;
+                        }
+
                         continue;
                     }
                     
                     modifiers.Add(modifier);   
                 }
+                if (skippedModifiersCount > 0)
+                    Debug.Log($"Editor Preview: not animating {skippedModifiersCount} modifiers\n{skippedModifiersPaths}");
 
                 coro = EditorCoroutineUtility.StartCoroutine(
                     ModifierEditor.AnimateStateTransition(modifiers, previewStates[previewStateIndex]

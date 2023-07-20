@@ -1,13 +1,14 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using OneHamsa.Dexterity.Utilities;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    public class ActivateModifier : Modifier
+    public class ActivateModifier : Modifier, ISceneEditingHooks, IPrefabEditingHooks
     {
-        private Coroutine coro;
-        public override bool animatableInEditor => false;
+        public override bool animatableInEditor => enabled;
+        [SerializeField] [HideInInspector] bool activeInEdit;
 
         [Serializable]
         public class Property : PropertyBase
@@ -16,55 +17,47 @@ namespace OneHamsa.Dexterity.Builtins
             public bool active;
         }
 
-
-        public override void Refresh()
+        public override void HandleStateChange(int oldState, int newState)
         {
-            // don't do anything here, we'll run update loop as a coroutine on node (to keep alive when inactive)
-        }
-
-        IEnumerator UpdateAlwaysCoro()
-        {
-            while (true)
-            {
-                if (this != null && GetNode() != null && GetNode().isActiveAndEnabled && enabled)
-                {
-                    base.Refresh();
-
-                    if (transitionChanged)
-                        gameObject.SetActive(((Property)GetProperty(GetNode().GetActiveState())).active);
-                }
-
-                yield return null;
-            }
-        }
-
-        public override void Awake()
-        {
-            base.Awake();
-            
-            if (enabled && !gameObject.activeInHierarchy)
-                // enable anyway (so that coroutine can be started)
-                base.OnEnable();
-        }
-
-        public override void HandleNodeEnabled()
-        {
-            base.HandleNodeEnabled();
-            coro ??= Manager.instance.StartCoroutine(UpdateAlwaysCoro());
+            base.HandleStateChange(oldState, newState);
+            var node = GetNode();
+            if (this != null && node != null && node.isActiveAndEnabled && enabled)
+                gameObject.SetActive(((Property)GetProperty(newState)).active);
         }
 
         protected override void OnDisable()
         {
-            // actually, don't cleanup just yet
+            // actually, don't cleanup just yet. we rely on coroutine
         }
 
         public void OnDestroy()
         {
             // cleanup now
             base.OnDisable();
-            
-            if (coro != null && Manager.instance != null)
-                Manager.instance.StopCoroutine(coro);
         }
+        
+		void ISceneEditingHooks.OnSceneSaving(bool duringBuild) { if (!duringBuild) PrepareForSave(); }
+		void ISceneEditingHooks.OnSceneSaved(bool duringBuild) { if (!duringBuild) PrepareForEdit(); }
+		void ISceneEditingHooks.OnSceneOpened(bool duringBuild) { if (!duringBuild) PrepareForEdit(); }
+
+		void IPrefabEditingHooks.OnPrefabSaving() { PrepareForSave(); }
+		void IPrefabEditingHooks.OnPrefabSaved() { PrepareForEdit(); }
+		void IPrefabEditingHooks.OnPrefabStageOpened() { PrepareForEdit(); }
+
+		void PrepareForSave() 
+        {
+#if UNITY_EDITOR
+			activeInEdit = gameObject.activeSelf;
+			gameObject.SetActive(true);
+			UnityEditor.EditorUtility.SetDirty(gameObject);
+#endif
+		}
+
+		void PrepareForEdit() 
+        {
+#if UNITY_EDITOR
+			gameObject.SetActive(activeInEdit);
+#endif
+		}
     }
 }
