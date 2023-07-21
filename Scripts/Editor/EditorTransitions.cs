@@ -13,6 +13,12 @@ namespace OneHamsa.Dexterity
         public static IEnumerator TransitionAsync(IEnumerable<Modifier> modifiers, 
             string fromState, string toState, float speed = 1f, Action onEnd = null)
         {
+            if (Application.isPlaying)
+            {
+                Debug.LogError($"{nameof(TransitionAsync)} called in play mode");
+                yield break;
+            }
+            
             modifiers = modifiers.ToList();
             // make sure it's not called with non-animatable modifiers
             if (modifiers.Any(m => !m.animatableInEditor))
@@ -46,9 +52,6 @@ namespace OneHamsa.Dexterity
                 Database.Destroy();
                 using var db = Database.Create(DexteritySettingsProvider.settings);
 
-                // timeScale doesn't behave nicely in editor
-                //Core.instance.timeScale = speed;
-
                 foreach (var modifier in modifiers)
                     modifier.PrepareTransition_Editor(fromState, toState);
 
@@ -56,7 +59,7 @@ namespace OneHamsa.Dexterity
                 bool anyChanged;
                 do
                 {
-                    // immitate a frame
+                    // imitate a frame
                     var beforeYield = EditorApplication.timeSinceStartup;
                     yield return null;
                     var dt = EditorApplication.timeSinceStartup - beforeYield;
@@ -73,6 +76,7 @@ namespace OneHamsa.Dexterity
                         if (modifier == null)
                             continue;
                         
+                        // Core.instance.timeScale doesn't behave nicely in editor, so we have to do it manually
                         modifier.ProgressTime_Editor(dt * speed);
 
                         modifier.Refresh();
