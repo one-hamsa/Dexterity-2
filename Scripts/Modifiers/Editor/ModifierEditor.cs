@@ -4,7 +4,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
-using System.Collections;
 using Unity.EditorCoroutines.Editor;
 using Object = UnityEngine.Object;
 
@@ -21,7 +20,7 @@ namespace OneHamsa.Dexterity
         private List<SerializedProperty> customProps = new();
         private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
         private bool hasUpdateOverride;
-
+        private string lastAnimatedState;
         private bool propertiesUpdated { get; set; } 
 
         private void OnEnable() 
@@ -336,8 +335,6 @@ namespace OneHamsa.Dexterity
                 sortedStateProps.Add((propState, property, i));
             }
 
-            var node = ((Modifier)target).GetNode();
-
             // draw the editor for each value in property
             foreach (var (propState, property, i) in sortedStateProps)
             {
@@ -381,7 +378,7 @@ namespace OneHamsa.Dexterity
                         return;
 
                     GUI.contentColor = coro != null ? Color.green : origColor;
-                    GUI.enabled = modifier.animatableInEditor && modifier.GetNode() != null;
+                    GUI.enabled = modifier.animatableInEditor;
                     if (GUILayout.Button(EditorGUIUtility.IconContent("d_PlayButton"),
                             GUILayout.Width(25)))
                     {
@@ -389,9 +386,14 @@ namespace OneHamsa.Dexterity
                         {
                             if (coro != null)
                                 EditorCoroutineUtility.StopCoroutine(coro);
-                            coro = EditorCoroutineUtility.StartCoroutine(
-                                AnimateStateTransition(new[] { modifier }, propertyBase.state, speed,
-                                    () => coro = null), this);
+
+                            var sourceState = !string.IsNullOrEmpty(lastAnimatedState)
+                                ? lastAnimatedState 
+                                : modifier.properties.OrderByDescending(p => p.state != propertyBase.state).First().state;
+                            lastAnimatedState = propertyBase.state;
+                            coro = EditorCoroutineUtility.StartCoroutine(EditorTransitions.TransitionAsync(new[] { modifier }, 
+                                    sourceState, propertyBase.state,
+                                    speed, () => coro = null), this);
                         }
 
                         if (Event.current.button == 1)
@@ -635,134 +637,6 @@ namespace OneHamsa.Dexterity
             EditorUtility.SetDirty(settings);
         }
 
-        public static IEnumerator AnimateStateTransition(IEnumerable<Modifier> modifiers, 
-        string state, float speed = 1f, Action onEnd = null)
-        {
-            modifiers = modifiers.ToList();
-            // make sure it's not called with non-animatable modifiers
-            if (modifiers.Any(m => !m.animatableInEditor))
-            {
-                Debug.LogError($"{nameof(AnimateStateTransition)} called with non-animatable modifiers");
-                yield break;
-            }
-
-            // record all components on modifiers for undo
-            foreach (var modifier in modifiers) {
-                Undo.RegisterCompleteObjectUndo(modifier.GetComponents<Component>().ToArray(), "Editor Transition");
-            }
-            Undo.FlushUndoRecordObjects();
-            
-            var animationContexts = modifiers.Select(m => m.GetEditorAnimationContext()).ToList();
-            IEnumerable<BaseStateNode> getNodes() 
-                => animationContexts.Select(c => c.GetNode()).ToHashSet();
-
-            void SetDirtyAll()
-            {
-                foreach (var modifier in modifiers)
-                {
-                    foreach (var obj in modifier.GetComponents<Component>().Cast<Object>()
-                                 .Concat(modifiers.Select(m => m.gameObject)))
-                    {
-                        EditorUtility.SetDirty(obj);
-                    }
-                }
-            }
-
-            try
-            {
-                // destroy previous instance, it's ok because it's editor time
-                Database.Destroy();
-                using var db = Database.Create(DexteritySettingsProvider.settings);
-
-                // timeScale doesn't behave nicely in editor
-                //Core.instance.timeScale = speed;
-
-                // setup
-                foreach (var n in getNodes())
-                {
-                    db.Register(n);
-                    n.InitializeEditor();
-                }
-
-                // 
-                foreach (var ctx in animationContexts)
-                    ctx.Initialize();
-
-                foreach (var n in getNodes())
-                {
-                    if (
-                        // it's the first run (didn't run an editor transition before)
-                        n.GetActiveState() == StateFunction.emptyStateId
-                        // activeState might be invalid at that point
-                        || !n.GetStateIDs().Contains(n.GetActiveState()))
-                    {
-                        // reset to initial state 
-                        n.SetActiveState_Editor(db.GetStateID(n.initialState));
-                    }
-
-                    n.timeSinceStateChange = 0f;
-                }
-
-                foreach (var ctx in animationContexts)
-                    ctx.OnNodeEnabled();
-
-                foreach (var n in getNodes())
-                {
-                    var oldState = n.GetActiveState();
-                    n.SetActiveState_Editor(db.GetStateID(state));
-                    foreach (var ctx in animationContexts)
-                        ctx.HandleStateChange(oldState, n.GetActiveState());
-                }
-
-                SetDirtyAll();
-                bool anyChanged;
-                var lastUpdate = EditorApplication.timeSinceStartup;
-                do
-                {
-                    // immitate a frame
-                    yield return null;
-
-                    // stop if something went wrong
-                    if (Database.instance == null)
-                        break;
-
-                    foreach (var n in getNodes())
-                    {
-                        n.deltaTime = (EditorApplication.timeSinceStartup - lastUpdate) * speed;
-                        n.timeSinceStateChange += n.deltaTime;
-                    }
-
-                    lastUpdate = EditorApplication.timeSinceStartup;
-
-                    // transition
-                    anyChanged = false;
-                    foreach (var ctx in animationContexts)
-                    {
-                        // guard for async changes that might result in reference loss
-                        if (!ctx.IsValid())
-                            continue;
-
-                        anyChanged |= ctx.Refresh();
-                    }
-
-                    if (anyChanged)
-                    {
-                        SceneView.RepaintAll();
-                    }
-                } while (anyChanged);
-                
-                SetDirtyAll();
-            }
-            finally
-            {
-                foreach (var ctx in animationContexts)
-                    ctx.Dispose();
-            }
-
-            Database.Destroy();
-            onEnd?.Invoke();
-        }
-
         static void DrawSeparator()
         {
             EditorGUILayout.Space();
@@ -779,9 +653,9 @@ namespace OneHamsa.Dexterity
             private Editor assetEditor;
             private Vector2 scrollPos;
 
-            public static PopUpAssetInspector Create(Object asset)
+            public static ModifierEditor.PopUpAssetInspector Create(Object asset)
             {
-                var window = CreateWindow<PopUpAssetInspector>($"{asset.name} | {asset.GetType().Name}");
+                var window = CreateWindow<ModifierEditor.PopUpAssetInspector>($"{asset.name} | {asset.GetType().Name}");
                 window.asset = asset;
                 window.assetEditor = CreateEditor(asset);
                 return window;

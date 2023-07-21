@@ -88,9 +88,6 @@ namespace OneHamsa.Dexterity
         /// <returns>State ID (runtime, may vary from run to run)</returns>
         public int GetStateID(string name)
         {
-            if (stateNames.Count == 0)
-                throw new Exception($"tried to get state id of {name} but stateNames is empty");
-            
             // lazy
             var indexOf = stateNames.IndexOf(name);
             if (indexOf == -1)
@@ -131,6 +128,11 @@ namespace OneHamsa.Dexterity
                 // special case for -1, which is the empty state
                 return null;
 
+            if (id >= stateNames.Count)
+            {
+                Debug.LogError($"state id {id} is out of range");
+                return null;
+            }
             return stateNames[id];
         }
 

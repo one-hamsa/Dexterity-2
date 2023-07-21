@@ -243,6 +243,7 @@ namespace OneHamsa.Dexterity
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             GUILayout.Label("Preview");
+            var sourceState = previewStateIndex == 0 ? baseNode.initialState : previewStates[previewStateIndex];
             var newIndex = EditorGUILayout.Popup("", previewStateIndex, previewStateNames.ToArray(),
                 GUILayout.MaxWidth(150));
             if (newIndex != 0)
@@ -290,8 +291,9 @@ namespace OneHamsa.Dexterity
                     Debug.Log($"Editor Preview: not animating {skippedModifiersCount} modifiers\n{skippedModifiersPaths}");
 
                 coro = EditorCoroutineUtility.StartCoroutine(
-                    ModifierEditor.AnimateStateTransition(modifiers, previewStates[previewStateIndex]
-                    , speeds[speedIndex], () => coro = null), this);
+                    EditorTransitions.TransitionAsync(modifiers, 
+                        sourceState, previewStates[previewStateIndex], 
+                        speeds[speedIndex], () => coro = null), this);
             }
             EditorGUILayout.EndHorizontal();
         }

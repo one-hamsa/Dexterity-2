@@ -67,9 +67,9 @@ namespace OneHamsa.Dexterity
             CacheComponent();
         }
 
-        public override void PrepareEditorTransition()
+        public override void PrepareTransition_Editor(string initialState, string targetState)
         {
-            base.PrepareEditorTransition();
+            base.PrepareTransition_Editor(initialState, targetState);
             CacheComponent();
         }
 

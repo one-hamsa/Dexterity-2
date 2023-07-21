@@ -45,9 +45,22 @@ namespace OneHamsa.Dexterity
         [HideInInspector] public List<string> lastSeenStates = new();
         [HideInInspector] public bool manualStateEditing = false;
 
+        private int[] cachedStates;
+        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
+        private int lastState = StateFunction.emptyStateId;
+
+        protected override int[] states => cachedStates;
+        protected override double deltaTime => myDeltaTime;
+        protected override double timeSinceStateChange => myTimeSinceStateChange;
+        private double myDeltaTime = 0d;
+        private double myTimeSinceStateChange = 0d;
+        private int activeState;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BaseStateNode GetNode() => TryFindNode();
         public float transitionProgress => GetTransitionProgress(GetNode().GetActiveState());
+        public virtual bool animatableInEditor => isActiveAndEnabled;
+
         public float GetTransitionProgress(int state)
         {
             if (transitionState == null)
@@ -56,11 +69,31 @@ namespace OneHamsa.Dexterity
             return result;
         }
 
-        public virtual bool animatableInEditor => isActiveAndEnabled;
-
-        public virtual void PrepareEditorTransition()
+        public virtual void PrepareTransition_Editor(string initialState, string targetState)
         {
             Awake();
+            CacheDelays();
+            
+            cachedStates = properties.Select(p => Database.instance.GetStateID(p.state)).ToArray();
+            var initialStateId = Database.instance.GetStateID(initialState);
+            if (Array.IndexOf(cachedStates, initialStateId) == -1)
+                cachedStates = cachedStates.Append(initialStateId).ToArray();
+            var targetStateId = Database.instance.GetStateID(targetState);
+            if (Array.IndexOf(cachedStates, targetStateId) == -1)
+                cachedStates = cachedStates.Append(targetStateId).ToArray();
+            
+            activeState = initialStateId;
+            InitializeTransitionState();
+            myTimeSinceStateChange = 1d;
+            
+            lastState = activeState;
+            activeState = targetStateId;
+        }
+
+        public void ProgressTime_Editor(double dt)
+        {
+            myDeltaTime = dt;
+            myTimeSinceStateChange += dt;
         }
 
         private Dictionary<int, PropertyBase> propertiesCache = null;
@@ -113,19 +146,15 @@ namespace OneHamsa.Dexterity
             lastState = oldState;
         }
 
-        private int[] cachedStates;
-        private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
-        private int lastState = StateFunction.emptyStateId;
-
-        protected override int[] states => cachedStates;
-        protected override double deltaTime => GetNode().deltaTime;
-        protected override double timeSinceStateChange => GetNode().timeSinceStateChange;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected bool IsTransitionDelayed() => timeSinceStateChange < GetStateDelay(lastState, GetNode().GetActiveState());
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override int GetActiveState() => IsTransitionDelayed() ? lastState : GetNode().GetActiveState();
+        public override int GetActiveState() => activeState;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetNodeActiveStateWithDelay() 
+            => IsTransitionDelayed() ? lastState : GetNode().GetActiveState();
 
         [Serializable]
         public abstract class PropertyBase
@@ -175,12 +204,12 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        public virtual void HandleNodeEnabled()
+        private void HandleNodeEnabled()
         {
             if (!enabled)
                 return;
             
-            var activeState = GetNode().GetActiveState();
+            activeState = GetNode().GetActiveState();
             HandleStateChange(activeState, activeState);
 
             cachedStates = GetNode().GetStateIDs().ToArray();
@@ -261,10 +290,18 @@ namespace OneHamsa.Dexterity
 
         public override void Refresh()
         {
-            // wait for node to be enabled
-            if (!GetNode().isActiveAndEnabled)
-                return;
-            
+            if (Application.isPlaying)
+            {
+                // wait for node to be enabled
+                var node = GetNode();
+                if (!node.isActiveAndEnabled)
+                    return;
+
+                myTimeSinceStateChange = node.timeSinceStateChange;
+                myDeltaTime = node.deltaTime;
+                activeState = GetNodeActiveStateWithDelay();
+            }
+
             base.Refresh();
             
             if (!IsChanged() && Manager.instance != null)
@@ -355,11 +392,6 @@ namespace OneHamsa.Dexterity
             
             public bool IsValid() => modifier != null;
             
-            public virtual void Initialize()
-            {
-                modifier.PrepareEditorTransition();
-            }
-
             public virtual void OnNodeEnabled()
             {
                 modifier.HandleNodeEnabled();
