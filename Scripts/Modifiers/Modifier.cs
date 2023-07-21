@@ -58,6 +58,11 @@ namespace OneHamsa.Dexterity
 
         public virtual bool animatableInEditor => isActiveAndEnabled;
 
+        public virtual void PrepareEditorTransition()
+        {
+            Awake();
+        }
+
         private Dictionary<int, PropertyBase> propertiesCache = null;
         private bool foundNode;
         
@@ -135,7 +140,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        public override void Awake()
+        protected override void Awake()
         {
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
@@ -350,9 +355,9 @@ namespace OneHamsa.Dexterity
             
             public bool IsValid() => modifier != null;
             
-            public virtual void Awake()
+            public virtual void Initialize()
             {
-                modifier.Awake();
+                modifier.PrepareEditorTransition();
             }
 
             public virtual void OnNodeEnabled()

@@ -1,90 +1,104 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
-using Object = UnityEngine.Object;
 
 namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// Base class for material modifiers. Takes care of setting up editor transitions
     /// </summary>
-    public abstract class BaseMaterialModifier : Modifier
+    public abstract class BaseMaterialModifier : Modifier, IMaterialModifier
     {
-        protected struct SupportedComponentActions {
-            public Func<Component, (Material material, bool created)> getMaterial;
-            public Func<Component, Material> getSharedMaterial;
-            public Action<Component, Material> setSharedMaterial;
-        }
-
-        private static Dictionary<Type, SupportedComponentActions> supportedComponents = new();
-        
-        static void AddSupportedComponent<T>(Func<T, (Material material, bool created)> getMaterial, Func<T, Material> getSharedMaterial,
-            Action<T, Material> setSharedMaterial) where T : Component
+        protected enum MaterialType
         {
-            supportedComponents.Add(typeof(T), new SupportedComponentActions {
-                getMaterial = (c) => getMaterial((T)c),
-                getSharedMaterial = (c) => getSharedMaterial((T)c),
-                setSharedMaterial =  (c, material) => setSharedMaterial((T)c, material),
-            });
+            Graphic,
+            Renderer
+        }
+        
+        private static Dictionary<Type, MaterialType> supportedComponents = new();
+        
+        private Component _component;
+        private MaterialType _materialType;
+        private Dictionary<int, ShaderPropertyType> _propertyTypes = new();
+        private MaterialPropertyBlock propertyBlock;  // shared across all materials
+        private Graphic graphic;
+        
+        protected Dictionary<int, int> initialInts = new();
+        protected Dictionary<int, float> initialFloats = new();
+        protected Dictionary<int, Color> initialColors = new();
+        protected Dictionary<int, Vector4> initialVectors = new();
+        
+        private Dictionary<int, int> intOverrides = new();
+        private Dictionary<int, float> floatOverrides = new();
+        private Dictionary<int, Vector4> vectorOverrides = new();
+        private Dictionary<int, Color> colorOverrides = new();
+        private Dictionary<int, Texture> textureOverrides = new();
+        private Dictionary<int, Matrix4x4> matrixOverrides = new();
+
+        static void AddSupportedComponent<T>(MaterialType materialType) where T : Component
+        {
+            supportedComponents.Add(typeof(T), materialType);
         }
 
         static BaseMaterialModifier()
         {
-            AddSupportedComponent<Renderer>(
-                c =>
-                {
-                    return !Application.isPlaying 
-                        // this is handled by the AnimationEditorContext
-                        ? (c.sharedMaterial, false) 
-                        : (c.material, false);
-                }, 
-                c => c.sharedMaterial, 
-                (c, m) => c.sharedMaterial = m
-                );
-            AddSupportedComponent<TextMeshProUGUI>(
-                c => (c.fontMaterial, false), 
-                c => c.fontSharedMaterial,
-                (c, m) => c.fontSharedMaterial = m
-                );
-            AddSupportedComponent<Image>(
-                // for image component, material is actually sharedMaterial (it won't create a new one for us)
-                c =>
-                {
-                    var material = new Material(c.material);
-                    c.material = material;
-                    return (material, true);
-                }, 
-                c => c.material,
-                (c, m) => c.material = m);
+            AddSupportedComponent<Renderer>(MaterialType.Renderer);
+            AddSupportedComponent<TMP_Text>(MaterialType.Graphic);
+            AddSupportedComponent<Image>(MaterialType.Graphic);
         }
         
-        private Material originalMaterial;
-        protected Material targetMaterial;
-        private (Component component, SupportedComponentActions actions) _cached;
-        private bool shouldDestroyTargetMaterial;
-
-        protected Component component {
-            get {
-                if (_cached.component == null)
-                    CacheComponent();
-                return _cached.component;
-            }
-        }
-        protected SupportedComponentActions actions {
-            get {
-                if (_cached.component == null)
-                    CacheComponent();
-                return _cached.actions;
-            }
-        }
-
-        public override void Awake()
+        protected override void OnEnable()
         {
-            base.Awake();
-            (targetMaterial, shouldDestroyTargetMaterial) = actions.getMaterial(component);
+            base.OnEnable();
+            SetMaterialDirty();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            SetMaterialDirty();
+        }
+
+        protected void Start()
+        {
+            CacheComponent();
+        }
+
+        public override void PrepareEditorTransition()
+        {
+            base.PrepareEditorTransition();
+            CacheComponent();
+        }
+
+        protected Component component
+        {
+            get
+            {
+                if (_component == null)
+                    CacheComponent(); 
+                return _component;
+            }
+        }
+        protected MaterialType materialType
+        {
+            get
+            {
+                if (_component == null)
+                    CacheComponent(); 
+                return _materialType;
+            }
+        }
+        protected Dictionary<int, ShaderPropertyType> propertyTypes
+        {
+            get
+            {
+                if (_component == null)
+                    CacheComponent(); 
+                return _propertyTypes;
+            }
         }
 
         private void CacheComponent()
@@ -94,130 +108,352 @@ namespace OneHamsa.Dexterity
                 var t = kv.Key;
                 if (GetComponent(t) != null)
                 {
-                    var component = GetComponent(t);
-                    _cached = (component, kv.Value);
+                    _component = GetComponent(t);
+                    _materialType = kv.Value;
+                    switch (_materialType)
+                    {
+                        case MaterialType.Graphic:
+                            GetMaterialProperties(new [] { ((Graphic)component).materialForRendering });
+                            break;
+                        
+                        case MaterialType.Renderer:
+                            GetMaterialProperties(((Renderer)component).sharedMaterials);
+                            break;
+                    }
                     return;
                 }
             }
-            Debug.LogError("No supported component found for ColorModifier", this);
+
             if (Application.isPlaying)
+            {
+                Debug.LogError($"No supported component found for {GetType().Name}", this);
                 enabled = false;
-        }
-
-        protected void Start()
-        {
-            CacheComponent();
-        }
-        public void OnDestroy()
-        {
-            if (targetMaterial != null && shouldDestroyTargetMaterial)
-            {
-                Destroy(targetMaterial);
-                targetMaterial = null;
             }
         }
-        
-        #if UNITY_EDITOR
-        public class MaterialModifierEditorAnimationContext : EditorAnimationContext
+
+        private void GetMaterialProperties(Material[] materials)
         {
-            private GameObject newGo;
-            private readonly Material[] materials;
-            private readonly Component originalComponent;
-
-            public MaterialModifierEditorAnimationContext(BaseMaterialModifier modifier) : base(modifier)
+            propertyTypes.Clear();
+            foreach (var material in materials)
             {
-                var go = modifier.gameObject;
-                originalComponent = modifier.component;
-                
-                newGo = Instantiate(go, go.transform.parent);
-                DisableOriginalComponent();
-                newGo.transform.localPosition = go.transform.localPosition;
-                newGo.transform.localRotation = go.transform.localRotation;
-                newGo.transform.localScale = go.transform.localScale;
-                newGo.hideFlags = HideFlags.HideAndDontSave;
-                newGo.name = $"[Editor] {go.name}";
-
-                var tempModifier = newGo.GetComponent<BaseMaterialModifier>();
-                this.modifier = tempModifier;
-                tempModifier.CacheComponent();
-                
-                var renderer = newGo.GetComponent<Renderer>();
-                if (renderer != null)
+                var shader = material.shader;
+                var count = shader.GetPropertyCount();
+                for (int i = 0; i < count; i++)
                 {
-                    materials = UnityEditorInternal.InternalEditorUtility.InstantiateMaterialsInEditMode(renderer);
-                    foreach (var material in materials)
+                    var propertyNameId = shader.GetPropertyNameId(i);
+                    var propertyType = shader.GetPropertyType(i);
+                    propertyTypes[propertyNameId] = propertyType;
+                    switch (propertyType)
                     {
-                        material.name = $"[Editor] {material.name}";
-                        material.EnableKeyword("_NORMALMAP");
-                        material.EnableKeyword("_DETAIL_MULX2");
+                        case ShaderPropertyType.Int:
+                            initialInts[propertyNameId] = material.GetInt(propertyNameId);
+                            break; 
+                        
+                        case ShaderPropertyType.Float:
+                            initialFloats[propertyNameId] = material.GetFloat(propertyNameId);
+                            break;
+                        
+                        case ShaderPropertyType.Color:
+                            initialColors[propertyNameId] = material.GetColor(propertyNameId);
+                            break;
+                        
+                        case ShaderPropertyType.Vector:
+                            initialVectors[propertyNameId] = material.GetVector(propertyNameId);
+                            break;
                     }
-                    renderer.sharedMaterials = materials;
                 }
-                
-                UnityEditor.SceneView.RepaintAll();
             }
+        }
 
-            private void DisableOriginalComponent()
+        private void SetMaterialDirty()
+        {
+            if (component == null)
+                return;
+
+            switch (materialType)
             {
-                switch (originalComponent)
-                {
-                    case Renderer renderer:
-                        renderer.enabled = false;
-                        break;
-                    case MaskableGraphic graphic:
-                        graphic.enabled = false;
-                        break;
-                    case MonoBehaviour monoBehaviour:
-                        monoBehaviour.enabled = false;
-                        break;
-                    default:
-                        throw new Exception($"Unsupported component type {originalComponent.GetType()}");
-                }
+                case MaterialType.Graphic:
+                    if ((Application.isPlaying && graphic != null) || TryGetComponent(out graphic))
+                        graphic.SetMaterialDirty();
+
+                    break;
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    foreach (var kv in intOverrides)
+                    {
+                        propertyBlock.SetInt(kv.Key, kv.Value);
+                    }
+                    
+                    foreach (var kv in floatOverrides)
+                    {
+                        propertyBlock.SetFloat(kv.Key, kv.Value);
+                    }
+                    
+                    foreach (var kv in vectorOverrides)
+                    {
+                        propertyBlock.SetVector(kv.Key, kv.Value);
+                    }
+                    
+                    foreach (var kv in colorOverrides)
+                    {
+                        propertyBlock.SetColor(kv.Key, kv.Value);
+                    }
+                    
+                    foreach (var kv in textureOverrides)
+                    {
+                        propertyBlock.SetTexture(kv.Key, kv.Value);
+                    }
+                    
+                    foreach (var kv in matrixOverrides)
+                    {
+                        propertyBlock.SetMatrix(kv.Key, kv.Value);
+                    }
+                    ((Renderer)component).SetPropertyBlock(propertyBlock);
+                    break;
+            }
+        }
+
+        private void GetPropertyBlock()
+        {
+            propertyBlock ??= new();
+            ((Renderer)component).GetPropertyBlock(propertyBlock);
+        }
+
+        public Material GetModifiedMaterial(Material baseMaterial)
+        {
+            // Return the base material if invalid or if this component is disabled
+            if (!enabled || baseMaterial == null) return baseMaterial;
+            
+            if (component == null || materialType != MaterialType.Graphic)
+                return baseMaterial;
+
+            // Create a child material of the original
+            Material modifiedMaterial = new(baseMaterial.shader)
+            {
+                // Set a new name, to warn about editor modifications
+                name = $"{baseMaterial.name} OVERRIDE",
+                hideFlags = HideFlags.HideAndDontSave | HideFlags.NotEditable
+            };
+#if UNITY_2022_1_OR_NEWER && UNITY_EDITOR
+          modifiedMaterial.parent = baseMaterial;
+#endif
+            modifiedMaterial.CopyPropertiesFromMaterial(baseMaterial);
+
+            foreach (var kv in intOverrides)
+            {
+                modifiedMaterial.SetInt(kv.Key, kv.Value);
             }
             
-            private void EnableOriginalComponent()
+            foreach (var kv in floatOverrides)
             {
-                switch (originalComponent)
-                {
-                    case Renderer renderer:
-                        renderer.enabled = true;
-                        break;
-                    case MaskableGraphic graphic:
-                        graphic.enabled = true;
-                        break;
-                    case MonoBehaviour monoBehaviour:
-                        monoBehaviour.enabled = true;
-                        break;
-                    default:
-                        throw new Exception($"Unsupported component type {originalComponent.GetType()}");
-                }
+                modifiedMaterial.SetFloat(kv.Key, kv.Value);
+            }
+            
+            foreach (var kv in vectorOverrides)
+            {
+                modifiedMaterial.SetVector(kv.Key, kv.Value);
+            }
+            
+            foreach (var kv in colorOverrides)
+            {
+                modifiedMaterial.SetColor(kv.Key, kv.Value);
+            }
+            
+            foreach (var kv in textureOverrides)
+            {
+                modifiedMaterial.SetTexture(kv.Key, kv.Value);
+            }
+            
+            foreach (var kv in matrixOverrides)
+            {
+                modifiedMaterial.SetMatrix(kv.Key, kv.Value);
             }
 
-            public override void Dispose()
+            // Return the child material
+            return modifiedMaterial;
+        }
+        
+        protected int GetInt(int id)
+        {
+            if (intOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
             {
-                base.Dispose();
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetInt(id);
                 
-                if (originalComponent != null) 
-                    EnableOriginalComponent();
-
-                if (materials != null)
-                {
-                    foreach (var material in materials)
-                    {
-                        DestroyImmediate(material);
-                    }
-                }
-               
-                if (newGo != null)
-                {
-                    DestroyImmediate(newGo);
-                    newGo = null;
-                }
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetInt(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetInt(id);
             }
+
+            return default;
+        }
+        
+        protected float GetFloat(int id)
+        {
+            if (floatOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
+            {
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetFloat(id);
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetFloat(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetFloat(id);
+            }
+
+            return default;
+        }
+        
+        protected Vector4 GetVector(int id)
+        {
+            if (vectorOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
+            {
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetVector(id);
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetVector(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetVector(id);
+            }
+
+            return default;
+        }
+        
+        protected Color GetColor(int id)
+        {
+            if (colorOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
+            {
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetColor(id);
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetColor(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetColor(id);
+            }
+
+            return default;
+        }
+        
+        protected Texture GetTexture(int id)
+        {
+            if (textureOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
+            {
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetTexture(id);
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetTexture(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetTexture(id);
+            }
+
+            return default;
+        }
+        
+        protected Matrix4x4 GetMatrix(int id)
+        {
+            if (matrixOverrides.TryGetValue(id, out var value))
+                return value;
+           
+            switch (materialType)
+            {
+                case MaterialType.Graphic:
+                    if (graphic == null)
+                        graphic = GetComponent<Graphic>();
+                    return graphic.materialForRendering.GetMatrix(id);
+                
+                case MaterialType.Renderer:
+                    GetPropertyBlock();
+                    if (!propertyBlock.isEmpty)
+                        return propertyBlock.GetMatrix(id);
+                    
+                    return ((Renderer)component).sharedMaterial.GetMatrix(id);
+            }
+
+            return default;
+        }
+        
+        protected void SetInt(int id, int value)
+        {
+            intOverrides[id] = value;
+            SetMaterialDirty();
+        }
+        protected void SetFloat(int id, float value)
+        {
+            floatOverrides[id] = value;
+            SetMaterialDirty();
+        }
+        
+        protected void SetVector(int id, Vector4 value)
+        {
+            vectorOverrides[id] = value;
+            SetMaterialDirty();
+        }
+        
+        protected void SetColor(int id, Color value)
+        {
+            colorOverrides[id] = value;
+            SetMaterialDirty();
+        }
+        
+        protected void SetTexture(int id, Texture value)
+        {
+            textureOverrides[id] = value;
+            SetMaterialDirty();
+        }
+        
+        protected void SetMatrix(int id, Matrix4x4 value)
+        {
+            matrixOverrides[id] = value;
+            SetMaterialDirty();
         }
 
-        public override EditorAnimationContext GetEditorAnimationContext() 
-            => new MaterialModifierEditorAnimationContext(this);
-#endif
+        #if UNITY_EDITOR
+        public override (string, LogType) GetEditorComment()
+        {
+            if (component == null) 
+                return ("No supported component found", LogType.Error);
+            return base.GetEditorComment();
+        }
+        #endif
     }
 }

@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         List<RectTransform> _transformsToUpdate;
 
-        public override void Awake() {
+        protected override void Awake() {
             base.Awake();
 
             CollectTransformsToUpdate();

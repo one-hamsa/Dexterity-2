@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using TMPro;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -17,18 +13,15 @@ namespace OneHamsa.Dexterity
         }
         
         private int propertyId;
-        public override void Awake()
+
+        protected override void Awake()
         {
             base.Awake();
-            
-            if (!targetMaterial.HasProperty(materialColorName))
-            {
-                Debug.LogError($"Property not found: {materialColorName} for material {targetMaterial.name}", this);
-                if (Application.isPlaying)
-                    enabled = false;
-                return;
-            }
-            
+            CachePropertyID();
+        }
+
+        private void CachePropertyID()
+        {
             propertyId = Shader.PropertyToID(materialColorName);
         }
 
@@ -51,20 +44,29 @@ namespace OneHamsa.Dexterity
                 b += property.color.b * value;
                 a += property.color.a * value;
             }
-            targetMaterial.SetColor(propertyId, new Color(r, g, b, a));
+            SetColor(propertyId, new Color(r, g, b, a));
         }
 
-        void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
+        public void FreezeProperty(PropertyBase property)
         {
-            #if UNITY_EDITOR
-            var prop = property as Property;
-
-            var allProps = UnityEditor.MaterialEditor.GetMaterialProperties(new [] { actions.getSharedMaterial(component) });
-                if (!allProps.Select(p => p.name).Contains(materialColorName))
-                    return;
-                    
-            prop.color = actions.getSharedMaterial(component).GetColor(materialColorName);
-            #endif
+            var prop = (Property)property;
+            
+            CachePropertyID();
+            prop.color = GetColor(propertyId);
         }
+        
+        #if UNITY_EDITOR
+        public override (string, LogType) GetEditorComment()
+        {
+            if (string.IsNullOrEmpty(materialColorName))
+                return ("Property name is empty", LogType.Error);
+            
+            CachePropertyID();
+            if (!propertyTypes.ContainsKey(propertyId))
+                return ($"Property {materialColorName} not found in material", LogType.Error);
+            
+            return base.GetEditorComment();
+        }
+        #endif
     }
 }

@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity
         public event Action<int> onTransitionStarted;
         public event Action<int> onTransitionEnded;
 
-        public virtual void Awake()
+        protected virtual void Awake()
         {
             InitializeTransitionState();
         }

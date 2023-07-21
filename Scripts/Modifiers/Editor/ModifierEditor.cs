@@ -686,7 +686,7 @@ namespace OneHamsa.Dexterity
 
                 // 
                 foreach (var ctx in animationContexts)
-                    ctx.Awake();
+                    ctx.Initialize();
 
                 foreach (var n in getNodes())
                 {

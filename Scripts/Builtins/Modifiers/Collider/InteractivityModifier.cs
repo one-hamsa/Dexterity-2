@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity.Builtins
             public bool interactive;
         }
 
-        public override void Awake()
+        protected override void Awake()
         {
             base.Awake();
 

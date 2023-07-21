@@ -104,7 +104,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (Application.isPlaying)
             {
-                Debug.LogError("No supported component found for ColorModifier", this);
+                Debug.LogError($"No supported component found for {GetType().Name}", this);
                 enabled = false;
             }
         }

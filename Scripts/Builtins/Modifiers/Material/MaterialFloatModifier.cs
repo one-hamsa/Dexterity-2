@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using TMPro;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -17,18 +13,15 @@ namespace OneHamsa.Dexterity
         }
         
         private int propertyId;
-        public override void Awake()
+
+        protected override void Awake()
         {
             base.Awake();
-            
-            if (!targetMaterial.HasProperty(propertyName))
-            {
-                Debug.LogError($"Property not found: {propertyName} for material {targetMaterial.name}", this);
-                if (Application.isPlaying)
-                    enabled = false;
-                return;
-            }
-            
+            CachePropertyID();
+        }
+
+        private void CachePropertyID()
+        {
             propertyId = Shader.PropertyToID(propertyName);
         }
 
@@ -48,20 +41,29 @@ namespace OneHamsa.Dexterity
 
                 total += property.value * value;
             }
-            targetMaterial.SetFloat(propertyId, total);
+            SetFloat(propertyId, total);
         }
 
         void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
         {
-            #if UNITY_EDITOR
             var prop = (Property)property;
-
-            var allProps = UnityEditor.MaterialEditor.GetMaterialProperties(new [] { actions.getSharedMaterial(component) });
-                if (!allProps.Select(p => p.name).Contains(propertyName))
-                    return;
-                    
-            prop.value = actions.getSharedMaterial(component).GetFloat(propertyName);
-            #endif
+            
+            CachePropertyID();
+            prop.value = GetFloat(propertyId);
         }
+
+        #if UNITY_EDITOR
+        public override (string, LogType) GetEditorComment()
+        {
+            if (string.IsNullOrEmpty(propertyName))
+                return ("Property name is empty", LogType.Error);
+            
+            CachePropertyID();
+            if (!propertyTypes.ContainsKey(propertyId))
+                return ($"Property {propertyName} not found in material", LogType.Error);
+            
+            return base.GetEditorComment();
+        }
+        #endif
     }
 }
