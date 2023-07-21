@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity
         static bool upstreamDebugOpen;
         private static HashSet<BaseField> upstreams = new();
         FieldNode node;
-        bool foldoutOpen;
+        bool gateFoldoutOpen;
         
         private HashSet<FieldNode.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity
 
         protected void OnEnable()
         {
-            foldoutOpen = true;
+            gateFoldoutOpen = false;
             fieldValuesDebugOpen = Application.isPlaying;
         }
 
@@ -131,7 +131,7 @@ namespace OneHamsa.Dexterity
         {
             if (targets.Length <= 1)
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(FieldNode.customGates)),
-                    node, ref foldoutOpen);
+                    node, ref gateFoldoutOpen);
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
         }

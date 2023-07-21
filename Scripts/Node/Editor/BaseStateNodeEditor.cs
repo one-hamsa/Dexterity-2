@@ -2,12 +2,8 @@
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using System;
-using System.Collections;
 using Unity.EditorCoroutines.Editor;
-using UnityEditor.SceneManagement;
-using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity
 {
@@ -17,9 +13,9 @@ namespace OneHamsa.Dexterity
         private static int speedIndex = -1;
         
         BaseStateNode baseNode;
-        private HashSet<string> states = new HashSet<string>();
-        private List<string> previewStates = new List<string>();
-        private List<string> previewStateNames = new List<string>();
+        private HashSet<string> states = new();
+        private List<string> previewStates = new();
+        private List<string> previewStateNames = new();
         private EditorCoroutine coro;
 
         private int previewStateIndex;
