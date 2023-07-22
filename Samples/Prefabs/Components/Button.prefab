@@ -112,24 +112,28 @@ MonoBehaviour:
       data:
         state: Executed
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.5133945, g: 0.7355867, b: 0.7830189, a: 0.4627451}
     - rid: 7862443120866623530
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Press
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.5, g: 0.5, b: 0.5, a: 0.49019608}
     - rid: 7862443120866623531
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Hover
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.7830189, g: 0.7830189, b: 0.7830189, a: 0.49019608}
     - rid: 7862443120866623532
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: <Default>
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 0}
     - rid: 7862443120866623533
       type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
@@ -252,24 +256,28 @@ MonoBehaviour:
       data:
         state: Executed
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 1, g: 0.96885854, b: 0.4575472, a: 1}
     - rid: 7862443120866623530
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Press
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 0}
     - rid: 7862443120866623531
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Hover
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 0}
     - rid: 7862443120866623532
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: <Default>
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 0}
     - rid: 7862443120866623533
       type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
@@ -335,6 +343,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initialState: <Default>
   delays: []
+  autoSyncModifiersStates: 1
   overrideState: 
   timeSinceStateChange: 0.6887042999978803
   referenceAssets:
@@ -343,7 +352,7 @@ MonoBehaviour:
   - outputFieldName: .was-pressed-this-frame
     overrideType: 3
     field:
-      rid: 7862443120866623528
+      rid: 7081534898452300087
   internalFieldDefinitions:
   - name: was-pressed-this-frame
     type: 1
@@ -395,12 +404,13 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 7862443120866623528
-      type: {class: UnityObjectField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+    - rid: 7081534898452300087
+      type: {class: BindingField, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         relatedFieldName: .was-pressed-this-frame
-        targetObject: {fileID: 4829240479815186121}
-        targetProperty: WasPressedThisFrame
+        binding:
+          target: {fileID: 4829240479815186121}
+          methodName: WasPressedThisFrame
         negate: 0
 --- !u!65 &4829240479815186123
 BoxCollider:
@@ -452,18 +462,21 @@ MonoBehaviour:
       data:
         state: Press
         savedPropertyKey: 
+        localStateReference: 
         scale: 1.08
     - rid: 7862443120866623517
       type: {class: ScaleModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Hover
         savedPropertyKey: 
+        localStateReference: 
         scale: 1.1
     - rid: 7862443120866623518
       type: {class: ScaleModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: <Default>
         savedPropertyKey: 
+        localStateReference: 
         scale: 1
     - rid: 7862443120866623519
       type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
@@ -476,6 +489,7 @@ MonoBehaviour:
       data:
         state: Executed
         savedPropertyKey: 
+        localStateReference: 
         scale: 1.08
 --- !u!114 &4829240479815186121
 MonoBehaviour:
@@ -745,24 +759,28 @@ MonoBehaviour:
       data:
         state: Executed
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 1}
     - rid: 7862443120866623535
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Press
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.1792453, g: 0.1792453, b: 0.1792453, a: 1}
     - rid: 7862443120866623536
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Hover
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.2830189, g: 0.2830189, b: 0.2830189, a: 1}
     - rid: 7862443120866623537
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: <Default>
         savedPropertyKey: 
+        localStateReference: 
         color: {r: 0.33962262, g: 0.33962262, b: 0.33962262, a: 1}
     - rid: 7862443120866623538
       type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
