@@ -139,7 +139,7 @@ namespace OneHamsa.Dexterity
                     EditorGUILayout.PropertyField(serializedProperty.FindPropertyRelative(nameof(DexteritySettings.SavedProperty.name)));
                     GUI.contentColor = origColor;
                     EditorGUI.indentLevel++;
-                    ModifierEditor.ShowSingleStateFields(property, savedProperty.property.GetType(),
+                    ModifierEditor.ShowSingleStateFields(null, property, savedProperty.property.GetType(),
                         group.Key.Name + "." + savedProperty.name, menuFunction: Menu);
                     EditorGUI.indentLevel--;
                     

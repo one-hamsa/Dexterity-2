@@ -424,24 +424,43 @@ namespace OneHamsa.Dexterity
                     
                     if (!string.IsNullOrEmpty(propertyBase.savedPropertyKey))
                     {
-                        menu.AddDisabledItem(new GUIContent($"Bind: {propertyBase.savedPropertyKey}"));
+                        menu.AddDisabledItem(new GUIContent($"Bind (Global): {propertyBase.savedPropertyKey}"));
+                        menu.AddSeparator("");
+                    }
+                    else if (!string.IsNullOrEmpty(propertyBase.localStateReference))
+                    {
+                        menu.AddDisabledItem(new GUIContent($"Bind (Local): {propertyBase.localStateReference}"));
                         menu.AddSeparator("");
                     }
                     
                     foreach (var savedProp in DexteritySettingsProvider.settings.GetSavedPropertiesForType(
                                  propertyBase.GetType()))
                     {
-                        menu.AddItem(new GUIContent($"Bind To/{savedProp}"), false, () =>
+                        menu.AddItem(new GUIContent($"Bind To/Global/{savedProp}"), false, () =>
                         {
+                            Undo.RecordObject(modifier, "Bind property");
                             propertyBase.savedPropertyKey = savedProp;
                             EditorUtility.SetDirty(modifier);
                         });
                     }
-                    if (!string.IsNullOrEmpty(propertyBase.savedPropertyKey))
+                    foreach (var prop in modifier.properties.Where(p => p != propertyBase 
+                                                                        && string.IsNullOrEmpty(p.localStateReference)
+                                                                        && string.IsNullOrEmpty(p.savedPropertyKey)))
+                    {
+                        menu.AddItem(new GUIContent($"Bind To/{prop.state}"), false, () =>
+                        {
+                            Undo.RecordObject(modifier, "Bind property");
+                            propertyBase.localStateReference = prop.state;
+                            EditorUtility.SetDirty(modifier);
+                        });
+                    }
+                    if (!string.IsNullOrEmpty(propertyBase.savedPropertyKey) || !string.IsNullOrEmpty(propertyBase.localStateReference))
                     {
                         menu.AddItem(new GUIContent("Unbind"), false, () =>
                         {
+                            Undo.RecordObject(modifier, "Unbind property");
                             propertyBase.savedPropertyKey = "";
+                            propertyBase.localStateReference = "";
                             EditorUtility.SetDirty(modifier);
                         });
                     }
@@ -473,7 +492,7 @@ namespace OneHamsa.Dexterity
                     menu.ShowAsContext();
                 }
 
-                updated = ShowSingleStateFields(property, propertyBase.GetType(),
+                updated = ShowSingleStateFields(modifier, property, propertyBase.GetType(),
                     propertyBase.state, UtilityButtons, Menu, suffix, 
                     targets.Length == 1 && modifier.manualStateEditing);
             }
@@ -485,7 +504,8 @@ namespace OneHamsa.Dexterity
             return updated;
         }
 
-        public static bool ShowSingleStateFields(SerializedProperty serializedProperty,
+        public static bool ShowSingleStateFields(Modifier modifier, 
+            SerializedProperty serializedProperty,
             Type propertyType,
             string propertyKey,
             Action<bool> utilityUiFunction = null,
@@ -495,7 +515,9 @@ namespace OneHamsa.Dexterity
             var origColor = GUI.contentColor;
 
             var savedProperty = serializedProperty.FindPropertyRelative(nameof(Modifier.PropertyBase.savedPropertyKey));
+            var localStateProperty = serializedProperty.FindPropertyRelative(nameof(Modifier.PropertyBase.localStateReference));
             var savedPropKey = string.Empty;
+            var localStateKey = string.Empty;
             if (!string.IsNullOrEmpty(savedProperty.stringValue))
             {
                 DexteritySettingsProvider.settings.BuildCache();
@@ -524,7 +546,23 @@ namespace OneHamsa.Dexterity
                     }
                 }
             }
-            
+            else if (!string.IsNullOrEmpty(localStateProperty.stringValue) && modifier != null)
+            {
+                var prop = modifier.properties.FirstOrDefault(p => p.state == localStateProperty.stringValue);
+                if (prop == null)
+                {
+                    Debug.LogError($"Local state property {localStateProperty.stringValue} not found for {propertyType}, clearing");
+                    localStateProperty.stringValue = "";
+                }
+                else
+                {
+                    var modifierObject = new SerializedObject(modifier);
+                    serializedProperty = modifierObject.FindProperty(nameof(Modifier.properties))
+                        .GetArrayElementAtIndex(modifier.properties.IndexOf(prop));
+                    localStateKey = localStateProperty.stringValue;
+                }
+            }
+
             stateProps.Clear();
             // fields
             foreach (var field in Utils.GetChildren(serializedProperty))
@@ -532,6 +570,7 @@ namespace OneHamsa.Dexterity
                 switch (field.name)
                 {
                     case nameof(Modifier.PropertyBase.savedPropertyKey):
+                    case nameof(Modifier.PropertyBase.localStateReference):
                     case nameof(Modifier.PropertyBase.state) when !manualStateEditing:
                         continue;
                     default:
@@ -553,7 +592,8 @@ namespace OneHamsa.Dexterity
                 }
             }
 
-            var isSaved = !string.IsNullOrEmpty(savedPropKey);
+            var isSaved = !string.IsNullOrEmpty(savedPropKey) || !string.IsNullOrEmpty(localStateKey);
+            var reference = !string.IsNullOrEmpty(savedPropKey) ? savedPropKey : localStateKey;
             if (stateProps.Count > 1)
             {
                 // multiple - fold
@@ -570,7 +610,7 @@ namespace OneHamsa.Dexterity
                 {
                     GUI.contentColor = Color.yellow;
                     GUILayout.Space(10);
-                    EditorGUILayout.LabelField($"[{savedPropKey}]", GUILayout.MinWidth(50));
+                    EditorGUILayout.LabelField($"[{reference}]", GUILayout.MinWidth(50));
                     GUI.contentColor = origColor;
                 }
 
@@ -604,7 +644,7 @@ namespace OneHamsa.Dexterity
                 {
                     GUI.contentColor = Color.yellow;
                     GUILayout.Space(10);
-                    EditorGUILayout.LabelField($"[{savedPropKey}]", GUILayout.MinWidth(50));
+                    EditorGUILayout.LabelField($"[{reference}]", GUILayout.MinWidth(50));
                     GUI.contentColor = origColor;
                     GUI.enabled = false;
                 }

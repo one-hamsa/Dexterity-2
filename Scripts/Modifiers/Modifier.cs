@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
@@ -161,6 +162,7 @@ namespace OneHamsa.Dexterity
         {
             public string state;
             public string savedPropertyKey;
+            public string localStateReference;
             
             public virtual PropertyBase Clone()
             {
@@ -198,6 +200,14 @@ namespace OneHamsa.Dexterity
                         Debug.LogError($"Saved property {prop.savedPropertyKey} not found in Modifier {name}, using old value", this);
                     else
                         chosen = saved;
+                }
+                else if (!string.IsNullOrEmpty(prop.localStateReference))
+                {
+                    var internalReference = properties.FirstOrDefault(p => p.state == prop.localStateReference);
+                    if (internalReference == null)
+                        Debug.LogError($"Internal state reference {prop.localStateReference} not found in Modifier {name}, using old value", this);
+                    else
+                        chosen = internalReference;
                 }
 
                 propertiesCache.Add(id, chosen);
