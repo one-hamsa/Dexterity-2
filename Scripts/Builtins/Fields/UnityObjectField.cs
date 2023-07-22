@@ -6,6 +6,7 @@ using UnityEngine.Events;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Obsolete]
     public class UnityObjectField : BaseField
     {
         public UnityEngine.Object targetObject;

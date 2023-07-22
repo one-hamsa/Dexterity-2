@@ -263,7 +263,6 @@ namespace OneHamsa.Dexterity
                 : default;
         }
 
-        static double lastReferenceRefreshTime = double.NegativeInfinity;
         private static Type[] referencesTypes;
         private static string[] referencesTypesNames;
 
@@ -299,6 +298,12 @@ namespace OneHamsa.Dexterity
                 var type = referencesTypes[fieldIdx];
                 property.managedReferenceValue = Activator.CreateInstance(type);
                 updated = true;
+            }
+
+            if (property.managedReferenceValue != null &&
+                property.managedReferenceValue.GetType().IsDefined(typeof(ObsoleteAttribute)))
+            {
+                EditorGUILayout.HelpBox($"{property.managedReferenceValue.GetType().Name} is obsolete", MessageType.Warning);
             }
 
             EditorGUI.indentLevel++;
@@ -344,9 +349,6 @@ namespace OneHamsa.Dexterity
 
         private static void RefreshReferenceTypes()
         {
-            if (EditorApplication.timeSinceStartup - lastReferenceRefreshTime < 3)
-                return;
-
             referencesTypes = TypeCache.GetTypesDerivedFrom<BaseField>()
                             .Where(t => t != typeof(FieldNode.OutputField))
                             .ToArray();
