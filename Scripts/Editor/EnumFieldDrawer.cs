@@ -31,8 +31,8 @@ namespace OneHamsa.Dexterity
             if (unityObjectProp.objectReferenceValue == null)
                 return;
 
-            var enumNode = (ObjectSourceEnumNode)unityObjectProp.objectReferenceValue;
-            enumNode.InitializeObjectContext();
+            var enumNode = (BindingEnumNode)unityObjectProp.objectReferenceValue;
+            enumNode.InitializeBinding();
 
             Enum enumPrevValue = default;
             if (Enum.TryParse(enumNode.targetEnumType, property.stringValue, out var prevValue))

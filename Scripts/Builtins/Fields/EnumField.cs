@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public class EnumField : BaseField
     {
-        public ObjectSourceEnumNode targetNode;
+        public BindingEnumNode targetNode;
         [EnumField(nameof(targetNode))]
         public string targetField;
         public bool negate;
@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             // initialize just to be sure
-            targetNode.InitializeObjectContext();
+            targetNode.InitializeBinding();
             cachedEnumValue = Convert.ToInt32(Enum.Parse(targetNode.targetEnumType, targetField));
         }
     }

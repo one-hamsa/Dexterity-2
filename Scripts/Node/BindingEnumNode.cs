@@ -1,40 +1,37 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
 {
-    [AddComponentMenu("Dexterity/Object Source Enum Node")]
+    [AddComponentMenu("Dexterity/Binding Enum Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class ObjectSourceEnumNode : BaseEnumStateNode
+    public class BindingEnumNode : BaseEnumStateNode
     {
-        public UnityEngine.Object targetObject;
-
-        [ObjectValue(objectFieldName: nameof(targetObject), 
-            ObjectValueContext.ValueType.Boolean | ObjectValueContext.ValueType.Enum)]
-        public string targetProperty;
+        public EnumOrBoolObjectBinding binding = new();
 
         [Header("Boolean Source")] 
         public string booleanTrueState = "On";
         public string booleanFalseState = "Off";
 
-        private ObjectValueContext objectCtx;
-        public int targetEnumValue => objectCtx?.GetValueAsInt() ?? 0;
-        public Type targetEnumType => objectCtx?.type;
+        public int targetEnumValue => binding.IsInitialized() ? binding.GetValueAsInt() : 0;
+        public Type targetEnumType => binding.IsInitialized() ? binding.type : null;
 
-        public void InitializeObjectContext() 
+        public void InitializeBinding()
         {
-            objectCtx = null;
-            if (targetObject != null && !string.IsNullOrEmpty(targetProperty))
+            if (!binding.IsValid()) 
+                return;
+            
+            if (!binding.Initialize() && Application.isPlaying)
             {
-                objectCtx = new ObjectValueContext(this, nameof(targetProperty));
+                Debug.LogError($"Failed to initialize binding for {name}", this);
+                enabled = false;
             }
         }
 
         protected override void Initialize()
         {
-            InitializeObjectContext();
+            InitializeBinding();
             base.Initialize();
         }
 
@@ -80,7 +77,7 @@ namespace OneHamsa.Dexterity
             try 
             {
                 // cache for sake of showing options in editor (enumToStateId.Keys)
-                InitializeObjectContext();
+                InitializeBinding();
             } catch (ArgumentException) 
             {
                 // it's ok in editor!
