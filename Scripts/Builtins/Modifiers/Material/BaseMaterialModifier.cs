@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity
         
         private static Dictionary<Type, MaterialType> supportedComponents = new();
         
-        [HideInInspector] public bool enableMaterialAnimations = true;
+        [HideInInspector] public bool enableMaterialAnimations;
         
         private Component _component;
         private MaterialType _materialType;
