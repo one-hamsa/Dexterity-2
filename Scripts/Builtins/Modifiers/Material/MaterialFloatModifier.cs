@@ -59,6 +59,7 @@ namespace OneHamsa.Dexterity
                 return ("Property name is empty", LogType.Error);
             
             CachePropertyID();
+            CacheComponent();
             if (!propertyTypes.ContainsKey(propertyId))
                 return ($"Property {propertyName} not found in material", LogType.Error);
             

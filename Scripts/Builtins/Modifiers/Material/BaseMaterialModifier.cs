@@ -106,7 +106,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        private void CacheComponent()
+        protected void CacheComponent()
         {
             foreach (var kv in supportedComponents)
             {
@@ -129,7 +129,7 @@ namespace OneHamsa.Dexterity
                 }
             }
 
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
             {
                 Debug.LogError($"No supported component found for {GetType().Name}", this);
                 enabled = false;
