@@ -20,6 +20,8 @@ namespace OneHamsa.Dexterity
         
         private static Dictionary<Type, MaterialType> supportedComponents = new();
         
+        [HideInInspector] public bool enableMaterialAnimations = true;
+        
         private Component _component;
         private MaterialType _materialType;
         private Dictionary<int, ShaderPropertyType> _propertyTypes = new();
@@ -69,6 +71,9 @@ namespace OneHamsa.Dexterity
 
         public override void PrepareTransition_Editor(string initialState, string targetState)
         {
+            enableMaterialAnimations = true;
+            SetMaterialDirty();
+            
             base.PrepareTransition_Editor(initialState, targetState);
             CacheComponent();
         }
@@ -165,7 +170,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        private void SetMaterialDirty()
+        public void SetMaterialDirty()
         {
             if (component == null)
                 return;
@@ -223,7 +228,8 @@ namespace OneHamsa.Dexterity
         public Material GetModifiedMaterial(Material baseMaterial)
         {
             // Return the base material if invalid or if this component is disabled
-            if (!enabled || baseMaterial == null) return baseMaterial;
+            if (!enabled || baseMaterial == null || (!Application.IsPlaying(this) && !enableMaterialAnimations))
+                return baseMaterial;
             
             if (component == null || materialType != MaterialType.Graphic)
                 return baseMaterial;

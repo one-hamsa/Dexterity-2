@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity
     {
         static Dictionary<string, bool> foldedStates = new();
         bool strategyExists { get; set; }
-        Modifier modifier { get; set; }
+        protected Modifier modifier { get; set; }
         static List<SerializedProperty> stateProps = new(8);
         private EditorCoroutine coro;
         private List<SerializedProperty> customProps = new();
