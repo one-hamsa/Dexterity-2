@@ -65,7 +65,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         private Transform _transform;
 
-        private void Awake()
+        protected void Awake()
         {
             _transform = transform;
         }
