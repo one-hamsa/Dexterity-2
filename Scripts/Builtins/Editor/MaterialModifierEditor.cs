@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.OnInspectorGUI();
             
-            if (targets.Length > 1 || Application.IsPlaying(target))
+            if (Application.IsPlaying(target))
                 return;
 
             var matModifier = (BaseMaterialModifier) target;
@@ -27,9 +27,14 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (GUILayout.Button(icon, EditorStyles.miniButton))
             {
-                matModifier.enableMaterialAnimations = !matModifier.enableMaterialAnimations;
-                matModifier.SetMaterialDirty();
-                EditorUtility.SetDirty(matModifier);
+                var newValue = !matModifier.enableMaterialAnimations;
+                foreach (var obj in targets)
+                {
+                    var matMod = (BaseMaterialModifier) obj;
+                    matMod.enableMaterialAnimations = newValue;
+                    matMod.SetMaterialDirty();
+                    EditorUtility.SetDirty(modifier);
+                }
             }
             
             GUI.contentColor = origColor;
