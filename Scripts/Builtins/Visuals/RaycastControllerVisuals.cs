@@ -32,17 +32,17 @@ namespace OneHamsa.Dexterity.Builtins
             
             lineRenderer.enabled = controller.current;
             
-            Vector3 origin = controller.ray.origin;
+            Vector3 origin = controller.displayRay.origin;
             lineRenderer.SetPosition(0, origin);
             if (controller.didHit)
             {
                 float hitDistance = Vector3.Distance(origin, controller.hit.point);
                 hitDistance = Mathf.Min(maxLength, hitDistance);
-                lineRenderer.SetPosition(1, controller.ray.origin + controller.ray.direction * hitDistance);
+                lineRenderer.SetPosition(1, controller.displayRay.origin + controller.displayRay.direction * hitDistance);
             }
             else
             {
-                lineRenderer.SetPosition(1, controller.ray.origin + controller.ray.direction * maxLength);
+                lineRenderer.SetPosition(1, controller.displayRay.origin + controller.displayRay.direction * maxLength);
             }
         }
 
@@ -53,7 +53,7 @@ namespace OneHamsa.Dexterity.Builtins
             
             destinationLineRenderer.enabled = controller.current && controller.didHit;
 
-            var destToOrigin = controller.ray.origin - controller.hit.point;
+            var destToOrigin = controller.displayRay.origin - controller.hit.point;
             if (destToOrigin.sqrMagnitude > maxDestLength * maxDestLength)
                 destToOrigin = destToOrigin.normalized * maxDestLength;
             

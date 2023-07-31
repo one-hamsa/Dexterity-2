@@ -43,6 +43,7 @@ namespace OneHamsa.Dexterity.Builtins
             enabled && ((lastControllerPressed == null && defaultController) || lastControllerPressed == this);
 
         public Ray ray { get; private set; }
+        public Ray displayRay { get; private set; }
         public bool didHit { get; private set; }
         public RaycastHit hit { get; private set; }
         private int pressStartFrame = -1;
@@ -61,6 +62,13 @@ namespace OneHamsa.Dexterity.Builtins
         public IRaycastController.RaycastEvent.Result GetLastEventResult() => lastEventResult;
 
         public delegate bool RaycastFilter(IRaycastReceiver receiver);
+
+        private Transform _transform;
+
+        private void Awake()
+        {
+            _transform = transform;
+        }
 
         /// <summary>
         /// Set Global Raycast Receiver filter
@@ -139,11 +147,17 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected void HandlePressed()
         {
+            bool wasCurrent = current;
+            
             lastControllerPressed = this;
             foreach (var other in mutuallyExclusiveControllers)
             {
                 other.HandleOtherPressed(this);
             }
+
+            // When changing controllers, the first click shouldn't actually do anything besides changing controllers
+            if (!wasCurrent)
+                return;
 
             if (onAnyPress != null)
             {
@@ -178,12 +192,13 @@ namespace OneHamsa.Dexterity.Builtins
             if (!current)
                 return;
 
-            var t = transform;
-            var f = t.forward;
-            Vector3 origin = t.position - f * backRayLength;
+            var pos = _transform.position;
+            var f = _transform.forward;
+            Vector3 origin = pos - f * backRayLength;
             Vector3 direction = f;
 
             ray = new Ray(origin, direction);
+            displayRay = new Ray(pos, direction);
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
 
             int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
