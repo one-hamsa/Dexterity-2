@@ -314,6 +314,22 @@ namespace OneHamsa.Dexterity.Builtins
 
             // TODO more, maybe with collider.bounds, just need to understand in what space
         }
+        
+        #if UNITY_EDITOR
+        [UnityEditor.MenuItem("Tools/Dexterity/Select active receiver %&r")]
+        private static void SelectActiveReceiver()
+        {
+            var controller = FindObjectsOfType<RaycastController>().FirstOrDefault(c => c.current);
+            if (controller == null || !controller.didHit || controller.hit.collider == null)
+            {
+                Debug.LogWarning($"No active receiver found", controller);
+                return;
+            }
+            
+            UnityEditor.Selection.activeObject = controller.hit.collider.gameObject;
+            UnityEditor.SceneView.FrameLastActiveSceneView();
+        }
+        #endif
 
         protected virtual bool isPressed => false;
         bool IRaycastController.isPressed => isPressed;
