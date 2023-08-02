@@ -1,7 +1,10 @@
 using UnityEngine;
 using System;
-using System.Collections;
 using OneHamsa.Dexterity.Utilities;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -47,9 +50,15 @@ namespace OneHamsa.Dexterity.Builtins
 		void PrepareForSave() 
         {
 #if UNITY_EDITOR
-			activeInEdit = gameObject.activeSelf;
+	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
+	        if (!isInstance)
+	        {
+		        EditorUtility.SetDirty(this);
+		        activeInEdit = gameObject.activeSelf;
+	        }
+	        
 			gameObject.SetActive(true);
-			UnityEditor.EditorUtility.SetDirty(gameObject);
+			EditorUtility.SetDirty(gameObject);
 #endif
 		}
 
