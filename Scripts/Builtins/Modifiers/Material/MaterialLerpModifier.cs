@@ -43,7 +43,9 @@ namespace OneHamsa.Dexterity
             {
                 var property = (Property)GetProperty(kv.Key);
                 var value = kv.Value;
-
+                
+                if (property.material == null)
+                    continue;
 
                 foreach (var (propId, propType) in propertyTypes)
                 {
