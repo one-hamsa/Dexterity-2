@@ -127,6 +127,9 @@ namespace OneHamsa.Dexterity.Builtins
 
         void ISupportPropertyFreeze.FreezeProperty(PropertyBase property)
         {
+            if (actions.getColor == null)
+                return;
+            
             var prop = property as Property;
             
             prop.color = actions.getColor(component);

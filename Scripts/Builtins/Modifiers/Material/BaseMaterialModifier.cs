@@ -313,6 +313,9 @@ namespace OneHamsa.Dexterity
                 case MaterialType.Graphic:
                     if (graphic == null)
                         graphic = GetComponent<Graphic>();
+                    
+                    if (!graphic.materialForRendering.HasFloat(id))
+                        return 0;
                     return graphic.materialForRendering.GetFloat(id);
                 
                 case MaterialType.Renderer:
@@ -320,6 +323,8 @@ namespace OneHamsa.Dexterity
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetFloat(id);
                     
+                    if (!((Renderer)component).sharedMaterial.HasFloat(id))
+                        return 0;
                     return ((Renderer)component).sharedMaterial.GetFloat(id);
             }
 
@@ -336,6 +341,9 @@ namespace OneHamsa.Dexterity
                 case MaterialType.Graphic:
                     if (graphic == null)
                         graphic = GetComponent<Graphic>();
+                    
+                    if (!graphic.materialForRendering.HasVector(id))
+                        return default;
                     return graphic.materialForRendering.GetVector(id);
                 
                 case MaterialType.Renderer:
@@ -343,6 +351,8 @@ namespace OneHamsa.Dexterity
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetVector(id);
                     
+                    if (!((Renderer)component).sharedMaterial.HasVector(id))
+                        return default;
                     return ((Renderer)component).sharedMaterial.GetVector(id);
             }
 
@@ -359,6 +369,9 @@ namespace OneHamsa.Dexterity
                 case MaterialType.Graphic:
                     if (graphic == null)
                         graphic = GetComponent<Graphic>();
+                    
+                    if (!graphic.materialForRendering.HasColor(id))
+                        return default;
                     return graphic.materialForRendering.GetColor(id);
                 
                 case MaterialType.Renderer:
@@ -366,6 +379,8 @@ namespace OneHamsa.Dexterity
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetColor(id);
                     
+                    if (!((Renderer)component).sharedMaterial.HasColor(id))
+                        return default;
                     return ((Renderer)component).sharedMaterial.GetColor(id);
             }
 
@@ -382,6 +397,9 @@ namespace OneHamsa.Dexterity
                 case MaterialType.Graphic:
                     if (graphic == null)
                         graphic = GetComponent<Graphic>();
+                    
+                    if (!graphic.materialForRendering.HasTexture(id))
+                        return default;
                     return graphic.materialForRendering.GetTexture(id);
                 
                 case MaterialType.Renderer:
@@ -389,6 +407,8 @@ namespace OneHamsa.Dexterity
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetTexture(id);
                     
+                    if (!((Renderer)component).sharedMaterial.HasTexture(id))
+                        return default;
                     return ((Renderer)component).sharedMaterial.GetTexture(id);
             }
 
@@ -405,6 +425,9 @@ namespace OneHamsa.Dexterity
                 case MaterialType.Graphic:
                     if (graphic == null)
                         graphic = GetComponent<Graphic>();
+                    
+                    if (!graphic.materialForRendering.HasMatrix(id))
+                        return default;
                     return graphic.materialForRendering.GetMatrix(id);
                 
                 case MaterialType.Renderer:
@@ -412,6 +435,8 @@ namespace OneHamsa.Dexterity
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetMatrix(id);
                     
+                    if (!((Renderer)component).sharedMaterial.HasMatrix(id))
+                        return default;
                     return ((Renderer)component).sharedMaterial.GetMatrix(id);
             }
 
