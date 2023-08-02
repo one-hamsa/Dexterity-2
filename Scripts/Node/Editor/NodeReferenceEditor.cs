@@ -86,9 +86,9 @@ namespace OneHamsa.Dexterity
                 var origColor = GUI.color;
 
                 var whitelist = gateContainer.GetWhitelistedFieldNames();
-                var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(fd => fd.name)
+                var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(fd => fd.GetName())
                     .Where(f => whitelist == null || whitelist.Contains(f))
-                    .Concat(gateContainer.GetInternalFieldDefinitions().Select(fd => fd.GetInternalName()))
+                    .Concat(gateContainer.GetInternalFieldDefinitions().Select(fd => fd.GetName()))
                     .ToArray();
                 
                 var fieldExistsInFunction = fields.Contains(kv.Key);
@@ -104,7 +104,7 @@ namespace OneHamsa.Dexterity
                 var definition = ExtractDefinition(gateContainer, kv.Key);
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
-                    if (definition.name != null)
+                    if (definition.GetName() != null)
                     {
                         // get value
                         var liveInstance = Application.isPlaying && gateContainer.node != null;

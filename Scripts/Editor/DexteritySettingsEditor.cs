@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity
 
             var type = element.FindPropertyRelative(nameof(FieldDefinition.type));
             var values = element.FindPropertyRelative(nameof(FieldDefinition.enumValues));
-            var name = element.FindPropertyRelative(nameof(FieldDefinition.name));
+            var name = element.FindPropertyRelative("name");
 
             //Create a property field and label field for each property. 
             EditorGUI.PropertyField(

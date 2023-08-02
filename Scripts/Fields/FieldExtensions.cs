@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity
         {
             if (field.definition.type != FieldNode.FieldType.Boolean)
             {
-                Debug.LogError($"GetBooleanValue: {field.definition.name} is not of type boolean");
+                Debug.LogError($"GetBooleanValue: {field.definition.GetName()} is not of type boolean");
                 return default;
             }
             return field.GetValue() == 1;
@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity
         {
             if (field.definition.type != FieldNode.FieldType.Enum)
             {
-                Debug.LogError($"GetEnumValue: {field.definition.name} is not of type enum");
+                Debug.LogError($"GetEnumValue: {field.definition.GetName()} is not of type enum");
                 return null;
             }
             var value = field.GetValue();

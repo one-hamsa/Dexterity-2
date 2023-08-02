@@ -307,7 +307,7 @@ namespace OneHamsa.Dexterity
                             }
 
                             if (!found)
-                                Debug.LogError($"Unknown override type {gate.overrideType} for field {gate.field.definition.name}", node);
+                                Debug.LogError($"Unknown override type {gate.overrideType} for field {gate.field.definition.GetName()}", node);
                         }
 
                         cachedValueWithoutOverride = result ? 1 : 0;
@@ -355,12 +355,12 @@ namespace OneHamsa.Dexterity
             public override string ToShortString() {
                 if (finalized) {
                     if (!string.IsNullOrEmpty(originalNodeName)) {
-                        return $"(Destroyed) {originalNodeName}::{Database.instance.GetFieldDefinition(definitionId).name}";
+                        return $"(Destroyed) {originalNodeName}::{Database.instance.GetFieldDefinition(definitionId).GetName()}";
                     }
                     return "(Uninitialized)";
                 }
 
-                return $"{node.name}::{Database.instance.GetFieldDefinition(definitionId).name}";
+                return $"{node.name}::{Database.instance.GetFieldDefinition(definitionId).GetName()}";
             }
 
             public void SetOverride(bool value) {

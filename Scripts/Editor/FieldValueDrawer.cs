@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity
 
             var gateContainer = property.serializedObject.targetObject as IGateContainer;
             var definition = DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, actualFieldName);
-            if (string.IsNullOrEmpty(definition.name)) {
+            if (string.IsNullOrEmpty(definition.GetName())) {
                 EditorGUI.LabelField(position, label.text, $"Field {actualFieldName} not found.");
                 return;
             }

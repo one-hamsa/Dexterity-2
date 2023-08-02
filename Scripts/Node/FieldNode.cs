@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity
                 if (fieldId != -1)
                 {
                     outputFieldDefinitionId = fieldId;
-                    outputFieldName = Database.instance.GetFieldDefinition(fieldId).name;
+                    outputFieldName = Database.instance.GetFieldDefinition(fieldId).GetName();
                     return true;
                 }
                 if (string.IsNullOrEmpty(outputFieldName))
@@ -255,7 +255,11 @@ namespace OneHamsa.Dexterity
                     yield return fieldDefinition;
             }
             foreach (var fieldDefinition in internalFieldDefinitions)
-                yield return fieldDefinition;
+            {
+                var f = fieldDefinition;
+                f.isInternal = true;
+                yield return f;
+            }
         }
         #endregion General Methods
 
@@ -478,7 +482,7 @@ namespace OneHamsa.Dexterity
         {
             var definition = Database.instance.GetFieldDefinition(fieldId);
             if (definition.type != FieldType.Boolean)
-                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.name}", this);
+                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.GetName()}", this);
 
             SetOverrideRaw(fieldId, value ? 1 : 0);
         }
@@ -492,12 +496,12 @@ namespace OneHamsa.Dexterity
         {
             var definition = Database.instance.GetFieldDefinition(fieldId);
             if (definition.type != FieldType.Enum)
-                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.name}", this);
+                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.GetName()}", this);
 
             int index;
             if ((index = Array.IndexOf(definition.enumValues, value)) == -1)
             {
-                Debug.LogError($"trying to set enum {definition.name} value to {value}, " +
+                Debug.LogError($"trying to set enum {definition.GetName()} value to {value}, " +
                     $"but it is not a valid enum value", this);
                 return;
             }
@@ -531,9 +535,9 @@ namespace OneHamsa.Dexterity
         /// <param name="fieldId">Field definition ID (from Manager)</param>
         public void ClearOverride(int fieldId)
         {
-            if (cachedOverrides.ContainsKey(fieldId))
+            if (cachedOverrides.TryGetValue(fieldId, out var @override))
             {
-                overrides.Remove(cachedOverrides[fieldId]);
+                overrides.Remove(@override);
                 CacheFieldOverrides();
             }
             else

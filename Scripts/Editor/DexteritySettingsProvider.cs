@@ -70,13 +70,13 @@ namespace OneHamsa.Dexterity
             // we can't use Database here since it's not initialized in edit mode, so we have to do it manually
             
             var internalField = gateContainer?.GetInternalFieldDefinitions()
-                .FirstOrDefault(fd => fd.GetInternalName() == name);
+                .FirstOrDefault(fd => fd.GetName() == name);
 
-            if (!string.IsNullOrEmpty(internalField?.name))
+            if (!string.IsNullOrEmpty(internalField?.GetName()))
                 return internalField.Value;
 
             foreach (var fd in settings.fieldDefinitions)
-                if (fd.name == name)
+                if (fd.GetName() == name)
                     return fd;
 
             return default;

@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Linq;
+using UnityEngine;
 
 namespace OneHamsa.Dexterity
 {
     [Serializable]
     public struct FieldDefinition
     {
-        public string name;
+        [SerializeField]
+        private string name;
         public FieldNode.FieldType type;
         public string[] enumValues;
+        [NonSerialized] public bool isInternal;
         
-        public string GetInternalName()
+        public string GetName()
         {
-            return $".{name}";
+            return isInternal ? $".{name}" : name;
         }
 
         public static bool IsInternalName(string fieldName) => fieldName.StartsWith(".");
@@ -26,5 +29,12 @@ namespace OneHamsa.Dexterity
         {
             return HashCode.Combine(name, (int)type, enumValues);
         }
+
+        #if UNITY_EDITOR
+        public void SetName_Editor(string s)
+        {
+            name = s;
+        }
+        #endif
     }
 }

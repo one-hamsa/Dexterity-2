@@ -25,7 +25,7 @@ namespace OneHamsa.Dexterity
             }
 
             var fieldsEnum = DexteritySettingsProvider.settings.fieldDefinitions
-                .Select(f => f.name);
+                .Select(f => f.GetName());
             var attr = (FieldAttribute)attribute;
             if (attr.allowNull) {
                 fieldsEnum = new[] { "(None)" }.Concat(fieldsEnum);
@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity
             {
                 // get internal fields
                 fieldsEnum = fieldsEnum.Concat(gateContainer.GetInternalFieldDefinitions()
-                    .Select(fd => fd.GetInternalName()));
+                    .Select(fd => fd.GetName()));
             }
 
             var fields = fieldsEnum.ToArray();

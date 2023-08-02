@@ -98,7 +98,7 @@ namespace OneHamsa.Dexterity
             this.definitionId = definitionId;
             definition = Database.instance.GetFieldDefinition(definitionId);
 
-            if (definitionId == -1 || string.IsNullOrEmpty(definition.name))
+            if (definitionId == -1 || string.IsNullOrEmpty(definition.GetName()))
                 throw new FieldInitializationException();
 
             this.context = context;

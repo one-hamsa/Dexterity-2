@@ -117,10 +117,10 @@ namespace OneHamsa.Dexterity
                     continue;
                 
                 var definition = DexteritySettingsProvider.GetFieldDefinitionByName(node, o.outputFieldName);
-                if (string.IsNullOrEmpty(definition.name))
-                    definition.name = $"(unknown: {o.outputFieldName})";
+                if (string.IsNullOrEmpty(definition.GetName()))
+                    definition.SetName_Editor($"(unknown: {o.outputFieldName})");
                     
-                o.name = $"{definition.name} = {Utils.ConvertFieldValueToText(o.value, definition)}";
+                o.name = $"{definition.GetName()} = {Utils.ConvertFieldValueToText(o.value, definition)}";
             }
 
             var overridesProp = serializedObject.FindProperty(nameof(FieldNode.overrides));
@@ -173,7 +173,7 @@ namespace OneHamsa.Dexterity
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.definition.name);
+                EditorGUILayout.LabelField(field.definition.GetName());
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();
@@ -211,7 +211,7 @@ namespace OneHamsa.Dexterity
 
                 foreach (var output in (t as FieldNode).outputFields.Values)
                 {
-                    GUILayout.Label(output.definition.name, EditorStyles.boldLabel);
+                    GUILayout.Label(output.definition.GetName(), EditorStyles.boldLabel);
 
                     upstreams.Clear();
                     ShowUpstreams(output, t as FieldNode);

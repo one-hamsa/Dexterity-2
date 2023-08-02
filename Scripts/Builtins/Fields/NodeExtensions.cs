@@ -18,12 +18,12 @@ namespace OneHamsa.Dexterity.Builtins
             field.node.enabled = false;
             field.node.AddGate(new NodeReference.Gate
             {
-                outputFieldName = field.definition.name,
+                outputFieldName = field.definition.GetName(),
                 overrideType = overrideType,
                 field = new NodeField
                 {
                     targetNodes = new List<FieldNode> { other.node },
-                    fieldName = other.definition.name,
+                    fieldName = other.definition.GetName(),
                     negate = negate
                 }
             });
@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Builtins
         {
             if (field.definition.type != FieldNode.FieldType.Enum)
             {
-                Debug.LogError($"GetEnumValue: {field.definition.name} is not of type enum");
+                Debug.LogError($"GetEnumValue: {field.definition.GetName()} is not of type enum");
                 return null;
             }
             var value = field.GetValue();
@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity.Builtins
                 case FieldNode.FieldType.Boolean:
                     return field.GetBooleanValue().ToString();
                 case FieldNode.FieldType.Enum:
-                    return field.GetEnumValue().ToString();
+                    return field.GetEnumValue();
                 default:
                     return field.GetValue().ToString();
             }

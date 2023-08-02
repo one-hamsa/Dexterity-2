@@ -188,7 +188,11 @@ namespace OneHamsa.Dexterity
             }
 
             foreach (var field in internalFieldDefinitions)
-                yield return field;
+            {
+                var f = field;
+                f.isInternal = true;
+                yield return f;
+            }
         }
 
         private void OnValidate() {
