@@ -119,7 +119,7 @@ namespace OneHamsa.Dexterity
                 if (!propertiesCache.ContainsKey(stateId))
                 {
                     if (!manualStateEditing)
-                        Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier {name}" +
+                        Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier [{GetType().Name}] {name}" +
                                          $" (probably states were added to node {GetNode().name} without updating modifier)", this);
                     // just return first
                     foreach (var p in propertiesCache.Values)

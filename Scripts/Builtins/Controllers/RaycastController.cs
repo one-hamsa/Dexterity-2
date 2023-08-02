@@ -219,6 +219,8 @@ namespace OneHamsa.Dexterity.Builtins
                     {
                         var receiver = receiversBeforeFilter[j];
                         var r = receiver.Resolve();
+                        if (r is MonoBehaviour { isActiveAndEnabled: false })
+                            continue;
                         if (filters.Count > 0 && !filters[^1](r))
                             continue;
                         potentialReceiversA.Add(r);
