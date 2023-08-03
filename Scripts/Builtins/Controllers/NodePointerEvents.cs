@@ -11,20 +11,20 @@ namespace OneHamsa.Dexterity.Builtins
         private static Queue<Transform> workQueue = new();
         
         [State(allowEmpty: true)]
-        public string hoverState = "Hover";
+        public string[] hoverStates = { "Hover" };
         [State(allowEmpty: true)]
-        public string pressedState = "Pressed";
+        public string[] pressedStates = { "Pressed" };
         [State(allowEmpty: true)]
-        public string disabledState = "Disabled";
+        public string[] disabledStates = { "Disabled" };
 
         public bool recurseNodes = true;
 
         protected List<BaseStateNode> nodes;
         private NodeRaycastRouter router;
 
-        protected int hoverStateId = StateFunction.emptyStateId;
-        protected int pressedStateId = StateFunction.emptyStateId;
-        protected int disabledStateId = StateFunction.emptyStateId;
+        protected int[] hoverStateIds;
+        protected int[] pressedStateIds;
+        protected int[] disabledStateIds;
 
         protected virtual void OnEnable()
         {
@@ -36,12 +36,9 @@ namespace OneHamsa.Dexterity.Builtins
                 router.AddReceiver(this);
             }
 
-            if (!string.IsNullOrEmpty(hoverState))
-                hoverStateId = Database.instance.GetStateID(hoverState);
-            if (!string.IsNullOrEmpty(pressedState))
-                pressedStateId = Database.instance.GetStateID(pressedState);
-            if (!string.IsNullOrEmpty(disabledState))
-                disabledStateId = Database.instance.GetStateID(disabledState);
+            hoverStateIds = hoverStates.Select(Database.instance.GetStateID).ToArray();
+            pressedStateIds = pressedStates.Select(Database.instance.GetStateID).ToArray();
+            disabledStateIds = disabledStates.Select(Database.instance.GetStateID).ToArray();
         }
 
         protected IRaycastController.RaycastEvent.Result GetResultFromState()
@@ -51,14 +48,15 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 var activeState = node.GetActiveState();
 
-                if (activeState == pressedStateId)
+                if (Array.IndexOf(pressedStateIds, activeState) != -1)
                 {
                     result = IRaycastController.RaycastEvent.Result.Accepted;
                     break;
                 }
-                if (activeState == hoverStateId)
+                if (Array.IndexOf(hoverStateIds, activeState) != -1)
                     result = IRaycastController.RaycastEvent.Result.CanAccept;
-                else if (activeState == disabledStateId && result == IRaycastController.RaycastEvent.Result.Default)
+                else if (Array.IndexOf(disabledStateIds, activeState) != -1 
+                         && result == IRaycastController.RaycastEvent.Result.Default)
                     result = IRaycastController.RaycastEvent.Result.CannotAccept;
             }
             
