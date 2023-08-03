@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity
         
         private static Dictionary<Type, MaterialType> supportedComponents = new();
         
-        [HideInInspector] public bool enableMaterialAnimations;
+        [HideInInspector] public bool enableEditorMaterialAnimations;
         
         private Component _component;
         private MaterialType _materialType;
@@ -71,7 +71,7 @@ namespace OneHamsa.Dexterity
 
         public override void PrepareTransition_Editor(string initialState, string targetState)
         {
-            enableMaterialAnimations = true;
+            enableEditorMaterialAnimations = true;
             SetMaterialDirty();
             
             base.PrepareTransition_Editor(initialState, targetState);
@@ -185,6 +185,13 @@ namespace OneHamsa.Dexterity
                 
                 case MaterialType.Renderer:
                     GetPropertyBlock();
+                    if (!overrideMaterial)
+                    {
+                        propertyBlock.Clear();
+                        ((Renderer)component).SetPropertyBlock(propertyBlock);
+                        return;
+                    }
+                    
                     foreach (var kv in intOverrides)
                     {
                         propertyBlock.SetInt(kv.Key, kv.Value);
@@ -228,7 +235,7 @@ namespace OneHamsa.Dexterity
         public Material GetModifiedMaterial(Material baseMaterial)
         {
             // Return the base material if invalid or if this component is disabled
-            if (!enabled || baseMaterial == null || (!Application.IsPlaying(this) && !enableMaterialAnimations))
+            if (!enabled || baseMaterial == null || !overrideMaterial)
                 return baseMaterial;
             
             if (component == null || materialType != MaterialType.Graphic)
@@ -279,7 +286,9 @@ namespace OneHamsa.Dexterity
             // Return the child material
             return modifiedMaterial;
         }
-        
+
+        private bool overrideMaterial => Application.IsPlaying(this) || enableEditorMaterialAnimations;
+
         protected int GetInt(int id)
         {
             if (intOverrides.TryGetValue(id, out var value))
