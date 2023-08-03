@@ -21,7 +21,10 @@ namespace OneHamsa.Dexterity
 
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
         {
-            foreach (var receiver in receivers) {
+            foreach (var receiver in receivers)
+            {
+                if (receiver is MonoBehaviour { isActiveAndEnabled: false })
+                    continue;
                 receiver.ReceiveHit(controller, ref raycastEvent);
             }
         }
