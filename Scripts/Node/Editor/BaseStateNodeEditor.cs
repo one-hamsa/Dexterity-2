@@ -314,7 +314,17 @@ namespace OneHamsa.Dexterity
             if (!modifiersCacheInvalidated)
                 return modifiers;
             
-            modifiers = new HashSet<Modifier>();
+            modifiers = GetModifiers(baseNode).ToHashSet();
+            lastModifiersUpdateTime = EditorApplication.timeSinceStartup;
+            return modifiers;
+        }
+        
+        private static IEnumerable<Modifier> GetModifiers(BaseStateNode baseNode)
+        {
+            if (Application.isPlaying)
+                return Modifier.GetModifiers(baseNode);
+
+            var modifiers = new HashSet<Modifier>();
             
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
@@ -324,7 +334,6 @@ namespace OneHamsa.Dexterity
                     modifiers.Add(modifier);
             }
 
-            lastModifiersUpdateTime = EditorApplication.timeSinceStartup;
             return modifiers;
         }
         
@@ -358,6 +367,38 @@ namespace OneHamsa.Dexterity
             Handles.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.width + 15, rect.y));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
+        }
+        
+        [MenuItem("CONTEXT/BaseStateNode/Convert to Simple Enum Node")]
+        private static void ConvertToSimpleEnumNode(MenuCommand command)
+        {
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Convert to Simple Enum Node");
+            var group = Undo.GetCurrentGroup();
+            
+            var baseNode = (BaseStateNode)command.context;
+            var simpleEnumNode = Undo.AddComponent<SimpleEnumNode>(baseNode.gameObject);
+            simpleEnumNode.manualStates.AddRange(baseNode.GetStateNames());
+            simpleEnumNode.initialState = baseNode.initialState;
+            simpleEnumNode.delays = baseNode.delays;
+            simpleEnumNode.overrideState = baseNode.overrideState;
+            simpleEnumNode.autoSyncModifiersStates = baseNode.autoSyncModifiersStates;
+
+            foreach (var modifier in GetModifiers(baseNode))
+            {
+                Undo.RecordObject(modifier, "Convert to Simple Enum Node");
+                modifier._node = simpleEnumNode;
+                EditorUtility.SetDirty(modifier);
+            }
+            
+            Undo.RecordObject(baseNode, "Convert to Simple Enum Node");
+            baseNode.enabled = false;
+            EditorUtility.SetDirty(baseNode);
+
+            simpleEnumNode.Cache_Editor();
+            EditorUtility.SetDirty(simpleEnumNode);
+            
+            Undo.CollapseUndoOperations(group);
         }
     }
 }

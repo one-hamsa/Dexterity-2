@@ -42,5 +42,9 @@ namespace OneHamsa.Dexterity
             activeStateIndex = indexOf;
             stateDirty = true;
         }
+
+        #if UNITY_EDITOR
+        public void Cache_Editor() => CacheEnumOptions();
+        #endif
     }
 }

@@ -99,9 +99,13 @@ namespace OneHamsa.Dexterity
                 return statesProvider.GetStateNames();
 
             if (unityObject is MonoBehaviour monoBehaviour) {
-                    var potentialNode = monoBehaviour.GetComponent<IHasStates>();
-                    if (potentialNode != null)
-                        return GetStatesFromObject(potentialNode as UnityEngine.Object);
+                foreach (var potentialNode in monoBehaviour.GetComponents<IHasStates>())
+                {
+                    if (potentialNode is MonoBehaviour { enabled: false })
+                        continue;
+                    
+                    return GetStatesFromObject(potentialNode as UnityEngine.Object);
+                }
             }
 
             return null;
