@@ -300,6 +300,12 @@ namespace OneHamsa.Dexterity
         }
         #endregion Overrides
 
+        [ContextMenu("Force State Change")]
+        public void ForceStateChange()
+        {
+            activeState = -1;
+            UpdateState();
+        }
         
         [ContextMenu("Toggle Auto Sync Modifiers States")]
         public void ToggleAutoSyncModifiersStates()
