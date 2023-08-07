@@ -2,11 +2,11 @@
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins {
-	[RequireComponent(typeof(FieldNode))]
+	[RequireComponent(typeof(BaseStateNode))]
 	public class TransitionsListener : MonoBehaviour {
 		[Tooltip("Optional. Will look for any Node on object or its parents")]
 		[SerializeField]
-		protected FieldNode node;
+		protected BaseStateNode node;
 
 		[Range(0, 1)] 
 		public float transitionProgressToConsiderDone = .99f;
