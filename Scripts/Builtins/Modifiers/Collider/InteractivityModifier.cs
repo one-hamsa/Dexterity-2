@@ -28,13 +28,13 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Awake();
 
-            RefreshTrackedColliders();
+            RefreshTrackedColliders(cacheDisabled: false);
         }
 
-        public void RefreshTrackedColliders()
+        public void RefreshTrackedColliders(bool cacheDisabled = true)
         {
             cachedColliders = recursive
-                ? GetComponentsInChildren<Collider>(true).Where(c => c.enabled).ToList()
+                ? GetComponentsInChildren<Collider>(true).Where(c => cacheDisabled || c.enabled).ToList()
                 : GetComponents<Collider>().ToList();
         }
 
