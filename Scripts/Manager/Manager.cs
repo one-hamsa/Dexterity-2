@@ -113,6 +113,14 @@ namespace OneHamsa.Dexterity
                 catch (Exception e)
                 {
                     Debug.LogException(e, modifier);
+                    // remove modifier from update pool if object is destroyed
+                    if (modifier == null)
+                    {
+                        Debug.LogWarning($"Modifier {modifier} was destroyed during update, " +
+                                         $"the exception above was probably caused by that reason. " +
+                                         $"removing from update pool");
+                        modifiers.Remove(modifier);
+                    }
                 }
             }
 
