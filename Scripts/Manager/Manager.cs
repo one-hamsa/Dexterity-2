@@ -116,7 +116,7 @@ namespace OneHamsa.Dexterity
                     // remove modifier from update pool if object is destroyed
                     if (modifier == null)
                     {
-                        Debug.LogWarning($"Modifier {modifier} was destroyed during update, " +
+                        Debug.LogWarning($"Modifier of type {modifier.GetType().Name} was destroyed but not removed, " +
                                          $"the exception above was probably caused by that reason. " +
                                          $"removing from update pool");
                         modifiers.Remove(modifier);
