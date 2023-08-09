@@ -50,8 +50,13 @@ namespace OneHamsa.Dexterity.Builtins
 		void PrepareForSave() 
         {
 #if UNITY_EDITOR
-	        activeInEdit = gameObject.activeSelf;
-	        EditorUtility.SetDirty(this);
+	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
+	        if (!isInstance)
+	        {
+		        EditorUtility.SetDirty(this);
+		        activeInEdit = gameObject.activeSelf;
+	        }
+	        
 			gameObject.SetActive(true);
 			EditorUtility.SetDirty(gameObject);
 #endif
