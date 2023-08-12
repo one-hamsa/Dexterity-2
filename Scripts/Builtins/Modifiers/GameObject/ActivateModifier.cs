@@ -65,7 +65,11 @@ namespace OneHamsa.Dexterity.Builtins
 		void PrepareForEdit() 
         {
 #if UNITY_EDITOR
-			gameObject.SetActive(activeInEdit);
+	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
+	        if (!isInstance)
+	        {
+		        gameObject.SetActive(activeInEdit);
+	        }
 #endif
 		}
     }
