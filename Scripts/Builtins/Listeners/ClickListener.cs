@@ -30,6 +30,7 @@ namespace OneHamsa.Dexterity.Builtins
         public Settings settings = new Settings {};
 
         public event Action onPressDown;
+        public event Action onPressUp;
 
         FieldNode.OutputField pressedField;
         FieldNode.OutputField hoverField;
@@ -81,8 +82,15 @@ namespace OneHamsa.Dexterity.Builtins
             if (disabledField != null && disabledField.GetBooleanValue())
                 return;
 
-            if (newValue && !oldValue)
-                onPressDown?.Invoke();
+            switch (newValue)
+            {
+                case true when !oldValue:
+                    onPressDown?.Invoke();
+                    break;
+                case false when oldValue:
+                    onPressUp?.Invoke();
+                    break;
+            }
 
             // manually refresh hover value - we might be in the middle of a cache update
             hoverField.CacheValue();
