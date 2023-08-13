@@ -97,10 +97,12 @@ namespace OneHamsa.Dexterity.Builtins
 
             // only handle if unpressed while on object
             if (oldValue && !newValue && hoverField.GetBooleanValue())
-                Click();
+                OnPressComplete();
         }
 
-        public void Click()
+        protected virtual void OnPressComplete() => TriggerClick();
+
+        public void TriggerClick()
         {
             pressFrame = Time.frameCount;
             onClick?.Invoke();
