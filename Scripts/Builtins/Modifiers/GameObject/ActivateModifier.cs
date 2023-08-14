@@ -50,6 +50,9 @@ namespace OneHamsa.Dexterity.Builtins
 		void PrepareForSave() 
         {
 #if UNITY_EDITOR
+	        if (!enabled)
+		        return;
+	        
 	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
 	        if (!isInstance)
 	        {
@@ -64,6 +67,9 @@ namespace OneHamsa.Dexterity.Builtins
 
 		void PrepareForEdit() 
         {
+	        if (!enabled)
+		        return;
+	        
 #if UNITY_EDITOR
 	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
 	        if (!isInstance)
