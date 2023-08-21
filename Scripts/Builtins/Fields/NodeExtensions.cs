@@ -8,7 +8,9 @@ namespace OneHamsa.Dexterity.Builtins
     {
         public static NodeRaycastRouter GetRaycastRouter(this BaseStateNode node)
         {
-            return node.GetOrAddComponent<NodeRaycastRouter>();
+            var router = node.GetOrAddComponent<NodeRaycastRouter>();
+            router.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
+            return router;
         }
         
         public static void AddUpstream(this FieldNode.OutputField field, FieldNode.OutputField other, 
