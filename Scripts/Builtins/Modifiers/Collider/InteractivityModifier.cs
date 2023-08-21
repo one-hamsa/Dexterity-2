@@ -2,20 +2,31 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using OneHamsa.Dexterity.Utilities;
 
 namespace OneHamsa.Dexterity.Builtins
 {
     public class InteractivityModifier : Modifier
     {
         public bool recursive = true;
-        private List<Collider> cachedColliders;
+        private List<Collider> cachedColliders = new();
 
+        // XXX: this is a hack, modifiers should also have individual override states
         private bool _overrideDisable;
-        public bool overrideDisable { set { _overrideDisable = value; HandleStateChange(_node.GetActiveState(), _node.GetActiveState()); }}
+        public bool overrideDisable
+        {
+            set
+            {
+                _overrideDisable = value;
+                dirty = true;
+            }
+        }
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
         private static List<Collider> colliderDisabledByTmp = new();
+        private HierarchyListener hierarchyListener;
+        private bool dirty;
 
         [Serializable]
         public class Property : PropertyBase
@@ -24,18 +35,66 @@ namespace OneHamsa.Dexterity.Builtins
             public bool interactive;
         }
 
-        protected override void Awake()
+        protected override void OnEnable()
         {
-            base.Awake();
+            dirty = true;
 
-            RefreshTrackedColliders(cacheDisabled: false);
+            if (recursive)
+            {
+                hierarchyListener = gameObject.GetOrAddComponent<HierarchyListener>();
+                hierarchyListener.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
+
+                hierarchyListener.onChildAdded += OnChildAdded;
+                hierarchyListener.onChildRemoved += OnChildRemoved;
+            }
+
+            base.OnEnable();
+
         }
 
-        public void RefreshTrackedColliders(bool cacheDisabled = true)
+        protected override void OnDisable()
         {
-            cachedColliders = recursive
-                ? GetComponentsInChildren<Collider>(true).Where(c => cacheDisabled || c.enabled).ToList()
-                : GetComponents<Collider>().ToList();
+            base.OnDisable();
+
+            if (hierarchyListener != null)
+            {
+                hierarchyListener.onChildAdded -= OnChildAdded;
+                hierarchyListener.onChildRemoved -= OnChildRemoved;
+            }
+        }
+
+        private void OnChildAdded(Transform child)
+        {
+            // can be optimized - look only at child
+            dirty = true;
+        }
+
+        private void OnChildRemoved(Transform child)
+        {
+            // can be optimized - look only at child
+            dirty = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (dirty)
+            {
+                dirty = false;
+                
+                // collect colliders
+                RefreshTrackedColliders();
+                // update colliders
+                HandleStateChange(GetNodeActiveStateWithoutDelay(), GetNodeActiveStateWithoutDelay());
+            }
+        }
+
+        private void RefreshTrackedColliders()
+        {
+            cachedColliders.Clear();
+            if (recursive)
+                GetComponentsInChildren(true, cachedColliders);
+            else
+                GetComponents(cachedColliders);
         }
 
         public override void HandleStateChange(int oldState, int newState) {

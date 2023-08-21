@@ -154,8 +154,10 @@ namespace OneHamsa.Dexterity
         public override int GetActiveState() => activeState;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetNodeActiveStateWithDelay() 
-            => IsTransitionDelayed() ? lastState : GetNode().GetActiveState();
+        protected int GetNodeActiveStateWithDelay() 
+            => IsTransitionDelayed() ? lastState : GetNodeActiveStateWithoutDelay();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected int GetNodeActiveStateWithoutDelay() => GetNode().GetActiveState();
 
         [Serializable]
         public abstract class PropertyBase
@@ -220,7 +222,16 @@ namespace OneHamsa.Dexterity
                 return;
             
             activeState = GetNode().GetActiveState();
-            HandleStateChange(activeState, activeState);
+            try
+            {
+                HandleStateChange(activeState, activeState);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, this);
+                enabled = false;
+                return;
+            }
 
             cachedStates = GetNode().GetStateIDs().ToArray();
 
