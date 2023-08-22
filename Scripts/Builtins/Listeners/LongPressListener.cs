@@ -1,83 +1,86 @@
-﻿using System;
-using OneHamsa.Dexterity;
-using OneHamsa.Dexterity.Builtins;
-using UnityEngine;
-using UnityEngine.Events;
+﻿using UnityEngine;
 using UnityEngine.Scripting;
-using UnityEngine.UI;
 
-public class LongPressListener : ClickListener {
-
-	public float pressDuration = 1f;
-	public float fillStartsAt = 0.05f;
-
-	private bool pressed;
-	private float currentPressDuration;
-
-	[Preserve] public bool IsPressed() => pressed;
-	[Preserve] public float timeRemaining => pressDuration - currentPressDuration;
-
-	protected override void Awake() 
+namespace OneHamsa.Dexterity.Builtins
+{
+	public class LongPressListener : ClickListener
 	{
-		base.Awake();
-		OnPressUp();
-	}
 
-	protected override void OnEnable() 
-	{
-		base.OnEnable();
-		onPressDown += OnPressDown;
-		onPressUp += OnPressUp;
-	}
+		public float pressDuration = 1f;
+		public float fillStartsAt = 0.05f;
 
-	protected override void OnDisable() 
-	{
-		base.OnDisable();
-		
-		onPressDown -= OnPressDown;
-		onPressUp -= OnPressUp;
-	}
+		private bool pressed;
+		private float currentPressDuration;
 
-	protected virtual void OnPressDown() 
-	{
-		pressed = true;
-		currentPressDuration = fillStartsAt * pressDuration;
-	}
+		[Preserve]
+		public bool IsPressed() => pressed;
 
-	protected virtual void OnPressUp() 
-	{
-		pressed = false;
-		UpdateProgress(0);
-	}
+		[Preserve] public float timeRemaining => pressDuration - currentPressDuration;
 
-
-	void Update()
-	{
-		if (pressed)
+		protected override void Awake()
 		{
-			currentPressDuration += Time.unscaledDeltaTime;
-			if (currentPressDuration >= pressDuration)
+			base.Awake();
+			OnPressUp();
+		}
+
+		protected override void OnEnable()
+		{
+			base.OnEnable();
+			onPressDown += OnPressDown;
+			onPressUp += OnPressUp;
+		}
+
+		protected override void OnDisable()
+		{
+			base.OnDisable();
+
+			onPressDown -= OnPressDown;
+			onPressUp -= OnPressUp;
+		}
+
+		protected virtual void OnPressDown()
+		{
+			pressed = true;
+			currentPressDuration = fillStartsAt * pressDuration;
+		}
+
+		protected virtual void OnPressUp()
+		{
+			pressed = false;
+			UpdateProgress(0);
+		}
+
+
+		void Update()
+		{
+			if (pressed)
 			{
-				pressed = false;
-				OnWaitCompleted();
-			}
-			else
-			{
-				float t = currentPressDuration / pressDuration;
-				UpdateProgress(t);
+				currentPressDuration += Time.unscaledDeltaTime;
+				if (currentPressDuration >= pressDuration)
+				{
+					pressed = false;
+					OnWaitCompleted();
+				}
+				else
+				{
+					float t = currentPressDuration / pressDuration;
+					UpdateProgress(t);
+				}
 			}
 		}
-	}
 
-	protected virtual void UpdateProgress(float progress) { }
+		protected virtual void UpdateProgress(float progress)
+		{
+		}
 
-	protected virtual void OnWaitCompleted()
-	{
-		TriggerClick();
-	}
+		protected virtual void OnWaitCompleted()
+		{
+			TriggerClick();
+		}
 
-	protected override void OnPressComplete()
-	{
-		// do nothing now
+		protected override void OnPressComplete()
+		{
+			// do nothing now
+		}
 	}
 }
