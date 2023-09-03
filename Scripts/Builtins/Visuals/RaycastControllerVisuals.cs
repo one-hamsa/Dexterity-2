@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace OneHamsa.Dexterity.Builtins
         {
             controller = GetComponent<RaycastController>();
         }
+
+        private void OnDisable() => Update();
+
         // Update is called once per frame
         void Update()
         {
@@ -30,7 +34,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (lineRenderer == null)
                 return;
             
-            lineRenderer.enabled = controller.current;
+            lineRenderer.enabled = controller.current && isActiveAndEnabled;
             
             Vector3 origin = controller.displayRay.origin;
             lineRenderer.SetPosition(0, origin);
@@ -51,7 +55,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (destinationLineRenderer == null)
                 return;
             
-            destinationLineRenderer.enabled = controller.current && controller.didHit;
+            destinationLineRenderer.enabled = controller.current && controller.didHit && isActiveAndEnabled;
 
             var destToOrigin = controller.displayRay.origin - controller.hit.point;
             if (destToOrigin.sqrMagnitude > maxDestLength * maxDestLength)
