@@ -159,6 +159,8 @@ namespace OneHamsa.Dexterity.Builtins
             if (!wasCurrent)
                 return;
 
+            pressStartFrame = Time.frameCount;
+
             if (onAnyPress != null)
             {
                 var args = new PressAnywhereEvent { controller = this, propagate = true };
@@ -166,8 +168,6 @@ namespace OneHamsa.Dexterity.Builtins
                 if (!args.propagate)
                     return;
             }
-
-            pressStartFrame = Time.frameCount;
         }
 
         private void HandleOtherPressed(RaycastController controller)
