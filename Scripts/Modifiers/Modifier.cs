@@ -48,7 +48,7 @@ namespace OneHamsa.Dexterity
 
         private int[] cachedStates;
         private Dictionary<(DelayDirection, int), TransitionDelay> cachedDelays = new();
-        private int lastState = StateFunction.emptyStateId;
+        private int renderedState = StateFunction.emptyStateId;
 
         protected override int[] states => cachedStates;
         protected override double deltaTime => myDeltaTime;
@@ -87,7 +87,7 @@ namespace OneHamsa.Dexterity
             InitializeTransitionState();
             myTimeSinceStateChange = 1d;
             
-            lastState = activeState;
+            renderedState = activeState;
             activeState = targetStateId;
         }
 
@@ -144,18 +144,18 @@ namespace OneHamsa.Dexterity
             // subscribe to refreshes (removed when transition ends)
             if (isActiveAndEnabled && Manager.instance != null)
                 Manager.instance.AddModifier(this);
-            lastState = oldState;
+            renderedState = oldState;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsTransitionDelayed() => timeSinceStateChange < GetStateDelay(lastState, GetNode().GetActiveState());
+        protected bool IsTransitionDelayed() => timeSinceStateChange < GetStateDelay(renderedState, GetNode().GetActiveState());
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetActiveState() => activeState;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int GetNodeActiveStateWithDelay() 
-            => IsTransitionDelayed() ? lastState : GetNodeActiveStateWithoutDelay();
+            => IsTransitionDelayed() ? renderedState : GetNodeActiveStateWithoutDelay();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int GetNodeActiveStateWithoutDelay() => GetNode().GetActiveState();
 
@@ -389,9 +389,9 @@ namespace OneHamsa.Dexterity
         /// <summary>
         /// jumps to current state (skips delays)
         /// </summary>
-        public void JumpToState()
+        public void JumpToNodeState()
         {
-            lastState = _node.GetActiveState();
+            renderedState = activeState = _node.GetActiveState();
         }
 
         protected virtual void Reset() {

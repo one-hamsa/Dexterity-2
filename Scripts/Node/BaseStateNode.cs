@@ -236,10 +236,10 @@ namespace OneHamsa.Dexterity
 
             foreach (var modifier in Modifier.GetModifiers(this))
             {
+                // ignore delays
+                modifier.JumpToNodeState();
                 // create a new transition state that is already pointing to active state
                 modifier.InitializeTransitionState();
-                // ignore delays
-                modifier.JumpToState();
             }
             
             UpdateState();
