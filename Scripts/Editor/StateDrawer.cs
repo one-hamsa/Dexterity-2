@@ -4,15 +4,13 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
     [CustomPropertyDrawer(typeof(StateAttribute))]
     public class StateDrawer : PropertyDrawer
     {
-        private List<string> states = new List<string>();
-        private List<string> stateNames = new List<string>();
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
 
@@ -58,30 +56,38 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            states.Clear();
-            stateNames.Clear();
-
-            if (attr.allowEmpty)
+            var states = ListPool<string>.Get();
+            var stateNames = ListPool<string>.Get();
+            try
             {
-                states.Add(null);
-                stateNames.Add("(None)");
+                if (attr.allowEmpty)
+                {
+                    states.Add(null);
+                    stateNames.Add("(None)");
+                }
+
+                foreach (var state in statesSet)
+                {
+                    states.Add(state);
+                    stateNames.Add(state);
+                }
+
+                var value = property.stringValue;
+                if (string.IsNullOrEmpty(value))
+                    value = null;
+
+                EditorGUI.BeginChangeCheck();
+                var index = EditorGUI.Popup(position, label.text, states.IndexOf(value), stateNames.ToArray());
+                if (EditorGUI.EndChangeCheck())
+                {
+                    property.stringValue = states[index];
+                    EditorUtility.SetDirty(property.serializedObject.targetObject);
+                }
             }
-
-            foreach (var state in statesSet) {
-                states.Add(state);
-                stateNames.Add(state);
-            }
-
-            var value = property.stringValue;
-            if (string.IsNullOrEmpty(value))
-                value = null;
-
-            EditorGUI.BeginChangeCheck();
-            var index = EditorGUI.Popup(position, label.text, states.IndexOf(value), stateNames.ToArray());
-            if (EditorGUI.EndChangeCheck())
+            finally
             {
-                property.stringValue = states[index];
-                EditorUtility.SetDirty(property.serializedObject.targetObject);
+                ListPool<string>.Release(states);
+                ListPool<string>.Release(stateNames);
             }
         }
     }
