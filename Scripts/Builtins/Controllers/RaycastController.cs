@@ -339,5 +339,6 @@ namespace OneHamsa.Dexterity.Builtins
         bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
         Vector3 IRaycastController.position => transform.position;
         Vector3 IRaycastController.forward => transform.forward;
+        Vector3 IRaycastController.up => transform.up;
     }
 }
