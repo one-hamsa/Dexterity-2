@@ -5,6 +5,7 @@ namespace OneHamsa.Dexterity.Builtins
     public class RaycastPressField : BaseField
     {
         [TagSelector] public string tag = "Untagged";
+        public bool stayPressedOutOfBounds = false;
         DexterityRaycastFieldProvider provider;
         private NodeRaycastRouter router;
 
@@ -13,6 +14,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             provider = new DexterityRaycastFieldProvider();
+            provider.stayPressedOutOfBounds = stayPressedOutOfBounds;
             router = context.GetRaycastRouter();
             router.AddReceiver(provider);
         }
