@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity
     /// </summary>
     public abstract class BaseMaterialModifier : Modifier, IMaterialModifier
     {
+        Material modifiedMaterial;
         protected enum MaterialType
         {
             Graphic,
@@ -61,6 +62,14 @@ namespace OneHamsa.Dexterity
         protected override void OnDisable()
         {
             base.OnDisable();
+            if (Application.isPlaying)
+            {
+                Destroy(modifiedMaterial);
+            }
+            else
+            {
+                DestroyImmediate(modifiedMaterial);
+            }
             SetMaterialDirty();
         }
 
@@ -241,15 +250,18 @@ namespace OneHamsa.Dexterity
             if (component == null || materialType != MaterialType.Graphic)
                 return baseMaterial;
 
-            // Create a child material of the original
-            Material modifiedMaterial = new(baseMaterial.shader)
+            if (modifiedMaterial == null)
             {
-                // Set a new name, to warn about editor modifications
-                name = $"{baseMaterial.name} OVERRIDE",
-                hideFlags = HideFlags.HideAndDontSave | HideFlags.NotEditable
-            };
+                // Create a child material of the original
+                modifiedMaterial = new(baseMaterial.shader)
+                {
+                    // Set a new name, to warn about editor modifications
+                    name = $"{baseMaterial.name} OVERRIDE",
+                    hideFlags = HideFlags.HideAndDontSave | HideFlags.NotEditable
+                };
+            }
 #if UNITY_2022_1_OR_NEWER && UNITY_EDITOR
-          modifiedMaterial.parent = baseMaterial;
+            modifiedMaterial.parent = baseMaterial;
 #endif
             modifiedMaterial.CopyPropertiesFromMaterial(baseMaterial);
 
