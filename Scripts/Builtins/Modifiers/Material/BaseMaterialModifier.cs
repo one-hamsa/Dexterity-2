@@ -12,7 +12,6 @@ namespace OneHamsa.Dexterity
     /// </summary>
     public abstract class BaseMaterialModifier : Modifier, IMaterialModifier
     {
-        Material modifiedMaterial;
         protected enum MaterialType
         {
             Graphic,
@@ -40,6 +39,8 @@ namespace OneHamsa.Dexterity
         private Dictionary<int, Color> colorOverrides = new();
         private Dictionary<int, Texture> textureOverrides = new();
         private Dictionary<int, Matrix4x4> matrixOverrides = new();
+        
+        private Material modifiedMaterial;
 
         static void AddSupportedComponent<T>(MaterialType materialType) where T : Component
         {
@@ -76,6 +77,17 @@ namespace OneHamsa.Dexterity
         protected void Start()
         {
             CacheComponent();
+        }
+
+        private void OnDestroy()
+        {
+            if (modifiedMaterial == null) 
+                return;
+            
+            if (Application.isPlaying)
+                Destroy(modifiedMaterial);
+            else
+                DestroyImmediate(modifiedMaterial);
         }
 
         public override void PrepareTransition_Editor(string initialState, string targetState)
