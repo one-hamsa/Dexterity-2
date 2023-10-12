@@ -89,15 +89,7 @@ namespace OneHamsa.Dexterity.Builtins
                 if (childReceivers.Contains(r) || (orFilter != null && orFilter(r)))
                     return true;
 
-                var t = ((Component)r).transform;
-                while (t != null)
-                {
-                    if (t == root)
-                        return true;
-                    t = t.parent;
-                }
-
-                return false;
+                return ((Component)r).transform.IsChildOf(root);
             }
 
             AddFilter(Filter);
