@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -15,15 +13,19 @@ namespace OneHamsa.Dexterity.Builtins
 
         RaycastController controller;
 
+        protected virtual bool isVisible => isActiveAndEnabled;
+
         private void Awake()
         {
             controller = GetComponent<RaycastController>();
         }
 
-        private void OnDisable() => Update();
+        protected virtual void OnEnable() { }
+
+        protected virtual void OnDisable() => Update();
 
         // Update is called once per frame
-        void Update()
+        protected virtual void Update()
         {
             UpdateSourceLineRenderer();
             UpdateDestinationLineRenderer();
@@ -34,7 +36,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (lineRenderer == null)
                 return;
             
-            lineRenderer.enabled = controller.current && isActiveAndEnabled;
+            lineRenderer.enabled = controller.current && isVisible;
             
             Vector3 origin = controller.displayRay.origin;
             lineRenderer.SetPosition(0, origin);
