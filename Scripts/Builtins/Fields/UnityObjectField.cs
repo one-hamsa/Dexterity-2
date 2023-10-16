@@ -20,13 +20,12 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
-            objectCtx = null;
             if (targetObject == null)
                 return;
             
             try
             {
-                objectCtx = new ObjectValueContext(this, nameof(targetProperty));
+                objectCtx ??= new ObjectValueContext(this, nameof(targetProperty));
             }
             catch (ArgumentException e)
             {

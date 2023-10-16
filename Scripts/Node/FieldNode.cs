@@ -76,6 +76,7 @@ namespace OneHamsa.Dexterity
         // output fields of this node
         public SortedList<int, OutputField> outputFields = new();
         public SortedList<int, OutputOverride> cachedOverrides = new();
+        public List<Gate> GetAllGates() => reference != null ? reference.gates : emptyGateList;
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
@@ -84,18 +85,17 @@ namespace OneHamsa.Dexterity
 
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
-        int gatesDirtyIncrement;
-        int overridesDirtyIncrement;
+        private int gatesDirtyIncrement;
+        private int overridesDirtyIncrement;
+        private bool referenceRequiresInitialize = true;
 
         FieldMask fieldMask = new FieldMask(32);
-        int[] stateFieldIds;
+        private int[] stateFieldIdsCache;
         private HashSet<string> fieldNames;
         private HashSet<string> stateNames;
         private StateFunction.StepEvaluationCache stepEvalCache;
         
         private static List<Gate> emptyGateList = new(0);
-
-        public List<Gate> GetAllGates() => reference != null ? reference.gates : emptyGateList;
 
         #endregion Private Properties
 
@@ -155,20 +155,29 @@ namespace OneHamsa.Dexterity
                 // copy all internal fields to the runtime instance
                 reference.internalFieldDefinitions.AddRange(GetInternalFieldDefinitions());
             }
-            else
-            {
+            else if (referenceRequiresInitialize)
                 reference.Uninitialize();
+
+            var shouldRebuildCaches = false;
+            if (referenceRequiresInitialize)
+            {
+                // initialize reference (this will create the runtime version with all the inherited gates)
+                reference.Initialize(customGates);
+                referenceRequiresInitialize = false;
+                shouldRebuildCaches = true;
             }
-            // initialize reference (this will create the runtime version with all the inherited gates)
-            reference.Initialize(customGates);
 
             // run base initialize after registering states
             base.Initialize();
-            // then initialize step list
-            (this as IStepList).InitializeSteps();
 
-            // find all fields that are used by this node's state function
-            stateFieldIds = GetFieldIDs().ToArray();
+            if (shouldRebuildCaches)
+            {
+                // then initialize step list
+                (this as IStepList).InitializeSteps();
+
+                // find all fields that are used by this node's state function
+                stateFieldIdsCache = GetFieldIDs().ToArray();
+            }
 
             // subscribe to more changes
             onGateAdded += RestartFields;
@@ -419,12 +428,14 @@ namespace OneHamsa.Dexterity
 
         public void AddGate(Gate gate)
         {
+            referenceRequiresInitialize = true;
             customGates.Add(gate);
             onGateAdded?.Invoke(gate);
         }
 
         public void RemoveGate(Gate gate)
         {
+            referenceRequiresInitialize = true;
             customGates.Remove(gate);
             onGateRemoved?.Invoke(gate);
         }
@@ -445,7 +456,7 @@ namespace OneHamsa.Dexterity
         {
             fieldMask.Clear();
 
-            foreach (var fieldId in stateFieldIds)
+            foreach (var fieldId in stateFieldIdsCache)
             {
                 var value = GetOutputField(fieldId).GetValue();
                 // if this field isn't provided just assume default

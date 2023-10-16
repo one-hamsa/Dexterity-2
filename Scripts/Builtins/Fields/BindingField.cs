@@ -1,8 +1,4 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
-using UnityEngine.Events;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -16,6 +12,9 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             if (!binding.IsValid())
+                return;
+
+            if (binding.IsInitialized())
                 return;
             
             if (!binding.Initialize())

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -61,13 +62,11 @@ namespace OneHamsa.Dexterity
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        private readonly HashSet<StateFunction> stateFunctionsSet = new();
-
         private static readonly HashSet<NodeReference> parentReferences = new();
         private HashSet<string> stateNames;
         private HashSet<string> fieldNames;
 
-        public void Initialize(IEnumerable<Gate> gates, HashSet<NodeReference> parentReferences = null)
+        public void Initialize(List<Gate> gates, HashSet<NodeReference> parentReferences = null)
         {
             // register all internal fields
             foreach (var field in internalFieldDefinitions)
@@ -95,7 +94,7 @@ namespace OneHamsa.Dexterity
                 var newParent = Instantiate(parent);
 
                 // make sure it's recursive
-                newParent.Initialize(new Gate[] { }, parentReferences);
+                newParent.Initialize(null, parentReferences);
                 
                 var i = 0;
                 foreach (var gate in newParent.gates)
@@ -108,9 +107,12 @@ namespace OneHamsa.Dexterity
             }
 
             // add new gates
-            foreach (var gate in gates)
+            if (gates != null)
             {
-                this.gates.Add(gate);
+                foreach (var gate in gates)
+                {
+                    this.gates.Add(gate);
+                }
             }
         }
 
@@ -144,24 +146,37 @@ namespace OneHamsa.Dexterity
         }
 
         public IEnumerable<StateFunction> GetStateFunctionAssetsIncludingParents() {
-            stateFunctionsSet.Clear();
-            foreach (var asset in stateFunctionAssets) {
-                if (asset == null)
-                    continue;
+            var stateFunctionsSet = HashSetPool<StateFunction>.Get();
+            try
+            {
+                foreach (var asset in stateFunctionAssets)
+                {
+                    if (asset == null)
+                        continue;
 
-                if (stateFunctionsSet.Add(asset)) {
-                    yield return asset;
-                }
-            }
-            foreach (var parent in extends) {
-                if (parent == null)
-                    continue;
-
-                foreach (var asset in parent.GetStateFunctionAssetsIncludingParents()) {
-                    if (stateFunctionsSet.Add(asset)) {
+                    if (stateFunctionsSet.Add(asset))
+                    {
                         yield return asset;
                     }
                 }
+
+                foreach (var parent in extends)
+                {
+                    if (parent == null)
+                        continue;
+
+                    foreach (var asset in parent.GetStateFunctionAssetsIncludingParents())
+                    {
+                        if (stateFunctionsSet.Add(asset))
+                        {
+                            yield return asset;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                HashSetPool<StateFunction>.Release(stateFunctionsSet);
             }
         }
 

@@ -233,7 +233,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            cachedStates = GetNode().GetStateIDs().ToArray();
+            cachedStates ??= GetNode().GetStateIDs().ToArray();
 
             CacheDelays();
 
