@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
+using System;
 
 namespace OneHamsa.Dexterity
 {
@@ -59,7 +60,14 @@ namespace OneHamsa.Dexterity
 
         private void OnNodeStateChanged(int oldState, int newState)
         {
-            stepListView.RefreshItems();
+            try 
+            {
+                stepListView.RefreshItems();
+            }
+            catch (Exception e) 
+            {
+                Debug.LogException(e, target);
+            }
         }
 
         private void OnDestroy()
