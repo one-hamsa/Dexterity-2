@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity.Builtins {
 			onTransitionsStart?.Invoke(oldValue, newValue);
 		}
 
-		private void Update()
+		private void LateUpdate()
 		{
 			if (!transitioning)
 				return;
@@ -73,7 +73,7 @@ namespace OneHamsa.Dexterity.Builtins {
 
 		void OnTransitionEnded(int activeState)
 		{
-			Update();
+			LateUpdate();
 		}
 	}
 }

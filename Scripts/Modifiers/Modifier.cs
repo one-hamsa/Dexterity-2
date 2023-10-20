@@ -108,7 +108,8 @@ namespace OneHamsa.Dexterity
 
         public override bool IsChanged()
         {
-            return base.IsChanged() || IsTransitionDelayed();
+            return base.IsChanged() || IsTransitionDelayed() 
+                                    || GetNodeActiveStateWithoutDelay() != activeState;
         }
 
         public PropertyBase GetProperty(int stateId)
