@@ -77,11 +77,6 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 var row = rows[i];
                 row.name = row.ToString();
-                // fix default values
-                if (row.time == 0f)
-                    row.time = defaultTime;
-                if (row.easingCurve == null || row.easingCurve.keys.Length == 0)
-                    row.easingCurve = defaultEasingCurve;
             }
         }
 
