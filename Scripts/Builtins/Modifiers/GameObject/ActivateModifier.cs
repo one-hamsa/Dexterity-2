@@ -20,9 +20,11 @@ namespace OneHamsa.Dexterity.Builtins
             public bool active;
         }
 
-        public override void HandleStateChange(int oldState, int newState)
+        
+        // override HandleNodeStateChange to decouple from this gameObject's lifecycle
+	    protected override void HandleNodeStateChange(int oldState, int newState)
         {
-            base.HandleStateChange(oldState, newState);
+            base.HandleNodeStateChange(oldState, newState);
             var node = GetNode();
             if (this != null && node != null && node.isActiveAndEnabled && enabled)
                 gameObject.SetActive(((Property)GetProperty(newState)).active);
@@ -78,5 +80,17 @@ namespace OneHamsa.Dexterity.Builtins
 	        }
 #endif
 		}
+		
+		#if UNITY_EDITOR
+	    public override (string, LogType) GetEditorComment()
+	    {
+		    var node = GetNode();
+		    if (GetNode() != null && node.gameObject == gameObject)
+		    {
+			    return ("ActivateModifier should not be used on the same GameObject as the node it is attached to.", LogType.Error);
+		    }
+		    return base.GetEditorComment();
+	    }
+#endif
     }
 }

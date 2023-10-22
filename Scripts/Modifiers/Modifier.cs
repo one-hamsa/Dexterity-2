@@ -140,12 +140,22 @@ namespace OneHamsa.Dexterity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public PropertyBase GetActiveProperty() => GetProperty(GetNode().GetActiveState());
 
-        public virtual void HandleStateChange(int oldState, int newState)
+        protected virtual void HandleNodeStateChange(int oldState, int newState)
         {
             // subscribe to refreshes (removed when transition ends)
             if (isActiveAndEnabled && Manager.instance != null)
                 Manager.instance.AddModifier(this);
             renderedState = oldState;
+        }
+        
+        /// <summary>
+        /// called when the modifier state changes, after possible delays
+        /// </summary>
+        /// <param name="oldState"></param>
+        /// <param name="newState"></param>
+        public virtual void HandleStateChange(int oldState, int newState)
+        {
+            // override me
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -225,6 +235,7 @@ namespace OneHamsa.Dexterity
             activeState = GetNode().GetActiveState();
             try
             {
+                HandleNodeStateChange(activeState, activeState);
                 HandleStateChange(activeState, activeState);
             }
             catch (Exception e)
@@ -288,8 +299,8 @@ namespace OneHamsa.Dexterity
                 _node.onEnabled += HandleNodeEnabled;
             }
 
-            _node.onStateChanged -= HandleStateChange;
-            _node.onStateChanged += HandleStateChange;
+            _node.onStateChanged -= HandleNodeStateChange;
+            _node.onStateChanged += HandleNodeStateChange;
 
             base.OnEnable();
         }
@@ -302,7 +313,7 @@ namespace OneHamsa.Dexterity
             
             if (_node != null) {
                 _node.onEnabled -= HandleNodeEnabled;
-                _node.onStateChanged -= HandleStateChange;
+                _node.onStateChanged -= HandleNodeStateChange;
                 if (nodesToModifiers.TryGetValue(_node, out var modifiers))
                     modifiers.Remove(this);
             }
@@ -312,7 +323,7 @@ namespace OneHamsa.Dexterity
 
         public override void Refresh()
         {
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
             {
                 // wait for node to be enabled
                 var node = GetNode();
@@ -321,7 +332,10 @@ namespace OneHamsa.Dexterity
 
                 myTimeSinceStateChange = node.timeSinceStateChange;
                 myDeltaTime = node.deltaTime;
+                var oldState = activeState;
                 activeState = GetNodeActiveStateWithDelay();
+                if (oldState != activeState)
+                    HandleStateChange(oldState, activeState);
             }
 
             base.Refresh();
@@ -402,47 +416,8 @@ namespace OneHamsa.Dexterity
         }
 
         #if UNITY_EDITOR
-        public class EditorAnimationContext : IDisposable
-        {
-            protected Modifier modifier;
-            
-            public BaseStateNode GetNode() => modifier.GetNode();
-            public EditorAnimationContext(Modifier modifier)
-            {
-                this.modifier = modifier;
-            }
-            
-            public bool IsValid() => modifier != null;
-            
-            public virtual void OnNodeEnabled()
-            {
-                modifier.HandleNodeEnabled();
-                // force updating at least once
-                modifier.ForceTransitionUpdate();
-            }
-
-            public virtual void HandleStateChange(int oldState, int newState)
-            {
-                modifier.HandleStateChange(oldState, newState);
-            }
-
-            public virtual bool Refresh()
-            {
-                modifier.Refresh();
-                if (!modifier.IsChanged()) 
-                    return false;
-                UnityEditor.EditorUtility.SetDirty(modifier);
-                return true;
-            }
-
-            public virtual void Dispose()
-            {
-            }
-        }
-        public virtual EditorAnimationContext GetEditorAnimationContext() => new(this);
-        
         public virtual (string, LogType) GetEditorComment() => default;
-#endif
+        #endif
     }
 
 }
