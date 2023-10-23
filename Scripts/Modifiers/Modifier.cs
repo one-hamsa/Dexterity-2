@@ -145,7 +145,8 @@ namespace OneHamsa.Dexterity
             // subscribe to refreshes (removed when transition ends)
             if (isActiveAndEnabled && Manager.instance != null)
                 Manager.instance.AddModifier(this);
-            renderedState = oldState;
+            
+            HandleStateChange(renderedState, GetNodeActiveStateWithDelay());
         }
         
         /// <summary>
@@ -155,7 +156,7 @@ namespace OneHamsa.Dexterity
         /// <param name="newState"></param>
         public virtual void HandleStateChange(int oldState, int newState)
         {
-            // override me
+            renderedState = newState;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -236,7 +237,6 @@ namespace OneHamsa.Dexterity
             try
             {
                 HandleNodeStateChange(activeState, activeState);
-                HandleStateChange(activeState, activeState);
             }
             catch (Exception e)
             {
@@ -279,7 +279,7 @@ namespace OneHamsa.Dexterity
             TryFindNode();
             if (!EnsureValidState())
             {
-                if (Application.isPlaying)
+                if (Application.IsPlaying(this))
                     enabled = false;
                 return;
             }
@@ -332,10 +332,7 @@ namespace OneHamsa.Dexterity
 
                 myTimeSinceStateChange = node.timeSinceStateChange;
                 myDeltaTime = node.deltaTime;
-                var oldState = activeState;
                 activeState = GetNodeActiveStateWithDelay();
-                if (oldState != activeState)
-                    HandleStateChange(oldState, activeState);
             }
 
             base.Refresh();
@@ -343,6 +340,9 @@ namespace OneHamsa.Dexterity
             if (!IsChanged() && Manager.instance != null)
                 // unsubscribe from refreshes until state changes
                 Manager.instance.RemoveModifier(this);
+            
+            if (renderedState != activeState)
+                HandleStateChange(renderedState, activeState);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
