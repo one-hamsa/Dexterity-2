@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Builtins {
 
 		void Awake() {
 			if (!node) {
-				node = GetComponentInParent<FieldNode>();
+				node = GetComponentInParent<BaseStateNode>();
 				if (!node) {
 					Debug.LogWarning($"Node not found for listener ({gameObject.name})");
 					enabled = false;
