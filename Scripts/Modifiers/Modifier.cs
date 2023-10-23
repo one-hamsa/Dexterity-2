@@ -85,7 +85,7 @@ namespace OneHamsa.Dexterity
             
             activeState = initialStateId;
             InitializeTransitionState();
-            myTimeSinceStateChange = 1d;
+            myTimeSinceStateChange = 0d;
             
             renderedState = activeState;
             activeState = targetStateId;
