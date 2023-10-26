@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity
     /// class that is paired with the ObjectBindingAttribute to read a value from a Unity Object.
     /// it comes with a dropdown drawer that allows to select the field to read from the object.
     /// 
-    /// this wrapper takes care of reflection substitute in form of Expression Trees.
+    /// this wrapper takes care of reflection substitute in form of Delegates.
     /// it is AOT safe and can be used in builds. some work required to make it possible - AOT
     /// does not support all types of delegates, so a void delegate is used instead of a generic Func T one.
     /// </summary>

@@ -295,19 +295,31 @@ namespace OneHamsa.Dexterity
                         var result = false;
                         foreach (var gate in cachedGates)
                         {
-                            var found = false;
+                            try
+                            {
+                                var found = false;
 
-                            if (gate.overrideType.HasFlag(Gate.OverrideType.Additive)) {
-                                result |= gate.field.GetBooleanValue();
-                                found = true;
-                            }
-                            if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive)) {
-                                result &= gate.field.GetBooleanValue();
-                                found = true;
-                            }
+                                if (gate.overrideType.HasFlag(Gate.OverrideType.Additive))
+                                {
+                                    result |= gate.field.GetBooleanValue();
+                                    found = true;
+                                }
 
-                            if (!found)
-                                Debug.LogError($"Unknown override type {gate.overrideType} for field {gate.field.definition.GetName()}", node);
+                                if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive))
+                                {
+                                    result &= gate.field.GetBooleanValue();
+                                    found = true;
+                                }
+
+                                if (!found)
+                                    Debug.LogError(
+                                        $"Unknown override type {gate.overrideType} for field {gate.field.definition.GetName()}",
+                                        node);
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogException(e, node);
+                            }
                         }
 
                         cachedValueWithoutOverride = result ? 1 : 0;

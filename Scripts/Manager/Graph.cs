@@ -185,8 +185,17 @@ namespace OneHamsa.Dexterity
                 sortedNodesCache.Add(node);
 
             foreach (var node in sortedNodesCache)
-                node.CacheValue();
-            
+            {
+                try
+                {
+                    node.CacheValue();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e, FieldNode.ByField(node));
+                }
+            }
+
             Profiler.EndSample();
         }
 

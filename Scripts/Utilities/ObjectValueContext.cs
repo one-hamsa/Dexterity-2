@@ -136,7 +136,15 @@ namespace OneHamsa.Dexterity
         
         public bool Boolean_GetValue()
         {
-            assign();
+            try
+            {
+                assign();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, unityObject);
+            }
+
             return boolean_value;
         }
         
@@ -172,7 +180,15 @@ namespace OneHamsa.Dexterity
         
         public int Enum_GetValue()
         {
-            assign();
+            try
+            {
+                assign();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, unityObject);
+            }
+
             return enumValue;
         }
         
