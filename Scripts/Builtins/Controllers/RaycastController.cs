@@ -233,7 +233,14 @@ namespace OneHamsa.Dexterity.Builtins
                     || !closestReceivers.Contains(receiver))
                 {
                     recentlyHitReceivers[receiver] = now;
-                    receiver.ClearHit(this);
+                    try
+                    {
+                        receiver.ClearHit(this);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e, receiver as MonoBehaviour);
+                    }
                 }
             }
 
@@ -261,11 +268,18 @@ namespace OneHamsa.Dexterity.Builtins
                         hit = hit,
                         result = IRaycastController.RaycastEvent.Result.Default
                     };
-                    receiver.ReceiveHit(this, ref hitEvent);
-                    if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default)
-                        lastEventResult = hitEvent.result;
+                    try
+                    {
+                        receiver.ReceiveHit(this, ref hitEvent);
+                        if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default)
+                            lastEventResult = hitEvent.result;
 
-                    lastReceivers.Add(receiver);
+                        lastReceivers.Add(receiver);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e, receiver as MonoBehaviour);
+                    }
                 }
             }
         }
