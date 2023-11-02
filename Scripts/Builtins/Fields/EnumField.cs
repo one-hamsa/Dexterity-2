@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             // initialize just to be sure
             targetNode.InitializeBinding();
-            cachedEnumValue = Convert.ToInt32(Enum.Parse(targetNode.targetEnumType, targetField));
+            cachedEnumValue = Convert.ToInt32(Enum.Parse(targetNode.bindingType, targetField));
         }
     }
 }

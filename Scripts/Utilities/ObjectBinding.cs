@@ -22,6 +22,7 @@ namespace OneHamsa.Dexterity
         {
             Boolean = 1 << 0,
             Enum = 1 << 1,
+            Int = 2 << 1,
         }
         
         [SerializeField]
@@ -80,7 +81,12 @@ namespace OneHamsa.Dexterity
         {
             if (valueTypes.Supports(type))
             {
-                actualObjectValueType = type == typeof(bool) ? ValueType.Boolean : ValueType.Enum;
+                if (type == typeof(bool))
+                    actualObjectValueType = ValueType.Boolean;
+                else if (type == typeof(int))
+                    actualObjectValueType = ValueType.Int;
+                else 
+                    actualObjectValueType = ValueType.Enum;
                 return;
             }
             
@@ -92,7 +98,8 @@ namespace OneHamsa.Dexterity
             return actualObjectValueType switch 
             {
                 ValueType.Boolean => Boolean_CreateDelegateForMethod(methodInfo),
-                ValueType.Enum => Enum_CreateDelegateForMethod(methodInfo),
+                ValueType.Enum => Int_CreateDelegateForMethod(methodInfo),
+                ValueType.Int => Int_CreateDelegateForMethod(methodInfo),
                 _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
             };
         }
@@ -102,7 +109,8 @@ namespace OneHamsa.Dexterity
             return actualObjectValueType switch 
             {
                 ValueType.Boolean => Boolean_CreateDelegateForField(fieldInfo),
-                ValueType.Enum => Enum_CreateDelegateForField(fieldInfo),
+                ValueType.Enum => Int_CreateDelegateForField(fieldInfo),
+                ValueType.Int => Int_CreateDelegateForField(fieldInfo),
                 _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
             };
         }
@@ -112,7 +120,8 @@ namespace OneHamsa.Dexterity
             return actualObjectValueType switch 
             {
                 ValueType.Boolean => Boolean_CreateDelegateForProperty(propertyInfo),
-                ValueType.Enum => Enum_CreateDelegateForProperty(propertyInfo),
+                ValueType.Enum => Int_CreateDelegateForProperty(propertyInfo),
+                ValueType.Int => Int_CreateDelegateForProperty(propertyInfo),
                 _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
             };
         }
@@ -122,7 +131,8 @@ namespace OneHamsa.Dexterity
             return actualObjectValueType switch 
             {
                 ValueType.Boolean => Boolean_GetValue() ? 1 : 0,
-                ValueType.Enum => Enum_GetValue(),
+                ValueType.Enum => Int_GetValue(),
+                ValueType.Int => Int_GetValue(),
                 _ => throw new ArgumentException($"unsupported value type {actualObjectValueType}"),
             };
         }
@@ -163,25 +173,25 @@ namespace OneHamsa.Dexterity
         }
         #endregion
     
-        #region Enum
-        private int enumValue;
-        private delegate int Enum_GetDelegate();
-        private Enum_GetDelegate enum_get;
+        #region Int
+        private int intValue;
+        private delegate int Int_GetDelegate();
+        private Int_GetDelegate int_get;
         
-        public int Enum_GetValue()
+        public int Int_GetValue()
         {
             assign();
-            return enumValue;
+            return intValue;
         }
         
-        private void Enum_Assign() => enumValue = enum_get();
+        private void Int_Assign() => intValue = int_get();
 
-        protected AssignDelegate Enum_CreateDelegateForMethod(MethodInfo methodInfo)
+        protected AssignDelegate Int_CreateDelegateForMethod(MethodInfo methodInfo)
         {
             try
             {
-                enum_get = (Enum_GetDelegate)Delegate.CreateDelegate(typeof(Enum_GetDelegate), target, methodInfo);
-                return Enum_Assign;
+                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), target, methodInfo);
+                return Int_Assign;
             }
             catch (Exception)
             {
@@ -191,7 +201,7 @@ namespace OneHamsa.Dexterity
                     $"falling back to expressions (slower and more GC)", target);
                 
                 var expr = Expression.Call(Expression.Constant(target), methodInfo);
-                var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
+                var field = Expression.Field(Expression.Constant(this), nameof(intValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
                 var assignExpr = Expression.Assign(field, convertExpr);
                 
@@ -199,23 +209,23 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        protected AssignDelegate Enum_CreateDelegateForField(FieldInfo fieldInfo)
+        protected AssignDelegate Int_CreateDelegateForField(FieldInfo fieldInfo)
         {
             Debug.LogWarning($"using expressions for field {fieldInfo.Name} in {target.name} (slower and more GC)", target);
             var expr = Expression.Field(Expression.Constant(target), fieldInfo);
-            var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
+            var field = Expression.Field(Expression.Constant(this), nameof(intValue));
             var convertExpr = Expression.Convert(expr, typeof(int));
             var assignExpr = Expression.Assign(field, convertExpr);
             
             return Expression.Lambda<AssignDelegate>(assignExpr).Compile();
         }
 
-        protected AssignDelegate Enum_CreateDelegateForProperty(PropertyInfo propertyInfo)
+        protected AssignDelegate Int_CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
             try
             {
-                enum_get = (Enum_GetDelegate)Delegate.CreateDelegate(typeof(Enum_GetDelegate), target, propertyInfo.GetGetMethod());
-                return Enum_Assign;
+                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), target, propertyInfo.GetGetMethod());
+                return Int_Assign;
             }
             catch (Exception)
             {
@@ -225,7 +235,7 @@ namespace OneHamsa.Dexterity
                     $"falling back to expressions (slower and more GC)", target);
                 
                 var expr = Expression.Property(Expression.Constant(target), propertyInfo);
-                var field = Expression.Field(Expression.Constant(this), nameof(enumValue));
+                var field = Expression.Field(Expression.Constant(this), nameof(intValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
                 var assignExpr = Expression.Assign(field, convertExpr);
                 
@@ -241,6 +251,9 @@ namespace OneHamsa.Dexterity
         {
             if (type == typeof(bool))
                 return valueTypes.HasFlag(ObjectBinding.ValueType.Boolean);
+            
+            if (type == typeof(int))
+                return valueTypes.HasFlag(ObjectBinding.ValueType.Int);
 
             if (typeof(Enum).IsAssignableFrom(type) && !type.IsDefined(typeof(FlagsAttribute), false))
                 return valueTypes.HasFlag(ObjectBinding.ValueType.Enum);

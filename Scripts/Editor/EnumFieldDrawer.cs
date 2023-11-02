@@ -35,7 +35,7 @@ namespace OneHamsa.Dexterity
             enumNode.InitializeBinding();
 
             Enum enumPrevValue = default;
-            if (Enum.TryParse(enumNode.targetEnumType, property.stringValue, out var prevValue))
+            if (Enum.TryParse(enumNode.bindingType, property.stringValue, out var prevValue))
             {
                 enumPrevValue = (Enum)prevValue;
             }
@@ -44,12 +44,12 @@ namespace OneHamsa.Dexterity
                 // just take current value
                 try
                 {
-                    enumPrevValue = (Enum)Enum.ToObject(enumNode.targetEnumType, enumNode.targetEnumValue);
+                    enumPrevValue = (Enum)Enum.ToObject(enumNode.bindingType, enumNode.bindingValue);
                 }
                 catch (Exception)
                 {
                     // use default
-                    foreach (var v in Enum.GetValues(enumNode.targetEnumType))
+                    foreach (var v in Enum.GetValues(enumNode.bindingType))
                     {
                         enumPrevValue = (Enum)v;
                         break;

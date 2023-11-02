@@ -8,14 +8,36 @@ namespace OneHamsa.Dexterity
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public class BindingEnumNode : BaseEnumStateNode
     {
-        public EnumOrBoolObjectBinding binding = new();
+        public GenericObjectBinding binding = new();
 
         [Header("Boolean Source")] 
         public string booleanTrueState = "On";
         public string booleanFalseState = "Off";
+        
+        [Header("Int Source")] 
+        public int intMinState = 0;
+        public int intMaxState = 1;
+        public int intOutOfBoundsState = 0;
 
-        public int targetEnumValue => binding.IsInitialized() ? binding.GetValueAsInt() : 0;
-        public Type targetEnumType => binding.IsInitialized() ? binding.type : null;
+        public int bindingValue
+        {
+            get
+            {
+                if (!binding.IsInitialized())
+                    return 0;
+                
+                var value = binding.GetValueAsInt();
+                if (bindingType == typeof(int))
+                {
+                    if (value < intMinState || value > intMaxState)
+                        return intOutOfBoundsState;
+                }
+                
+                return value;
+            }
+        }
+
+        public Type bindingType => binding.IsInitialized() ? binding.type : null;
 
         public void InitializeBinding()
         {
@@ -37,27 +59,39 @@ namespace OneHamsa.Dexterity
 
         protected override IEnumerable<(string enumOption, int enumValue)> GetEnumOptions()
         {
-            if (targetEnumType == null)
+            if (bindingType == null)
             {
                 yield return (initialState, 0);
                 yield break;
             }
 
             // bool
-            if (targetEnumType == typeof(bool))
+            if (bindingType == typeof(bool))
             {
                 yield return (booleanFalseState, 0);
                 yield return (booleanTrueState, 1);
                 yield break;
             }
             
-            // enum
-            foreach (var enumOption in Enum.GetNames(targetEnumType)) 
+            // int
+            if (bindingType == typeof(int))
             {
-                yield return (enumOption, (int)Enum.Parse(targetEnumType, enumOption));
+                for (int i = intMinState; i <= intMaxState; i++)
+                {
+                    yield return (i.ToString(), i);
+                }
+                if (intMinState > intOutOfBoundsState || intMaxState < intOutOfBoundsState)
+                    yield return (intOutOfBoundsState.ToString(), intOutOfBoundsState);
+                yield break;
+            }
+            
+            // enum
+            foreach (var enumOption in Enum.GetNames(bindingType)) 
+            {
+                yield return (enumOption, (int)Enum.Parse(bindingType, enumOption));
             }
         }
-        public override int GetEnumValue() => Convert.ToInt32(targetEnumValue);
+        public override int GetEnumValue() => Convert.ToInt32(bindingValue);
         
         protected override void UpdateInternal(bool ignoreDelays)
         {

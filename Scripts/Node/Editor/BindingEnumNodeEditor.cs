@@ -16,6 +16,10 @@ namespace OneHamsa.Dexterity
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.booleanTrueState)));
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.booleanFalseState)));
+            
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.intMinState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.intMaxState)));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.intOutOfBoundsState)));
         }
     }
 }
