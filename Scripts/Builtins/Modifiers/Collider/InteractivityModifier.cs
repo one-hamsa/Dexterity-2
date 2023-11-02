@@ -10,17 +10,6 @@ namespace OneHamsa.Dexterity.Builtins
     {
         public bool recursive = true;
         private List<Collider> cachedColliders = new();
-
-        // XXX: this is a hack, modifiers should also have individual override states
-        private bool _overrideDisable;
-        public bool overrideDisable
-        {
-            set
-            {
-                _overrideDisable = value;
-                dirty = true;
-            }
-        }
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
@@ -110,7 +99,7 @@ namespace OneHamsa.Dexterity.Builtins
                 if (!colliderDisabledBy.TryGetValue(c, out var disablers))
                     colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
 
-                if (shouldDisable || _overrideDisable)
+                if (shouldDisable)
                     disablers.Add(this);
                 else
                     disablers.Remove(this);
