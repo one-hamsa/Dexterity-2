@@ -115,8 +115,13 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static void RemoveFilter(RaycastFilter filter)
         {
-            if (!filters.Remove(filter))
-                Debug.LogWarning($"trying to remove a filter that is no longer registered: {filter}");
+            if (!TryRemoveFilter(filter))
+                Debug.LogWarning($"trying to remove a filter that is no longer registered: {filter.Method.Name}");
+        }
+        
+        public static bool TryRemoveFilter(RaycastFilter filter)
+        {
+            return filters.Remove(filter);
         }
 
         public static void ClearFilters()
