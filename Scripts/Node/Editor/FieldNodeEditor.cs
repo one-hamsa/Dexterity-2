@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -13,7 +14,6 @@ namespace OneHamsa.Dexterity
     {
         static bool fieldValuesDebugOpen;
         static bool upstreamDebugOpen;
-        private static HashSet<BaseField> upstreams = new();
         FieldNode node;
         bool gateFoldoutOpen;
         
@@ -221,7 +221,6 @@ namespace OneHamsa.Dexterity
                 {
                     GUILayout.Label(output.definition.GetName(), EditorStyles.boldLabel);
 
-                    upstreams.Clear();
                     ShowUpstreams(output, t as FieldNode);
 
                     GUILayout.Space(5);
@@ -232,32 +231,54 @@ namespace OneHamsa.Dexterity
             
         }
 
-        private static void ShowUpstreams(BaseField field, FieldNode context)
+        private static void ShowUpstreams(BaseField field, FieldNode context, HashSet<BaseField> parentUpstreams = null)
         {
-            upstreams.Add(field);
-
-            if (Manager.instance.graph.edges.TryGetValue(field, out var upstreamFields)) {
-                EditorGUI.indentLevel++;
-                foreach (var upstreamField in upstreamFields) {
-                    var upstreamFieldName = upstreamField.ToShortString();
-                    var upstreamValue = upstreamField.GetValueAsString();
-
-                    EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
-                    GUILayout.FlexibleSpace();
-                    if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name)) {
-                        Selection.activeObject = upstreamField.context;
-                    }
-                    EditorGUILayout.EndHorizontal();
-
-                    if (upstreams.Contains(upstreamField)) {
-                        EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
-                        continue;
-                    }
-
-                    ShowUpstreams(upstreamField, context);
+            var upstreams = HashSetPool<BaseField>.Get();
+            try
+            {
+                if (parentUpstreams != null)
+                {
+                    upstreams.UnionWith(parentUpstreams);
                 }
-                EditorGUI.indentLevel--;
+                upstreams.Add(field);
+
+                if (Manager.instance.graph.edges.TryGetValue(field, out var upstreamFields))
+                {
+                    EditorGUI.indentLevel++;
+                    foreach (var upstreamField in upstreamFields)
+                    {
+                        var origColor = GUI.contentColor;
+                        var upstreamFieldName = upstreamField.ToShortString();
+                        var upstreamValue = upstreamField.GetValueAsString();
+                        if (upstreamField.definition.type == FieldNode.FieldType.Boolean)
+                            GUI.contentColor = upstreamField.GetBooleanValue() ? Color.green : Color.red;
+
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
+                        GUI.contentColor = origColor;
+                        GUILayout.FlexibleSpace();
+                        if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name))
+                        {
+                            Selection.activeObject = upstreamField.context;
+                        }
+
+                        EditorGUILayout.EndHorizontal();
+
+                        if (upstreams.Contains(upstreamField))
+                        {
+                            EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
+                            continue;
+                        }
+
+                        ShowUpstreams(upstreamField, context, upstreams);
+                    }
+
+                    EditorGUI.indentLevel--;
+                }
+            }
+            finally
+            {
+                HashSetPool<BaseField>.Release(upstreams);
             }
         }
 
