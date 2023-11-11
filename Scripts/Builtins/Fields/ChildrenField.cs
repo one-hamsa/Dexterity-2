@@ -18,6 +18,7 @@ namespace OneHamsa.Dexterity.Builtins
         public string fieldName;
         public Transform parent;
         public bool recursive = true;
+        public bool recurseWhenFindingNode;
         public TakeValueWhen takeValueWhen = TakeValueWhen.AnyEqualsTrue;
         public bool negate;
         public bool updateChildrenReference;
@@ -155,10 +156,15 @@ namespace OneHamsa.Dexterity.Builtins
                 var transform = workQueue.Dequeue();
                 var node = transform.GetComponent<FieldNode>();
                 if (transform != parent && node != null)
+                {
                     yield return node;
-                else
-                    foreach (Transform child in transform)
-                        workQueue.Enqueue(child);
+                    
+                    if (!recurseWhenFindingNode)
+                        continue;
+                }
+
+                foreach (Transform child in transform)
+                    workQueue.Enqueue(child);
             }
         }
 
