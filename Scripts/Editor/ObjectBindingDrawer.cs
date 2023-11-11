@@ -144,7 +144,7 @@ namespace OneHamsa.Dexterity
             var objType = obj.GetType();
 
             var path = string.IsNullOrEmpty(rootPath) ? "GameObject/" : rootPath;
-            foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var method in objType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
             {
                 if (method.GetParameters().Length == 0 && supportedTypes.Supports(method.ReturnType))
                 {
@@ -160,7 +160,7 @@ namespace OneHamsa.Dexterity
                 }
             }
 
-            foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var prop in objType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
             {
                 if (supportedTypes.Supports(prop.PropertyType))
                 {

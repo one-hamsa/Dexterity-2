@@ -47,7 +47,8 @@ namespace OneHamsa.Dexterity
                 return false;
             }
             
-            var methodInfo = target.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+            var methodInfo = target.GetType().GetMethod(methodName, 
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (methodInfo != null)
             {
                 type = methodInfo.ReturnType;
@@ -56,7 +57,8 @@ namespace OneHamsa.Dexterity
                 return true;
             }
 
-            var fieldInfo = target.GetType().GetField(methodName, BindingFlags.Public | BindingFlags.Instance);
+            var fieldInfo = target.GetType().GetField(methodName, 
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (fieldInfo != null) {
                 type = fieldInfo.FieldType;
                 FindActualValueType(supportedTypes);
@@ -64,7 +66,8 @@ namespace OneHamsa.Dexterity
                 return true;
             }
             
-            var propertyInfo = target.GetType().GetProperty(methodName, BindingFlags.Public | BindingFlags.Instance);
+            var propertyInfo = target.GetType().GetProperty(methodName, 
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (propertyInfo != null) 
             {
                 type = propertyInfo.PropertyType;
@@ -152,14 +155,15 @@ namespace OneHamsa.Dexterity
 
         protected AssignDelegate Boolean_CreateDelegateForMethod(MethodInfo methodInfo)
         {
-            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), target, methodInfo);
+            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), 
+                !methodInfo.IsStatic ? target : null, methodInfo);
             return Boolean_Assign;
         }
 
         protected AssignDelegate Boolean_CreateDelegateForField(FieldInfo fieldInfo)
         {
             Debug.LogWarning($"using expressions for field {fieldInfo.Name} in {target.name} (slower and more GC)", target);
-            var expr = Expression.Field(Expression.Constant(target), fieldInfo);
+            var expr = Expression.Field(Expression.Constant(!fieldInfo.IsStatic ? target : null), fieldInfo);
             var field = Expression.Field(Expression.Constant(this), nameof(boolean_value));
             var assignExpr = Expression.Assign(field, expr);
             
@@ -168,7 +172,8 @@ namespace OneHamsa.Dexterity
 
         protected AssignDelegate Boolean_CreateDelegateForProperty(PropertyInfo propertyInfo)
         {
-            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), target, propertyInfo.GetGetMethod());
+            boolean_get = (Boolean_GetDelegate)Delegate.CreateDelegate(typeof(Boolean_GetDelegate), 
+                !propertyInfo.GetMethod.IsStatic ? target : null, propertyInfo.GetGetMethod());
             return Boolean_Assign;
         }
         #endregion
@@ -190,7 +195,8 @@ namespace OneHamsa.Dexterity
         {
             try
             {
-                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), target, methodInfo);
+                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), 
+                    !methodInfo.IsStatic ? target : null, methodInfo);
                 return Int_Assign;
             }
             catch (Exception)
@@ -200,7 +206,8 @@ namespace OneHamsa.Dexterity
                     $"could not create delegate for method {methodInfo.Name} in {target.name}, " +
                     $"falling back to expressions (slower and more GC)", target);
                 
-                var expr = Expression.Call(Expression.Constant(target), methodInfo);
+                var expr = Expression.Call(
+                    Expression.Constant(!methodInfo.IsStatic ? target : null), methodInfo);
                 var field = Expression.Field(Expression.Constant(this), nameof(intValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
                 var assignExpr = Expression.Assign(field, convertExpr);
@@ -212,7 +219,8 @@ namespace OneHamsa.Dexterity
         protected AssignDelegate Int_CreateDelegateForField(FieldInfo fieldInfo)
         {
             Debug.LogWarning($"using expressions for field {fieldInfo.Name} in {target.name} (slower and more GC)", target);
-            var expr = Expression.Field(Expression.Constant(target), fieldInfo);
+            var expr = Expression.Field(
+                Expression.Constant(!fieldInfo.IsStatic ? target : null), fieldInfo);
             var field = Expression.Field(Expression.Constant(this), nameof(intValue));
             var convertExpr = Expression.Convert(expr, typeof(int));
             var assignExpr = Expression.Assign(field, convertExpr);
@@ -224,7 +232,8 @@ namespace OneHamsa.Dexterity
         {
             try
             {
-                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), target, propertyInfo.GetGetMethod());
+                int_get = (Int_GetDelegate)Delegate.CreateDelegate(typeof(Int_GetDelegate), 
+                    !propertyInfo.GetMethod.IsStatic ? target : null, propertyInfo.GetGetMethod());
                 return Int_Assign;
             }
             catch (Exception)
@@ -234,7 +243,8 @@ namespace OneHamsa.Dexterity
                     $"could not create delegate for property {propertyInfo.Name} in {target.name}, " +
                     $"falling back to expressions (slower and more GC)", target);
                 
-                var expr = Expression.Property(Expression.Constant(target), propertyInfo);
+                var expr = Expression.Property(
+                    Expression.Constant(!propertyInfo.GetMethod.IsStatic ? target : null), propertyInfo);
                 var field = Expression.Field(Expression.Constant(this), nameof(intValue));
                 var convertExpr = Expression.Convert(expr, typeof(int));
                 var assignExpr = Expression.Assign(field, convertExpr);
