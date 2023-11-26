@@ -2,13 +2,13 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    public class BlockingRaycastFilter : MonoBehaviour
+    public class WhitelistRaycastFilter : MonoBehaviour
     {
         private RaycastController.RaycastFilter filter;
 
         private void OnEnable()
         {
-            filter = RaycastController.AddBlockingFilter(transform);
+            filter = RaycastController.AddFilter(transform);
         }
         
         private void OnDisable()
