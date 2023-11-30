@@ -120,9 +120,17 @@ namespace OneHamsa.Dexterity
             {
                 if (!propertiesCache.ContainsKey(stateId))
                 {
+                    // try to return initial state
+                    if (propertiesCache.TryGetValue(TryFindNode().initialStateId, out var property))
+                        return property;
+                    
                     if (!manualStateEditing)
+                    {
                         Debug.LogWarning($"property for state = {Database.instance.GetStateAsString(stateId)} not found on Modifier [{GetType().Name}] {name}" +
-                                         $" (probably states were added to node {GetNode().name} without updating modifier)", this);
+                                         $" (probably states were added to node {GetNode().name} without updating modifier)," +
+                                         $" and no initial state was found", this);
+                    }
+                    
                     // just return first
                     foreach (var p in propertiesCache.Values)
                         return p;

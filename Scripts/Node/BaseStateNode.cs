@@ -34,6 +34,8 @@ namespace OneHamsa.Dexterity
         public double timeSinceStateChange;
         [NonSerialized]
         public double deltaTime;
+        
+        public int initialStateId { get; private set; } = -1;
 
         public event Action onEnabled;
         public event Action onDisabled;
@@ -48,6 +50,7 @@ namespace OneHamsa.Dexterity
         protected bool stateDirty = true;
         double pendingStateChangeTime;
         int pendingState = -1;
+
         #endregion Private Properties
 
         #region Unity Events
@@ -130,7 +133,6 @@ namespace OneHamsa.Dexterity
             // cache overrides to allow quick access internally
             CacheStateOverride();
 
-            int initialStateId;
             if (!GetStateNames().Contains(initialState))
             {
                 initialStateId = GetStateIDs().ElementAt(0);
