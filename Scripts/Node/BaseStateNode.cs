@@ -171,6 +171,8 @@ namespace OneHamsa.Dexterity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetActiveState() => activeState;
         public void SetActiveState_Editor(int newState) => activeState = newState;
+        
+        public bool IsStateDirty() => stateDirty;
         #endregion General Methods
 
         #region State Reduction
