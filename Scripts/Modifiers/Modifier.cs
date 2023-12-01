@@ -337,7 +337,10 @@ namespace OneHamsa.Dexterity
                 // wait for node to be enabled
                 var node = GetNode();
                 if (!node.isActiveAndEnabled)
+                {
+                    transitionChanged = false;
                     return;
+                }
 
                 myTimeSinceStateChange = node.timeSinceStateChange;
                 myDeltaTime = node.deltaTime;
