@@ -209,6 +209,21 @@ namespace OneHamsa.Dexterity
         }
         
         /// <summary>
+        /// procedurally sets a delay for a transition between two states
+        /// </summary>
+        /// <param name="exitingState"></param>
+        /// <param name="enteringState"></param>
+        /// <param name="delay"></param>
+        public void SetStateDelay(int exitingState, int enteringState, float delay)
+        {
+            cachedDelays.Remove((enteringState, exitingState));
+            cachedDelays[(enteringState, exitingState)] = new TransitionDelay
+            {
+                waitFor = delay
+            };
+        }
+        
+        /// <summary>
         /// makes sure this node's state is updated and propagated to its modifiers (ignores node delays)
         /// </summary>
         public void UpdateState()
