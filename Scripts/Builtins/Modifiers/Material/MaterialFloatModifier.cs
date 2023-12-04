@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity
                 return;
             
             float total = 0f;
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = (Property)GetProperty(kv.Key);
                 var value = kv.Value;

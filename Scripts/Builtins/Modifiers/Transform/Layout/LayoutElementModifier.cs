@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity.Builtins
             var flexibleWidth = 0f;
             var flexibleHeight = 0f;
 
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;

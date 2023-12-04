@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity.Builtins
                 return;
 
             Vector2 sizeDelta = baseSize;
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;

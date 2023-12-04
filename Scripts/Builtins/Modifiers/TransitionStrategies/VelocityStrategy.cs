@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         private Dictionary<int, float> currentVelocities = new Dictionary<int, float>(); 
 
-        public override SortedList<int, float> Initialize(int[] states, int currentState)  
+        public override InsertSortList<float> Initialize(int[] states, int currentState)  
         {
             foreach (var state in states)
                 currentVelocities[state] = 0f;

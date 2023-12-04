@@ -9,13 +9,13 @@ namespace OneHamsa.Dexterity.Builtins
     {
         protected const float activityThreshold = 0.999f;
 
-        protected SortedList<int, float> result = new();
-        protected SortedList<int, float> nextResult = new();
+        protected InsertSortList<float> result = new();
+        protected InsertSortList<float> nextResult = new();
         protected int[] states;
 
         private bool jumpedToFinalState;
 
-        public virtual SortedList<int, float> Initialize(int[] states, int currentState)
+        public virtual InsertSortList<float> Initialize(int[] states, int currentState)
         {
             this.states = states;
             
@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity.Builtins
             
             return result;
         }
-        public virtual SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
+        public virtual InsertSortList<float> GetTransition(InsertSortList<float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             changed = false;
@@ -65,7 +65,7 @@ namespace OneHamsa.Dexterity.Builtins
             // write to new pointer
             nextResult.Clear();
             var total = 0f;
-            foreach (var kv in prevState)
+            foreach (var kv in prevState.keyValuePairs)
             {
                 var state = kv.Key;
                 var value = kv.Value;

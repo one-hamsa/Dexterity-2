@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             Vector2 minOffset = baseMinOffset;
             Vector2 maxOffset = baseMaxOffset;
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;

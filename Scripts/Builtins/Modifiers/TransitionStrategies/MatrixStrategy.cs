@@ -16,7 +16,7 @@ namespace OneHamsa.Dexterity.Builtins
         private double timeSinceRowChange;
         private Dictionary<int, float> transitionStartValues = new();
 
-        public override SortedList<int, float> Initialize(int[] states, int currentState)
+        public override InsertSortList<float> Initialize(int[] states, int currentState)
         {
             definition.Initialize();
             var initialRow = definition.GetRow(trackedCurrentState, currentState);
@@ -32,7 +32,7 @@ namespace OneHamsa.Dexterity.Builtins
             return base.Initialize(states, currentState);
         }
 
-        public override SortedList<int, float> GetTransition(SortedList<int, float> prevState, 
+        public override InsertSortList<float> GetTransition(InsertSortList<float> prevState, 
             int currentState, double timeSinceStateChange, double deltaTime, out bool changed)
         {
             // manually track state changes
@@ -53,7 +53,7 @@ namespace OneHamsa.Dexterity.Builtins
                     currentTotalTransitionTime = timeDiff * (1 - prevState[currentState]);
 
                     // save start values for all states to allow transitioning in the middle
-                    foreach (var kv in prevState)
+                    foreach (var kv in prevState.keyValuePairs)
                     {
                         transitionStartValues[kv.Key] = kv.Value;
                     }

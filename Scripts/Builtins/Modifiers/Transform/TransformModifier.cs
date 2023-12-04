@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             var rotationOffset = baseRotation;
             var positionOffset = basePosition;
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = GetProperty(kv.Key) as Property;
                 var value = kv.Value;

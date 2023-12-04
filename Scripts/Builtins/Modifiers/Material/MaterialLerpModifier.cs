@@ -39,7 +39,7 @@ namespace OneHamsa.Dexterity
             foreach (var (k, v) in initialVectors)
                 vectorLerps[k] = v;
             
-            foreach (var kv in transitionState)
+            foreach (var kv in transitionState.keyValuePairs)
             {
                 var property = (Property)GetProperty(kv.Key);
                 var value = kv.Value;
