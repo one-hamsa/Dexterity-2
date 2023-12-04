@@ -219,6 +219,8 @@ namespace OneHamsa.Dexterity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetActiveState() => activeState;
         public void SetActiveState_Editor(int newState) => activeState = newState;
+        
+        public bool IsStateDirty() => stateDirty;
         #endregion General Methods
 
         #region State Reduction
@@ -252,6 +254,21 @@ namespace OneHamsa.Dexterity
                     cachedDelays.TryGetValue((StateFunction.emptyStateId, exitingState), out value);
             }
             return value?.waitFor ?? 0f;
+        }
+        
+        /// <summary>
+        /// procedurally sets a delay for a transition between two states
+        /// </summary>
+        /// <param name="exitingState"></param>
+        /// <param name="enteringState"></param>
+        /// <param name="delay"></param>
+        public void SetStateDelay(int exitingState, int enteringState, float delay)
+        {
+            cachedDelays.Remove((enteringState, exitingState));
+            cachedDelays[(enteringState, exitingState)] = new TransitionDelay
+            {
+                waitFor = delay
+            };
         }
         
         /// <summary>

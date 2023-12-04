@@ -61,6 +61,9 @@ namespace OneHamsa.Dexterity.Builtins {
 			if (!transitioning)
 				return;
 			
+			if (node.IsStateDirty())
+				return; // pending state change
+			
 			foreach (var modifier in Modifier.GetModifiers(node)) {
 				if (modifier.IsChanged() && modifier.transitionProgress < transitionProgressToConsiderDone)
 					return; // still not all done

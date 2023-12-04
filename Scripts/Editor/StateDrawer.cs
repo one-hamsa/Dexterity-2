@@ -58,6 +58,7 @@ namespace OneHamsa.Dexterity
 
             var states = ListPool<string>.Get();
             var stateNames = ListPool<string>.Get();
+            EditorGUI.BeginProperty(position, label, property);
             try
             {
                 if (attr.allowEmpty)
@@ -88,6 +89,7 @@ namespace OneHamsa.Dexterity
             {
                 ListPool<string>.Release(states);
                 ListPool<string>.Release(stateNames);
+                EditorGUI.EndProperty();
             }
         }
     }
