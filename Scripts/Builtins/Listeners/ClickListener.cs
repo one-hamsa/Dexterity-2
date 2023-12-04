@@ -40,6 +40,8 @@ namespace OneHamsa.Dexterity.Builtins
         
         [Preserve]
         public bool WasPressedThisFrame() => pressFrame == Time.frameCount - 1;
+        
+        public FieldNode GetNode() => node;
 
         protected virtual void Awake()
         {
