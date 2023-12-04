@@ -90,6 +90,8 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
+            context.onParentTransformChanged += RefreshReferences;
+
             fieldId = Database.instance.GetFieldID(fieldName);
             if (child == null)
                 child = context.transform;

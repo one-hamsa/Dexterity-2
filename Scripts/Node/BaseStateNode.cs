@@ -39,6 +39,10 @@ namespace OneHamsa.Dexterity
 
         public event Action onEnabled;
         public event Action onDisabled;
+
+        public event Action onParentTransformChanged;
+        public event Action onChildTransformChanged;
+        
         public event Action<int, int> onStateChanged;
         #endregion Public Properties
 
@@ -50,6 +54,8 @@ namespace OneHamsa.Dexterity
         protected bool stateDirty = true;
         double pendingStateChangeTime;
         int pendingState = -1;
+
+        private BaseStateNode parentNode;
 
         #endregion Private Properties
 
@@ -63,6 +69,13 @@ namespace OneHamsa.Dexterity
                 onEnabled?.Invoke();
         }
 
+        private void UpdateParentNode()
+        {
+            var transformParent = transform.parent;
+            if (transformParent != null)
+                parentNode = transformParent.GetComponentInParent<BaseStateNode>();
+        }
+
         protected void OnDisable()
         {
             Uninitialize();
@@ -72,6 +85,41 @@ namespace OneHamsa.Dexterity
 
         protected virtual void OnDestroy()
         {
+        }
+
+        private void OnTransformParentChanged()
+        {
+            var prevParentNode = parentNode;
+            
+            UpdateParentNode();
+            
+            if (parentNode != prevParentNode)
+            {
+                // Let all (previous) parents know their children have updated (this is done because OnTransformChildrenChanged()
+                // is not recursive in the Unity implementation)
+                var ancestorNode = prevParentNode;
+                while (ancestorNode != null)
+                {
+                    ancestorNode.OnTransformChildrenChanged();
+                    ancestorNode = ancestorNode.parentNode;
+                }
+
+                // Let all (new) parents know their children have updated (this is done because OnTransformChildrenChanged()
+                // is not recursive in the Unity implementation)
+                ancestorNode = parentNode;
+                while (ancestorNode != null)
+                {
+                    ancestorNode.OnTransformChildrenChanged();
+                    ancestorNode = ancestorNode.parentNode;
+                }
+            }
+            
+            onParentTransformChanged?.Invoke();
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            onChildTransformChanged?.Invoke();
         }
 
         protected void Update() => UpdateInternal(ignoreDelays: false);

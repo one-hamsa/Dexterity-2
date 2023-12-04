@@ -85,7 +85,6 @@ namespace OneHamsa.Dexterity
 
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
-        private int gatesDirtyIncrement;
         private int overridesDirtyIncrement;
         private bool referenceRequiresInitialize = true;
 
@@ -334,8 +333,6 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            SetDirty();
-
             // make sure output field for gate is initialized
             GetOutputField(gate.outputFieldDefinitionId);
 
@@ -349,12 +346,13 @@ namespace OneHamsa.Dexterity
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
                 FinalizeGate(gate);
             }
+
+            SetDirty();
         }
         private void FinalizeGate(Gate gate)
         {
-            SetDirty();
-
             FinalizeFields(new[] { gate.field });
+            SetDirty();
         }
 
         /// <summary>
@@ -398,10 +396,15 @@ namespace OneHamsa.Dexterity
             }
         }
 
+        public event Action onDirty;
+
         /// <summary>
         /// Sets the node as dirty. Forces gates update
         /// </summary>
-        public void SetDirty() => gatesDirtyIncrement++;
+        public void SetDirty()
+        {
+            onDirty?.Invoke();
+        }
 
         private void AuditField(BaseField field)
         {

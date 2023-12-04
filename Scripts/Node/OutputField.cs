@@ -31,8 +31,6 @@ namespace OneHamsa.Dexterity
             protected int cachedValueWithoutOverride = emptyFieldValue;
 
             #region Optimization Fields
-            // tracks the last gates dirty increment from the node, if it's different we need to update
-            int gatesDirtyIncrement = -1;
             // marks if the output node is dependent only on other output nodes (or proxies for outputs)
             bool allUpstreamFieldsAreOutputOrProxy;
             // in case the output node is dependent only on other output nodes, tracks if those are dirty
@@ -94,6 +92,7 @@ namespace OneHamsa.Dexterity
                 
                 node.onEnabled += OnNodeEnabled;
                 node.onDisabled += OnNodeDisabled;
+                node.onDirty += RefreshReferences;
                 
                 if (node.isActiveAndEnabled)
                     OnNodeEnabled();
@@ -152,10 +151,6 @@ namespace OneHamsa.Dexterity
             /// </summary>
             public override void RefreshReferences()
             {
-                // only update if something changed in the node's gates
-                if (gatesDirtyIncrement == node.gatesDirtyIncrement)
-                    return;
-
                 prevCachedGates.Clear();
                 prevCachedGates.AddRange(cachedGates);
                 cachedGates.Clear();
@@ -203,9 +198,6 @@ namespace OneHamsa.Dexterity
                     }
                 }
 
-                // we just finished refreshing our references, update the tracked dirty increment
-                gatesDirtyIncrement = node.gatesDirtyIncrement;
-
                 // subscribe to changes in output fields if needed
                 if (allUpstreamFieldsAreOutputOrProxy)
                 {
@@ -219,7 +211,7 @@ namespace OneHamsa.Dexterity
 
             public override void RebuildCache()
             {
-                gatesDirtyIncrement = -1;
+                RefreshReferences(); // Is this needed here? what has changed in this context that requires a 'RebuildCache'?
                 overridesDirtyIncrement = -1;
             }
 

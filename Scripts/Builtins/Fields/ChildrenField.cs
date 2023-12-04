@@ -183,7 +183,19 @@ namespace OneHamsa.Dexterity.Builtins
 
             fieldId = Database.instance.GetFieldID(fieldName);
             if (parent == null)
+            {
                 parent = context.transform;
+                context.onChildTransformChanged += RefreshReferences;
+            }
+            else
+            {
+                var customContext = parent.GetComponentInParent<FieldNode>();
+                if (customContext != null)
+                    customContext.onChildTransformChanged += RefreshReferences;
+                else
+                    Debug.LogError("ChildrenField: custom parent specified but cannot locate the FieldNode associated with it", context);
+            }
+            
             RefreshReferences();
         }
 

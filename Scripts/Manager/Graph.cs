@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity
         private readonly HashSet<BaseField> nodesForCurrentSortIteration = new();
         private readonly HashSet<BaseField> nodesForRefreshIteration = new();
         
-        public Dictionary<BaseField, IEnumerable<BaseField>> edges { get; } = new();
+        public Dictionary<BaseField, HashSet<BaseField>> edges { get; } = new();
 
         public event Action onGraphUpdated;
         public event Action<int> onGraphColorUpdated;
@@ -70,6 +70,11 @@ namespace OneHamsa.Dexterity
         private List<int> colorsToReset = new(8);
         private int dirtyIncrement = 0;
         private int lastDirtyUpdate = -1;
+
+        private void OnEnable()
+        {
+            StartCoroutine(UpdateGraph());
+        }
 
         public void AddNode(BaseField node)
         {
@@ -110,6 +115,8 @@ namespace OneHamsa.Dexterity
             dirtyColors[colorToColor] = true;
         }
 
+        private bool graphNeedsUpdate => lastDirtyUpdate != dirtyIncrement;
+
         // updates the graph (if needed), then invokes the update functions for each field
         public void Refresh()
         {
@@ -117,14 +124,11 @@ namespace OneHamsa.Dexterity
                 return;
 
             // ask all nodes to refresh their edges
-            RefreshEdges();
+            //RefreshEdges();
 
 
-            if (lastDirtyUpdate != dirtyIncrement)
-            {
-                StartCoroutine(nameof(UpdateGraph));
+            if (graphNeedsUpdate)
                 return;
-            }
 
             // invoke update
             RefreshNodeValues();
@@ -160,7 +164,7 @@ namespace OneHamsa.Dexterity
             // save IEnumeration cast
             foreach (var node in nodes)
                 nodesForRefreshIteration.Add(node);
-            
+
             foreach (var node in nodesForRefreshIteration)
             {
                 try
@@ -181,8 +185,7 @@ namespace OneHamsa.Dexterity
             
             // cache - the foreach clause might invoke changes to collection
             sortedNodesCache.Clear();
-            foreach (var node in sortedNodes)
-                sortedNodesCache.Add(node);
+            sortedNodesCache.AddRange(sortedNodes);
 
             foreach (var node in sortedNodesCache)
             {
@@ -208,44 +211,50 @@ namespace OneHamsa.Dexterity
 
         IEnumerator UpdateGraph()
         {
-            updating = true;
-            try
+            while (true)
             {
-                lastUpdateAttempt = Time.unscaledTime;
-
-                updateOperations = 0;
-                updatedNodes = 0;
-                updateFrames = 1;
-                var startDirtyIncrement = dirtyIncrement;
-                var topSort = TopologicalSort();
-
-                while (topSort.MoveNext())
+                if (graphNeedsUpdate)
                 {
-                    if (startDirtyIncrement != dirtyIncrement)
+                    updating = true;
+                    try
                     {
-                        // dirty increment changed, restart topological sort (calculate cumulative update time)
-                        startDirtyIncrement = dirtyIncrement;
-                        topSort = TopologicalSort();
+                        lastUpdateAttempt = Time.unscaledTime;
+
+                        updateOperations = 0;
+                        updatedNodes = 0;
+                        updateFrames = 1;
+                        var startDirtyIncrement = dirtyIncrement;
+                        var topSort = TopologicalSort();
+
+                        while (topSort.MoveNext())
+                        {
+                            if (startDirtyIncrement != dirtyIncrement)
+                            {
+                                // dirty increment changed, restart topological sort (calculate cumulative update time)
+                                startDirtyIncrement = dirtyIncrement;
+                                topSort = TopologicalSort();
+                            }
+                            if (++updateOperations % throttleOperationsPerFrame == 0)
+                            {
+                                // wait a frame
+                                yield return null;
+                                updateFrames++;
+                            }
+                        }
+
+                        lastSuccessfulUpdate = Time.unscaledTime;
+
+                        // invoke general update
+                        RefreshNodeValues();
+                
+                        onGraphUpdated?.Invoke();
                     }
-                    if (++updateOperations % throttleOperationsPerFrame == 0)
+                    finally
                     {
-                        // wait a frame
-                        yield return null;
-                        updateFrames++;
+                        updating = false;
                     }
                 }
-
-                lastSuccessfulUpdate = Time.unscaledTime;
-
-                // invoke general update
-                RefreshNodeValues();
-                
-                onGraphUpdated?.Invoke();
-
-            }
-            finally
-            {
-                updating = false;
+                yield return null;
             }
         }
 
@@ -301,6 +310,7 @@ namespace OneHamsa.Dexterity
 
                     if (current.process)
                     {
+                        // TODO: Can this be optimized?
                         // remove from sorted if it already exists
                         sortedNodes.Remove(current.node);
 
