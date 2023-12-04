@@ -64,12 +64,20 @@ namespace OneHamsa.Dexterity.Builtins
                 a += property.color.a * value;
             }
 
-            SetColor(new Color(r, g, b, a));
+            Color prevColor = GetColor();
+            Color c = new Color(r, g, b, a);
+            if (c != prevColor)
+                SetColor(c);
         }
 
         private void SetColor(Color color)
         {
             actions.setColor(component, color);
+        }
+
+        private Color GetColor()
+        {
+            return actions.getColor(component);
         }
 
         private (Component component, SupportedComponentActions actions) _cached;
