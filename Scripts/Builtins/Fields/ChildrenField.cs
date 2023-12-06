@@ -1,10 +1,10 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class ChildrenField : BaseField
     {
         public enum TakeValueWhen {
@@ -23,10 +23,11 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
         public bool updateChildrenReference;
 
-        HashSet<FieldNode> children, prevChildren = new();
-        HashSet<string> childrenPath = new();
-        private static Queue<Transform> workQueue = new();
-        private static IEqualityComparer<HashSet<FieldNode>> comparer = HashSet<FieldNode>.CreateSetComparer();
+        HashSet<FieldNode> children, prevChildren;
+        HashSet<string> childrenPath;
+        private static Queue<Transform> workQueue;
+        private static IEqualityComparer<HashSet<FieldNode>> comparer;
+        
         int fieldId;
 
         // only proxy when children are found
@@ -181,6 +182,12 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
+            prevChildren = new();
+            children = new();
+            childrenPath = new();
+            workQueue = new();
+            comparer = HashSet<FieldNode>.CreateSetComparer();
+            
             fieldId = Database.instance.GetFieldID(fieldName);
             if (parent == null)
             {

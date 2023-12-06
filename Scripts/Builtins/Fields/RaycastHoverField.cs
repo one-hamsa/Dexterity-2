@@ -1,7 +1,8 @@
-using OneHamsa.Dexterity.Utilities;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class RaycastHoverField : BaseField
     {
         [TagSelector] public string tag = "Untagged";
@@ -12,6 +13,9 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
+            if (router != null)
+                UnityEngine.Debug.LogError("Twice?");
+            
             provider = new DexterityRaycastFieldProvider();
             router = context.GetRaycastRouter();
             router.AddReceiver(provider);

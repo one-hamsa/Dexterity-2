@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -71,12 +72,10 @@ namespace OneHamsa.Dexterity
         #endregion Serialized Fields
 
         #region Public Properties
-        public NodeReference reference { get; private set; }
 
         // output fields of this node
         public SortedList<int, OutputField> outputFields = new();
         public SortedList<int, OutputOverride> cachedOverrides = new();
-        public List<Gate> GetAllGates() => reference != null ? reference.gates : emptyGateList;
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
@@ -94,7 +93,8 @@ namespace OneHamsa.Dexterity
         private HashSet<string> stateNames;
         private StateFunction.StepEvaluationCache stepEvalCache;
         
-        private static List<Gate> emptyGateList = new(0);
+        [NonSerialized]
+        public List<Gate> nodeGates = new(0);
 
         #endregion Private Properties
 
@@ -107,11 +107,6 @@ namespace OneHamsa.Dexterity
                 output.Finalize(this);
             }
             outputFields.Clear();
-
-            if (reference != null) {
-                Destroy(reference);
-                reference = null;
-            }
             base.OnDestroy();
         }
         #endregion Unity Events
@@ -142,6 +137,60 @@ namespace OneHamsa.Dexterity
             foreach (var field in internalFieldDefinitions)
                 Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
+            HashSetPool<NodeReference>.Get(out var addedNodeReferences);
+            ListPool<NodeReference>.Get(out var nodeReferencesToAdd);
+            nodeReferencesToAdd.AddRange(referenceAssets);
+            
+            if (nodeGates.Count > 0)
+                Debug.LogError("Twice init?!");
+            
+            // build the comprehensive NodeReference list to process, in the order we want (by semi-recursively crawling the data)
+            for (int i = 0; i < nodeReferencesToAdd.Count; i++)
+            {
+                var reference = nodeReferencesToAdd[i];
+                nodeReferencesToAdd.AddRange(reference.extends);
+
+                #if UNITY_EDITOR
+                if (i >= 1000)
+                {
+                    Debug.LogError("Do we have a loop in our data??");
+                    break;
+                }
+                #endif
+            }
+            
+
+            while (nodeReferencesToAdd.Count > 0)
+            {
+                // reverse the order [^1]
+                var reference = nodeReferencesToAdd[^1];
+                
+                // Don't double add a reference
+                if (!addedNodeReferences.Add(reference))
+                    continue;
+
+                // register all internal fields
+                foreach (var field in reference.internalFieldDefinitions)
+                    Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
+
+                // register all functions
+                foreach (var stateFunc in reference.GetStateFunctionAssetsIncludingParents())
+                    Database.instance.Register(stateFunc);
+
+                foreach (var gate in reference.gates)
+                    nodeGates.Add(gate.CreateDeepClone());
+                
+                nodeReferencesToAdd.RemoveAt(nodeReferencesToAdd.Count-1);
+            }
+            
+            // Add our own custom gates last
+            nodeGates.AddRange(customGates);
+
+            // Release our temp collections
+            HashSetPool<NodeReference>.Release(addedNodeReferences);
+            ListPool<NodeReference>.Release(nodeReferencesToAdd);
+
+            /*
             // only needed once
             if (reference == null) {
                 // create a runtime instance of this scriptable object to allow changing it
@@ -156,12 +205,13 @@ namespace OneHamsa.Dexterity
             }
             else if (referenceRequiresInitialize)
                 reference.Uninitialize();
+                */
 
             var shouldRebuildCaches = false;
             if (referenceRequiresInitialize)
             {
                 // initialize reference (this will create the runtime version with all the inherited gates)
-                reference.Initialize(customGates);
+                //reference.Initialize(customGates);
                 referenceRequiresInitialize = false;
                 shouldRebuildCaches = true;
             }
@@ -183,11 +233,6 @@ namespace OneHamsa.Dexterity
             onGateRemoved += RestartFields;
             onGatesUpdated += RestartFields;
 
-            // same for reference (gates can be modified either on the node or on its reference)
-            reference.onGateAdded += RestartFields;
-            reference.onGateRemoved += RestartFields;
-            reference.onGatesUpdated += RestartFields;
-
             // go through all the fields. initialize them, register them to manager and add them to internal structure
             RestartFields();
             // cache overrides to allow quick access internally
@@ -201,22 +246,17 @@ namespace OneHamsa.Dexterity
         protected override void Uninitialize()
         {
             // cleanup gates
-            foreach (var gate in GetAllGates().ToArray())
+            foreach (var gate in nodeGates)
             {
                 FinalizeGate(gate);
             }
+            
+            nodeGates.Clear();
 
             // unsubscribe
             onGateAdded -= RestartFields;
             onGateRemoved -= RestartFields;
             onGatesUpdated -= RestartFields;
-
-            if (reference != null)
-            {
-                reference.onGateAdded -= RestartFields;
-                reference.onGateRemoved -= RestartFields;
-                reference.onGatesUpdated -= RestartFields;
-            }
 
             base.Uninitialize();
         }
@@ -281,7 +321,7 @@ namespace OneHamsa.Dexterity
             FinalizeFields(nonOutputFields.ToArray());
 
             // re-register all gates
-            foreach (var gate in GetAllGates().ToArray())  // might manipulate gates within the loop
+            foreach (var gate in nodeGates)  // might manipulate gates within the loop
                 InitializeGate(gate);
             
             // cache all outputs
@@ -299,9 +339,10 @@ namespace OneHamsa.Dexterity
                 if (f is null or OutputField)  // OutputFields are self-initialized 
                     return;
 
-                Manager.instance.RegisterField(f);
-
                 f.Initialize(this, definitionId);
+                
+                Manager.instance.RegisterField(f);
+                
                 InitializeFields(definitionId, f.GetUpstreamFields());
 
                 AuditField(f);

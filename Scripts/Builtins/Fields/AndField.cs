@@ -1,16 +1,23 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class AndField : BaseField
     {
         [SerializeReference]
         public BaseField first;
         [SerializeReference]
         public BaseField second;
+
+        public override BaseField CreateDeepClone()
+        {
+            AndField clone = base.CreateDeepClone() as AndField;
+            clone.first = first.CreateDeepClone();
+            clone.second = second.CreateDeepClone();
+            return clone;
+        }
 
         public override int GetValue() {
             return first?.GetValue() == 1 && second?.GetValue() == 1 ? 1 : 0;

@@ -1,10 +1,10 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class EnumField : BaseField
     {
         public BindingEnumNode targetNode;

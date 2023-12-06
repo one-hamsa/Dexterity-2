@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
         /// </summary>
-        private readonly HashSet<BaseField> upstreamFields = new();
+        private HashSet<BaseField> upstreamFields;
 
         /// <summary>
         /// adds an upstream field
@@ -42,6 +42,8 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected void ClearUpstreamFields()
         {
+            foreach (var field in upstreamFields)
+                Manager.instance.SetDirty(field);
             upstreamFields.Clear();
 
             Manager.instance.SetDirty(this);
@@ -90,6 +92,11 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public abstract int GetValue();
 
+        public virtual BaseField CreateDeepClone()
+        {
+             return MemberwiseClone() as BaseField;
+        }
+
         /// <summary>
         /// dispatched by the node when initializing a new field
         /// </summary>
@@ -105,10 +112,14 @@ namespace OneHamsa.Dexterity
             Initialize(context);
             initialized = true;
         }
+
         /// <summary>
         /// override for custom initialization
         /// </summary>
-        protected virtual void Initialize(FieldNode context) { }
+        protected virtual void Initialize(FieldNode context)
+        {
+            upstreamFields = new();
+        }
 
         /// <summary>
         /// dispatched by the node when the field is destroyed

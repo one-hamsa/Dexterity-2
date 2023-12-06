@@ -1,10 +1,8 @@
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class NodeStateField : BaseField
     {
         public BaseStateNode targetNode;
@@ -13,6 +11,11 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
 
         private int targetStateId;
+        
+        public override BaseField CreateDeepClone()
+        {
+            throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
+        }
 
         public override int GetValue()
         {

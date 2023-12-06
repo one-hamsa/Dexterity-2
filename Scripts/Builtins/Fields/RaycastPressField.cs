@@ -1,7 +1,8 @@
-using OneHamsa.Dexterity.Utilities;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class RaycastPressField : BaseField
     {
         [TagSelector] public string tag = "Untagged";

@@ -1,9 +1,11 @@
 using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class UIHoverField : BaseField
     {
         DexterityUIHoverFieldProvider provider = null;

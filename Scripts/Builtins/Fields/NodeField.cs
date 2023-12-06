@@ -1,7 +1,4 @@
-using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
-using System;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -14,16 +11,22 @@ namespace OneHamsa.Dexterity.Builtins
             AllEqual = 2,
         }
 
-        public List<FieldNode> targetNodes = new List<FieldNode>();
+        public List<FieldNode> targetNodes;
         [Field]
         public string fieldName;
         public TakeValueWhen takeValueWhen = TakeValueWhen.AnyEqualsTrue;
         public bool negate;
 
-        List<FieldNode.OutputField> outputFields = new List<FieldNode.OutputField>();
+        List<FieldNode.OutputField> outputFields;
 
         // we always report about someone else's field, so mark as proxy
         public override bool proxy => true;
+        
+        public override BaseField CreateDeepClone()
+        {
+            throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
+        }
+        
         public override int GetValue() {
             var value = GetValueBeforeNegation();
             return negate ? (value + 1) % 2 : value;
@@ -64,6 +67,9 @@ namespace OneHamsa.Dexterity.Builtins
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
+
+            targetNodes = new();
+            outputFields = new();
 
             if (targetNodes.Count == 0)
                 targetNodes.Add(context);

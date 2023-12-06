@@ -1,10 +1,10 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [Preserve]
     public class ParentField : BaseField
     {
         [Field]
@@ -15,6 +15,8 @@ namespace OneHamsa.Dexterity.Builtins
 
         FieldNode parent = null;
         int fieldId;
+
+        List<Transform> parentsTransform;
 
         // only proxy when parent is found
         public override bool proxy => parent != null;
@@ -28,7 +30,6 @@ namespace OneHamsa.Dexterity.Builtins
             return negate ? (value + 1) % 2 : value;
         }
 
-        List<Transform> parentsTransform = new List<Transform>();
         public override void RefreshReferences()
         {
             var lastParent = parent;
@@ -90,6 +91,7 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
+            parentsTransform = new();
             context.onParentTransformChanged += RefreshReferences;
 
             fieldId = Database.instance.GetFieldID(fieldName);

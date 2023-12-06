@@ -28,6 +28,16 @@ namespace OneHamsa.Dexterity
 
             public int outputFieldDefinitionId { get; private set; } = -1;
 
+            public Gate CreateDeepClone()
+            {
+                Gate ret = new Gate();
+                ret.outputFieldName = outputFieldName;
+                ret.overrideType = overrideType;
+                ret.field = field.CreateDeepClone();
+                ret.outputFieldDefinitionId = outputFieldDefinitionId;
+                return ret;
+            }
+
             public bool Initialize()
             {
                 if (string.IsNullOrEmpty(outputFieldName))
@@ -95,6 +105,8 @@ namespace OneHamsa.Dexterity
 
                 // make sure it's recursive
                 newParent.Initialize(null, parentReferences);
+                
+                this.gates.InsertRange(0, newParent.gates);
                 
                 var i = 0;
                 foreach (var gate in newParent.gates)

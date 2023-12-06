@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.Events;
+using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [Obsolete]
+    [Obsolete, Preserve]
     public class UnityObjectField : BaseField
     {
         public UnityEngine.Object targetObject;

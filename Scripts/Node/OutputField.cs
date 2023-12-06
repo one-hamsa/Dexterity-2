@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -82,6 +83,12 @@ namespace OneHamsa.Dexterity
                     return cachedOverride;
                 }
             }
+
+            public override BaseField CreateDeepClone()
+            {
+                throw new DataException("OutputFields shouldn't get DeepCloned!");
+            }
+
             protected override void Initialize(FieldNode context)
             {
                 base.Initialize(context);
@@ -166,7 +173,7 @@ namespace OneHamsa.Dexterity
 
                 // find whether this output field is dependent only on other output fields
                 allUpstreamFieldsAreOutputOrProxy = true;
-                foreach (var gate in node.GetAllGates())
+                foreach (var gate in node.nodeGates)
                 {
                     if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;

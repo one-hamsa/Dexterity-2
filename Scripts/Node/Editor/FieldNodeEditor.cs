@@ -90,14 +90,6 @@ namespace OneHamsa.Dexterity
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.referenceAssets)));
 
-            // runtime
-            if (node.reference != null) {
-                if (GUILayout.Button("Open Live Reference"))
-                {
-                    NodeReferenceEditorWindow.Open(node.reference); 
-                }
-            }
-
             serializedObject.ApplyModifiedProperties();
         }
 
