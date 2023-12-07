@@ -31,10 +31,5 @@ namespace OneHamsa.Dexterity.Builtins
             AddUpstreamField(first);
             AddUpstreamField(second);
         }
-        
-        public override void RebuildCache() {
-            first.RebuildCache();
-            second.RebuildCache();
-        }
     }
 }

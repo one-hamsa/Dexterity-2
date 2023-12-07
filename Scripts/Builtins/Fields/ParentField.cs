@@ -11,7 +11,6 @@ namespace OneHamsa.Dexterity.Builtins
         public string fieldName;
         public Transform child;
         public bool negate;
-        public bool updateParentReference;
 
         FieldNode parent = null;
         int fieldId;
@@ -33,45 +32,9 @@ namespace OneHamsa.Dexterity.Builtins
         public override void RefreshReferences()
         {
             var lastParent = parent;
-
-            if (parent == null || updateParentReference)
-            {
-                {
-                    // traverse to check if the chain broke
-                    var current = child.parent;
-
-                    // make sure you don't skip the update in case the cache is empty
-                    if (parentsTransform.Count > 0)
-                    {
-                        var i = 0;
-                        while (i < parentsTransform.Count && current == parentsTransform[i])
-                        {
-                            i++;
-                            current = current?.parent;
-                        }
-                        if (i == parentsTransform.Count)
-                            // no need to update
-                            return;
-                    }
-                }
-
-                // save new references
-                var transformParent = context.transform.parent;
-                parent = transformParent != null ? transformParent.GetComponentInParent<FieldNode>() : null;
-                parentsTransform.Clear();
-
-                {
-                    var current = child.parent;
-                    // save until the parent, or until the root if the parent is null
-                    do
-                    {
-                        parentsTransform.Add(current);
-                        current = current?.parent;
-                    }
-                    while (current != null && (parent == null || current.gameObject != parent.gameObject));
-                }
-            }
-
+            var transformParent = child.parent;
+            parent = transformParent != null ? transformParent.GetComponentInParent<FieldNode>() : null;
+            
             if (lastParent != parent) 
             {
                 ClearUpstreamFields();
@@ -83,10 +46,6 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
         
-        public override void RebuildCache() {
-            parent = null;
-        }
-
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);

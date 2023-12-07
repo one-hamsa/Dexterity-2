@@ -21,7 +21,6 @@ namespace OneHamsa.Dexterity.Builtins
         public bool recurseWhenFindingNode;
         public TakeValueWhen takeValueWhen = TakeValueWhen.AnyEqualsTrue;
         public bool negate;
-        public bool updateChildrenReference;
 
         HashSet<FieldNode> children, prevChildren;
         HashSet<string> childrenPath;
@@ -79,63 +78,22 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override void RefreshReferences()
         {
-            // find if any child is destroyed - if so, refresh all children
-            if (children != null) {
-                var anyIsNull = false;
-                foreach (var child in children) {
-                    if (child == null) {
-                        anyIsNull = true;
-                        break;
-                    }
-                }
-                if (anyIsNull) {
-                    children = null;
-                }
-            }
-
             prevChildren.Clear();
             if (children != null)
-                foreach (var child in children) {
-                    prevChildren.Add(child);
-                }
+                prevChildren.UnionWith(children);
 
             // check if children transforms stay the same
-            if (children == null || updateChildrenReference) {
-                var nodesIter = recursive 
-                    ? GetNodesInChildrenRecursive() 
-                    : GetNodesInImmediateChildren();
+            var nodesIter = recursive 
+                ? GetNodesInChildrenRecursive() 
+                : GetNodesInImmediateChildren();
 
-                // recalculate paths
-                childrenPath.Clear();
-                foreach (var child in nodesIter) {
-                    childrenPath.Add(GetPath(child.transform));
-                }
-
-                if (children != null && childrenPath.Count == children.Count) {
-                    var matched = true;
-                    foreach (var child in children) {
-                        if (child == null) {
-                            matched = false;
-                            break;
-                        }
-                        if (!childrenPath.Contains(GetPath(child.transform))) {
-                            matched = false;
-                            break;
-                        }
-                    }
-                    if (matched)
-                        // transforms stayed the same, no need to update
-                        return;
-                }
-
-                if (children == null)
-                    children = new HashSet<FieldNode>();
-
+            if (children == null)
+                children = new HashSet<FieldNode>();
+            else
                 children.Clear();
-                foreach (var child in nodesIter) {
-                    children.Add(child);
-                }
-            }
+                
+            foreach (var child in nodesIter) 
+                children.Add(child);
 
             if (!comparer.Equals(children, prevChildren)) {
                 ClearUpstreamFields();
@@ -183,7 +141,6 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             prevChildren = new();
-            children = new();
             childrenPath = new();
             workQueue = new();
             comparer = HashSet<FieldNode>.CreateSetComparer();
@@ -204,10 +161,6 @@ namespace OneHamsa.Dexterity.Builtins
             }
             
             RefreshReferences();
-        }
-
-        public override void RebuildCache() {
-            children = null;
         }
 
         private static string GetPath(Transform current) {

@@ -68,7 +68,6 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
-            targetNodes = new();
             outputFields = new();
 
             if (targetNodes.Count == 0)

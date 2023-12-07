@@ -173,7 +173,7 @@ namespace OneHamsa.Dexterity
 
                 // find whether this output field is dependent only on other output fields
                 allUpstreamFieldsAreOutputOrProxy = true;
-                foreach (var gate in node.nodeGates)
+                foreach (var gate in node.customGates)
                 {
                     if (gate.outputFieldDefinitionId != definitionId || gate.field == null)
                         continue;
@@ -214,12 +214,6 @@ namespace OneHamsa.Dexterity
                         RegisterUpstreamOutput(field);
                     }
                 }
-            }
-
-            public override void RebuildCache()
-            {
-                RefreshReferences(); // Is this needed here? what has changed in this context that requires a 'RebuildCache'?
-                overridesDirtyIncrement = -1;
             }
 
             private void InvokeEvents(int oldValue, int newValue)

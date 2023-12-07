@@ -85,17 +85,15 @@ namespace OneHamsa.Dexterity
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
         private int overridesDirtyIncrement;
-        private bool referenceRequiresInitialize = true;
 
         FieldMask fieldMask = new FieldMask(32);
         private int[] stateFieldIdsCache;
         private HashSet<string> fieldNames;
         private HashSet<string> stateNames;
         private StateFunction.StepEvaluationCache stepEvalCache;
-        
-        [NonSerialized]
-        public List<Gate> nodeGates = new(0);
 
+        private bool _performedFirstInitialization;
+        
         #endregion Private Properties
 
         #region Unity Events
@@ -122,6 +120,9 @@ namespace OneHamsa.Dexterity
             return true;
         }
 
+        private static Stack<NodeReference> _processingStack = new(128);
+        private static Stack<NodeReference> _orderedStack = new(128);
+        
         protected override void Initialize()
         {
             // one more chance to run hotfix in case references changed but OnValidate() wasn't called
@@ -132,94 +133,77 @@ namespace OneHamsa.Dexterity
                 enabled = false;
                 return;
             }
-            
-            // register all internal fields
-            foreach (var field in internalFieldDefinitions)
-                Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
-            HashSetPool<NodeReference>.Get(out var addedNodeReferences);
-            ListPool<NodeReference>.Get(out var nodeReferencesToAdd);
-            nodeReferencesToAdd.AddRange(referenceAssets);
-            
-            if (nodeGates.Count > 0)
-                Debug.LogError("Twice init?!");
-            
-            // build the comprehensive NodeReference list to process, in the order we want (by semi-recursively crawling the data)
-            for (int i = 0; i < nodeReferencesToAdd.Count; i++)
+            if (!_performedFirstInitialization)
             {
-                var reference = nodeReferencesToAdd[i];
-                nodeReferencesToAdd.AddRange(reference.extends);
-
-                #if UNITY_EDITOR
-                if (i >= 1000)
-                {
-                    Debug.LogError("Do we have a loop in our data??");
-                    break;
-                }
-                #endif
-            }
-            
-
-            while (nodeReferencesToAdd.Count > 0)
-            {
-                // reverse the order [^1]
-                var reference = nodeReferencesToAdd[^1];
-                
-                // Don't double add a reference
-                if (!addedNodeReferences.Add(reference))
-                    continue;
-
                 // register all internal fields
-                foreach (var field in reference.internalFieldDefinitions)
+                foreach (var field in internalFieldDefinitions)
                     Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
-                // register all functions
-                foreach (var stateFunc in reference.GetStateFunctionAssetsIncludingParents())
-                    Database.instance.Register(stateFunc);
+                using var _ = HashSetPool<NodeReference>.Get(out var visitedNodeReferences);
+                using var __ = ListPool<NodeReference>.Get(out var nodeReferencesToAdd);
+                using var ___ = ListPool<NodeReference.Gate>.Get(out var nodeGates);
 
-                foreach (var gate in reference.gates)
-                    nodeGates.Add(gate.CreateDeepClone());
-                
-                nodeReferencesToAdd.RemoveAt(nodeReferencesToAdd.Count-1);
-            }
-            
-            // Add our own custom gates last
-            nodeGates.AddRange(customGates);
+                _orderedStack.Clear();
+                _processingStack.Clear();
+                for (int i = referenceAssets.Count-1; i >= 0; i--)
+                    _processingStack.Push(referenceAssets[i]);
 
-            // Release our temp collections
-            HashSetPool<NodeReference>.Release(addedNodeReferences);
-            ListPool<NodeReference>.Release(nodeReferencesToAdd);
+                while (_processingStack.Count > 0)
+                {
+                    var currentNodeRef = _processingStack.Pop();
+                    if (visitedNodeReferences.Contains(currentNodeRef))
+                        continue;
+                    _orderedStack.Push(currentNodeRef);
+                    visitedNodeReferences.Add(currentNodeRef);
+                    for (int i = currentNodeRef.extends.Count-1; i >= 0; i--)
+                    {
+                        _processingStack.Push(currentNodeRef.extends[i]);
+                    }
+                }
+                    
 
-            /*
-            // only needed once
-            if (reference == null) {
-                // create a runtime instance of this scriptable object to allow changing it
-                reference = ScriptableObject.CreateInstance<NodeReference>();
-                // define this node as its owner
-                reference.owner = this;
-                reference.name = $"{name} (Live Reference)";
-                // copy all references from this node to the runtime instance
-                reference.extends.AddRange(referenceAssets);
-                // copy all internal fields to the runtime instance
-                reference.internalFieldDefinitions.AddRange(GetInternalFieldDefinitions());
-            }
-            else if (referenceRequiresInitialize)
-                reference.Uninitialize();
-                */
+                // build the comprehensive NodeReference list to process, in the order we want (by semi-recursively crawling the data)
+                for (int i = 0; i < nodeReferencesToAdd.Count; i++)
+                {
+                    var reference = nodeReferencesToAdd[i];
+                    nodeReferencesToAdd.AddRange(reference.extends);
 
-            var shouldRebuildCaches = false;
-            if (referenceRequiresInitialize)
-            {
-                // initialize reference (this will create the runtime version with all the inherited gates)
-                //reference.Initialize(customGates);
-                referenceRequiresInitialize = false;
-                shouldRebuildCaches = true;
+#if UNITY_EDITOR
+                    if (i >= 1000)
+                    {
+                        Debug.LogError("Do we have a loop in our data??");
+                        break;
+                    }
+#endif
+                }
+
+
+                while (_orderedStack.Count > 0)
+                {
+                    // reverse the order [^1]
+                    var reference = _orderedStack.Pop();
+
+                    // register all internal fields
+                    foreach (var field in reference.internalFieldDefinitions)
+                        Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
+
+                    // register all functions
+                    foreach (var stateFunc in reference.GetStateFunctionAssetsIncludingParents())
+                        Database.instance.Register(stateFunc);
+
+                    foreach (var gate in reference.gates)
+                        nodeGates.Add(gate.CreateDeepClone());
+                }
+
+                // Add our own custom gates last
+                customGates.InsertRange(0, nodeGates);
             }
 
             // run base initialize after registering states
             base.Initialize();
 
-            if (shouldRebuildCaches)
+            if (!_performedFirstInitialization)
             {
                 // then initialize step list
                 (this as IStepList).InitializeSteps();
@@ -227,6 +211,8 @@ namespace OneHamsa.Dexterity
                 // find all fields that are used by this node's state function
                 stateFieldIdsCache = GetFieldIDs().ToArray();
             }
+
+            _performedFirstInitialization = true;
 
             // subscribe to more changes
             onGateAdded += RestartFields;
@@ -246,13 +232,9 @@ namespace OneHamsa.Dexterity
         protected override void Uninitialize()
         {
             // cleanup gates
-            foreach (var gate in nodeGates)
-            {
+            foreach (var gate in customGates)
                 FinalizeGate(gate);
-            }
             
-            nodeGates.Clear();
-
             // unsubscribe
             onGateAdded -= RestartFields;
             onGateRemoved -= RestartFields;
@@ -321,7 +303,7 @@ namespace OneHamsa.Dexterity
             FinalizeFields(nonOutputFields.ToArray());
 
             // re-register all gates
-            foreach (var gate in nodeGates)  // might manipulate gates within the loop
+            foreach (var gate in customGates)  // might manipulate gates within the loop
                 InitializeGate(gate);
             
             // cache all outputs
@@ -426,17 +408,6 @@ namespace OneHamsa.Dexterity
             return output;
         }
 
-        /// <summary>
-        /// Builds all node's fields' cache
-        /// </summary>
-        public void RebuildCache() {
-            foreach (var field in nonOutputFields.Concat(outputFields.Values)) {
-                field.RebuildCache();
-                field.RefreshReferences();
-                field.CacheValue();
-            }
-        }
-
         public event Action onDirty;
 
         /// <summary>
@@ -472,15 +443,15 @@ namespace OneHamsa.Dexterity
 
         public void AddGate(Gate gate)
         {
-            referenceRequiresInitialize = true;
             customGates.Add(gate);
+            RestartFields();
             onGateAdded?.Invoke(gate);
         }
 
         public void RemoveGate(Gate gate)
         {
-            referenceRequiresInitialize = true;
             customGates.Remove(gate);
+            RestartFields();
             onGateRemoved?.Invoke(gate);
         }
         public void NotifyGatesUpdate()

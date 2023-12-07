@@ -136,11 +136,6 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public virtual void CacheValue() { }
 
-        /// <summary>
-        /// dispatched manually when field needs structure recalculation (finding scene references, etc.)
-        /// </summary>
-        public virtual void RebuildCache() { }
-
         public override string ToString()
         {
             return $"{ToShortString()} -> {this.GetValueAsString()}";
