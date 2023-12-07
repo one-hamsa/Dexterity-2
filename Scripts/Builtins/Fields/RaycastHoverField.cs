@@ -12,10 +12,6 @@ namespace OneHamsa.Dexterity.Builtins
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
-
-            if (router != null)
-                UnityEngine.Debug.LogError("Twice?");
-            
             provider = new DexterityRaycastFieldProvider();
             router = context.GetRaycastRouter();
             router.AddReceiver(provider);

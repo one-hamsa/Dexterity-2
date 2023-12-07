@@ -141,8 +141,7 @@ namespace OneHamsa.Dexterity
                     Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
                 using var _ = HashSetPool<NodeReference>.Get(out var visitedNodeReferences);
-                using var __ = ListPool<NodeReference>.Get(out var nodeReferencesToAdd);
-                using var ___ = ListPool<NodeReference.Gate>.Get(out var nodeGates);
+                using var __ = ListPool<Gate>.Get(out var nodeGates);
 
                 _orderedStack.Clear();
                 _processingStack.Clear();
@@ -161,23 +160,6 @@ namespace OneHamsa.Dexterity
                         _processingStack.Push(currentNodeRef.extends[i]);
                     }
                 }
-                    
-
-                // build the comprehensive NodeReference list to process, in the order we want (by semi-recursively crawling the data)
-                for (int i = 0; i < nodeReferencesToAdd.Count; i++)
-                {
-                    var reference = nodeReferencesToAdd[i];
-                    nodeReferencesToAdd.AddRange(reference.extends);
-
-#if UNITY_EDITOR
-                    if (i >= 1000)
-                    {
-                        Debug.LogError("Do we have a loop in our data??");
-                        break;
-                    }
-#endif
-                }
-
 
                 while (_orderedStack.Count > 0)
                 {

@@ -66,72 +66,12 @@ namespace OneHamsa.Dexterity
         [NonSerialized]
         public FieldNode owner;
 
-        public StateFunction[] stateFunctions { get; private set; }
-
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
 
-        private static readonly HashSet<NodeReference> parentReferences = new();
         private HashSet<string> stateNames;
         private HashSet<string> fieldNames;
-
-        public void Initialize(List<Gate> gates, HashSet<NodeReference> parentReferences = null)
-        {
-            // register all internal fields
-            foreach (var field in internalFieldDefinitions)
-                Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
-            
-            if (parentReferences == null) {
-                parentReferences = NodeReference.parentReferences;
-                parentReferences.Clear();
-            }
-
-            // register all functions
-            stateFunctions = GetStateFunctionAssetsIncludingParents().ToArray();
-            for (int i = 0; i < stateFunctions.Length; i++) {
-                Database.instance.Register(stateFunctions[i]);
-            }
-
-            // copy from parents
-            foreach (var parent in extends)
-            {
-                // skip if already added 
-                if (!parentReferences.Add(parent))
-                    continue;
-
-                // deep clone before iterating gates to make sure we point to new instances
-                var newParent = Instantiate(parent);
-
-                // make sure it's recursive
-                newParent.Initialize(null, parentReferences);
-                
-                this.gates.InsertRange(0, newParent.gates);
-                
-                var i = 0;
-                foreach (var gate in newParent.gates)
-                {
-                    this.gates.Insert(i++, gate);
-                }
-
-                // c'est tout
-                Destroy(newParent);
-            }
-
-            // add new gates
-            if (gates != null)
-            {
-                foreach (var gate in gates)
-                {
-                    this.gates.Add(gate);
-                }
-            }
-        }
-
-        public void Uninitialize()
-        {
-            gates.Clear();
-        }
 
         public void AddGate(Gate gate)
         {
