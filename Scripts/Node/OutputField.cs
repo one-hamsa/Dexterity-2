@@ -120,7 +120,9 @@ namespace OneHamsa.Dexterity
                 {
                     node.onEnabled -= OnNodeEnabled;
                     node.onDisabled -= OnNodeDisabled;
+                    node.onDirty -= RefreshReferences;
                 }
+                
                 fieldsToNodes.Remove(this);
                 finalized = true;
             }

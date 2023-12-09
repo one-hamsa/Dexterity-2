@@ -74,8 +74,8 @@ namespace OneHamsa.Dexterity
         #region Public Properties
 
         // output fields of this node
-        public SortedList<int, OutputField> outputFields = new();
-        public SortedList<int, OutputOverride> cachedOverrides = new();
+        public InsertSortList<OutputField> outputFields = new();
+        public InsertSortList<OutputOverride> cachedOverrides = new();
 
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
@@ -100,10 +100,9 @@ namespace OneHamsa.Dexterity
         protected override void OnDestroy()
         {
             // only now it's ok to remove output fields
-            foreach (var output in outputFields.Values.ToArray())
-            {
-                output.Finalize(this);
-            }
+            foreach (var pair in outputFields.keyValuePairs)
+                pair.Value.Finalize(this);
+            
             outputFields.Clear();
             base.OnDestroy();
         }
@@ -282,52 +281,54 @@ namespace OneHamsa.Dexterity
         {
             // unregister all fields. this might be triggered by editor, so go through this list
             //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
-            FinalizeFields(nonOutputFields.ToArray());
+            using (var _ = ListPool<BaseField>.Get(out var list))
+            {
+                list.AddRange(nonOutputFields);
+                foreach (var field in list)
+                    FinalizeField(field);
+            }
 
             // re-register all gates
             foreach (var gate in customGates)  // might manipulate gates within the loop
                 InitializeGate(gate);
             
             // cache all outputs
-            foreach (var output in outputFields.Values) {
+            foreach (var pair in outputFields.keyValuePairs)
+            {
+                var output = pair.Value;
                 output.RefreshReferences();
                 output.CacheValue();
             }
         }
 
-        void InitializeFields(int definitionId, IEnumerable<BaseField> fields)
+        void InitializeField(int definitionId, BaseField field)
         {
-            // initialize all fields
-            fields.ToList().ForEach(f =>
-            {
-                if (f is null or OutputField)  // OutputFields are self-initialized 
-                    return;
+            if (field is null or OutputField)  // OutputFields are self-initialized 
+                return;
 
-                f.Initialize(this, definitionId);
+            field.Initialize(this, definitionId);
                 
-                Manager.instance.RegisterField(f);
+            Manager.instance.RegisterField(field);
                 
-                InitializeFields(definitionId, f.GetUpstreamFields());
+            foreach (var upstreamField in field.GetUpstreamFields())
+                InitializeField(definitionId, upstreamField);
 
-                AuditField(f);
-            });
+            AuditField(field);
         }
 
-        void FinalizeFields(IEnumerable<BaseField> fields)
+        void FinalizeField(BaseField field)
         {
-            // finalize all gate fields and output fields
-            fields.ToList().ForEach(f =>
-            {
-                if (f == null || f is OutputField)  // OutputFields are never removed
-                    return;
+            if (field == null || field is OutputField)  // OutputFields are never removed
+                return;
 
-                f.Finalize(this);
-                if (Manager.instance != null)
-                    Manager.instance.UnregisterField(f);
-                FinalizeFields(f.GetUpstreamFields());
+            field.Finalize(this);
+            if (Manager.instance != null)
+                Manager.instance.UnregisterField(field);
+            
+            foreach (var upstreamField in field.GetUpstreamFields())
+                FinalizeField(upstreamField);
 
-                RemoveAudit(f);
-            });
+            RemoveAudit(field);
         }
 
         private void InitializeGate(Gate gate)
@@ -343,7 +344,7 @@ namespace OneHamsa.Dexterity
 
             try
             {
-                InitializeFields(gate.outputFieldDefinitionId, new[] { gate.field });
+                InitializeField(gate.outputFieldDefinitionId, gate.field);
             }
             catch (BaseField.FieldInitializationException e)
             {
@@ -356,7 +357,7 @@ namespace OneHamsa.Dexterity
         }
         private void FinalizeGate(Gate gate)
         {
-            FinalizeFields(new[] { gate.field });
+            FinalizeField(gate.field);
             SetDirty();
         }
 
@@ -408,7 +409,7 @@ namespace OneHamsa.Dexterity
                 fieldsToNodes[field] = this;
             }
             else
-                outputFields.Add(o.definitionId, o);
+                outputFields.AddOrUpdate(o.definitionId, o);
         }
         private void RemoveAudit(BaseField field)
         {
@@ -524,7 +525,7 @@ namespace OneHamsa.Dexterity
         /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
         public void SetOverrideRaw(int fieldId, int value)
         {
-            if (!cachedOverrides.ContainsKey(fieldId))
+            if (!cachedOverrides.Contains(fieldId))
             {
                 var newOverride = new OutputOverride();
                 newOverride.Initialize(fieldId);
@@ -665,7 +666,7 @@ namespace OneHamsa.Dexterity
         IEnumerable<FieldDefinition> IGateContainer.GetInternalFieldDefinitions() 
             => GetInternalFieldDefinitions();
 
-        IEnumerable<string> IGateContainer.GetWhitelistedFieldNames()
+        HashSet<string> IGateContainer.GetWhitelistedFieldNames()
             => GetFieldNames();
 
         FieldNode IGateContainer.node => this;

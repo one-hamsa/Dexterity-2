@@ -146,8 +146,8 @@ namespace OneHamsa.Dexterity
             var outputFields = node.outputFields;
             var overrides = node.cachedOverrides;
             unusedOverrides.Clear();
-            foreach (var value in overrides.Values)
-                unusedOverrides.Add(value);
+            foreach (var pair in overrides.keyValuePairs)
+                unusedOverrides.Add(pair.Value);
 
             var overridesStr = overrides.Count == 0 ? "" : $", {overrides.Count} overrides";
             {
@@ -155,8 +155,9 @@ namespace OneHamsa.Dexterity
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
-            foreach (var field in outputFields.Values.ToArray().OrderBy(f => f.GetValue() == FieldNode.emptyFieldValue))
+            foreach (var pair in outputFields.keyValuePairs.OrderBy(f => f.Value.GetValue() == FieldNode.emptyFieldValue))
             {
+                var field = pair.Value;
                 var value = field.GetValueWithoutOverride();
                 string strValue = Utils.ConvertFieldValueToText(value, field.definition);
 
@@ -209,8 +210,9 @@ namespace OneHamsa.Dexterity
                 if (targets.Length > 1)
                     EditorGUILayout.LabelField(t.name, EditorStyles.whiteBoldLabel);
 
-                foreach (var output in (t as FieldNode).outputFields.Values)
+                foreach (var pair in (t as FieldNode).outputFields.keyValuePairs)
                 {
+                    var output = pair.Value;
                     GUILayout.Label(output.definition.GetName(), EditorStyles.boldLabel);
 
                     ShowUpstreams(output, t as FieldNode);
