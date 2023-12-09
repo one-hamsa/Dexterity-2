@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
 
@@ -29,7 +30,6 @@ namespace OneHamsa.Dexterity.Builtins
         public static event Action<PressAnywhereEvent> onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
-        public float repeatHitCooldown = 0f;
         [Tooltip("How far back should the ray be casted from this transform?")]
         public float backRayLength = .25f;
 
@@ -54,8 +54,6 @@ namespace OneHamsa.Dexterity.Builtins
         private List<IRaycastReceiver> potentialReceiversA = new(4);
         private List<IRaycastReceiver> potentialReceiversB = new(4);
         private readonly List<IRaycastReceiver> receiversBeforeFilter = new(1);
-
-        private readonly Dictionary<IRaycastReceiver, long> recentlyHitReceivers = new();
         private IRaycastController.RaycastEvent.Result lastEventResult;
 
         [Preserve]
@@ -172,7 +170,7 @@ namespace OneHamsa.Dexterity.Builtins
             lastReceivers.Clear();
         }
 
-        void Update()
+        void LateUpdate()
         {
             long now = Stopwatch.GetTimestamp();
 
@@ -207,12 +205,16 @@ namespace OneHamsa.Dexterity.Builtins
                     for (var j = 0; j < receiversBeforeFilter.Count; j++)
                     {
                         var receiver = receiversBeforeFilter[j];
-                        var r = receiver.Resolve();
-                        if (r is MonoBehaviour { isActiveAndEnabled: false })
-                            continue;
-                        if (filters.Count > 0 && !filters[^1](r))
-                            continue;
-                        potentialReceiversA.Add(r);
+                        using var _ = ListPool<IRaycastReceiver>.Get(out var receivers);
+                        receiver.Resolve(receivers);
+                        foreach (var r in receivers)
+                        {
+                            if (r is MonoBehaviour { isActiveAndEnabled: false })
+                                continue;
+                            if (filters.Count > 0 && !filters[^1](r))
+                                continue;
+                            potentialReceiversA.Add(r);
+                        }
                     }
 
                     if (potentialReceiversA.Count == 0)
@@ -237,7 +239,6 @@ namespace OneHamsa.Dexterity.Builtins
                     // this receiver is no longer relevant
                     || !closestReceivers.Contains(receiver))
                 {
-                    recentlyHitReceivers[receiver] = now;
                     try
                     {
                         receiver.ClearHit(this);
@@ -259,15 +260,6 @@ namespace OneHamsa.Dexterity.Builtins
                 for (var i = 0; i < closestReceivers.Count; i++)
                 {
                     var receiver = closestReceivers[i];
-
-                    // repeat-hit cooldown
-                    if (recentlyHitReceivers.TryGetValue(receiver, out var lastHit))
-                    {
-                        var cooldown = (float)(now - lastHit) / Stopwatch.Frequency;
-                        if (cooldown < repeatHitCooldown)
-                            continue;
-                    }
-
                     var hitEvent = new IRaycastController.RaycastEvent
                     {
                         hit = hit,

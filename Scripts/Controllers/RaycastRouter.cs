@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -7,19 +8,17 @@ namespace OneHamsa.Dexterity
     /// </summary>
     public class RaycastRouter : MonoBehaviour, IRaycastReceiver
     {
-        private IRaycastReceiver receiver;
+        private HashSet<IRaycastReceiver> receivers = new();
 
-        public void SetReceiver(IRaycastReceiver receiver)
+        public void AddReceiver(IRaycastReceiver receiver)
         {
-            if (this.receiver != null)
-                Debug.LogError($"RaycastRouter.SetReceiver() called when receiver was already set.", this);
-            this.receiver = receiver;
+            if (!receivers.Add(receiver))
+                Debug.LogError($"RaycastRouter.SetReceiver() called when receiver was already added.", this);
         }
         public void RemoveReceiver(IRaycastReceiver receiver)
         {
-            if (this.receiver != receiver)
-                Debug.LogError($"RaycastRouter.RemoveReceiver() called with a receiver that was not set.", this);
-            this.receiver = null;
+            if (!receivers.Remove(receiver))
+                Debug.LogError($"RaycastRouter.RemoveReceiver() called with a receiver that was not added.", this);
         }
         
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
@@ -32,6 +31,9 @@ namespace OneHamsa.Dexterity
             Debug.LogError($"RaycastRouter.ClearHit() should never be called.", this);
         }
 
-        public IRaycastReceiver Resolve() => receiver;
+        void IRaycastReceiver.Resolve(List<IRaycastReceiver> receivers)
+        {
+            receivers.AddRange(this.receivers);
+        }
     }
 }
