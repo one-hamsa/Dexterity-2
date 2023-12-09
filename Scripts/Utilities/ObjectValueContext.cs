@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity
             
             var field = (string)callerObject.GetType().GetField(attributeFieldName).GetValue(callerObject);
 
-            var methodInfo = unityObject.GetType().GetMethod(field, BindingFlags.Public | BindingFlags.Instance);
+            var methodInfo = Reflection.GetMethod(unityObject.GetType(), field, BindingFlags.Public | BindingFlags.Instance);
             if (methodInfo != null)
             {
                 type = methodInfo.ReturnType;
@@ -58,7 +58,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            var fieldInfo = unityObject.GetType().GetField(field, BindingFlags.Public | BindingFlags.Instance);
+            var fieldInfo = Reflection.GetField(unityObject.GetType(), field, BindingFlags.Public | BindingFlags.Instance);
             if (fieldInfo != null) {
                 type = fieldInfo.FieldType;
                 FindActualValueType(attr.supportedTypes);
@@ -66,7 +66,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
             
-            var propertyInfo = unityObject.GetType().GetProperty(field, BindingFlags.Public | BindingFlags.Instance);
+            var propertyInfo = Reflection.GetProperty(unityObject.GetType(), field, BindingFlags.Public | BindingFlags.Instance);
             if (propertyInfo != null) 
             {
                 type = propertyInfo.PropertyType;
