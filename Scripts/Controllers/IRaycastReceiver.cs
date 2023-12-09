@@ -1,9 +1,15 @@
+using System.Collections.Generic;
+
 namespace OneHamsa.Dexterity
 {
     public interface IRaycastReceiver
     {
         void ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent);
         void ClearHit(IRaycastController controller);
-        IRaycastReceiver Resolve() => this;
+
+        void Resolve(List<IRaycastReceiver> receivers)
+        {
+            receivers.Add(this);
+        }
     }
 }

@@ -51,12 +51,16 @@ namespace OneHamsa.Dexterity
             while (queue.Count > 0) {
                 var current = queue.Dequeue();
 
+                /*
+                if (transform != current && current.GetComponent<FieldNode>() != null) 
+                {
+                    continue;
+                }
+                */
+
+                // TODO wrong order
                 foreach (Transform child in current) {
                     queue.Enqueue(child);
-                }
-
-                if (current.GetComponent<FieldNode>() != null) {
-                    continue;
                 }
                 
                 if (current != transform) {
@@ -64,7 +68,7 @@ namespace OneHamsa.Dexterity
                     if (collider != null) {
                         // add router component and route it to receivers
                         var router = collider.gameObject.GetOrAddComponent<RaycastRouter>();
-                        router.SetReceiver(this);
+                        router.AddReceiver(this);
                         routers.Add(router);
                     }
                 }
