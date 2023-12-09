@@ -51,6 +51,8 @@ namespace OneHamsa.Dexterity
             return null;
         }
         
+        public static FieldInfo GetField(Type type, string name) => GetField(type, name, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public);
+
         public static FieldInfo GetField(Type type, string name, BindingFlags flags)
         {
             var fields = GetFields(type, flags);

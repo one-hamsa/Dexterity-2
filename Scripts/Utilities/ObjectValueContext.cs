@@ -33,13 +33,13 @@ namespace OneHamsa.Dexterity
             if (callerObject == null)
                 throw new ArgumentException($"caller object is null");
             
-            var fieldWithAttribute = callerObject.GetType().GetField(attributeFieldName);
+            var fieldWithAttribute = Reflection.GetField(callerObject.GetType(), attributeFieldName);
             if (fieldWithAttribute == null)
                 throw new ArgumentException($"could not find field {attributeFieldName} in {callerObject.GetType().Name}");
             
             var attr = (ObjectValueAttribute)fieldWithAttribute.GetCustomAttribute(typeof(ObjectValueAttribute));
             
-            var targetFieldInfo = callerObject.GetType().GetField(attr.objectFieldName);
+            var targetFieldInfo = Reflection.GetField(callerObject.GetType(), attr.objectFieldName);
             if (targetFieldInfo == null)
                 throw new ArgumentException($"could not find field {attr.objectFieldName} in {callerObject.GetType().Name}");
             
@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity
             if (unityObject == null)
                 throw new ArgumentException($"field {attr.objectFieldName} in {callerObject.GetType().Name} is null or not a Unity Object");
             
-            var field = (string)callerObject.GetType().GetField(attributeFieldName).GetValue(callerObject);
+            var field = (string)fieldWithAttribute.GetValue(callerObject);
 
             var methodInfo = Reflection.GetMethod(unityObject.GetType(), field, BindingFlags.Public | BindingFlags.Instance);
             if (methodInfo != null)
