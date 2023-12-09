@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity
             if (!binding.IsValid()) 
                 return;
             
-            if (!binding.Initialize() && Application.isPlaying)
+            if (!binding.Initialize() && Application.IsPlaying(this))
             {
                 Debug.LogError($"Failed to initialize binding for {name}", this);
                 enabled = false;
@@ -105,7 +105,7 @@ namespace OneHamsa.Dexterity
         {
             base.OnValidate();
             
-            if (Application.isPlaying) 
+            if (Application.IsPlaying(this)) 
                 return;
             
             try 

@@ -234,7 +234,7 @@ namespace OneHamsa.Dexterity
         }
         
         public override HashSet<string> GetStateNames() {
-            if (!Application.isPlaying || stateNames == null)
+            if (!Application.IsPlaying(this) || stateNames == null)
             {
                 stateNames = new HashSet<string>();
                 
@@ -245,7 +245,7 @@ namespace OneHamsa.Dexterity
             return stateNames;
         }
         public override HashSet<string> GetFieldNames() {
-            if (!Application.isPlaying || fieldNames == null)
+            if (!Application.IsPlaying(this) || fieldNames == null)
             {
                 fieldNames = new HashSet<string>();
 
@@ -332,7 +332,7 @@ namespace OneHamsa.Dexterity
 
         private void InitializeGate(Gate gate)
         {
-            if (Application.isPlaying && !gate.Initialize()) {
+            if (Application.IsPlaying(this) && !gate.Initialize()) {
                 // invalid gate, don't add
                 Debug.LogWarning($"{name}: {gate} is invalid, not adding", this);
                 return;
@@ -572,7 +572,7 @@ namespace OneHamsa.Dexterity
             // this will cause editor to crash if selecting multiple nodes, so we call it from CustomEditor instead
             // FixSteps();
 
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
                 CacheFieldOverrides();
         }
 

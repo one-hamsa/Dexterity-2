@@ -88,7 +88,7 @@ namespace OneHamsa.Dexterity
             if (targets.Length > 1)
                 return;
 
-            GUI.enabled = Application.isPlaying;
+            GUI.enabled = Application.IsPlaying(this);
             var overrideStateProp = serializedObject.FindProperty(nameof(BaseStateNode.overrideState));
 
             EditorGUI.BeginChangeCheck();
@@ -105,14 +105,14 @@ namespace OneHamsa.Dexterity
 
         void ShowSingleTargetDebug()
         {
-            if (!Application.isPlaying)
+            if (!Application.IsPlaying(this))
             {
                 ShowPreviewState();
             }
             
             ShowModifiers();
                 
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
             {
                 ShowActiveState();
                 ShowFieldValues();
@@ -308,7 +308,7 @@ namespace OneHamsa.Dexterity
         
         private IEnumerable<Modifier> GetModifiers()
         {
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
                 return Modifier.GetModifiers(baseNode);
 
             if (!modifiersCacheInvalidated)
@@ -321,7 +321,7 @@ namespace OneHamsa.Dexterity
         
         private static IEnumerable<Modifier> GetModifiers(BaseStateNode baseNode)
         {
-            if (Application.isPlaying)
+            if (Application.IsPlaying(baseNode))
                 return Modifier.GetModifiers(baseNode);
 
             var modifiers = new HashSet<Modifier>();

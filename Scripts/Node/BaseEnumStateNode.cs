@@ -82,7 +82,7 @@ namespace OneHamsa.Dexterity
         protected override void OnValidate() {
             base.OnValidate();
             
-            if (Application.isPlaying) 
+            if (Application.IsPlaying(this)) 
                 return;
             
             // cache for sake of showing options in editor

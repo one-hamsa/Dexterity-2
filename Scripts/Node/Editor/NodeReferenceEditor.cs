@@ -107,7 +107,8 @@ namespace OneHamsa.Dexterity
                     if (definition.GetName() != null)
                     {
                         // get value
-                        var liveInstance = Application.isPlaying && gateContainer.node != null;
+                        var liveInstance = Application.IsPlaying(gatesProp.serializedObject.targetObject) 
+                                           && gateContainer.node != null;
                         var value = liveInstance
                             ? gateContainer.node.GetOutputField(kv.Key).GetValue()
                             : FieldNode.defaultFieldValue;

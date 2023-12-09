@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity
         protected void OnEnable()
         {
             gateFoldoutOpen = false;
-            fieldValuesDebugOpen = Application.isPlaying;
+            fieldValuesDebugOpen = Application.IsPlaying(target);
         }
 
         public override VisualElement CreateInspectorGUI()
@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity
             foldout.Add(stepListView);
             
             // disallow editing in play mode - this would require re-initialization of StepList
-            foldout.SetEnabled(!Application.isPlaying);
+            foldout.SetEnabled(!Application.IsPlaying(target));
             root.Add(foldout);
             
             // TODO 
@@ -199,7 +199,7 @@ namespace OneHamsa.Dexterity
 
         protected override void ShowAllTargetsDebug()
         {
-            if (!Application.isPlaying)
+            if (!Application.IsPlaying(target))
                 return;
 
             if (!(upstreamDebugOpen = EditorGUILayout.Foldout(upstreamDebugOpen, "Upstreams", true, EditorStyles.foldoutHeader)))

@@ -382,7 +382,7 @@ namespace OneHamsa.Dexterity
 
         protected virtual void OnValidate()
         {
-            if (Application.isPlaying)
+            if (Application.IsPlaying(this))
                 return;
             
             var states = GetStateNames().ToList();
