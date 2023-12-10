@@ -125,13 +125,12 @@ namespace OneHamsa.Dexterity.Builtins
             return filters.Remove(filter);
         }
 
-        public static void ClearFilters()
+        public static void ClearFilters(Predicate<RaycastFilter> predicate = null)
         {
-            if (filters.Count > 0)
+            for (var i = filters.Count - 1; i >= 0; i--)
             {
-                // log this, because if we got to clearing filters it means someone didn't clean up after themself...!
-                Debug.LogWarning($"clearing {filters.Count} filters");
-                filters.Clear();
+                if (predicate == null || predicate(filters[i]))
+                    filters.RemoveAt(i);
             }
         }
 
