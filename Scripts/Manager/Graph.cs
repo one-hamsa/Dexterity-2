@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using OneHumus;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -159,7 +158,7 @@ namespace OneHamsa.Dexterity
 
         void RefreshEdges()
         {
-            using var _ = new DexScopedProfile("Dexterity: Refresh Graph Edges");
+            using var _ = new ScopedProfile("Dexterity: Refresh Graph Edges");
             nodesForRefreshIteration.Clear();
             
             // save IEnumeration cast
@@ -181,7 +180,7 @@ namespace OneHamsa.Dexterity
 
         void RefreshNodeValues()
         {
-            using var _ = new DexScopedProfile("Dexterity: Refresh Graph Values");
+            using var _ = new ScopedProfile("Dexterity: Refresh Graph Values");
 
             // cache - the foreach clause might invoke changes to collection
             sortedNodesCache.Clear();
@@ -216,6 +215,8 @@ namespace OneHamsa.Dexterity
                     updating = true;
                     try
                     {
+                        Profiler.BeginSample("Dexterity: Topological Sort");
+                        
                         lastUpdateAttempt = Time.unscaledTime;
 
                         updateOperations = 0;
@@ -235,7 +236,9 @@ namespace OneHamsa.Dexterity
                             if (++updateOperations % throttleOperationsPerFrame == 0)
                             {
                                 // wait a frame
+                                Profiler.EndSample();
                                 yield return null;
+                                Profiler.BeginSample("Dexterity: Topological Sort");
                                 updateFrames++;
                             }
                         }
@@ -249,6 +252,7 @@ namespace OneHamsa.Dexterity
                     }
                     finally
                     {
+                        Profiler.EndSample();
                         updating = false;
                     }
                 }
@@ -261,8 +265,6 @@ namespace OneHamsa.Dexterity
         //. https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         IEnumerator<BaseField> TopologicalSort()
         {
-            using var _ = new DexScopedProfile("Dexterity: Topological Sort");
-
             // first copy all nodes
             nodesForCurrentSortIteration.Clear();
             foreach (var node in nodes)
