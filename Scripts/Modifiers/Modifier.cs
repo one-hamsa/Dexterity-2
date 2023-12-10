@@ -360,7 +360,7 @@ namespace OneHamsa.Dexterity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected BaseStateNode TryFindNode()
         {
-            if (Application.isPlaying && foundNode) 
+            if (Application.IsPlaying(this) && foundNode) 
                 return _node;
             
             BaseStateNode current = _node;
@@ -374,7 +374,7 @@ namespace OneHamsa.Dexterity
                 parent = parent.parent;
             }
 
-            if (current != null && Application.isPlaying)
+            if (current != null && Application.IsPlaying(this))
             {
                 foundNode = true;
                 _node = current;
