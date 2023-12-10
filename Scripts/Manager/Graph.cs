@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using OneHumus;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -158,7 +159,7 @@ namespace OneHamsa.Dexterity
 
         void RefreshEdges()
         {
-            Profiler.BeginSample("Dexterity: Refresh Graph Edges");
+            using var _ = new DexScopedProfile("Dexterity: Refresh Graph Edges");
             nodesForRefreshIteration.Clear();
             
             // save IEnumeration cast
@@ -176,13 +177,12 @@ namespace OneHamsa.Dexterity
                     Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
-            Profiler.EndSample();
         }
 
         void RefreshNodeValues()
         {
-            Profiler.BeginSample("Dexterity: Refresh Node Values");
-            
+            using var _ = new DexScopedProfile("Dexterity: Refresh Graph Values");
+
             // cache - the foreach clause might invoke changes to collection
             sortedNodesCache.Clear();
             sortedNodesCache.AddRange(sortedNodes);
@@ -198,8 +198,6 @@ namespace OneHamsa.Dexterity
                     Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
-
-            Profiler.EndSample();
         }
 
         public IEnumerable<BaseField> GetByColor(int color)
@@ -263,8 +261,8 @@ namespace OneHamsa.Dexterity
         //. https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         IEnumerator<BaseField> TopologicalSort()
         {
-            Profiler.BeginSample("Dexterity: Topological Sort");
-            
+            using var _ = new DexScopedProfile("Dexterity: Topological Sort");
+
             // first copy all nodes
             nodesForCurrentSortIteration.Clear();
             foreach (var node in nodes)
@@ -383,8 +381,6 @@ namespace OneHamsa.Dexterity
             }
 
             lastDirtyUpdate = dirtyIncrement;
-            
-            Profiler.EndSample();
         }
     }
 }
