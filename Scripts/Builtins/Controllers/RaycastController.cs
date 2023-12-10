@@ -63,6 +63,9 @@ namespace OneHamsa.Dexterity.Builtins
 
         private Transform _transform;
 
+        private static readonly Comparer<RaycastHit> raycastDistanceComparer
+            = Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
+
         protected virtual void Awake()
         {
             _transform = transform;
@@ -170,10 +173,8 @@ namespace OneHamsa.Dexterity.Builtins
             lastReceivers.Clear();
         }
 
-        void LateUpdate()
+        void Update()
         {
-            long now = Stopwatch.GetTimestamp();
-
             didHit = false;
 
             if (!current)
@@ -189,15 +190,23 @@ namespace OneHamsa.Dexterity.Builtins
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
 
             int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
+            
+            // sort hits by distance
+            Array.Sort(hits, 0, numHits, raycastDistanceComparer);
 
-            float minDist = float.PositiveInfinity;
+            var sameAsLast = false;
             hit = new RaycastHit();
             List<IRaycastReceiver> closestReceivers = null;
 
+            // find closest hit, prefer receivers that were hit last frame
             for (int i = 0; i < numHits; ++i)
             {
+                // short circuit if we already found a hit and this hit is further than the last one
+                if (didHit && !Mathf.Approximately(hit.distance, hits[i].distance))
+                    break;
+                
                 hits[i].collider.gameObject.GetComponents(receiversBeforeFilter);
-                if (receiversBeforeFilter.Count != 0 && hits[i].distance < minDist)
+                if (receiversBeforeFilter.Count != 0)
                 {
                     // filter hit
                     potentialReceiversA.Clear();
@@ -222,8 +231,27 @@ namespace OneHamsa.Dexterity.Builtins
 
                     // save hit
                     hit = hits[i];
-                    minDist = hits[i].distance;
+                    didHit = true;
                     closestReceivers = potentialReceiversA;
+                    
+                    // check if this is the same hit as last frame
+                    if (lastReceivers.Count == closestReceivers.Count)
+                    {
+                        sameAsLast = true;
+                        for (var j = 0; j < lastReceivers.Count; j++)
+                        {
+                            if (lastReceivers[j] != closestReceivers[j])
+                            {
+                                sameAsLast = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // short circuit if this is the same hit as last frame
+                    if (sameAsLast)
+                        break;
+                    
                     // swap pointers
                     (potentialReceiversA, potentialReceiversB) = (potentialReceiversB, potentialReceiversA);
                 }
