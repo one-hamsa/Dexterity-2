@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace OneHamsa.Dexterity
 {
@@ -100,7 +99,7 @@ namespace OneHamsa.Dexterity
             // update graph
             graph.Refresh();
 
-            Profiler.BeginSample("Dexterity: Update Modifiers");
+            using var _ = new ScopedProfile("Dexterity: Update Modifiers");
             // update all modifiers
             modifiersActiveList.Clear();
             modifiersActiveList.AddRange(modifiers);
@@ -123,8 +122,6 @@ namespace OneHamsa.Dexterity
                     }
                 }
             }
-
-            Profiler.EndSample();
         }
     }
 }

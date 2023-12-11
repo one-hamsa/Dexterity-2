@@ -158,7 +158,7 @@ namespace OneHamsa.Dexterity
 
         void RefreshEdges()
         {
-            Profiler.BeginSample("Dexterity: Refresh Graph Edges");
+            using var _ = new ScopedProfile("Dexterity: Refresh Graph Edges");
             nodesForRefreshIteration.Clear();
             
             // save IEnumeration cast
@@ -176,13 +176,12 @@ namespace OneHamsa.Dexterity
                     Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
-            Profiler.EndSample();
         }
 
         void RefreshNodeValues()
         {
-            Profiler.BeginSample("Dexterity: Refresh Node Values");
-            
+            using var _ = new ScopedProfile("Dexterity: Refresh Graph Values");
+
             // cache - the foreach clause might invoke changes to collection
             sortedNodesCache.Clear();
             sortedNodesCache.AddRange(sortedNodes);
@@ -198,8 +197,6 @@ namespace OneHamsa.Dexterity
                     Debug.LogException(e, FieldNode.ByField(node));
                 }
             }
-
-            Profiler.EndSample();
         }
 
         public IEnumerable<BaseField> GetByColor(int color)
@@ -218,6 +215,8 @@ namespace OneHamsa.Dexterity
                     updating = true;
                     try
                     {
+                        Profiler.BeginSample("Dexterity: Topological Sort");
+                        
                         lastUpdateAttempt = Time.unscaledTime;
 
                         updateOperations = 0;
@@ -237,7 +236,9 @@ namespace OneHamsa.Dexterity
                             if (++updateOperations % throttleOperationsPerFrame == 0)
                             {
                                 // wait a frame
+                                Profiler.EndSample();
                                 yield return null;
+                                Profiler.BeginSample("Dexterity: Topological Sort");
                                 updateFrames++;
                             }
                         }
@@ -251,6 +252,7 @@ namespace OneHamsa.Dexterity
                     }
                     finally
                     {
+                        Profiler.EndSample();
                         updating = false;
                     }
                 }
@@ -263,8 +265,6 @@ namespace OneHamsa.Dexterity
         //. https://stackoverflow.com/questions/56316639/detect-cycle-in-directed-graph-with-non-recursive-dfs
         IEnumerator<BaseField> TopologicalSort()
         {
-            Profiler.BeginSample("Dexterity: Topological Sort");
-            
             // first copy all nodes
             nodesForCurrentSortIteration.Clear();
             foreach (var node in nodes)
@@ -383,8 +383,6 @@ namespace OneHamsa.Dexterity
             }
 
             lastDirtyUpdate = dirtyIncrement;
-            
-            Profiler.EndSample();
         }
     }
 }
