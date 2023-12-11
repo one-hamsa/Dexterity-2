@@ -25,7 +25,6 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected override void Awake() {
             base.Awake();
-
             CollectTransformsToUpdate();
         }
 
@@ -59,7 +58,7 @@ namespace OneHamsa.Dexterity.Builtins
             
             if (syncScale)
             {
-                transform.localScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
+                _transform.localScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
             }
 
             // update UI layout

@@ -4,7 +4,8 @@
     "references": [
         "Dexterity",
         "Unity.InputSystem",
-        "Unity.EditorCoroutines.Editor"
+        "Unity.EditorCoroutines.Editor",
+        "Underdogs.SpawnWarmer"
     ],
     "includePlatforms": [
         "Editor"

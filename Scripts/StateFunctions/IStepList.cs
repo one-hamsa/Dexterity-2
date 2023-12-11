@@ -17,8 +17,16 @@ namespace OneHamsa.Dexterity
                 step.Initialize();
             }
         }
+        
+        private static int GetValue(List<(int field, int value)> mask, int field)
+        {
+            foreach (var pair in mask)
+                if (pair.field == field)
+                    return pair.value;
+            return FieldNode.emptyFieldValue;
+        }
 
-        static int Evaluate(StepEvaluationCache cache, FieldMask mask) {
+        static int Evaluate(List<(Step step, int depth)> cache, List<(int,int)> mask) {
             var conditionMetDepth = -1;
             foreach (var (step, depth) in cache) {
                 if (conditionMetDepth < depth - 1) {
@@ -27,7 +35,7 @@ namespace OneHamsa.Dexterity
 
                 switch (step.type) {
                     case Step.Type.Condition:
-                        var res = mask.GetValue(step.GetConditionFieldID()) == step.condition_fieldValue;
+                        var res = GetValue(mask, step.GetConditionFieldID()) == step.condition_fieldValue;
                         if (step.condition_negate) {
                             res = !res;
                         }
@@ -91,8 +99,11 @@ namespace OneHamsa.Dexterity
             return false;
         }
 
-        StepEvaluationCache BuildStepCache()
-            => new StepEvaluationCache(EnumerateTreeStepsDFS());
+        void PopulateStepCache(List<(Step step, int depth)> cache)
+        {
+            cache.Clear();
+            cache.AddRange(EnumerateTreeStepsDFS());
+        }
 
         IEnumerable<(Step step, int depth)> EnumerateTreeStepsDFS() {
             var tree = ListToTree();

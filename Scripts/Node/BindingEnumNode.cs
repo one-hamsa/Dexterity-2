@@ -19,6 +19,9 @@ namespace OneHamsa.Dexterity
         public int intMaxState = 1;
         public int intOutOfBoundsState = 0;
 
+        [NonSerialized]
+        private bool _performedFirstInitialization_BindingEnumNode;
+
         public int bindingValue
         {
             get
@@ -53,7 +56,11 @@ namespace OneHamsa.Dexterity
 
         protected override void Initialize()
         {
-            InitializeBinding();
+            if (!_performedFirstInitialization_BindingEnumNode)
+                InitializeBinding();
+            
+            _performedFirstInitialization_BindingEnumNode = true;
+            
             base.Initialize();
         }
 

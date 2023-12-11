@@ -4,6 +4,19 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Utilities {
 
 	public static class Extensions {
+		
+		public static string GetPath(this Transform go)
+		{
+			string name = go.name;
+			while (go.transform.parent != null)
+			{
+
+				go = go.transform.parent;
+				name = go.name + "/" + name;
+			}
+			return name;
+		}
+
 		internal static Component GetOrAddComponent(this GameObject obj, Type type) {
 			Component comp = obj.GetComponent(type);
 			if (comp == null) {

@@ -39,24 +39,20 @@ namespace OneHamsa.Dexterity.Builtins
                 rotationOffset = Quaternion.Slerp(rotationOffset, baseRotation * property.rotation, value);
             }
 
-            transform.localPosition = positionOffset;
-            transform.localRotation = rotationOffset;
+            _transform.SetLocalPositionAndRotation(positionOffset, rotationOffset);
         }
 
         public void FreezeProperty(PropertyBase property)
         {
             var prop = property as Property;
-            prop.position = transform.localPosition - basePosition;
-            prop.rotation = transform.localRotation * Quaternion.Inverse(baseRotation);
+            transform.GetLocalPositionAndRotation(out var localPos, out var localRot);
+            prop.position = localPos - basePosition;
+            prop.rotation = localRot * Quaternion.Inverse(baseRotation);
         } 
 
         public void FreezeValue()
         {
-            // if (transform == null)
-            //     return;
-
-            basePosition = transform.localPosition;
-            baseRotation = transform.localRotation;
+            transform.GetLocalPositionAndRotation(out basePosition, out baseRotation);
         }
     }
 }

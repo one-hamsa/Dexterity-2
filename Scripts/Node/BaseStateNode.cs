@@ -1,13 +1,15 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class BaseStateNode : MonoBehaviour, IHasStates
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates, ISpawnWarmer
     {
         [Serializable]
         public class TransitionDelay
@@ -57,9 +59,30 @@ namespace OneHamsa.Dexterity
 
         private BaseStateNode parentNode;
 
+        internal HashSet<Modifier> nodeModifiers; 
+
+        [NonSerialized]
+        private bool _performedFirstInitialization;
+
         #endregion Private Properties
 
         #region Unity Events
+
+        protected virtual void Awake()
+        {
+            nodeModifiers = HashSetPool<Modifier>.Get();
+            nodeModifiers.EnsureCapacity(16);
+
+            cachedDelays = DictionaryPool<(int enter, int exit), TransitionDelay>.Get();
+        }
+
+        protected virtual void OnDestroy()
+        {
+            Uninitialize(true);
+            HashSetPool<Modifier>.Release(nodeModifiers);
+            DictionaryPool<(int enter, int exit), TransitionDelay>.Release(cachedDelays);
+        }
+
         protected void OnEnable()
         {
             Initialize();
@@ -78,13 +101,9 @@ namespace OneHamsa.Dexterity
 
         protected void OnDisable()
         {
-            Uninitialize();
+            Uninitialize(false);
 
             onDisabled?.Invoke();
-        }
-
-        protected virtual void OnDestroy()
-        {
         }
 
         private void OnTransformParentChanged()
@@ -171,15 +190,21 @@ namespace OneHamsa.Dexterity
         #endregion Unity Events
 
         #region General Methods
+
+        public HashSet<Modifier> GetModifiers() => nodeModifiers;
+
         protected virtual void Initialize()
         {
             // register my states 
             Database.instance.Register(this);
-            
-            // cache delays (from string to int)
-            CacheDelays();
-            // cache overrides to allow quick access internally
-            CacheStateOverride();
+
+            if (!_performedFirstInitialization)
+            {
+                // cache delays (from string to int)
+                CacheDelays();
+                // cache overrides to allow quick access internally
+                CacheStateOverride();
+            }
 
             if (!GetStateNames().Contains(initialState))
             {
@@ -203,9 +228,10 @@ namespace OneHamsa.Dexterity
 
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;
+            _performedFirstInitialization = true;
         }
 
-        protected virtual void Uninitialize()
+        protected virtual void Uninitialize(bool duringTeardown)
         {
         }
 
@@ -283,7 +309,7 @@ namespace OneHamsa.Dexterity
             // make sure state is up-to-date
             UpdateInternal(ignoreDelays: true);
 
-            foreach (var modifier in Modifier.GetModifiers(this))
+            foreach (var modifier in GetModifiers())
             {
                 // force updating now
                 modifier.ForceTransitionUpdate();
@@ -301,7 +327,7 @@ namespace OneHamsa.Dexterity
             // make sure state is up-to-date
             UpdateInternal(ignoreDelays: true);
 
-            foreach (var modifier in Modifier.GetModifiers(this))
+            foreach (var modifier in GetModifiers())
             {
                 // ignore delays
                 modifier.JumpToNodeState();
@@ -400,5 +426,17 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual void InitializeEditor() { }
         #endif
+        
+        public int Order { get; }
+        public IEnumerator Warmup()
+        {
+            yield break;
+        }
+
+        public virtual void OnPoolCreation()
+        {
+            Initialize();
+            Uninitialize(false);
+        }
     }
 }

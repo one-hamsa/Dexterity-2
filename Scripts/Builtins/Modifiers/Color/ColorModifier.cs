@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Profiling;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -80,18 +81,18 @@ namespace OneHamsa.Dexterity.Builtins
             return actions.getColor(component);
         }
 
-        private (Component component, SupportedComponentActions actions) _cached;
+        private (bool cached, Component component, SupportedComponentActions actions) _cached;
 
         protected Component component {
             get {
-                if (_cached.component == null)
+                if (!_cached.cached)
                     CacheComponent();
                 return _cached.component;
             }
         }
         private SupportedComponentActions actions {
             get {
-                if (_cached.component == null)
+                if (!_cached.cached)
                     CacheComponent();
                 return _cached.actions;
             }
@@ -99,13 +100,15 @@ namespace OneHamsa.Dexterity.Builtins
 
         private void CacheComponent()
         {
+            if (_cached.cached)
+                return;
+            
             foreach (var kv in supportedComponents)
             {
                 var t = kv.Key;
-                if (GetComponent(t) != null)
+                if (TryGetComponent(t, out var comp))
                 {
-                    var component = GetComponent(t);
-                    _cached = (component, kv.Value);
+                    _cached = (true, comp, kv.Value);
                     return;
                 }
             }
@@ -116,10 +119,19 @@ namespace OneHamsa.Dexterity.Builtins
                 enabled = false;
             }
         }
+        
 
         protected void Start()
         {
-            CacheComponent();
+            if (!_cached.cached)
+                CacheComponent();
+        }
+        
+        protected override void InitializedCachedData()
+        {
+            base.InitializedCachedData();
+            if (!_cached.cached)
+                CacheComponent();
         }
         
         #if UNITY_EDITOR

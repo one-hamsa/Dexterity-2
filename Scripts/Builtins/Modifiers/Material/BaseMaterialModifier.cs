@@ -21,7 +21,8 @@ namespace OneHamsa.Dexterity
         private static Dictionary<Type, MaterialType> supportedComponents = new();
         
         [HideInInspector] public bool enableEditorMaterialAnimations;
-        
+
+        private bool _cached;
         private Component _component;
         private MaterialType _materialType;
         private Dictionary<int, ShaderPropertyType> _propertyTypes = new();
@@ -76,7 +77,8 @@ namespace OneHamsa.Dexterity
 
         protected void Start()
         {
-            CacheComponent();
+            if (!_cached)
+                CacheComponent();
         }
 
         private void OnDestroy()
@@ -103,7 +105,7 @@ namespace OneHamsa.Dexterity
         {
             get
             {
-                if (_component == null)
+                if (!_cached)
                     CacheComponent(); 
                 return _component;
             }
@@ -112,7 +114,7 @@ namespace OneHamsa.Dexterity
         {
             get
             {
-                if (_component == null)
+                if (!_cached)
                     CacheComponent(); 
                 return _materialType;
             }
@@ -121,7 +123,7 @@ namespace OneHamsa.Dexterity
         {
             get
             {
-                if (_component == null)
+                if (!_cached)
                     CacheComponent(); 
                 return _propertyTypes;
             }
@@ -136,6 +138,7 @@ namespace OneHamsa.Dexterity
                 {
                     _component = GetComponent(t);
                     _materialType = kv.Value;
+                    _cached = true;
                     switch (_materialType)
                     {
                         case MaterialType.Graphic:
@@ -146,6 +149,7 @@ namespace OneHamsa.Dexterity
                             GetMaterialProperties(((Renderer)component).sharedMaterials);
                             break;
                     }
+
                     return;
                 }
             }
@@ -519,5 +523,12 @@ namespace OneHamsa.Dexterity
             return base.GetEditorComment();
         }
         #endif
+
+        protected override void InitializedCachedData()
+        {
+            base.InitializedCachedData();
+            if (!_cached)
+                CacheComponent();
+        }
     }
 }

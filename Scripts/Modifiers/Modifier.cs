@@ -1,16 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IReferencesNode
+    public abstract class Modifier : TransitionBehaviour, IReferencesNode, ISpawnWarmer
     {
         public enum DelayDirection
         {
@@ -24,14 +24,6 @@ namespace OneHamsa.Dexterity
             [State]
             public string state;
             public float waitFor = 0;
-        }
-        
-        private static Dictionary<BaseStateNode, HashSet<Modifier>> nodesToModifiers = new();
-        public static IEnumerable<Modifier> GetModifiers(BaseStateNode node)
-        {
-            if (nodesToModifiers.TryGetValue(node, out var modifiers))
-                return modifiers;
-            return System.Linq.Enumerable.Empty<Modifier>();
         }
 
         [SerializeField]
@@ -57,10 +49,14 @@ namespace OneHamsa.Dexterity
         private double myTimeSinceStateChange = 0d;
         private int activeState;
 
+        private bool _initialized;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BaseStateNode GetNode() => TryFindNode();
         public float transitionProgress => GetTransitionProgress(GetNode().GetActiveState());
         public virtual bool animatableInEditor => isActiveAndEnabled;
+
+        protected Transform _transform;
 
         public float GetTransitionProgress(int state)
         {
@@ -122,7 +118,9 @@ namespace OneHamsa.Dexterity
                 {
                     // try to return initial state
                     if (propertiesCache.TryGetValue(TryFindNode().initialStateId, out var property))
+                    {
                         return property;
+                    }
                     
                     if (!manualStateEditing)
                     {
@@ -133,15 +131,23 @@ namespace OneHamsa.Dexterity
                     
                     // just return first
                     foreach (var p in propertiesCache.Values)
+                    {
                         return p;
+                    }
                 }
+
                 return propertiesCache[stateId];
             }
 
             // editor
             foreach (var prop in properties)
+            {
                 if (Database.instance.GetStateID(prop.state) == stateId)
+                {
                     return prop;
+                }
+                
+            }
 
             return null;
         }
@@ -194,8 +200,11 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        protected override void Awake()
+        protected virtual void InitializedCachedData()
         {
+            if (_initialized)
+                return;
+            
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
@@ -235,13 +244,22 @@ namespace OneHamsa.Dexterity
 
                 propertiesCache.Add(id, chosen);
             }
+            
+            CacheDelays();
+            cachedStates ??= GetNode().GetStateIDs().ToArray();
+
+            _initialized = true;
         }
 
-        private void HandleNodeEnabled()
+        protected override void Awake()
         {
-            if (!enabled)
-                return;
-            
+            _transform = transform;
+            InitializedCachedData();
+        }
+
+        private void HandleNodeEnabled() => HandleNodeEnabled(false);
+        private void HandleNodeEnabled(bool duringSelfOnEnable)
+        {
             activeState = GetNode().GetActiveState();
             try
             {
@@ -254,17 +272,16 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            cachedStates ??= GetNode().GetStateIDs().ToArray();
-
-            CacheDelays();
-
             InitializeTransitionState();
-            Refresh();
+
+            // When this is called during OnEnalbe of my modifier, TransitionBehavior.OnEnable will force refresh anyway (optimization)
+            if (!duringSelfOnEnable)
+                Refresh();
         }
         
         private void CacheDelays()
         {
-            cachedDelays = new();
+            cachedDelays.Clear();
             foreach (var delay in delays)
                 cachedDelays[(delay.direction, Database.instance.GetStateID(delay.state))] = delay;
         }
@@ -292,16 +309,12 @@ namespace OneHamsa.Dexterity
                     enabled = false;
                 return;
             }
-            
+
             Manager.instance.AddModifier(this);
-            if (!nodesToModifiers.TryGetValue(_node, out var modifiers))
-            {
-                modifiers = nodesToModifiers[_node] = new HashSet<Modifier>();
-            }
-            modifiers.Add(this);
+            _node.nodeModifiers.Add(this);
 
             if (_node.isActiveAndEnabled)
-                HandleNodeEnabled();
+                HandleNodeEnabled(true);
             else
             {
                 _node.onEnabled -= HandleNodeEnabled;
@@ -323,8 +336,7 @@ namespace OneHamsa.Dexterity
             if (_node != null) {
                 _node.onEnabled -= HandleNodeEnabled;
                 _node.onStateChanged -= HandleNodeStateChange;
-                if (nodesToModifiers.TryGetValue(_node, out var modifiers))
-                    modifiers.Remove(this);
+                _node.nodeModifiers.Remove(this);
             }
             
             foundNode = false;
@@ -430,6 +442,15 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual (string, LogType) GetEditorComment() => default;
         #endif
-    }
+        public int Order => 1; // after the nodes
+        public IEnumerator Warmup()
+        {
+            yield break;
+        }
 
+        public void OnPoolCreation()
+        {
+            InitializedCachedData();
+        }
+    }
 }

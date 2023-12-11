@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity.Builtins
             scale.y *= baseScale.y;
             scale.z *= baseScale.z;
 
-            transform.localScale = scale;
+            _transform.localScale = scale;
         }
 
         public void FreezeValue()

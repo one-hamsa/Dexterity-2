@@ -8,10 +8,12 @@ namespace OneHamsa.Dexterity
     {
         private T _component;
         protected virtual bool createIfNotFound => false;
+
+        private bool _cached;
         
         protected T component {
             get {
-                if (_component == null)
+                if (!_cached)
                     CacheComponent();
                 return _component;
             }
@@ -22,11 +24,21 @@ namespace OneHamsa.Dexterity
             _component = GetComponent<T>();
             if (_component == null && createIfNotFound)
                 _component = gameObject.AddComponent<T>();
+
+            _cached = true;
         }
 
         protected void Start()
         {
-            CacheComponent();
+            if (!_cached)
+                CacheComponent();
+        }
+
+        protected override void InitializedCachedData()
+        {
+            base.InitializedCachedData();
+            if (!_cached)
+                CacheComponent();
         }
     }
 }

@@ -80,20 +80,21 @@ namespace OneHamsa.Dexterity
         public event Action<Gate> onGateAdded;
         public event Action<Gate> onGateRemoved;
         public event Action onGatesUpdated;
+        
         #endregion Public Properties
 
         #region Private Properties
         private List<BaseField> nonOutputFields = new List<BaseField>(10);
         private int overridesDirtyIncrement;
-
-        FieldMask fieldMask = new FieldMask(32);
-        private int[] stateFieldIdsCache;
+        
+        private List<int> stateFieldIdsCache;
         private HashSet<string> fieldNames;
         private HashSet<string> stateNames;
-        private StateFunction.StepEvaluationCache stepEvalCache;
+        private List<(StateFunction.Step step, int depth)> stepEvalCache;
 
-        private bool _performedFirstInitialization;
-        
+        [NonSerialized]
+        private bool _performedFirstInitialization_FieldNode;
+
         #endregion Private Properties
 
         #region Unity Events
@@ -104,6 +105,24 @@ namespace OneHamsa.Dexterity
                 pair.Value.Finalize(this);
             
             outputFields.Clear();
+            
+            if (stateFieldIdsCache != null)
+                ListPool<int>.Release(stateFieldIdsCache);
+            
+            if (fieldNames != null)
+                HashSetPool<string>.Release(fieldNames);
+
+            if (stateNames != null)
+                HashSetPool<string>.Release(stateNames);
+            
+            if (stepEvalCache != null)
+                ListPool<(StateFunction.Step step, int depth)>.Release(stepEvalCache);
+
+            stateFieldIdsCache = null;
+            fieldNames = null;
+            stateNames = null;
+            stepEvalCache = null;
+
             base.OnDestroy();
         }
         #endregion Unity Events
@@ -125,7 +144,8 @@ namespace OneHamsa.Dexterity
         protected override void Initialize()
         {
             // one more chance to run hotfix in case references changed but OnValidate() wasn't called
-            FixSteps();
+            if (!_performedFirstInitialization_FieldNode)
+                FixSteps();
 
             if (!EnsureValidState())
             {
@@ -133,7 +153,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            if (!_performedFirstInitialization)
+            if (!_performedFirstInitialization_FieldNode)
             {
                 // register all internal fields
                 foreach (var field in internalFieldDefinitions)
@@ -184,44 +204,42 @@ namespace OneHamsa.Dexterity
             // run base initialize after registering states
             base.Initialize();
 
-            if (!_performedFirstInitialization)
+            if (!_performedFirstInitialization_FieldNode)
             {
                 // then initialize step list
                 (this as IStepList).InitializeSteps();
 
                 // find all fields that are used by this node's state function
-                stateFieldIdsCache = GetFieldIDs().ToArray();
+                stateFieldIdsCache = ListPool<int>.Get();
+                stateFieldIdsCache.AddRange(GetFieldIDs());
+                
+                // go through all the fields. initialize them, register them to manager and add them to internal structure
+                RestartFields();
+
+                // cache overrides to allow quick access internally
+                CacheFieldOverrides();
+                
+                // To trigger caching of step list
+                var _ = GetState();
             }
 
-            _performedFirstInitialization = true;
-
-            // subscribe to more changes
-            onGateAdded += RestartFields;
-            onGateRemoved += RestartFields;
-            onGatesUpdated += RestartFields;
-
-            // go through all the fields. initialize them, register them to manager and add them to internal structure
-            RestartFields();
-            // cache overrides to allow quick access internally
-            CacheFieldOverrides();
+            _performedFirstInitialization_FieldNode = true;
             
             // last chance: if there are field overrides, reroute initial state
             if (cachedOverrides.Count > 0)
                 activeState = GetState();
         }
 
-        protected override void Uninitialize()
+        protected override void Uninitialize(bool duringTeardown = false)
         {
-            // cleanup gates
-            foreach (var gate in customGates)
-                FinalizeGate(gate);
+            // dont cleanup gates here, we might still want to use them
+            if (enabled)
+            {
+                foreach (var gate in customGates)
+                    FinalizeGate(gate, duringTeardown);
+            }
             
-            // unsubscribe
-            onGateAdded -= RestartFields;
-            onGateRemoved -= RestartFields;
-            onGatesUpdated -= RestartFields;
-
-            base.Uninitialize();
+            base.Uninitialize(duringTeardown);
         }
 
         public IEnumerable<int> GetFieldIDs()
@@ -232,27 +250,41 @@ namespace OneHamsa.Dexterity
             }
         }
         
-        public override HashSet<string> GetStateNames() {
-            if (!Application.IsPlaying(this) || stateNames == null)
+        public override HashSet<string> GetStateNames()
+        {
+            HashSet<string> myStateNames;
+            if (!Application.IsPlaying(this))
+                myStateNames = new HashSet<string>();
+            else
             {
-                stateNames = new HashSet<string>();
-                
-                foreach (var name in (this as IStepList).GetStepListStateNames())
-                    stateNames.Add(name);
-            }
-            
-            return stateNames;
-        }
-        public override HashSet<string> GetFieldNames() {
-            if (!Application.IsPlaying(this) || fieldNames == null)
-            {
-                fieldNames = new HashSet<string>();
+                if (stateNames == null)
+                    stateNames = HashSetPool<string>.Get();
 
-                foreach (var name in (this as IStepList).GetStepListFieldNames())
-                    fieldNames.Add(name);
+                myStateNames = stateNames;
             }
+
+            foreach (var name in (this as IStepList).GetStepListStateNames())
+                myStateNames.Add(name);
             
-            return fieldNames;
+            return myStateNames;
+        }
+        public override HashSet<string> GetFieldNames()
+        {
+            HashSet<string> myFieldNames;
+            if (!Application.IsPlaying(this))
+                myFieldNames = new HashSet<string>();
+            else
+            {
+                if (fieldNames == null)
+                    fieldNames = HashSetPool<string>.Get();
+
+                myFieldNames = fieldNames;
+            }
+
+            foreach (var name in (this as IStepList).GetStepListFieldNames())
+                myFieldNames.Add(name);
+            
+            return myFieldNames;
         }
         
         public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
@@ -316,19 +348,22 @@ namespace OneHamsa.Dexterity
             AuditField(field);
         }
 
-        void FinalizeField(BaseField field)
+        void FinalizeField(BaseField field, bool duringTeardown = false)
         {
             if (field == null || field is OutputField)  // OutputFields are never removed
                 return;
 
-            field.Finalize(this);
+            if (duringTeardown)
+                field.Finalize(this);
+            
             if (Manager.instance != null)
                 Manager.instance.UnregisterField(field);
             
             foreach (var upstreamField in field.GetUpstreamFields())
-                FinalizeField(upstreamField);
+                FinalizeField(upstreamField, duringTeardown);
 
-            RemoveAudit(field);
+            if (duringTeardown)
+                RemoveAudit(field);
         }
 
         private void InitializeGate(Gate gate)
@@ -350,14 +385,14 @@ namespace OneHamsa.Dexterity
             {
                 Debug.LogException(e, this);
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
-                FinalizeGate(gate);
+                FinalizeGate(gate, true);
             }
 
             SetDirty();
         }
-        private void FinalizeGate(Gate gate)
+        private void FinalizeGate(Gate gate, bool duringTeardown = false)
         {
-            FinalizeField(gate.field);
+            FinalizeField(gate.field, duringTeardown);
             SetDirty();
         }
 
@@ -439,6 +474,7 @@ namespace OneHamsa.Dexterity
         }
         public void NotifyGatesUpdate()
         {
+            RestartFields();
             onGatesUpdated?.Invoke();
         }
 
@@ -450,7 +486,7 @@ namespace OneHamsa.Dexterity
         #endregion Fields & Gates
 
         #region State Reduction
-        private FieldMask GenerateFieldMask()
+        private void GenerateFieldMask(List<(int field, int value)> fieldMask)
         {
             fieldMask.Clear();
 
@@ -464,7 +500,6 @@ namespace OneHamsa.Dexterity
                 }
                 fieldMask.Add((fieldId, value));
             }
-            return fieldMask;
         }
         protected override int GetState()
         {
@@ -472,10 +507,26 @@ namespace OneHamsa.Dexterity
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
-            if (stepEvalCache == null)
-                stepEvalCache = (this as IStepList).BuildStepCache();
+            List<(StateFunction.Step step, int depth)> usedStepCahce;
+            if (Application.IsPlaying(this))
+            {
+                if (stepEvalCache == null)
+                    stepEvalCache = ListPool<(StateFunction.Step step, int depth)>.Get();
 
-            return IStepList.Evaluate(stepEvalCache, GenerateFieldMask());
+                usedStepCahce = stepEvalCache;
+            }
+            else
+            {
+                usedStepCahce = new();
+            }
+            
+            (this as IStepList).PopulateStepCache(usedStepCahce);
+
+            using (ListPool<(int field, int value)>.Get(out var fieldMask))
+            {
+                GenerateFieldMask(fieldMask);
+                return IStepList.Evaluate(usedStepCahce, fieldMask);
+            }
         }
 
         private void MarkStateDirty(FieldNode.OutputField field, int oldValue, int newValue) => stateDirty = true;
@@ -586,7 +637,7 @@ namespace OneHamsa.Dexterity
         public void FixSteps()
         {
             // fix duplicate IDs
-            var ids = new HashSet<int>();
+            using var _ = HashSetPool<int>.Get(out var ids);
             for (int i = 0; i < customSteps.Count; i++)
             {
                 var step = customSteps[i];
@@ -683,5 +734,12 @@ namespace OneHamsa.Dexterity
         }
 #endif
         #endregion
+
+        public override void OnPoolCreation()
+        {
+            base.OnPoolCreation();
+            // To trigger caching of step list
+            var _ = GetState();
+        }
     }
 }

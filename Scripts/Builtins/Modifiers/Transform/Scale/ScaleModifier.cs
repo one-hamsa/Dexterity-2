@@ -19,12 +19,11 @@ namespace OneHamsa.Dexterity.Builtins
 
         [Tooltip("Check this flag only if the object may be re-parented in runtime")]
         public bool updateParentReference = false;
-        
+
         List<RectTransform> _transformsToUpdate;
 
         protected override void Awake() {
             base.Awake();
-
             CollectTransformsToUpdate();
         }
 
@@ -54,7 +53,7 @@ namespace OneHamsa.Dexterity.Builtins
                 scale += Vector3.one * baseScale * property.scale * value;
             }
 
-            transform.localScale = scale;
+            _transform.localScale = scale;
             
             // update UI layout
             if (updateParentReference)

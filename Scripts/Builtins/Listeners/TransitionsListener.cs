@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity.Builtins {
 			node.onStateChanged += OnStateChanged;
 			
 			var anyTransitioning = false;
-			foreach (var modifier in Modifier.GetModifiers(node))
+			foreach (var modifier in node.GetModifiers())
 			{
 				modifier.onTransitionEnded += OnTransitionEnded;
 				if (modifier.IsChanged())
@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity.Builtins {
 		void OnDisable() {
 			transitioning = false;
 			node.onStateChanged -= OnStateChanged;
-			foreach (var modifier in Modifier.GetModifiers(node))
+			foreach (var modifier in node.GetModifiers())
 				modifier.onTransitionEnded -= OnTransitionEnded;
 		}
 
@@ -64,7 +64,7 @@ namespace OneHamsa.Dexterity.Builtins {
 			if (node.IsStateDirty())
 				return; // pending state change
 			
-			foreach (var modifier in Modifier.GetModifiers(node)) {
+			foreach (var modifier in node.GetModifiers()) {
 				if (modifier.IsChanged() && modifier.transitionProgress < transitionProgressToConsiderDone)
 					return; // still not all done
 			}

@@ -12,14 +12,23 @@ namespace OneHamsa.Dexterity
         private readonly Dictionary<int, string> enumIntOptions = new();
         private readonly Dictionary<string, int> enumToStateId = new();
 
+        [NonSerialized]
+        private bool _performedFirstInitialization_BaseEnumStateNode;
+        
         protected override void Initialize()
         {
             // cache that state names to register
-            CacheEnumOptions();
+            if (!_performedFirstInitialization_BaseEnumStateNode)
+                CacheEnumOptions();
+            
             // register them
             base.Initialize();
+            
             // get the state IDs from manager
-            CacheEnumToStateID();
+            if (!_performedFirstInitialization_BaseEnumStateNode)
+                CacheEnumToStateID();
+
+            _performedFirstInitialization_BaseEnumStateNode = true;
         }
         
         protected abstract IEnumerable<(string enumOption, int enumValue)> GetEnumOptions();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -92,20 +93,13 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        public class StepEvaluationCache : List<(Step step, int depth)>
-        {
-            public StepEvaluationCache(IEnumerable<(Step step, int depth)> collection) : base(collection)
-            {
-            }
-        }
-
         public const string kDefaultState = "<Default>";
 
         private static HashSet<string> namesSet = new HashSet<string>();
         private static Stack<(Step step, int depth)> stack = new Stack<(Step step, int depth)>();
 
         public List<Step> steps = new List<Step>();
-        private StepEvaluationCache stepEvalCache;
+        private List<(Step step, int depth)> stepEvalCache;
         private int lastEvaluationResult = emptyStateId;
         private HashSet<string> stateNames;
         private HashSet<string> fieldNames;
@@ -113,11 +107,24 @@ namespace OneHamsa.Dexterity
 
         List<Step> IStepList.steps => steps;
 
-        internal int Evaluate(FieldMask mask)
+        internal int Evaluate(List<(int field, int mask)> mask)
         {
-            if (stepEvalCache == null)
-                stepEvalCache = (this as IStepList).BuildStepCache();
-            var result = IStepList.Evaluate(stepEvalCache, mask);
+            List<(Step step, int depth)> usedStepCahce;
+            if (Application.IsPlaying(this))
+            {
+                if (stepEvalCache == null)
+                    stepEvalCache = ListPool<(Step step, int depth)>.Get();
+
+                usedStepCahce = stepEvalCache;
+            }
+            else
+            {
+                usedStepCahce = new();
+            }
+            
+            (this as IStepList).PopulateStepCache(usedStepCahce);
+            
+            var result = IStepList.Evaluate(usedStepCahce, mask);
             lastEvaluationResult = result;
             return result;
         }

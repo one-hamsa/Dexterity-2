@@ -309,7 +309,7 @@ namespace OneHamsa.Dexterity
         private IEnumerable<Modifier> GetModifiers()
         {
             if (Application.IsPlaying(this))
-                return Modifier.GetModifiers(baseNode);
+                return baseNode.GetModifiers();
 
             if (!modifiersCacheInvalidated)
                 return modifiers;
@@ -322,7 +322,7 @@ namespace OneHamsa.Dexterity
         private static IEnumerable<Modifier> GetModifiers(BaseStateNode baseNode)
         {
             if (Application.IsPlaying(baseNode))
-                return Modifier.GetModifiers(baseNode);
+                return baseNode.GetModifiers();
 
             var modifiers = new HashSet<Modifier>();
             
