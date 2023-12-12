@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -118,13 +119,16 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected virtual void Initialize(FieldNode context)
         {
-            upstreamFields = new();
+            upstreamFields = HashSetPool<BaseField>.Get();
         }
 
         /// <summary>
         /// dispatched by the node when the field is destroyed
         /// </summary>
-        public virtual void Finalize(FieldNode context) { }
+        public virtual void Finalize(FieldNode context)
+        {
+            HashSetPool<BaseField>.Release(upstreamFields);
+        }
 
         /// <summary>
         /// dispatched by the graph before updating
