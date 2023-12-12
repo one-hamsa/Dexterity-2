@@ -121,7 +121,10 @@ namespace OneHamsa.Dexterity
 
         private void ShowModifiers()
         {
-            var modifiers = GetModifiers().ToList();
+            var _modifiers = GetModifiers();
+            if (_modifiers == null)
+                return;
+            var modifiers = _modifiers.ToList();
 
             if (baseNode.autoSyncModifiersStates)
             {
@@ -265,6 +268,10 @@ namespace OneHamsa.Dexterity
 
                 // collect all children modifiers
                 var allModifiers = GetModifiers();
+
+                if (allModifiers == null)
+                    return;
+                
                 var modifiers = new HashSet<Modifier>();
                 var skippedModifiersPaths = "";
                 var skippedModifiersCount = 0;
