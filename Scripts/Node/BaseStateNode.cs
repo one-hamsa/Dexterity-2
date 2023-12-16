@@ -264,7 +264,7 @@ namespace OneHamsa.Dexterity
         #region Transitions
         private void CacheDelays()
         {
-            cachedDelays = new Dictionary<(int enter, int exit), TransitionDelay>();
+            cachedDelays.Clear();
             foreach (var delay in delays)
                 cachedDelays[(
                     Database.instance.GetStateID(delay.beforeEnteringState),

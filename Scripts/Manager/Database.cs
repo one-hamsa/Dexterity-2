@@ -86,6 +86,9 @@ namespace OneHamsa.Dexterity
         /// <returns>State ID (runtime, may vary from run to run)</returns>
         public int GetStateID(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                return StateFunction.emptyStateId;
+            
             // lazy
             var indexOf = stateNames.IndexOf(name);
             if (indexOf == -1)
@@ -183,8 +186,25 @@ namespace OneHamsa.Dexterity
                 RegisterField(settings.fieldDefinitions[i].GetName());
         }
 
-        private void RegisterField(string fieldName) => fieldNames.Add(fieldName);
-        private void RegisterState(string stateName) => stateNames.Add(stateName);
+        private void RegisterField(string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+            {
+                Debug.LogError("tried to register empty field name");
+                return;
+            }
+            fieldNames.Add(fieldName);
+        }
+
+        private void RegisterState(string stateName)
+        {
+            if (string.IsNullOrWhiteSpace(stateName))
+            {
+                Debug.LogError("tried to register empty state name");
+                return;
+            }
+            stateNames.Add(stateName);
+        }
 
         /// <summary>
         /// Uninitializes state (useful for editor)
