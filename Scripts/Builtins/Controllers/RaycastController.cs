@@ -82,6 +82,20 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static RaycastFilter AddFilter(Transform root, RaycastFilter orFilter = null)
         {
+            var filter = CreateTransformFilter(root, orFilter);
+            AddFilter(filter);
+            return filter;
+        }
+
+        public static RaycastFilter AddBlockingFilter(Transform root)
+        {
+            var filter = CreateTransformBlockingFilter(root);
+            AddFilter(filter);
+            return filter;
+        }
+
+        public static RaycastFilter CreateTransformFilter(Transform root, RaycastFilter orFilter = null)
+        {
             // cache all transforms
             var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
 
@@ -92,15 +106,15 @@ namespace OneHamsa.Dexterity.Builtins
 
                 return ((Component)r).transform.IsChildOf(root);
             }
-
-            AddFilter(Filter);
+            
             return Filter;
         }
 
-        public static RaycastFilter AddBlockingFilter(Transform root)
+        public static RaycastFilter CreateTransformBlockingFilter(Transform root)
         {
             // cache all transforms
             var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
+            return Filter;
 
             bool Filter(IRaycastReceiver r)
             {
@@ -109,9 +123,6 @@ namespace OneHamsa.Dexterity.Builtins
 
                 return !((Component)r).transform.IsChildOf(root);
             }
-
-            AddFilter(Filter);
-            return Filter;
         }
 
         public static void RemoveFilter(RaycastFilter filter)
