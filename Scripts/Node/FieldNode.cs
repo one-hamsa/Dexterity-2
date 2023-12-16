@@ -474,7 +474,8 @@ namespace OneHamsa.Dexterity
         }
         public void NotifyGatesUpdate()
         {
-            RestartFields();
+            if (Application.IsPlaying(this))
+                RestartFields();
             onGatesUpdated?.Invoke();
         }
 
