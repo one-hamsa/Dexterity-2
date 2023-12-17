@@ -70,7 +70,8 @@ namespace OneHamsa.Dexterity
 
         protected virtual void Awake()
         {
-            InitializeModifiersHashSet();
+            nodeModifiers = HashSetPool<Modifier>.Get();
+            nodeModifiers.EnsureCapacity(16);
 
             cachedDelays = DictionaryPool<(int enter, int exit), TransitionDelay>.Get();
         }
@@ -189,19 +190,8 @@ namespace OneHamsa.Dexterity
         #endregion Unity Events
 
         #region General Methods
-        private void InitializeModifiersHashSet()
-        {
-            if (nodeModifiers == null && enabled)
-            {
-                nodeModifiers = HashSetPool<Modifier>.Get();
-                nodeModifiers.EnsureCapacity(16);
-            }
-        }
-        public HashSet<Modifier> GetModifiers()
-        {
-            InitializeModifiersHashSet();
-            return nodeModifiers;
-        }
+
+        public HashSet<Modifier> GetModifiers() => nodeModifiers;
 
         protected virtual void Initialize()
         {
