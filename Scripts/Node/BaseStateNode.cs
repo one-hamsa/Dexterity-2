@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity
         #region Private Properties
         protected int activeState = StateFunction.emptyStateId;
         private int overrideStateId = StateFunction.emptyStateId;
-        Dictionary<(int enter, int exit), TransitionDelay> cachedDelays;
+        private Dictionary<(int enter, int exit), TransitionDelay> cachedDelays = new();
 
         protected bool stateDirty = true;
         double pendingStateChangeTime;
@@ -59,7 +59,7 @@ namespace OneHamsa.Dexterity
 
         private BaseStateNode parentNode;
 
-        internal HashSet<Modifier> nodeModifiers; 
+        internal HashSet<Modifier> nodeModifiers = new();
 
         [NonSerialized]
         private bool _performedFirstInitialization;
@@ -70,17 +70,12 @@ namespace OneHamsa.Dexterity
 
         protected virtual void Awake()
         {
-            nodeModifiers = HashSetPool<Modifier>.Get();
             nodeModifiers.EnsureCapacity(16);
-
-            cachedDelays = DictionaryPool<(int enter, int exit), TransitionDelay>.Get();
         }
 
         protected virtual void OnDestroy()
         {
             Uninitialize(true);
-            HashSetPool<Modifier>.Release(nodeModifiers);
-            DictionaryPool<(int enter, int exit), TransitionDelay>.Release(cachedDelays);
         }
 
         protected void OnEnable()
