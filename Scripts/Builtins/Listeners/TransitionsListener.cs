@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins {
@@ -10,6 +11,8 @@ namespace OneHamsa.Dexterity.Builtins {
 
 		[Range(0, 1)] 
 		public float transitionProgressToConsiderDone = .99f;
+		
+		public List<Modifier> blacklistModifiers = new List<Modifier>();
 
 		public bool transitioning { get; private set; }
 		public event Action<int, int> onTransitionsStart;
@@ -65,6 +68,9 @@ namespace OneHamsa.Dexterity.Builtins {
 				return; // pending state change
 			
 			foreach (var modifier in node.GetModifiers()) {
+				if (blacklistModifiers.Contains(modifier))
+					continue;
+				
 				if (modifier.IsChanged() && modifier.transitionProgress < transitionProgressToConsiderDone)
 					return; // still not all done
 			}
