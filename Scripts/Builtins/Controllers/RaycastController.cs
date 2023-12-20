@@ -146,6 +146,7 @@ namespace OneHamsa.Dexterity.Builtins
                     filters.RemoveAt(i);
             }
         }
+        public static List<RaycastFilter> GetFilters() => filters;
 
         protected void HandlePressed()
         {
