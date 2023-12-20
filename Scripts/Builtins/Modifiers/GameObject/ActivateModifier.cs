@@ -32,7 +32,10 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected override void OnDisable()
         {
-            // actually, don't cleanup just yet. we rely on coroutine
+            if (Manager.instance != null)
+                Manager.instance.RemoveModifier(this);
+            
+            // don't cleanup node registrations
         }
 
         public void OnDestroy()
