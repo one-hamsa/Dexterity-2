@@ -158,7 +158,6 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 activeContext.onChildTransformChanged += RefreshReferences;
                 activeContext.onEnabled += RefreshReferences;
-                activeContext.onDisabled += RefreshReferences;
             }
             RefreshReferences();
             
@@ -176,7 +175,6 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 activeContext.onChildTransformChanged -= RefreshReferences;
                 activeContext.onEnabled -= RefreshReferences;
-                activeContext.onDisabled -= RefreshReferences;
             }
         }
 

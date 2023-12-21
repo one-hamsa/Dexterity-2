@@ -53,7 +53,6 @@ namespace OneHamsa.Dexterity.Builtins
             parentsTransform = new();
             context.onParentTransformChanged += RefreshReferences;
             context.onEnabled += RefreshReferences;
-            context.onDisabled += RefreshReferences;
 
             fieldId = Database.instance.GetFieldID(fieldName);
             if (child == null)
@@ -69,7 +68,6 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 context.onParentTransformChanged -= RefreshReferences;
                 context.onEnabled -= RefreshReferences;
-                context.onDisabled -= RefreshReferences;
             }
         }
     }
