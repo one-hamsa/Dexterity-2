@@ -146,21 +146,38 @@ namespace OneHamsa.Dexterity.Builtins
             comparer = HashSet<FieldNode>.CreateSetComparer();
             
             fieldId = Database.instance.GetFieldID(fieldName);
+            var activeContext = context;
             if (parent == null)
-            {
                 parent = context.transform;
-                context.onChildTransformChanged += RefreshReferences;
-            }
+            else
+                activeContext = parent.GetComponentInParent<FieldNode>();
+            
+            if (activeContext == null)
+                Debug.LogError("ChildrenField: cannot locate the FieldNode associated with given context", context);
             else
             {
-                var customContext = parent.GetComponentInParent<FieldNode>();
-                if (customContext != null)
-                    customContext.onChildTransformChanged += RefreshReferences;
-                else
-                    Debug.LogError("ChildrenField: custom parent specified but cannot locate the FieldNode associated with it", context);
+                activeContext.onChildTransformChanged += RefreshReferences;
+                activeContext.onEnabled += RefreshReferences;
+                activeContext.onDisabled += RefreshReferences;
             }
-            
             RefreshReferences();
+            
+        }
+        
+        public override void Finalize(FieldNode context)
+        {
+            base.Finalize(context);
+
+            var activeContext = context;
+            if (parent != null)
+                activeContext = parent.GetComponentInParent<FieldNode>();
+
+            if (activeContext != null)
+            {
+                activeContext.onChildTransformChanged -= RefreshReferences;
+                activeContext.onEnabled -= RefreshReferences;
+                activeContext.onDisabled -= RefreshReferences;
+            }
         }
 
         private static string GetPath(Transform current) {
