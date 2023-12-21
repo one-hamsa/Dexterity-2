@@ -200,9 +200,13 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        protected virtual void InitializedCachedData()
+        protected virtual void InitializeCacheData()
         {
             if (_initialized)
+                return;
+            
+            var node = GetNode();
+            if (node == null)
                 return;
             
             propertiesCache = new Dictionary<int, PropertyBase>();
@@ -246,7 +250,7 @@ namespace OneHamsa.Dexterity
             }
             
             CacheDelays();
-            cachedStates ??= GetNode().GetStateIDs().ToArray();
+            cachedStates ??= node.GetStateIDs().ToArray();
 
             _initialized = true;
         }
@@ -254,12 +258,15 @@ namespace OneHamsa.Dexterity
         protected override void Awake()
         {
             _transform = transform;
-            InitializedCachedData();
+            InitializeCacheData();
         }
 
         private void HandleNodeEnabled() => HandleNodeEnabled(false);
         private void HandleNodeEnabled(bool duringSelfOnEnable)
         {
+            // maybe it didn't happen because node was disabled
+            InitializeCacheData();
+            
             activeState = GetNode().GetActiveState();
             try
             {
@@ -456,7 +463,7 @@ namespace OneHamsa.Dexterity
 
         public void OnPoolCreation()
         {
-            InitializedCachedData();
+            InitializeCacheData();
         }
     }
 }

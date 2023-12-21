@@ -127,9 +127,9 @@ namespace OneHamsa.Dexterity.Builtins
                 CacheComponent();
         }
         
-        protected override void InitializedCachedData()
+        protected override void InitializeCacheData()
         {
-            base.InitializedCachedData();
+            base.InitializeCacheData();
             if (!_cached.cached)
                 CacheComponent();
         }
