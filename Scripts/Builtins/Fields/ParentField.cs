@@ -52,11 +52,25 @@ namespace OneHamsa.Dexterity.Builtins
 
             parentsTransform = new();
             context.onParentTransformChanged += RefreshReferences;
+            context.onEnabled += RefreshReferences;
+            context.onDisabled += RefreshReferences;
 
             fieldId = Database.instance.GetFieldID(fieldName);
             if (child == null)
                 child = context.transform;
             RefreshReferences();
+        }
+
+        public override void Finalize(FieldNode context)
+        {
+            base.Finalize(context);
+
+            if (context != null)
+            {
+                context.onParentTransformChanged -= RefreshReferences;
+                context.onEnabled -= RefreshReferences;
+                context.onDisabled -= RefreshReferences;
+            }
         }
     }
 }
