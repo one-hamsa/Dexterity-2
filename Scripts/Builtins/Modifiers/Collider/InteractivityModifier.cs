@@ -142,5 +142,12 @@ namespace OneHamsa.Dexterity.Builtins
                 c.enabled = disablers.Count == 0;
             }
         }
+        
+        public override void Refresh()
+        {
+	        base.Refresh();
+	        // always mark as didn't change
+	        transitionChanged = false;
+        }
     }
 }

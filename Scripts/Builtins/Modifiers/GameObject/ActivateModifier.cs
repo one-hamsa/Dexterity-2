@@ -43,8 +43,15 @@ namespace OneHamsa.Dexterity.Builtins
             // cleanup now
             base.OnDisable();
         }
-        
-		void ISceneEditingHooks.OnSceneSaving(bool duringBuild) { if (!duringBuild) PrepareForSave(); }
+
+        public override void Refresh()
+        {
+	        base.Refresh();
+	        // always mark as didn't change
+	        transitionChanged = false;
+        }
+
+        void ISceneEditingHooks.OnSceneSaving(bool duringBuild) { if (!duringBuild) PrepareForSave(); }
 		void ISceneEditingHooks.OnSceneSaved(bool duringBuild) { if (!duringBuild) PrepareForEdit(); }
 		void ISceneEditingHooks.OnSceneOpened(bool duringBuild) { if (!duringBuild) PrepareForEdit(); }
 
