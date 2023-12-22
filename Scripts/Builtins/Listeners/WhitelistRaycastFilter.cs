@@ -20,7 +20,9 @@ namespace OneHamsa.Dexterity.Builtins
             if (includeSelf)
                 allTransforms.Add(transform);
 
-            var allFilters = allTransforms.Select(t => RaycastController.CreateTransformFilter(t)).ToList();
+            var allFilters = allTransforms
+                .Where(t => t != null)
+                .Select(t => RaycastController.CreateTransformFilter(t)).ToList();
             filter = RaycastController.AddFilter(t =>
             {
                 foreach (var f in allFilters)
