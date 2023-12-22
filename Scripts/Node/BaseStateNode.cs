@@ -295,14 +295,14 @@ namespace OneHamsa.Dexterity
         /// <summary>
         /// makes sure this node's state is updated and propagated to its modifiers (ignores node delays)
         /// </summary>
-        public void UpdateState()
+        public void UpdateState(bool ignoreDelays = true)
         {
             stateDirty = true;
             if (!isActiveAndEnabled)
                 return;
             
             // make sure state is up-to-date
-            UpdateInternal(ignoreDelays: true);
+            UpdateInternal(ignoreDelays: ignoreDelays);
 
             foreach (var modifier in GetModifiers())
             {
