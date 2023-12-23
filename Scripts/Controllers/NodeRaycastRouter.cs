@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -44,23 +45,22 @@ namespace OneHamsa.Dexterity
             RemoveRoutersFromAllColliders();
         }
 
-        private void AddRoutersToAllColliders() {
-            var queue = new Queue<Transform>();
-            queue.Enqueue(transform);
+        private void AddRoutersToAllColliders()
+        {
+            using var _ = ListPool<Transform>.Get(out var queue);
+            using var __ = ListPool<IRaycastReceiver>.Get(out var thisObjectReceivers);
+            GetComponents(thisObjectReceivers);
+            
+            queue.Add(transform);
 
             while (queue.Count > 0) {
-                var current = queue.Dequeue();
-
-                /*
-                if (transform != current && current.GetComponent<FieldNode>() != null) 
-                {
-                    continue;
-                }
-                */
+                var current = queue[0];
+                queue.RemoveAt(0);
 
                 // TODO wrong order
-                foreach (Transform child in current) {
-                    queue.Enqueue(child);
+                foreach (Transform child in current) 
+                {
+                    queue.Add(child);
                 }
                 
                 if (current != transform) {
@@ -68,7 +68,13 @@ namespace OneHamsa.Dexterity
                     if (collider != null) {
                         // add router component and route it to receivers
                         var router = collider.gameObject.GetOrAddComponent<RaycastRouter>();
-                        router.AddReceiver(this);
+                        // add this, and all other receivers on this object, to the router
+                        for (int i = 0; i < thisObjectReceivers.Count; i++) 
+                        {
+                            if (thisObjectReceivers[i] is MonoBehaviour { enabled: false } or RaycastRouter)
+                                continue;
+                            router.AddReceiver(thisObjectReceivers[i]);
+                        }
                         routers.Add(router);
                     }
                 }
