@@ -134,7 +134,7 @@ namespace OneHamsa.Dexterity
             idToStep.Add(Step.Root.id, Step.Root);
 
             foreach (var step in steps) {
-                idToStep.Add(step.id, step);
+                idToStep[step.id] = step;
             }
 
             var tree = new Dictionary<Step, List<Step>>();
