@@ -36,6 +36,8 @@ namespace OneHamsa.Dexterity
         public double timeSinceStateChange;
         [NonSerialized]
         public double deltaTime;
+        [NonSerialized]
+        public double timeScale = 1f;
         
         public int initialStateId { get; private set; } = -1;
 
@@ -141,7 +143,7 @@ namespace OneHamsa.Dexterity
         protected virtual void UpdateInternal(bool ignoreDelays)
         {
             // doing this here gives the editor a chance to intervene
-            deltaTime = Database.instance.deltaTime;
+            deltaTime = Database.instance.deltaTime * timeScale;
             
             if (stateDirty)
             {
