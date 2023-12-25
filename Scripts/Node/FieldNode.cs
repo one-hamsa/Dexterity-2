@@ -462,14 +462,16 @@ namespace OneHamsa.Dexterity
         public void AddGate(Gate gate)
         {
             customGates.Add(gate);
-            RestartFields();
+            if (Application.IsPlaying(this))
+                RestartFields();
             onGateAdded?.Invoke(gate);
         }
 
         public void RemoveGate(Gate gate)
         {
             customGates.Remove(gate);
-            RestartFields();
+            if (Application.IsPlaying(this))
+                RestartFields();
             onGateRemoved?.Invoke(gate);
         }
         public void NotifyGatesUpdate()
