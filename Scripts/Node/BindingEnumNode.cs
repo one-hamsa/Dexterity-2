@@ -40,6 +40,11 @@ namespace OneHamsa.Dexterity
             }
         }
 
+        public override bool ShouldAutoSyncModifiersStates()
+        {
+            return base.ShouldAutoSyncModifiersStates() && binding.IsValid();
+        }
+
         public Type bindingType => binding.IsInitialized() ? binding.type : null;
 
         public void InitializeBinding()

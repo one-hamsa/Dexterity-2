@@ -26,8 +26,8 @@ namespace OneHamsa.Dexterity
         
         [SerializeField]
         public List<TransitionDelay> delays = new();
-        [HideInInspector]
-        public bool autoSyncModifiersStates = true;
+        [SerializeField, HideInInspector]
+        private bool autoSyncModifiersStates = true;
 
         [State(allowEmpty: true)]
         public string overrideState;
@@ -187,6 +187,8 @@ namespace OneHamsa.Dexterity
         #endregion Unity Events
 
         #region General Methods
+        public virtual bool ShouldAutoSyncModifiersStates() => autoSyncModifiersStates;
+        public void SetAutoSyncModifiersStates(bool value) => autoSyncModifiersStates = value;
 
         public HashSet<Modifier> GetModifiers() => nodeModifiers;
 

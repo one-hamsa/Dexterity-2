@@ -63,7 +63,7 @@ namespace OneHamsa.Dexterity
             foreach (var m in targets.Cast<Modifier>())
             {
                 var node = m.GetNode();
-                if (node != null && node.autoSyncModifiersStates && SyncModifierStates(m))
+                if (node != null && node.ShouldAutoSyncModifiersStates() && SyncModifierStates(m))
                     serializedObject.Update();
 
                 var targetStates = m.properties.Select(p => p.state).ToList();
