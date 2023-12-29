@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity
         /// list of topologically-sorted nodes, used for invoking updates in order. public visibility for editor.
         /// CAUTION: don't read when updating, this might return stale values.
         /// </summary>
-        public List<BaseField> sortedNodes = new ListSet<BaseField>();
+        public OrderedSet<BaseField> sortedNodes = new();
         private List<BaseField> sortedNodesCache = new();
 
         /// <summary>
@@ -310,7 +310,6 @@ namespace OneHamsa.Dexterity
 
                     if (current.process)
                     {
-                        // TODO: Can this be optimized?
                         // remove from sorted if it already exists
                         sortedNodes.Remove(current.node);
 
