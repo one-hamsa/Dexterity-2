@@ -229,10 +229,13 @@ namespace OneHamsa.Dexterity
                     changed = true;
                 }
             }
-            
-            foreach (var state in targetStates)
+
+            for (var i = 0; i < targetStates.Count; i++)
             {
-                if (state == null || !states.Contains(state))
+                var state = targetStates[i];
+                if (state == null
+                    || !states.Contains(state)
+                    || targetStates.IndexOf(state) != i)
                 {
                     RemoveStateFromModifier(m, state);
                     changed = true;

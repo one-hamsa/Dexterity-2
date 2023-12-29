@@ -209,10 +209,14 @@ namespace OneHamsa.Dexterity
             if (node == null)
                 return;
             
+            CacheDelays();
+            cachedStates ??= node.GetStateIDs().ToArray();
+            
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
-                if (prop == null) {
+                if (prop == null) 
+                {
                     Debug.LogError("Null property in Modifier", this);
                     continue;
                 }
@@ -222,9 +226,16 @@ namespace OneHamsa.Dexterity
                     // those properties are kept serialized in order to maintain history, no biggie
                     continue;
                 }
+
+                if (Array.IndexOf(cachedStates, id) == -1)
+                {
+                    // stale property, ignore
+                    continue;
+                }
+
                 if (propertiesCache.ContainsKey(id))
                 {
-                    Debug.LogError($"Duplicate property for state {prop.state} in Modifier", this);
+                    Debug.LogError($"Duplicate property for state {prop.state} in {GetType().Name}", this);
                     continue;
                 }
 
@@ -248,9 +259,6 @@ namespace OneHamsa.Dexterity
 
                 propertiesCache.Add(id, chosen);
             }
-            
-            CacheDelays();
-            cachedStates ??= node.GetStateIDs().ToArray();
 
             _initialized = true;
         }
