@@ -6,7 +6,7 @@ namespace OneHamsa.Dexterity.Builtins
     public class InputSystemRaycastController : RaycastController
 	{
 		public InputAction pressed;
-		protected override bool isPressed => pressed.phase == InputActionPhase.Started;
+		public override bool isPressed => pressed.phase == InputActionPhase.Started;
 
 		private void OnEnable()
         {

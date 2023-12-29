@@ -20,14 +20,24 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 propagate = false;
             }
+            
+            /// <summary>
+            /// simulate a press event on this controller.
+            /// can be used to trigger a delayed press from code.
+            /// </summary>
+            public void SimulateControllerPress()
+            {
+                controller.HandlePressed();
+            }
         }
+        public delegate void PressAnywhereHandler(PressAnywhereEvent e);
         
         const float rayLength = 100f;
         const int maxHits = 20;
 
         // Raycast Receiver filter
         private static readonly List<RaycastFilter> filters = new();
-        public static event Action<PressAnywhereEvent> onAnyPress;
+        public static event PressAnywhereHandler onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
         [Tooltip("How far back should the ray be casted from this transform?")]
@@ -148,6 +158,9 @@ namespace OneHamsa.Dexterity.Builtins
         }
         public static List<RaycastFilter> GetFilters() => filters;
 
+        /// <summary>
+        /// Handle a press event from this controller.
+        /// </summary>
         protected void HandlePressed()
         {
             bool wasCurrent = current;
@@ -369,7 +382,7 @@ namespace OneHamsa.Dexterity.Builtins
         }
         #endif
 
-        protected virtual bool isPressed => false;
+        public virtual bool isPressed => false;
         bool IRaycastController.isPressed => isPressed;
         bool IRaycastController.CompareTag(string other) => gameObject.CompareTag(other);
         bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
