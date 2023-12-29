@@ -54,12 +54,26 @@ namespace OneHamsa.Dexterity.Builtins
                 sizeDelta += Vector2.Lerp(Vector2.zero, property.sizeDelta, value);
             }
 
-            component.sizeDelta = sizeDelta;
+            var needsRebuild = false;
+            
+            if (component.sizeDelta != sizeDelta)
+            {
+                component.sizeDelta = sizeDelta;
+                needsRebuild = true;
+            }
             
             if (syncScale)
             {
-                _transform.localScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
+                var newScale = new Vector3(sizeDelta.x / baseSize.x, sizeDelta.y / baseSize.y, 1);
+                if (_transform.localScale != newScale)
+                {
+                    _transform.localScale = newScale;
+                    needsRebuild = true;
+                }
             }
+            
+            if (!needsRebuild)
+                return;
 
             // update UI layout
             if (updateParentReference)

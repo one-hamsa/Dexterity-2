@@ -52,7 +52,10 @@ namespace OneHamsa.Dexterity.Builtins
 
                 scale += Vector3.one * baseScale * property.scale * value;
             }
-
+            
+            if (scale == _transform.localScale)
+                return;
+            
             _transform.localScale = scale;
             
             // update UI layout
