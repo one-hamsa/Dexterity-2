@@ -425,9 +425,9 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual void InitializeEditor() { }
         #endif
-        
-        public int Order { get; }
-        public IEnumerator Warmup()
+
+        int IWarmer.Order => 0;
+        IEnumerator IWarmer.Warmup()
         {
             yield break;
         }

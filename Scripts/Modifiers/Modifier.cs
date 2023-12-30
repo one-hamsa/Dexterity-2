@@ -259,6 +259,11 @@ namespace OneHamsa.Dexterity
 
                 propertiesCache.Add(id, chosen);
             }
+            if (propertiesCache.Count == 0)
+            {
+                Debug.LogError($"No properties found for modifier {name} ({GetType().Name})", this);
+                return;
+            }
 
             _initialized = true;
         }
@@ -418,25 +423,6 @@ namespace OneHamsa.Dexterity
                 return false;
             }
 
-            if (!_node.enabled)
-            {
-                // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
-                //. before it is == null, but also call OnEnable on child components. so here we are, not printing
-                //. this warning because unity. 
-
-                try
-                {
-                    Debug.LogWarning($"Node {_node.gameObject.GetPath()} is disabled, " +
-                                     $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-
-                return false;
-            }
-
             if (properties.Count == 0)
             {
                 Debug.Log($"No properties found for modifier {name} ({GetType().Name})", this);
@@ -463,8 +449,9 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual (string, LogType) GetEditorComment() => default;
         #endif
-        public int Order => 1; // after the nodes
-        public IEnumerator Warmup()
+        int IWarmer.Order => 1; // after the nodes
+
+        IEnumerator IWarmer.Warmup()
         {
             yield break;
         }
