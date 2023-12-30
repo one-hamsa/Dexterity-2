@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IReferencesNode, ISpawnWarmer
+    public abstract class Modifier : TransitionBehaviour, IReferencesNode, IWarmer
     {
         public enum DelayDirection
         {

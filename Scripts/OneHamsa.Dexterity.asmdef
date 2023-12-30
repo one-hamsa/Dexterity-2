@@ -4,7 +4,7 @@
     "references": [
         "Unity.InputSystem",
         "Unity.TextMeshPro",
-        "Underdogs.SpawnWarmer"
+        "Underdogs.Warmer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

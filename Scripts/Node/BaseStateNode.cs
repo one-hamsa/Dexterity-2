@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class BaseStateNode : MonoBehaviour, IHasStates, ISpawnWarmer
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates, IWarmer
     {
         [Serializable]
         public class TransitionDelay
