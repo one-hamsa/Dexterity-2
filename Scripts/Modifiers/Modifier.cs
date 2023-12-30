@@ -68,6 +68,7 @@ namespace OneHamsa.Dexterity
 
         public virtual void PrepareTransition_Editor(string initialState, string targetState)
         {
+            _initialized = false;
             Awake();
             CacheDelays();
             
