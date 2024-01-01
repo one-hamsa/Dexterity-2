@@ -424,7 +424,7 @@ namespace OneHamsa.Dexterity
                 return false;
             }
 
-            if (properties.Count == 0)
+            if (properties.Count == 0 || propertiesCache.Count == 0)
             {
                 Debug.Log($"No properties found for modifier {name} ({GetType().Name})", this);
                 return false;
