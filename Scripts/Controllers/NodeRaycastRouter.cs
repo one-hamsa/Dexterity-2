@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity
         {
             foreach (var receiver in receivers)
             {
-                if (receiver is MonoBehaviour { isActiveAndEnabled: false })
+                if (receiver is MonoBehaviour mono && (mono == null || !mono.isActiveAndEnabled))
                     continue;
                 receiver.ReceiveHit(controller, ref raycastEvent);
             }
@@ -67,7 +67,13 @@ namespace OneHamsa.Dexterity
                     var collider = current.GetComponent<Collider>();
                     if (collider != null) {
                         // add router component and route it to receivers
-                        var router = collider.gameObject.GetOrAddComponent<RaycastRouter>();
+                        var router = collider.gameObject.GetComponent<RaycastRouter>();
+                        if (router == null)
+                        {
+                            router = collider.gameObject.AddComponent<RaycastRouter>();
+                            router.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
+                        }
+
                         // add this, and all other receivers on this object, to the router
                         for (int i = 0; i < thisObjectReceivers.Count; i++) 
                         {
@@ -83,7 +89,9 @@ namespace OneHamsa.Dexterity
         private void RemoveRoutersFromAllColliders() {
             foreach (var router in routers) {
                 router.RemoveReceiver(this);
-                Destroy(router);
+                
+                if (router != null && (router.hideFlags & HideFlags.HideAndDontSave) != 0)
+                    Destroy(router);
             }
             routers.Clear();
         }

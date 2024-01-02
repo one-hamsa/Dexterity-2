@@ -50,6 +50,18 @@ namespace OneHamsa.Dexterity.Builtins
                 hierarchyListener.onChildAdded -= OnChildAdded;
                 hierarchyListener.onChildRemoved -= OnChildRemoved;
             }
+            
+            PruneDeadColliders();
+            
+            foreach (var c in cachedColliders)
+            {
+                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
+                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
+                
+                disablers.Remove(this);
+                
+                c.enabled = disablers.Count == 0;
+            }
         }
 
         private void OnChildAdded(Transform child)
@@ -126,21 +138,6 @@ namespace OneHamsa.Dexterity.Builtins
             
             foreach (var c in colliderDisabledByTmp)
                 colliderDisabledBy.Remove(c);
-        }
-
-        public void OnDestroy()
-        {
-            PruneDeadColliders();
-            
-            foreach (var c in cachedColliders)
-            {
-                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
-                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
-                
-                disablers.Remove(this);
-                
-                c.enabled = disablers.Count == 0;
-            }
         }
         
         public override void Refresh()
