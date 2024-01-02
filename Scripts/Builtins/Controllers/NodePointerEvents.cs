@@ -20,7 +20,7 @@ namespace OneHamsa.Dexterity.Builtins
         public bool recurseNodes = true;
 
         protected List<BaseStateNode> nodes;
-        private NodeRaycastRouter router;
+        private HashSet<NodeRaycastRouter> routers = new();
 
         protected int[] hoverStateIds;
         protected int[] pressedStateIds;
@@ -32,13 +32,21 @@ namespace OneHamsa.Dexterity.Builtins
             
             foreach (var node in nodes)
             {
-                router = node.GetRaycastRouter();
+                var router = node.GetRaycastRouter();
                 router.AddReceiver(this);
+                routers.Add(router);
             }
 
             hoverStateIds = hoverStates.Select(Database.instance.GetStateID).ToArray();
             pressedStateIds = pressedStates.Select(Database.instance.GetStateID).ToArray();
             disabledStateIds = disabledStates.Select(Database.instance.GetStateID).ToArray();
+        }
+        
+        protected virtual void OnDisable()
+        {
+            foreach (var router in routers)
+                router.RemoveReceiver(this);
+            routers.Clear();
         }
 
         protected IRaycastController.RaycastEvent.Result GetResultFromState()

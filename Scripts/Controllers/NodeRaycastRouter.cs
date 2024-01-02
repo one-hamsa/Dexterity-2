@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity
         {
             foreach (var receiver in receivers)
             {
-                if (receiver is MonoBehaviour mono && (mono == null || !mono.isActiveAndEnabled))
+                if (receiver is MonoBehaviour { isActiveAndEnabled: false })
                     continue;
                 receiver.ReceiveHit(controller, ref raycastEvent);
             }
@@ -87,10 +87,22 @@ namespace OneHamsa.Dexterity
             }
         }
         private void RemoveRoutersFromAllColliders() {
-            foreach (var router in routers) {
-                router.RemoveReceiver(this);
+            using var __ = ListPool<IRaycastReceiver>.Get(out var thisObjectReceivers);
+            GetComponents(thisObjectReceivers);
+            
+            foreach (var router in routers)
+            {
+                if (router == null)
+                    continue;
                 
-                if (router != null && (router.hideFlags & HideFlags.HideAndDontSave) != 0)
+                for (int i = 0; i < thisObjectReceivers.Count; i++) 
+                {
+                    if (thisObjectReceivers[i] is MonoBehaviour { enabled: false } or RaycastRouter)
+                        continue;
+                    router.RemoveReceiver(thisObjectReceivers[i]);
+                }
+                
+                if ((router.hideFlags & HideFlags.HideAndDontSave) != 0)
                     Destroy(router);
             }
             routers.Clear();
