@@ -240,6 +240,9 @@ namespace OneHamsa.Dexterity.Builtins
                     for (var j = 0; j < receiversBeforeFilter.Count; j++)
                     {
                         var receiver = receiversBeforeFilter[j];
+                        if (receiver is MonoBehaviour { isActiveAndEnabled: false })
+                            continue;
+                        
                         using var _ = ListPool<IRaycastReceiver>.Get(out var receivers);
                         receiver.Resolve(receivers);
                         foreach (var r in receivers)
