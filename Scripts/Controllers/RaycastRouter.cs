@@ -33,13 +33,11 @@ namespace OneHamsa.Dexterity
 
         public void AddReceiver(IRaycastReceiver receiver)
         {
-            if (!receivers.Add(receiver))
-                Debug.LogError($"RaycastRouter.SetReceiver() called when receiver was already added.", this);
+            receivers.Add(receiver);
         }
         public void RemoveReceiver(IRaycastReceiver receiver)
         {
-            if (!receivers.Remove(receiver))
-                Debug.LogError($"RaycastRouter.RemoveReceiver() called with a receiver that was not added.", this);
+            receivers.Remove(receiver);
         }
         
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
