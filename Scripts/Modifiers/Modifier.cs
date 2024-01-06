@@ -336,11 +336,10 @@ namespace OneHamsa.Dexterity
 
             if (_node.isActiveAndEnabled)
                 HandleNodeEnabled(true);
-            else
-            {
-                _node.onEnabled -= HandleNodeEnabled;
-                _node.onEnabled += HandleNodeEnabled;
-            }
+            
+            // always treat node enabled to be able to handle state changes
+            _node.onEnabled -= HandleNodeEnabled;
+            _node.onEnabled += HandleNodeEnabled;
 
             _node.onStateChanged -= HandleNodeStateChange;
             _node.onStateChanged += HandleNodeStateChange;
