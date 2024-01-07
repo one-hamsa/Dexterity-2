@@ -123,7 +123,6 @@ namespace OneHamsa.Dexterity
                     node.onDirty -= RefreshReferences;
                 }
                 
-                fieldsToNodes.Remove(this);
                 finalized = true;
             }
 
@@ -133,7 +132,6 @@ namespace OneHamsa.Dexterity
                 {
                     // register this field in manager to get updates from graph
                     Manager.instance.RegisterField(this);
-                    fieldsToNodes[this] = node;
                     registered = true;
                 }
 

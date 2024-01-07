@@ -12,16 +12,6 @@ namespace OneHamsa.Dexterity
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
     {
-        #region Static Functions
-        // mainly for debugging graph problems
-        private static Dictionary<BaseField, FieldNode> fieldsToNodes = new();
-        internal static FieldNode ByField(BaseField f)
-        {
-            fieldsToNodes.TryGetValue(f, out var node);
-            return node;
-        }
-        #endregion Static Functions
-
         #region Data Definitions
         [Serializable]
         public class OutputOverride
@@ -437,7 +427,6 @@ namespace OneHamsa.Dexterity
             if (!(field is OutputField o))
             {
                 nonOutputFields.Add(field);
-                fieldsToNodes[field] = this;
             }
             else
                 outputFields.AddOrUpdate(o.definitionId, o);
@@ -451,8 +440,6 @@ namespace OneHamsa.Dexterity
                 Debug.LogWarning("OutputFields cannot be removed", this);
                 return;
             }
-
-            fieldsToNodes.Remove(field);
         }
 
         public void AddGate(Gate gate)

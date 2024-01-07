@@ -173,7 +173,7 @@ namespace OneHamsa.Dexterity
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e, FieldNode.ByField(node));
+                    Debug.LogException(e, node.context);
                 }
             }
         }
@@ -194,7 +194,7 @@ namespace OneHamsa.Dexterity
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e, FieldNode.ByField(node));
+                    Debug.LogException(e, node.context);
                 }
             }
         }
