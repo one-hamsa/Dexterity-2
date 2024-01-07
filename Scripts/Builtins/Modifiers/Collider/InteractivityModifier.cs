@@ -130,9 +130,9 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 if (cachedColliders[i] == null || !cachedColliders[i].transform.IsChildOf(transform))
                 {
-                    cachedColliders.RemoveAt(i);
                     if (colliderDisabledBy.TryGetValue(cachedColliders[i], out var disablers))
                         disablers.Remove(this);
+                    cachedColliders.RemoveAt(i);
                 }
             }
             
