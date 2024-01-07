@@ -126,6 +126,7 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public virtual void Finalize(FieldNode context)
         {
+            this.context = null;
         }
 
         /// <summary>

@@ -142,7 +142,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             prevChildren = new();
             childrenPath = new();
-            workQueue = new();
+            workQueue ??= new();
             comparer = HashSet<FieldNode>.CreateSetComparer();
             
             fieldId = Database.instance.GetFieldID(fieldName);

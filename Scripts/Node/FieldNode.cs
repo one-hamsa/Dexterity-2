@@ -92,8 +92,11 @@ namespace OneHamsa.Dexterity
         {
             // only now it's ok to remove output fields
             foreach (var pair in outputFields.keyValuePairs)
+            {
+                pair.Value.onValueChanged -= MarkStateDirty;
                 pair.Value.Finalize(this);
-            
+            }
+
             outputFields.Clear();
             
             if (stateFieldIdsCache != null)

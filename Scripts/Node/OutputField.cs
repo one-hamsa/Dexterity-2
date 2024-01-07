@@ -122,6 +122,10 @@ namespace OneHamsa.Dexterity
                     node.onDisabled -= OnNodeDisabled;
                     node.onDirty -= RefreshReferences;
                 }
+                upstreamSubscribers.Clear();
+                cachedGates.Clear();
+                prevCachedGates.Clear();
+                node = null;
                 
                 finalized = true;
             }
