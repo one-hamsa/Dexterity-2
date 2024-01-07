@@ -230,14 +230,10 @@ namespace OneHamsa.Dexterity
                 activeState = GetState();
         }
 
-        protected override void Uninitialize(bool duringTeardown = false)
+        protected override void Uninitialize(bool duringTeardown)
         {
-            // dont cleanup gates here, we might still want to use them
-            if (enabled)
-            {
-                foreach (var gate in customGates)
-                    FinalizeGate(gate, duringTeardown);
-            }
+            foreach (var gate in customGates)
+                FinalizeGate(gate, duringTeardown);
             
             base.Uninitialize(duringTeardown);
         }
