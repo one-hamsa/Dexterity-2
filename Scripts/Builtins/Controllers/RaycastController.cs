@@ -233,7 +233,8 @@ namespace OneHamsa.Dexterity.Builtins
             ray = new Ray(origin, direction);
             displayRay = new Ray(pos, direction);
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
-
+            
+            // cast to find all hits in range and layer
             int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
             
             // sort hits by distance
@@ -362,6 +363,10 @@ namespace OneHamsa.Dexterity.Builtins
                     }
                 }
             }
+            
+            // clear hits to avoid leaking references
+            for (int i = 0; i < hits.Length; ++i)
+                hits[i] = default;
         }
 
         private void OnDrawGizmos()
