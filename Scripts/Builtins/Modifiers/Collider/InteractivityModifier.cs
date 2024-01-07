@@ -128,15 +128,19 @@ namespace OneHamsa.Dexterity.Builtins
             // in-place cleanup
             for (var i = cachedColliders.Count - 1; i >= 0; i--) 
             {
-                if (cachedColliders[i] == null || !cachedColliders[i].transform.IsChildOf(transform)) 
+                if (cachedColliders[i] == null || !cachedColliders[i].transform.IsChildOf(transform))
+                {
                     cachedColliders.RemoveAt(i);
+                    if (colliderDisabledBy.TryGetValue(cachedColliders[i], out var disablers))
+                        disablers.Remove(this);
+                }
             }
             
             // use aux list to avoid allocations
             using var _ = ListPool<Collider>.Get(out var colliderDisabledByTmp);
             foreach (var c in colliderDisabledBy.Keys)
             {
-                if (c == null || !c.transform.IsChildOf(transform))
+                if (c == null)
                     colliderDisabledByTmp.Add(c);
             }
             
