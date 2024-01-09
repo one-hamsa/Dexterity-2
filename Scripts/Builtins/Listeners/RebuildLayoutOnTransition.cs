@@ -7,6 +7,7 @@ namespace OneHamsa.Dexterity.Builtins
     public class RebuildLayoutOnTransition : MonoBehaviour
     {
         [SerializeField] private RectTransform targetTransform;
+        [SerializeField] private bool forceRebuild = false;
         
         private TransitionsListener transitionsListener;
 
@@ -23,6 +24,8 @@ namespace OneHamsa.Dexterity.Builtins
         {
             transitionsListener.onTransitionsStart += OnTransitionsStart;
             transitionsListener.onTransitionsEnd += OnTransitionsEnd;
+            
+            Rebuild();
         }
 
         private void OnTransitionsStart(int oldState, int newState)
@@ -47,6 +50,8 @@ namespace OneHamsa.Dexterity.Builtins
         private void Rebuild()
         {
             LayoutRebuilder.MarkLayoutForRebuild(targetTransform);
+            if (forceRebuild)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(targetTransform);
         }
     }
 }
