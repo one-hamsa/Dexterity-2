@@ -431,7 +431,9 @@ namespace OneHamsa.Dexterity
 
             if (properties.Count == 0)
             {
+                #if UNITY_EDITOR
                 Debug.Log($"No properties found for modifier {name} ({GetType().Name})", this);
+                #endif
                 return false;
             }
 
