@@ -12,8 +12,8 @@ namespace OneHamsa.Dexterity.Builtins
         private TransitionsListener transitionsListener;
 
         private bool transitioning;
-        
-        private void Awake()
+
+        protected virtual void Awake()
         {
             transitionsListener = GetComponent<TransitionsListener>();
             if (targetTransform == null)
@@ -31,6 +31,7 @@ namespace OneHamsa.Dexterity.Builtins
         private void OnTransitionsStart(int oldState, int newState)
         {
             transitioning = true;
+            Rebuild();
         }
 
         private void OnTransitionsEnd(int state)
@@ -47,7 +48,7 @@ namespace OneHamsa.Dexterity.Builtins
             Rebuild();
         }
 
-        private void Rebuild()
+        protected virtual void Rebuild()
         {
             LayoutRebuilder.MarkLayoutForRebuild(targetTransform);
             if (forceRebuild)
