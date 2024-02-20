@@ -12,6 +12,7 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastController : MonoBehaviour, IRaycastController
     {
+        
         public class PressAnywhereEvent
         {
             public RaycastController controller;
@@ -423,5 +424,7 @@ namespace OneHamsa.Dexterity.Builtins
         Vector3 IRaycastController.position => transform.position;
         Vector3 IRaycastController.forward => transform.forward;
         Vector3 IRaycastController.up => transform.up;
+        
+        public virtual Vector2 scroll => Vector2.zero;
     }
 }
