@@ -213,14 +213,14 @@ namespace OneHamsa.Dexterity
                 CacheFieldOverrides();
                 
                 // To trigger caching of step list
-                var _ = GetState();
+                var _ = GetNextState();
             }
 
             _performedFirstInitialization_FieldNode = true;
             
             // last chance: if there are field overrides, reroute initial state
             if (cachedOverrides.Count > 0)
-                activeState = GetState();
+                activeState = GetNextState();
         }
 
         protected override void Uninitialize(bool duringTeardown)
@@ -490,9 +490,10 @@ namespace OneHamsa.Dexterity
                 fieldMask.Add((fieldId, value));
             }
         }
-        protected override int GetState()
+
+        public override int GetNextState()
         {
-            var baseState = base.GetState();
+            var baseState = base.GetNextState();
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
@@ -728,7 +729,7 @@ namespace OneHamsa.Dexterity
         {
             base.OnPoolCreation();
             // To trigger caching of step list
-            var _ = GetState();
+            var _ = GetNextState();
         }
     }
 }

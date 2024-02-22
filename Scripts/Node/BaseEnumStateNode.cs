@@ -71,9 +71,9 @@ namespace OneHamsa.Dexterity
             return value;
         }
 
-        protected override int GetState()
+        public override int GetNextState()
         {
-            var baseState = base.GetState();
+            var baseState = base.GetNextState();
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 

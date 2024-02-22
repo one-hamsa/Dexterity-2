@@ -148,7 +148,7 @@ namespace OneHamsa.Dexterity
             if (stateDirty)
             {
                 // someone marked this dirty, check for new state
-                var newState = GetState();
+                var newState = GetNextState();
                 if (newState == -1)
                 {
                     Debug.LogWarning($"{name}: got -1 for new state, not updating", this);
@@ -223,7 +223,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
             
-            activeState = overrideStateId != StateFunction.emptyStateId ? GetState() : initialStateId;
+            activeState = overrideStateId != StateFunction.emptyStateId ? GetNextState() : initialStateId;
 
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;
@@ -249,7 +249,8 @@ namespace OneHamsa.Dexterity
         #endregion General Methods
 
         #region State Reduction
-        protected virtual int GetState()
+
+        public virtual int GetNextState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;

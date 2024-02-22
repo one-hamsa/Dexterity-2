@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting;
+using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity.Builtins.Utilities
 {
@@ -11,19 +12,26 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
         public float perChildDelay = 0.2f;
         
         [State(allowEmpty: true)]
-        public string fromState;
+        public string forceSourceState;
         
         [State(allowEmpty: true)]
-        public string toState;
+        public string destinationState;
+        
+        public List<BaseStateNode> manualNodes = new();
+
+        public bool skipIfNotInDestinationState;
 
         private List<BaseStateNode> nodes = new();
         private Dictionary<BaseStateNode, Action<int, int>> onStateChanged = new();
 
-        private int fromStateId;
-        private int toStateId;
+        private int forceSourceStateId;
+        private int destStateId;
         
         public List<BaseStateNode> GetNodes()
         {
+            if (manualNodes.Count > 0)
+                return manualNodes;
+            
             nodes.Clear();
             for (var i = 0; i < transform.childCount; i++)
             {
@@ -32,7 +40,6 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
                 if (node)
                     nodes.Add(node);
             }
-            
             return nodes;
         }
         
@@ -41,24 +48,27 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
 
         private void Awake()
         {
-            fromStateId = Database.instance.GetStateID(fromState);
-            toStateId = Database.instance.GetStateID(toState);
+            forceSourceStateId = Database.instance.GetStateID(forceSourceState);
+            destStateId = Database.instance.GetStateID(destinationState);
         }
 
-        private void OnEnable()
+        private void Start()
         {
             isStaggerDone = false;
             
             var delay = firstDelay;
             foreach (var node in GetNodes())
             {
-                node.SetStateDelay(fromStateId, toStateId, delay);
+                if (skipIfNotInDestinationState && node.GetNextState() != destStateId)
+                    continue;
+                
+                node.SetStateDelay(StateFunction.emptyStateId, destStateId, delay);
                 
                 void OnNodeStateChanged(int oldState, int newState)
                 {
-                    if (toStateId == StateFunction.emptyStateId || newState == toStateId)
+                    if (destStateId == StateFunction.emptyStateId || newState == destStateId)
                     {
-                        node.SetStateDelay(fromStateId, toStateId, 0);
+                        node.SetStateDelay(StateFunction.emptyStateId, destStateId, 0);
                         node.onStateChanged -= onStateChanged[node];
                         onStateChanged.Remove(node);
                         
@@ -69,9 +79,9 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
                 node.onStateChanged += OnNodeStateChanged;
                 onStateChanged[node] = OnNodeStateChanged;
                 
-                if (fromStateId != StateFunction.emptyStateId)
-                    node.JumpToState(fromStateId);
-                
+                if (forceSourceStateId != StateFunction.emptyStateId)
+                    node.JumpToState(forceSourceStateId);
+               
                 delay += perChildDelay;
             }
         }
@@ -82,7 +92,7 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             {
                 if (onStateChanged.TryGetValue(node, out var onNodeStateChanged))
                 {
-                    node.SetStateDelay(fromStateId, toStateId, 0);
+                    node.SetStateDelay(forceSourceStateId, destStateId, 0);
                     node.onStateChanged -= onNodeStateChanged;
                     onStateChanged.Remove(node);
                 }
