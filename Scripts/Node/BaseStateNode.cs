@@ -250,12 +250,14 @@ namespace OneHamsa.Dexterity
 
         #region State Reduction
 
-        public virtual int GetNextState()
+        public virtual int GetNextStateWithoutOverride() => StateFunction.emptyStateId;
+
+        public int GetNextState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return StateFunction.emptyStateId;
+            return GetNextStateWithoutOverride();
         }
         public abstract HashSet<string> GetStateNames();
         public abstract HashSet<string> GetFieldNames();

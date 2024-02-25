@@ -98,9 +98,9 @@ namespace OneHamsa.Dexterity
             base.UpdateInternal(ignoreDelays);
         }
 
-        public override int GetNextState()
+        public override int GetNextStateWithoutOverride()
         {
-            var baseState = base.GetNextState();
+            var baseState = base.GetNextStateWithoutOverride();
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
