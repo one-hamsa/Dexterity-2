@@ -2,12 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting;
-using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity.Builtins.Utilities
 {
     public class StaggerChildrenState : MonoBehaviour, IReferencesNodes
     {
+        public const float dontOverrideDelay = -1f;
+        
+        [Serializable]
+        public class ManualNode
+        {
+            public BaseStateNode node;
+            [Tooltip("Override delay for this node, -1 to not override")]
+            public float overrideDelay = dontOverrideDelay;
+        }
+        
         public float firstDelay = 0.2f;
         public float perChildDelay = 0.2f;
         
@@ -17,8 +26,9 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
         [State]
         public string destinationState;
         
-        public List<BaseStateNode> manualNodes = new();
+        public List<ManualNode> manualNodes = new();
 
+        [Tooltip("If true, will skip nodes that are not in (or transitioning to) destination state when stagger starts")]
         public bool skipIfNotInDestinationState;
 
         private List<BaseStateNode> nodes = new();
@@ -34,11 +44,15 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
 
             if (manualNodes.Count > 0)
             {
-                nodes.AddRange(manualNodes);
-                for (var i = nodes.Count - 1; i >= 0; i--)
+                foreach (var manualNode in manualNodes)
                 {
-                    if (!nodes[i].gameObject.activeSelf)
-                        nodes.RemoveAt(i);
+                    if (manualNode.node == null)
+                        continue;
+                    
+                    if (!manualNode.node.gameObject.activeSelf)
+                        continue;
+                    
+                    nodes.Add(manualNode.node);
                 }
                 
                 return nodes;
@@ -109,7 +123,7 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             }
 
             current.SetStateDelay(StateFunction.emptyStateId, destStateId, 
-                index == 0 ? firstDelay : perChildDelay);
+                GetDelayForNode(current, index == 0));
             
             void OnNodeStateChanged(int oldState, int newState)
             {
@@ -161,6 +175,16 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
                     // TODO remove onStaggerDone recursive subscription
                 }
             }
+        }
+        
+        private float GetDelayForNode(BaseStateNode node, bool isFirst)
+        {
+            foreach (var manualNode in manualNodes)
+            {
+                if (manualNode.node == node && !Mathf.Approximately(manualNode.overrideDelay, dontOverrideDelay))
+                    return manualNode.overrideDelay;
+            }
+            return isFirst ? firstDelay : perChildDelay;
         }
     }
 }
