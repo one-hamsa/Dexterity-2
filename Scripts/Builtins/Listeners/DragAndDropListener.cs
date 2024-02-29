@@ -37,6 +37,7 @@ public class DragAndDropListener : MonoBehaviour
 		_pressDuration = 0;
 		_controller = raycastListener.pressingController;
 		OnDragStart?.Invoke();
+		InvokeOnDrag();
 	}
 	
 	private void OnRelease() {
@@ -49,6 +50,11 @@ public class DragAndDropListener : MonoBehaviour
 		
 		_pressed = false;
 		_controller = null;
+	}
+
+	private void InvokeOnDrag() {
+		Ray ray = new Ray(_controller.position, _controller.forward);
+		OnDrag?.Invoke(ray);
 	}
 	
 	private void Awake() {
@@ -71,7 +77,6 @@ public class DragAndDropListener : MonoBehaviour
 		if (_pressed == false) return;
 
 		_pressDuration += Time.unscaledDeltaTime;
-		Ray ray = new Ray(_controller.position, _controller.forward);
-		OnDrag?.Invoke(ray);
+		InvokeOnDrag();
 	}
 }
