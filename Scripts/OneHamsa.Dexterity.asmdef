@@ -3,8 +3,7 @@
     "rootNamespace": "OneHamsa.Dexterity",
     "references": [
         "Unity.InputSystem",
-        "Unity.TextMeshPro",
-        "Underdogs.Warmer"
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

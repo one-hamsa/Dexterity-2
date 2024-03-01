@@ -725,11 +725,11 @@ namespace OneHamsa.Dexterity
 #endif
         #endregion
 
-        public override void OnPoolCreation()
+        public override void Allocate()
         {
-            base.OnPoolCreation();
+            base.Allocate();
             // To trigger caching of step list
-            var _ = GetNextState();
+            _ = GetNextState();
         }
     }
 }

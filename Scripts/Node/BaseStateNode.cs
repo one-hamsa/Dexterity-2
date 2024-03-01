@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class BaseStateNode : MonoBehaviour, IHasStates, IWarmer
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates
     {
         [Serializable]
         public class TransitionDelay
@@ -429,13 +429,10 @@ namespace OneHamsa.Dexterity
         public virtual void InitializeEditor() { }
         #endif
 
-        int IWarmer.Order => 0;
-        IEnumerator IWarmer.Warmup()
-        {
-            yield break;
-        }
-
-        public virtual void OnPoolCreation()
+        /// <summary>
+        /// Allocates data structures, can be called before the node is enabled for faster initialization
+        /// </summary>
+        public virtual void Allocate()
         {
             Initialize();
             Uninitialize(false);

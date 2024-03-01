@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IReferencesNode, IWarmer
+    public abstract class Modifier : TransitionBehaviour, IReferencesNode
     {
         public enum DelayDirection
         {
@@ -447,20 +447,18 @@ namespace OneHamsa.Dexterity
                 supportValueFreeze.FreezeValue();
             }
         }
+        
+        /// <summary>
+        /// Allocates data structures, can be called before the modifier is enabled for faster initialization
+        /// </summary>
+        public virtual void Allocate()
+        {
+            InitializeCacheData();
+        }
 
         #if UNITY_EDITOR
         public virtual (string, LogType) GetEditorComment() => default;
         #endif
-        int IWarmer.Order => 1; // after the nodes
-
-        IEnumerator IWarmer.Warmup()
-        {
-            yield break;
-        }
-
-        public void OnPoolCreation()
-        {
-            InitializeCacheData();
-        }
+        
     }
 }
