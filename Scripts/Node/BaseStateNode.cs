@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class BaseStateNode : MonoBehaviour, IHasStates, ISpawnWarmer
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates
     {
         [Serializable]
         public class TransitionDelay
@@ -26,8 +26,8 @@ namespace OneHamsa.Dexterity
         
         [SerializeField]
         public List<TransitionDelay> delays = new();
-        [HideInInspector]
-        public bool autoSyncModifiersStates = true;
+        [SerializeField, HideInInspector]
+        private bool autoSyncModifiersStates = true;
 
         [State(allowEmpty: true)]
         public string overrideState;
@@ -148,7 +148,7 @@ namespace OneHamsa.Dexterity
             if (stateDirty)
             {
                 // someone marked this dirty, check for new state
-                var newState = GetState();
+                var newState = GetNextState();
                 if (newState == -1)
                 {
                     Debug.LogWarning($"{name}: got -1 for new state, not updating", this);
@@ -187,6 +187,8 @@ namespace OneHamsa.Dexterity
         #endregion Unity Events
 
         #region General Methods
+        public virtual bool ShouldAutoSyncModifiersStates() => autoSyncModifiersStates;
+        public void SetAutoSyncModifiersStates(bool value) => autoSyncModifiersStates = value;
 
         public HashSet<Modifier> GetModifiers() => nodeModifiers;
 
@@ -221,7 +223,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
             
-            activeState = overrideStateId != StateFunction.emptyStateId ? GetState() : initialStateId;
+            activeState = overrideStateId != StateFunction.emptyStateId ? GetNextState() : initialStateId;
 
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;
@@ -247,12 +249,15 @@ namespace OneHamsa.Dexterity
         #endregion General Methods
 
         #region State Reduction
-        protected virtual int GetState()
+
+        public virtual int GetNextStateWithoutOverride() => StateFunction.emptyStateId;
+
+        public int GetNextState()
         {
             if (overrideStateId != -1)
                 return overrideStateId;
 
-            return StateFunction.emptyStateId;
+            return GetNextStateWithoutOverride();
         }
         public abstract HashSet<string> GetStateNames();
         public abstract HashSet<string> GetFieldNames();
@@ -423,14 +428,11 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual void InitializeEditor() { }
         #endif
-        
-        public int Order { get; }
-        public IEnumerator Warmup()
-        {
-            yield break;
-        }
 
-        public virtual void OnPoolCreation()
+        /// <summary>
+        /// Allocates data structures, can be called before the node is enabled for faster initialization
+        /// </summary>
+        public virtual void Allocate()
         {
             Initialize();
             Uninitialize(false);

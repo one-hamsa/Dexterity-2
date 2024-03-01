@@ -5,7 +5,7 @@
         "Dexterity",
         "Unity.InputSystem",
         "Unity.EditorCoroutines.Editor",
-        "Underdogs.SpawnWarmer"
+        "Underdogs.Warmer"
     ],
     "includePlatforms": [
         "Editor"

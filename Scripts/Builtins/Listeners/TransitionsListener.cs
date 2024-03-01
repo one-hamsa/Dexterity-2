@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins {
-	[RequireComponent(typeof(BaseStateNode))]
 	public class TransitionsListener : MonoBehaviour {
 		[Tooltip("Optional. Will look for any Node on object or its parents")]
 		[SerializeField]
@@ -18,10 +17,13 @@ namespace OneHamsa.Dexterity.Builtins {
 		public event Action<int, int> onTransitionsStart;
 		public event Action<int> onTransitionsEnd;
 
-		void Awake() {
-			if (!node) {
+		void Awake() 
+		{
+			if (!node) 
+			{
 				node = GetComponentInParent<BaseStateNode>();
-				if (!node) {
+				if (!node) 
+				{
 					Debug.LogWarning($"Node not found for listener ({gameObject.name})");
 					enabled = false;
 				}

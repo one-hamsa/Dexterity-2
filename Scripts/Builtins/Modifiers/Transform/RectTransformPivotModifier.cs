@@ -52,6 +52,9 @@ namespace OneHamsa.Dexterity.Builtins
                 pivot += Vector2.Lerp(Vector2.zero, property.pivot, value);
             }
 
+            if (component.pivot == pivot)
+                return;
+            
             component.pivot = pivot;
             
             // update UI layout

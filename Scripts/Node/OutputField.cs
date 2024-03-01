@@ -122,8 +122,11 @@ namespace OneHamsa.Dexterity
                     node.onDisabled -= OnNodeDisabled;
                     node.onDirty -= RefreshReferences;
                 }
+                upstreamSubscribers.Clear();
+                cachedGates.Clear();
+                prevCachedGates.Clear();
+                node = null;
                 
-                fieldsToNodes.Remove(this);
                 finalized = true;
             }
 
@@ -133,7 +136,6 @@ namespace OneHamsa.Dexterity
                 {
                     // register this field in manager to get updates from graph
                     Manager.instance.RegisterField(this);
-                    fieldsToNodes[this] = node;
                     registered = true;
                 }
 

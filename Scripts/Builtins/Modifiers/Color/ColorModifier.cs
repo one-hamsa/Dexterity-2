@@ -27,6 +27,7 @@ namespace OneHamsa.Dexterity.Builtins
         static ColorModifier()
         {
             AddSupportedComponent<Image>((c) => c.color, (c, color) => c.color = color);
+            AddSupportedComponent<RawImage>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<IColorModifierSupport>((c)=> c.GetColor(), (c, color)=> c.SetColor(color));
             AddSupportedComponent<SpriteRenderer>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<TMP_Text>((c) => c.color, (c, color) => c.color = color);

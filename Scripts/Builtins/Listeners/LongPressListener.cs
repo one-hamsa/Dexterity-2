@@ -26,6 +26,8 @@ namespace OneHamsa.Dexterity.Builtins
 		protected override void OnEnable()
 		{
 			base.OnEnable();
+			currentPressDuration = 0f;
+			pressed = false;
 			onPressDown += OnPressDown;
 			onPressUp += OnPressUp;
 		}

@@ -10,7 +10,7 @@ namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IReferencesNode, ISpawnWarmer
+    public abstract class Modifier : TransitionBehaviour, IReferencesNode
     {
         public enum DelayDirection
         {
@@ -68,6 +68,7 @@ namespace OneHamsa.Dexterity
 
         public virtual void PrepareTransition_Editor(string initialState, string targetState)
         {
+            _initialized = false;
             Awake();
             CacheDelays();
             
@@ -206,13 +207,17 @@ namespace OneHamsa.Dexterity
                 return;
             
             var node = GetNode();
-            if (node == null)
+            if (!enabled || node == null || !node.enabled)
                 return;
+            
+            CacheDelays();
+            cachedStates ??= node.GetStateIDs().ToArray();
             
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)
             {
-                if (prop == null) {
+                if (prop == null) 
+                {
                     Debug.LogError("Null property in Modifier", this);
                     continue;
                 }
@@ -222,9 +227,16 @@ namespace OneHamsa.Dexterity
                     // those properties are kept serialized in order to maintain history, no biggie
                     continue;
                 }
+
+                if (Array.IndexOf(cachedStates, id) == -1)
+                {
+                    // stale property, ignore
+                    continue;
+                }
+
                 if (propertiesCache.ContainsKey(id))
                 {
-                    Debug.LogError($"Duplicate property for state {prop.state} in Modifier", this);
+                    Debug.LogError($"Duplicate property for state {prop.state} in {GetType().Name}", this);
                     continue;
                 }
 
@@ -248,9 +260,11 @@ namespace OneHamsa.Dexterity
 
                 propertiesCache.Add(id, chosen);
             }
-            
-            CacheDelays();
-            cachedStates ??= node.GetStateIDs().ToArray();
+            if (propertiesCache.Count == 0)
+            {
+                Debug.LogError($"No properties found for modifier {name} ({GetType().Name})", this);
+                return;
+            }
 
             _initialized = true;
         }
@@ -322,11 +336,10 @@ namespace OneHamsa.Dexterity
 
             if (_node.isActiveAndEnabled)
                 HandleNodeEnabled(true);
-            else
-            {
-                _node.onEnabled -= HandleNodeEnabled;
-                _node.onEnabled += HandleNodeEnabled;
-            }
+            
+            // always treat node enabled to be able to handle state changes
+            _node.onEnabled -= HandleNodeEnabled;
+            _node.onEnabled += HandleNodeEnabled;
 
             _node.onStateChanged -= HandleNodeStateChange;
             _node.onStateChanged += HandleNodeStateChange;
@@ -410,26 +423,7 @@ namespace OneHamsa.Dexterity
                 return false;
             }
 
-            if (!_node.enabled)
-            {
-                // XXX here comes garbage: unity might set a node to disabled when its gameObject is destroyed
-                //. before it is == null, but also call OnEnable on child components. so here we are, not printing
-                //. this warning because unity. 
-
-                try
-                {
-                    Debug.LogWarning($"Node {_node.gameObject.GetPath()} is disabled, " +
-                                     $"modifier {gameObject.GetPath()}:{GetType().Name} will start disabled too", this);
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-
-                return false;
-            }
-
-            if (properties.Count == 0)
+            if (properties.Count == 0 || propertiesCache == null || propertiesCache.Count == 0)
             {
                 #if UNITY_EDITOR
                 Debug.Log($"No properties found for modifier {name} ({GetType().Name})", this);
@@ -453,19 +447,18 @@ namespace OneHamsa.Dexterity
                 supportValueFreeze.FreezeValue();
             }
         }
+        
+        /// <summary>
+        /// Allocates data structures, can be called before the modifier is enabled for faster initialization
+        /// </summary>
+        public virtual void Allocate()
+        {
+            InitializeCacheData();
+        }
 
         #if UNITY_EDITOR
         public virtual (string, LogType) GetEditorComment() => default;
         #endif
-        public int Order => 1; // after the nodes
-        public IEnumerator Warmup()
-        {
-            yield break;
-        }
-
-        public void OnPoolCreation()
-        {
-            InitializeCacheData();
-        }
+        
     }
 }

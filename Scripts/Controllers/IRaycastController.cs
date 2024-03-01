@@ -11,6 +11,8 @@ namespace OneHamsa.Dexterity
         Vector3 forward { get; }
         Vector3 up { get; }
         RaycastHit hit { get; }
+
+        Vector2 scroll { get; }
         
 		public ref struct RaycastEvent
 		{

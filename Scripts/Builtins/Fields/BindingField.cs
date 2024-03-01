@@ -29,6 +29,12 @@ namespace OneHamsa.Dexterity.Builtins
                 Debug.LogError($"{nameof(BindingField)}: Failed to initialize binding for {context}", context);
         }
 
+        public override void Finalize(FieldNode context)
+        {
+            base.Finalize(context);
+            binding = null;
+        }
+
         public override int GetValue() 
         {
             if (!binding.IsValid() || !binding.IsInitialized())

@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
         /// </summary>
-        private HashSet<BaseField> upstreamFields;
+        private HashSet<BaseField> upstreamFields = new();
 
         /// <summary>
         /// adds an upstream field
@@ -119,7 +119,6 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected virtual void Initialize(FieldNode context)
         {
-            upstreamFields = HashSetPool<BaseField>.Get();
         }
 
         /// <summary>
@@ -127,7 +126,7 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public virtual void Finalize(FieldNode context)
         {
-            HashSetPool<BaseField>.Release(upstreamFields);
+            this.context = null;
         }
 
         /// <summary>

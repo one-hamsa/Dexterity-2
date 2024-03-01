@@ -126,7 +126,7 @@ namespace OneHamsa.Dexterity
                 return;
             var modifiers = _modifiers.ToList();
 
-            if (baseNode.autoSyncModifiersStates)
+            if (baseNode.ShouldAutoSyncModifiersStates())
             {
                 // make sure all are up to date
                 foreach (var modifier in modifiers)
@@ -389,7 +389,7 @@ namespace OneHamsa.Dexterity
             simpleEnumNode.initialState = baseNode.initialState;
             simpleEnumNode.delays = baseNode.delays;
             simpleEnumNode.overrideState = baseNode.overrideState;
-            simpleEnumNode.autoSyncModifiersStates = baseNode.autoSyncModifiersStates;
+            simpleEnumNode.SetAutoSyncModifiersStates(baseNode.ShouldAutoSyncModifiersStates());
 
             foreach (var modifier in GetModifiers(baseNode))
             {

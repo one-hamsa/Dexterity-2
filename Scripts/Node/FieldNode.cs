@@ -12,16 +12,6 @@ namespace OneHamsa.Dexterity
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
     {
-        #region Static Functions
-        // mainly for debugging graph problems
-        private static Dictionary<BaseField, FieldNode> fieldsToNodes = new();
-        internal static FieldNode ByField(BaseField f)
-        {
-            fieldsToNodes.TryGetValue(f, out var node);
-            return node;
-        }
-        #endregion Static Functions
-
         #region Data Definitions
         [Serializable]
         public class OutputOverride
@@ -102,8 +92,11 @@ namespace OneHamsa.Dexterity
         {
             // only now it's ok to remove output fields
             foreach (var pair in outputFields.keyValuePairs)
+            {
+                pair.Value.onValueChanged -= MarkStateDirty;
                 pair.Value.Finalize(this);
-            
+            }
+
             outputFields.Clear();
             
             if (stateFieldIdsCache != null)
@@ -220,24 +213,20 @@ namespace OneHamsa.Dexterity
                 CacheFieldOverrides();
                 
                 // To trigger caching of step list
-                var _ = GetState();
+                var _ = GetNextState();
             }
 
             _performedFirstInitialization_FieldNode = true;
             
             // last chance: if there are field overrides, reroute initial state
             if (cachedOverrides.Count > 0)
-                activeState = GetState();
+                activeState = GetNextState();
         }
 
-        protected override void Uninitialize(bool duringTeardown = false)
+        protected override void Uninitialize(bool duringTeardown)
         {
-            // dont cleanup gates here, we might still want to use them
-            if (enabled)
-            {
-                foreach (var gate in customGates)
-                    FinalizeGate(gate, duringTeardown);
-            }
+            foreach (var gate in customGates)
+                FinalizeGate(gate, duringTeardown);
             
             base.Uninitialize(duringTeardown);
         }
@@ -441,7 +430,6 @@ namespace OneHamsa.Dexterity
             if (!(field is OutputField o))
             {
                 nonOutputFields.Add(field);
-                fieldsToNodes[field] = this;
             }
             else
                 outputFields.AddOrUpdate(o.definitionId, o);
@@ -455,21 +443,21 @@ namespace OneHamsa.Dexterity
                 Debug.LogWarning("OutputFields cannot be removed", this);
                 return;
             }
-
-            fieldsToNodes.Remove(field);
         }
 
         public void AddGate(Gate gate)
         {
             customGates.Add(gate);
-            RestartFields();
+            if (Application.IsPlaying(this))
+                RestartFields();
             onGateAdded?.Invoke(gate);
         }
 
         public void RemoveGate(Gate gate)
         {
             customGates.Remove(gate);
-            RestartFields();
+            if (Application.IsPlaying(this))
+                RestartFields();
             onGateRemoved?.Invoke(gate);
         }
         public void NotifyGatesUpdate()
@@ -502,9 +490,10 @@ namespace OneHamsa.Dexterity
                 fieldMask.Add((fieldId, value));
             }
         }
-        protected override int GetState()
+
+        public override int GetNextStateWithoutOverride()
         {
-            var baseState = base.GetState();
+            var baseState = base.GetNextStateWithoutOverride();
             if (baseState != StateFunction.emptyStateId)
                 return baseState;
 
@@ -736,11 +725,11 @@ namespace OneHamsa.Dexterity
 #endif
         #endregion
 
-        public override void OnPoolCreation()
+        public override void Allocate()
         {
-            base.OnPoolCreation();
+            base.Allocate();
             // To trigger caching of step list
-            var _ = GetState();
+            _ = GetNextState();
         }
     }
 }

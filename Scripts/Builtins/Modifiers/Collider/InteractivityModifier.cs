@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using OneHamsa.Dexterity.Utilities;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -13,7 +14,6 @@ namespace OneHamsa.Dexterity.Builtins
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
-        private static List<Collider> colliderDisabledByTmp = new();
         private HierarchyListener hierarchyListener;
         private bool dirty;
 
@@ -49,6 +49,18 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 hierarchyListener.onChildAdded -= OnChildAdded;
                 hierarchyListener.onChildRemoved -= OnChildRemoved;
+            }
+            
+            PruneStaleColliders();
+            
+            foreach (var c in cachedColliders)
+            {
+                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
+                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
+                
+                disablers.Remove(this);
+                
+                c.enabled = disablers.Count == 0;
             }
         }
 
@@ -89,7 +101,7 @@ namespace OneHamsa.Dexterity.Builtins
         public override void HandleStateChange(int oldState, int newState) {
             base.HandleStateChange(oldState, newState);
             
-            PruneDeadColliders();
+            PruneStaleColliders();
             
             var property = (Property)GetProperty(newState);
             var shouldDisable = !property.interactive;
@@ -108,16 +120,24 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        private void PruneDeadColliders()
+        /// <summary>
+        /// Removes colliders that are destroyed or no longer children of this transform
+        /// </summary>
+        private void PruneStaleColliders()
         {
             // in-place cleanup
-            for (var i = cachedColliders.Count - 1; i >= 0; i--) {
-                if (cachedColliders[i] == null) 
+            for (var i = cachedColliders.Count - 1; i >= 0; i--) 
+            {
+                if (cachedColliders[i] == null || !cachedColliders[i].transform.IsChildOf(transform))
+                {
+                    if (colliderDisabledBy.TryGetValue(cachedColliders[i], out var disablers))
+                        disablers.Remove(this);
                     cachedColliders.RemoveAt(i);
+                }
             }
             
             // use aux list to avoid allocations
-            colliderDisabledByTmp.Clear();
+            using var _ = ListPool<Collider>.Get(out var colliderDisabledByTmp);
             foreach (var c in colliderDisabledBy.Keys)
             {
                 if (c == null)
@@ -126,21 +146,6 @@ namespace OneHamsa.Dexterity.Builtins
             
             foreach (var c in colliderDisabledByTmp)
                 colliderDisabledBy.Remove(c);
-        }
-
-        public void OnDestroy()
-        {
-            PruneDeadColliders();
-            
-            foreach (var c in cachedColliders)
-            {
-                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
-                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
-                
-                disablers.Remove(this);
-                
-                c.enabled = disablers.Count == 0;
-            }
         }
         
         public override void Refresh()

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.SceneManagement;
 using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
 
@@ -11,6 +12,7 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastController : MonoBehaviour, IRaycastController
     {
+        
         public class PressAnywhereEvent
         {
             public RaycastController controller;
@@ -20,14 +22,24 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 propagate = false;
             }
+            
+            /// <summary>
+            /// simulate a press event on this controller.
+            /// can be used to trigger a delayed press from code.
+            /// </summary>
+            public void SimulateControllerPress()
+            {
+                controller.HandlePressed();
+            }
         }
+        public delegate void PressAnywhereHandler(PressAnywhereEvent e);
         
         const float rayLength = 100f;
         const int maxHits = 20;
 
         // Raycast Receiver filter
         private static readonly List<RaycastFilter> filters = new();
-        public static event Action<PressAnywhereEvent> onAnyPress;
+        public static event PressAnywhereHandler onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
         [Tooltip("How far back should the ray be casted from this transform?")]
@@ -51,9 +63,6 @@ namespace OneHamsa.Dexterity.Builtins
 
         private readonly RaycastHit[] hits = new RaycastHit[maxHits];
         private readonly List<IRaycastReceiver> lastReceivers = new(4);
-        private List<IRaycastReceiver> potentialReceiversA = new(4);
-        private List<IRaycastReceiver> potentialReceiversB = new(4);
-        private readonly List<IRaycastReceiver> receiversBeforeFilter = new(1);
         private IRaycastController.RaycastEvent.Result lastEventResult;
 
         [Preserve]
@@ -65,10 +74,31 @@ namespace OneHamsa.Dexterity.Builtins
 
         private static readonly Comparer<RaycastHit> raycastDistanceComparer
             = Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
-
+        
         protected virtual void Awake()
         {
             _transform = transform;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+        
+        protected virtual void OnDestroy()
+        {
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+        }
+
+        private void OnSceneUnloaded(Scene scene)
+        {
+            using (ListPool<IRaycastReceiver>.Get(out var receivers))
+            {
+                receivers.AddRange(lastReceivers);
+                foreach (var receiver in receivers)
+                {
+                    if (receiver is MonoBehaviour mono && mono == null)
+                    {
+                        lastReceivers.Remove(receiver);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -148,6 +178,9 @@ namespace OneHamsa.Dexterity.Builtins
         }
         public static List<RaycastFilter> GetFilters() => filters;
 
+        /// <summary>
+        /// Handle a press event from this controller.
+        /// </summary>
         protected void HandlePressed()
         {
             bool wasCurrent = current;
@@ -201,7 +234,8 @@ namespace OneHamsa.Dexterity.Builtins
             ray = new Ray(origin, direction);
             displayRay = new Ray(pos, direction);
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
-
+            
+            // cast to find all hits in range and layer
             int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
             
             // sort hits by distance
@@ -210,6 +244,10 @@ namespace OneHamsa.Dexterity.Builtins
             var sameAsLast = false;
             hit = new RaycastHit();
             List<IRaycastReceiver> closestReceivers = null;
+            
+            using var pooledObjectA = ListPool<IRaycastReceiver>.Get(out var potentialReceiversA);
+            using var pooledObjectB = ListPool<IRaycastReceiver>.Get(out var potentialReceiversB);
+            
 
             // find closest hit, prefer receivers that were hit last frame
             for (int i = 0; i < numHits; ++i)
@@ -217,56 +255,62 @@ namespace OneHamsa.Dexterity.Builtins
                 // short circuit if we already found a hit and this hit is further than the last one
                 if (didHit && !Mathf.Approximately(hit.distance, hits[i].distance))
                     break;
-                
-                hits[i].collider.gameObject.GetComponents(receiversBeforeFilter);
-                if (receiversBeforeFilter.Count != 0)
+
+                using (ListPool<IRaycastReceiver>.Get(out var receiversBeforeFilter))
                 {
-                    // filter hit
-                    potentialReceiversA.Clear();
-                    // foreach enumerator not cached for interfaces on IL2CPP
-                    for (var j = 0; j < receiversBeforeFilter.Count; j++)
+                    hits[i].collider.gameObject.GetComponents(receiversBeforeFilter);
+                    if (receiversBeforeFilter.Count != 0)
                     {
-                        var receiver = receiversBeforeFilter[j];
-                        using var _ = ListPool<IRaycastReceiver>.Get(out var receivers);
-                        receiver.Resolve(receivers);
-                        foreach (var r in receivers)
+                        // filter hit
+                        potentialReceiversA.Clear();
+                        // foreach enumerator not cached for interfaces on IL2CPP
+                        for (var j = 0; j < receiversBeforeFilter.Count; j++)
                         {
-                            if (r is MonoBehaviour { isActiveAndEnabled: false })
+                            var receiver = receiversBeforeFilter[j];
+                            if (receiver is MonoBehaviour { isActiveAndEnabled: false })
                                 continue;
-                            if (filters.Count > 0 && !filters[^1](r))
-                                continue;
-                            potentialReceiversA.Add(r);
-                        }
-                    }
 
-                    if (potentialReceiversA.Count == 0)
-                        continue;
-
-                    // save hit
-                    hit = hits[i];
-                    didHit = true;
-                    closestReceivers = potentialReceiversA;
-                    
-                    // check if this is the same hit as last frame
-                    if (lastReceivers.Count == closestReceivers.Count)
-                    {
-                        sameAsLast = true;
-                        for (var j = 0; j < lastReceivers.Count; j++)
-                        {
-                            if (lastReceivers[j] != closestReceivers[j])
+                            using var _ = ListPool<IRaycastReceiver>.Get(out var receivers);
+                            receiver.Resolve(receivers);
+                            foreach (var r in receivers)
                             {
-                                sameAsLast = false;
-                                break;
+                                if (r is MonoBehaviour { isActiveAndEnabled: false })
+                                    continue;
+                                if (filters.Count > 0 && !filters[^1](r))
+                                    continue;
+                                potentialReceiversA.Add(r);
                             }
                         }
+
+                        if (potentialReceiversA.Count == 0)
+                            continue;
+
+                        // save hit
+                        hit = hits[i];
+                        didHit = true;
+                        closestReceivers = potentialReceiversA;
+
+                        // check if this is the same hit as last frame
+                        if (lastReceivers.Count == closestReceivers.Count)
+                        {
+                            sameAsLast = true;
+                            for (var j = 0; j < lastReceivers.Count; j++)
+                            {
+                                if (lastReceivers[j] != closestReceivers[j])
+                                {
+                                    sameAsLast = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // short circuit if this is the same hit as last frame
+                        if (sameAsLast)
+                            break;
+
+                        // swap pointers
+                        (potentialReceiversA, potentialReceiversB) = (potentialReceiversB, potentialReceiversA);
                     }
-                    
-                    // short circuit if this is the same hit as last frame
-                    if (sameAsLast)
-                        break;
-                    
-                    // swap pointers
-                    (potentialReceiversA, potentialReceiversB) = (potentialReceiversB, potentialReceiversA);
                 }
             }
 
@@ -320,6 +364,10 @@ namespace OneHamsa.Dexterity.Builtins
                     }
                 }
             }
+            
+            // clear hits to avoid leaking references
+            for (int i = 0; i < hits.Length; ++i)
+                hits[i] = default;
         }
 
         private void OnDrawGizmos()
@@ -369,12 +417,14 @@ namespace OneHamsa.Dexterity.Builtins
         }
         #endif
 
-        protected virtual bool isPressed => false;
+        public virtual bool isPressed => false;
         bool IRaycastController.isPressed => isPressed;
         bool IRaycastController.CompareTag(string other) => gameObject.CompareTag(other);
         bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
         Vector3 IRaycastController.position => transform.position;
         Vector3 IRaycastController.forward => transform.forward;
         Vector3 IRaycastController.up => transform.up;
+        
+        public virtual Vector2 scroll => Vector2.zero;
     }
 }
