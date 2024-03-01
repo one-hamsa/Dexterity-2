@@ -4,8 +4,7 @@
     "references": [
         "Dexterity",
         "Unity.InputSystem",
-        "Unity.EditorCoroutines.Editor",
-        "Underdogs.Warmer"
+        "Unity.EditorCoroutines.Editor"
     ],
     "includePlatforms": [
         "Editor"
