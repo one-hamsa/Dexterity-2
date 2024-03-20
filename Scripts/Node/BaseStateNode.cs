@@ -83,6 +83,7 @@ namespace OneHamsa.Dexterity
         protected void OnEnable()
         {
             Initialize();
+            OnTransformParentChanged();
 
             // initialize can disable the node
             if (enabled)
