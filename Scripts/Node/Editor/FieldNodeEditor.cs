@@ -251,7 +251,7 @@ namespace OneHamsa.Dexterity
                         EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
                         GUI.contentColor = origColor;
                         GUILayout.FlexibleSpace();
-                        if (upstreamField.context != context && GUILayout.Button(upstreamField.context.name))
+                        if (upstreamField.context != context && upstreamField.context != null && GUILayout.Button(upstreamField.context.name))
                         {
                             Selection.activeObject = upstreamField.context;
                         }
