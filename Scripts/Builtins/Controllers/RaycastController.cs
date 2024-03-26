@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -369,53 +368,6 @@ namespace OneHamsa.Dexterity.Builtins
             for (int i = 0; i < hits.Length; ++i)
                 hits[i] = default;
         }
-
-        private void OnDrawGizmos()
-        {
-            if (!didHit)
-                return;
-
-            Gizmos.color = debugHitColor;
-            Gizmos.DrawWireSphere(hit.point, .025f);
-
-            if (hit.collider == null)
-                return;
-
-            Gizmos.matrix = hit.collider.transform.localToWorldMatrix;
-            Gizmos.color = debugColliderColor;
-            DrawCollider(hit.collider);
-        }
-
-        private void DrawCollider(Collider c)
-        {
-            switch (c)
-            {
-                case BoxCollider box:
-                    Gizmos.DrawWireCube(box.center, box.size);
-                    break;
-                case SphereCollider sphere:
-                    Gizmos.DrawWireSphere(sphere.center, sphere.radius);
-                    break;
-            }
-
-            // TODO more, maybe with collider.bounds, just need to understand in what space
-        }
-        
-        #if UNITY_EDITOR
-        [UnityEditor.MenuItem("Tools/Dexterity/Select active receiver %&r")]
-        private static void SelectActiveReceiver()
-        {
-            var controller = FindObjectsOfType<RaycastController>().FirstOrDefault(c => c.current);
-            if (controller == null || !controller.didHit || controller.hit.collider == null)
-            {
-                Debug.LogWarning($"No active receiver found", controller);
-                return;
-            }
-            
-            UnityEditor.Selection.activeObject = controller.hit.collider.gameObject;
-            UnityEditor.SceneView.FrameLastActiveSceneView();
-        }
-        #endif
 
         public virtual bool isPressed => false;
         bool IRaycastController.isPressed => isPressed;
