@@ -69,7 +69,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         public delegate bool RaycastFilter(IRaycastReceiver receiver);
 
-        private Transform _transform;
+        protected Transform _transform;
 
         private static readonly Comparer<RaycastHit> raycastDistanceComparer
             = Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
