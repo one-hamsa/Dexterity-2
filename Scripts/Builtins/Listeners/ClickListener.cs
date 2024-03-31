@@ -37,7 +37,8 @@ namespace OneHamsa.Dexterity.Builtins
         FieldNode.OutputField disabledField;
         FieldNode.OutputField visibleField;
         private int pressFrame = -1;
-        
+        private double pressTime = double.MinValue;
+
         [Preserve]
         public bool WasPressedThisFrame() => pressFrame == Time.frameCount - 1;
         
@@ -107,7 +108,10 @@ namespace OneHamsa.Dexterity.Builtins
         public void TriggerClick()
         {
             pressFrame = Time.frameCount;
+            pressTime = Time.realtimeSinceStartupAsDouble;
             onClick?.Invoke();
         }
+        
+        public double GetTimeSinceClick() => Time.realtimeSinceStartupAsDouble - pressTime;
     }
 }
