@@ -33,6 +33,7 @@ namespace OneHamsa.Dexterity
         public string overrideState;
 
         #region Public Properties
+        [NonSerialized]
         public double timeSinceStateChange;
         [NonSerialized]
         public double deltaTime;
