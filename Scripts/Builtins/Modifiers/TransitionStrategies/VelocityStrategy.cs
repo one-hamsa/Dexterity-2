@@ -24,8 +24,10 @@ namespace OneHamsa.Dexterity.Builtins
         {
             var targetValue = state == currentState ? 1 : 0;
             var velocity = currentVelocities[state];
-            var result = Mathf.SmoothDamp(currentValue, targetValue, ref velocity, (float)smoothTime, maxSpeed,
-                (float)deltaTime);
+            float result = currentValue;
+            if (deltaTime > Mathf.Epsilon)
+                result = Mathf.SmoothDamp(currentValue, targetValue, ref velocity, (float)smoothTime, maxSpeed, (float)deltaTime);
+            
             currentVelocities[state] = velocity;
             return result;
         }
