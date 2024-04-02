@@ -1,3 +1,4 @@
+using OneHamsa.Dexterity.Builtins;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -10,7 +11,7 @@ namespace OneHamsa.Dexterity
         Vector3 position { get; }
         Vector3 forward { get; }
         Vector3 up { get; }
-        RaycastHit hit { get; }
+        DexRaycastHit hit { get; }
 
         Vector2 scroll { get; }
 
@@ -26,8 +27,16 @@ namespace OneHamsa.Dexterity
 				Accepted,
 			}
 			
-			public RaycastHit hit;
+			public DexRaycastHit hit;
 			public Result result;
 		}
+    }
+
+    public struct DexRaycastHit
+    {
+	    public float distance;
+	    public Vector3 point;
+	    public Collider collider;
+	    public Transform transform;
     }
 }

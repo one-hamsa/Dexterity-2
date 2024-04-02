@@ -47,6 +47,17 @@ namespace OneHamsa.Dexterity.Builtins
         public RaycastController[] mutuallyExclusiveControllers;
         public bool defaultController;
 
+        public static List<IRaycastResolver> Resolvers = new List<IRaycastResolver>();
+
+        public static void AddResolver(IRaycastResolver resolver)
+        {
+            Resolvers.Add(resolver);
+        }
+        public static void RemoveResolver(IRaycastResolver resolver)
+        {
+            Resolvers.Remove(resolver);
+        }
+
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
         public Color debugHitColor = new Color(1f, .25f, 0f);
 
@@ -56,11 +67,12 @@ namespace OneHamsa.Dexterity.Builtins
         public Ray ray { get; private set; }
         public Ray displayRay { get; private set; }
         public bool didHit { get; private set; }
-        public RaycastHit hit { get; private set; }
+        public DexRaycastHit hit { get; private set; }
         private int pressStartFrame = -1;
         private RaycastController lastControllerPressed;
 
-        private readonly RaycastHit[] hits = new RaycastHit[maxHits];
+        private readonly DexRaycastHit[] hits = new DexRaycastHit[maxHits];
+        private readonly RaycastHit[] colldierHits = new RaycastHit[maxHits];
         private readonly List<IRaycastReceiver> lastReceivers = new(4);
         private IRaycastController.RaycastEvent.Result lastEventResult;
 
@@ -71,8 +83,8 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected Transform _transform;
 
-        private static readonly Comparer<RaycastHit> raycastDistanceComparer
-            = Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
+        private static readonly Comparer<DexRaycastHit> raycastDistanceComparer
+            = Comparer<DexRaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
         
         protected virtual void Awake()
         {
@@ -235,13 +247,38 @@ namespace OneHamsa.Dexterity.Builtins
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.blue);
             
             // cast to find all hits in range and layer
-            int numHits = Physics.RaycastNonAlloc(ray, hits, rayLength, layerMask, QueryTriggerInteraction.Collide);
+            int numHits = Physics.RaycastNonAlloc(ray, colldierHits, rayLength, layerMask, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < numHits; i++)
+            {
+                var dexHit = hits[i];
+                var hit = colldierHits[i];
+                dexHit.distance = hit.distance;
+                dexHit.point = hit.point;
+                dexHit.transform = hit.collider.transform;
+                dexHit.collider = hit.collider;
+                hits[i] = dexHit;
+            }
             
+            for (int i = 0; i < Resolvers.Count; i++)
+            {
+                if (numHits < hits.Length)
+                {
+                    //we have room for resolvers
+                    var resolver = Resolvers[i];
+                    if (resolver.GetHit(ray, out var resolvedHit))
+                    {
+                        var hitIndex = Mathf.Min(numHits, hits.Length);
+                        hits[hitIndex] = resolvedHit;
+                        numHits++;
+                    }
+                }
+            }
+
             // sort hits by distance
             Array.Sort(hits, 0, numHits, raycastDistanceComparer);
 
             var sameAsLast = false;
-            hit = new RaycastHit();
+            hit = new DexRaycastHit();
             List<IRaycastReceiver> closestReceivers = null;
             
             using var pooledObjectA = ListPool<IRaycastReceiver>.Get(out var potentialReceiversA);
@@ -257,7 +294,7 @@ namespace OneHamsa.Dexterity.Builtins
 
                 using (ListPool<IRaycastReceiver>.Get(out var receiversBeforeFilter))
                 {
-                    hits[i].collider.gameObject.GetComponents(receiversBeforeFilter);
+                    hits[i].transform.gameObject.GetComponents(receiversBeforeFilter);
                     if (receiversBeforeFilter.Count != 0)
                     {
                         // filter hit
