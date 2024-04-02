@@ -324,6 +324,7 @@ namespace OneHamsa.Dexterity
         protected override void OnEnable()
         {
             TryFindNode();
+            InitializeCacheData();
             if (!EnsureValidState())
             {
                 if (Application.IsPlaying(this))
