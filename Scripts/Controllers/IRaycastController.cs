@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity
         Vector3 position { get; }
         Vector3 forward { get; }
         Vector3 up { get; }
-        DexRaycastHit hit { get; }
+        DexterityRaycastHit hit { get; }
 
         Vector2 scroll { get; }
 
@@ -27,12 +27,12 @@ namespace OneHamsa.Dexterity
 				Accepted,
 			}
 			
-			public DexRaycastHit hit;
+			public DexterityRaycastHit hit;
 			public Result result;
 		}
     }
 
-    public struct DexRaycastHit
+    public struct DexterityRaycastHit
     {
 	    public float distance;
 	    public Vector3 point;

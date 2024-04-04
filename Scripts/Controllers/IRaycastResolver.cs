@@ -7,7 +7,8 @@ namespace OneHamsa.Dexterity
 {
     public interface IRaycastResolver
     {
-        public bool GetHit(Ray ray, out DexRaycastHit hit);
+        bool GetHit(Ray ray, out DexterityRaycastHit hit);
         IRaycastReceiver GetReceiver();
+        LayerMask GetLayerMask();
     }
 }

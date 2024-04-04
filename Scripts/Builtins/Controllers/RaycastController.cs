@@ -36,8 +36,11 @@ namespace OneHamsa.Dexterity.Builtins
         const float rayLength = 100f;
         const int maxHits = 20;
 
-        // Raycast Receiver filter
+        // RaycastReceiver filter
         private static readonly List<RaycastFilter> filters = new();
+
+        // custom raycast resolvers
+        private static readonly List<IRaycastResolver> resolvers = new();
         public static event PressAnywhereHandler onAnyPress;
 
         public LayerMask layerMask = int.MaxValue;
@@ -47,15 +50,13 @@ namespace OneHamsa.Dexterity.Builtins
         public RaycastController[] mutuallyExclusiveControllers;
         public bool defaultController;
 
-        public static List<IRaycastResolver> Resolvers = new List<IRaycastResolver>();
-
         public static void AddResolver(IRaycastResolver resolver)
         {
-            Resolvers.Add(resolver);
+            resolvers.Add(resolver);
         }
         public static void RemoveResolver(IRaycastResolver resolver)
         {
-            Resolvers.Remove(resolver);
+            resolvers.Remove(resolver);
         }
 
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
@@ -67,11 +68,11 @@ namespace OneHamsa.Dexterity.Builtins
         public Ray ray { get; private set; }
         public Ray displayRay { get; private set; }
         public bool didHit { get; private set; }
-        public DexRaycastHit hit { get; private set; }
+        public DexterityRaycastHit hit { get; private set; }
         private int pressStartFrame = -1;
         private RaycastController lastControllerPressed;
 
-        private readonly DexRaycastHit[] hits = new DexRaycastHit[maxHits];
+        private readonly DexterityRaycastHit[] hits = new DexterityRaycastHit[maxHits];
         private readonly RaycastHit[] colldierHits = new RaycastHit[maxHits];
         private readonly List<IRaycastReceiver> lastReceivers = new(4);
         private IRaycastController.RaycastEvent.Result lastEventResult;
@@ -83,8 +84,8 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected Transform _transform;
 
-        private static readonly Comparer<DexRaycastHit> raycastDistanceComparer
-            = Comparer<DexRaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
+        private static readonly Comparer<DexterityRaycastHit> raycastDistanceComparer
+            = Comparer<DexterityRaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
         
         protected virtual void Awake()
         {
@@ -259,13 +260,13 @@ namespace OneHamsa.Dexterity.Builtins
                 hits[i] = dexHit;
             }
             
-            for (int i = 0; i < Resolvers.Count; i++)
+            for (int i = 0; i < resolvers.Count; i++)
             {
                 if (numHits < hits.Length)
                 {
                     //we have room for resolvers
-                    var resolver = Resolvers[i];
-                    if (resolver.GetHit(ray, out var resolvedHit))
+                    var resolver = resolvers[i];
+                    if ((layerMask & resolver.GetLayerMask()) > 0 && resolver.GetHit(ray, out var resolvedHit))
                     {
                         var hitIndex = Mathf.Min(numHits, hits.Length);
                         hits[hitIndex] = resolvedHit;
@@ -278,7 +279,7 @@ namespace OneHamsa.Dexterity.Builtins
             Array.Sort(hits, 0, numHits, raycastDistanceComparer);
 
             var sameAsLast = false;
-            hit = new DexRaycastHit();
+            hit = new DexterityRaycastHit();
             List<IRaycastReceiver> closestReceivers = null;
             
             using var pooledObjectA = ListPool<IRaycastReceiver>.Get(out var potentialReceiversA);
