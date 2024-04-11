@@ -18,6 +18,8 @@ namespace OneHamsa.Dexterity.Builtins
         private void Awake()
         {
             controller = GetComponent<RaycastController>();
+            lineRenderer.useWorldSpace = false;
+            destinationLineRenderer.useWorldSpace = false;
         }
 
         protected virtual void OnEnable() { }
@@ -36,20 +38,13 @@ namespace OneHamsa.Dexterity.Builtins
             if (lineRenderer == null)
                 return;
             
-            lineRenderer.enabled = controller.current && isVisible;
+            float length = controller.didHit ? Mathf.Min(controller.hit.distance, maxLength) : maxLength;
+            Vector3 point0 = Vector3.zero;
+            Vector3 point1 = length * Vector3.forward;
             
-            Vector3 origin = controller.displayRay.origin;
-            lineRenderer.SetPosition(0, origin);
-            if (controller.didHit)
-            {
-                float hitDistance = Vector3.Distance(origin, controller.hit.point);
-                hitDistance = Mathf.Min(maxLength, hitDistance);
-                lineRenderer.SetPosition(1, controller.displayRay.origin + controller.displayRay.direction * hitDistance);
-            }
-            else
-            {
-                lineRenderer.SetPosition(1, controller.displayRay.origin + controller.displayRay.direction * maxLength);
-            }
+            lineRenderer.enabled = controller.current && isVisible;
+            lineRenderer.SetPosition(0, point0);
+            lineRenderer.SetPosition(1, point1);
         }
 
         private void UpdateDestinationLineRenderer()
@@ -58,14 +53,15 @@ namespace OneHamsa.Dexterity.Builtins
                 return;
             
             destinationLineRenderer.enabled = controller.current && controller.didHit && isActiveAndEnabled;
-
-            var destToOrigin = controller.displayRay.origin - controller.hit.point;
-            if (destToOrigin.sqrMagnitude > maxDestLength * maxDestLength)
-                destToOrigin = destToOrigin.normalized * maxDestLength;
             
-            destinationLineRenderer.SetPosition(0, controller.hit.point);
-            destinationLineRenderer.SetPosition(1, controller.hit.point + destToOrigin * .01f); 
-            destinationLineRenderer.SetPosition(2, controller.hit.point + destToOrigin); 
+            float length = Mathf.Min(controller.hit.distance, maxDestLength);
+            Vector3 point0 = Vector3.forward * controller.hit.distance;
+            Vector3 point1 = point0 - Vector3.forward * (length * .01f);
+            Vector3 point2 = point0 - Vector3.forward * length;
+            
+            destinationLineRenderer.SetPosition(0, point0);
+            destinationLineRenderer.SetPosition(1, point1); 
+            destinationLineRenderer.SetPosition(2, point2);
         }
     }
 }
