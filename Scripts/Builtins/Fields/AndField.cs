@@ -13,7 +13,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override BaseField CreateDeepClone()
         {
-            AndField clone = base.CreateDeepClone() as AndField;
+            AndField clone = (AndField)base.CreateDeepClone();
             clone.first = first.CreateDeepClone();
             clone.second = second.CreateDeepClone();
             return clone;
