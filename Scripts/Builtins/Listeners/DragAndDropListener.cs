@@ -32,6 +32,14 @@ namespace OneHamsa.Dexterity.Builtins
 			enabled = false;
 		}
 
+		public void StartDrag(IRaycastController controller) {
+			raycastListener.SetPressing(controller);
+		}
+
+		public void EndDrag() {
+			raycastListener.SetPressing(null);
+		}
+
 		private void OnPress()
 		{
 			_pressed = true;

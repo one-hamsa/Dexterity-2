@@ -27,6 +27,17 @@ namespace OneHamsa.Dexterity.Builtins
             controllers.Remove(controller);
         }
 
+        public void SetPressing(IRaycastController controller) {
+            if (controller == null) {
+                if (pressingController == null) return;
+                pressingController = null;
+                onRelease?.Invoke();
+            } else {
+                pressingController = controller;
+                onPress?.Invoke();
+            }
+        }
+
         private void LateUpdate() {
             if (!pressing)
             {
@@ -34,15 +45,13 @@ namespace OneHamsa.Dexterity.Builtins
                 {
                     if (controller.wasPressedThisFrame)
                     {
-                        pressingController = controllers.First();
-                        onPress?.Invoke();
+                        SetPressing(controllers.First());
                         break;
                     }
                 }
             }
             else if (!pressingController.isPressed) {
-                pressingController = null;
-                onRelease?.Invoke();
+                SetPressing(null);
             }
         }
     }
