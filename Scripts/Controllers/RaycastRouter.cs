@@ -10,6 +10,7 @@ namespace OneHamsa.Dexterity
     public class RaycastRouter : MonoBehaviour, IRaycastReceiver
     {
         public List<GameObject> manualReceivers = new();
+        public bool dontRecurse;
 
         private void OnEnable()
         {

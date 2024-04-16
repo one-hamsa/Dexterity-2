@@ -73,6 +73,9 @@ namespace OneHamsa.Dexterity
                             router = collider.gameObject.AddComponent<RaycastRouter>();
                             router.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
                         }
+                        
+                        if (router.dontRecurse)
+                            continue;
 
                         // add this, and all other receivers on this object, to the router
                         for (int i = 0; i < thisObjectReceivers.Count; i++) 
