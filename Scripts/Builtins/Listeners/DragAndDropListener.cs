@@ -88,6 +88,12 @@ namespace OneHamsa.Dexterity.Builtins
 			if (raycastListener == null) return;
 			raycastListener.onPress -= OnPress;
 			raycastListener.onRelease -= OnRelease;
+
+			if (_pressed) {
+				_pressed = false;
+				_controller = null;
+				onDragCancel?.Invoke();
+			}
 		}
 
 		private void Update()
