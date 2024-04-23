@@ -72,14 +72,19 @@ namespace OneHamsa.Dexterity
 
             protected OutputOverride fieldOverride
             {
-                get 
-                {
-                    if (overridesDirtyIncrement == node.overridesDirtyIncrement)
-                        return cachedOverride;
-
-                    if (!node.cachedOverrides.TryGetValue(definitionId, out cachedOverride))
+                get {
+                    if (node == null) {
                         cachedOverride = null;
-                    overridesDirtyIncrement = node.overridesDirtyIncrement;
+                    } else {
+                        if (overridesDirtyIncrement == node.overridesDirtyIncrement)
+                            return cachedOverride;
+                        
+                        if (!node.cachedOverrides.TryGetValue(definitionId, out cachedOverride))
+                            cachedOverride = null;
+                        
+                        overridesDirtyIncrement = node.overridesDirtyIncrement;
+                    }
+                    
                     return cachedOverride;
                 }
             }
