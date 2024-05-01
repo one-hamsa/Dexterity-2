@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -22,6 +23,13 @@ namespace OneHamsa.Dexterity
             {
                 if (inst == null)
                 {
+                    // This seems to catch the 'tear-down' state of the editor and avoid the long delay when quitting play-mode
+                    // (because every modifier/field tries to access Manager.instance and Unity decided it is now null) 
+                    #if UNITY_EDITOR
+                    if (EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+                        return null;
+                    #endif
+                    
                     inst = FindObjectOfType<Manager>();
                     if (inst == null)
                     {
