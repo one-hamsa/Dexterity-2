@@ -8,6 +8,5 @@ namespace OneHamsa.Dexterity
         static readonly HashSet<string> emptySet = new(0);
         
         HashSet<string> GetStateNames();
-        HashSet<string> GetFieldNames();
     }
 }

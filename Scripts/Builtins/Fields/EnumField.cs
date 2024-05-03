@@ -14,10 +14,10 @@ namespace OneHamsa.Dexterity.Builtins
 
         private int cachedEnumValue;
 
-        public override int GetValue()
+        public override bool GetValue()
         {
-            var value = targetNode != null && targetNode.GetEnumValue() == cachedEnumValue ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            var value = targetNode != null && targetNode.GetEnumValue() == cachedEnumValue;
+            return negate ? !value : value;
         }
 
         protected override void Initialize(FieldNode context)

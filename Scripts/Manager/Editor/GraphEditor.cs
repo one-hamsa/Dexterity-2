@@ -195,7 +195,7 @@ namespace OneHamsa.Dexterity
                     }
                 }
                 GUILayout.FlexibleSpace();
-                EditorGUILayout.LabelField(field.GetValueAsString(), GUILayout.Width(80));
+                EditorGUILayout.LabelField(field.GetValue().ToString(), GUILayout.Width(80));
             }
         }
     }

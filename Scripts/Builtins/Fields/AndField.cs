@@ -19,8 +19,10 @@ namespace OneHamsa.Dexterity.Builtins
             return clone;
         }
 
-        public override int GetValue() {
-            return first?.GetValue() == 1 && second?.GetValue() == 1 ? 1 : 0;
+        public override bool GetValue() {
+            if (first == null || second == null)
+                return false;
+            return first.GetValue() && second.GetValue();
         }
 
         protected override void Initialize(FieldNode context) {

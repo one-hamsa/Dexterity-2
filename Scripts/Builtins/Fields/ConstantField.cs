@@ -5,9 +5,8 @@ namespace OneHamsa.Dexterity.Builtins
     [Preserve]
     public class ConstantField : BaseField
     {
-        [FieldValue(nameof(BaseField.relatedFieldName), proxy = true)]
-        public int constant;
+        public bool constant;
 
-        public override int GetValue() => constant;
+        public override bool GetValue() => constant;
     }
 }

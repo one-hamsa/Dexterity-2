@@ -17,10 +17,10 @@ namespace OneHamsa.Dexterity.Builtins
             throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
         }
 
-        public override int GetValue()
+        public override bool GetValue()
         {
-            var value = targetNode.GetActiveState() == targetStateId ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            var value = targetNode.GetActiveState() == targetStateId;
+            return negate ? !value : value;
         }
 
         protected override void Initialize(FieldNode context)

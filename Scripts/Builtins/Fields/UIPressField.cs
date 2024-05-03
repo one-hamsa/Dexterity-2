@@ -29,6 +29,6 @@ namespace OneHamsa.Dexterity.Builtins
             UnityEngine.Object.Destroy(provider);
         }
 
-        public override int GetValue() => (provider && provider.click) ? 1 : 0;
+        public override bool GetValue() => provider && provider.click;
     }
 }

@@ -32,16 +32,16 @@ namespace OneHamsa.Dexterity.Builtins
         // only proxy when children are found
         public override bool proxy => children != null && children.Count > 0;
 
-        public override int GetValue()
+        public override bool GetValue()
         {
             if (children == null)
-                return 0;
+                return false;
 
             var value = GetValueBeforeNegation();
-            return negate ? (value + 1) % 2 : value;
+            return negate ? !value : value;
         }
 
-        private int GetValueBeforeNegation() {
+        private bool GetValueBeforeNegation() {
             switch (takeValueWhen)
             {
                 case TakeValueWhen.AnyEqualsTrue:
@@ -49,31 +49,31 @@ namespace OneHamsa.Dexterity.Builtins
                     {
                         if (child == null)
                             continue;
-                        if (child.GetOutputField(fieldId).GetBooleanValue())
-                            return 1;
+                        if (child.GetOutputField(fieldId).GetValue())
+                            return true;
                     }
-                    return 0;
+                    return false;
                 case TakeValueWhen.AnyEqualsFalse:
                     foreach (var child in children)
                     {
                         if (child == null)
-                            return 0;
-                        if (!child.GetOutputField(fieldId).GetBooleanValue())
-                            return 0;
+                            return false;
+                        if (!child.GetOutputField(fieldId).GetValue())
+                            return false;
                     }
-                    return 1;
+                    return true;
                 case TakeValueWhen.AllEqual:
-                    int? prevValue = null;
+                    bool? prevValue = null;
                     foreach (var child in children) {
-                        var value = child == null ? 0 : child.GetOutputField(fieldId).GetValue();
+                        var value = child != null && child.GetOutputField(fieldId).GetValue();
                         if (prevValue.HasValue && prevValue.Value != value)
-                            return 0;
+                            return false;
 
                         prevValue = value;
                     }
-                    return prevValue.HasValue ? prevValue.Value : 0;
+                    return prevValue.HasValue && prevValue.Value;
             }
-            return 0;
+            return false;
         }
 
         public override void RefreshReferences()
@@ -145,7 +145,7 @@ namespace OneHamsa.Dexterity.Builtins
             workQueue ??= new();
             comparer = HashSet<FieldNode>.CreateSetComparer();
             
-            fieldId = Database.instance.GetFieldID(fieldName);
+            fieldId = Database.instance.GetStateID(fieldName);
             var activeContext = context;
             if (parent == null)
                 parent = context.transform;

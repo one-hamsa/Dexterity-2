@@ -13,18 +13,18 @@ namespace OneHamsa.Dexterity.Builtins
 		
 		[SerializeReference] public BaseField source;
 
-		private int _lastValue;
+		private bool _lastValue;
 		private float _timer;
 		
-		public override int GetValue() {
-			if (_lastValue > 0) {
+		public override bool GetValue() {
+			if (_lastValue) {
 				if (_timer > delayFalse) {
 					_lastValue = source.GetValue();
 					_timer = 0;
 				}
 			}
 			
-			if (_lastValue == 0) {
+			if (!_lastValue) {
 				if (_timer > delayTrue) {
 					_lastValue = source.GetValue();
 					_timer = 0;

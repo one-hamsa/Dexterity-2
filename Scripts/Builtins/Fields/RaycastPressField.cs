@@ -28,6 +28,6 @@ namespace OneHamsa.Dexterity.Builtins
             provider = null;
         }
 
-        public override int GetValue() => provider != null && provider.GetPress(tag) ? 1 : 0;
+        public override bool GetValue() => provider != null && provider.GetPress(tag);
     }
 }

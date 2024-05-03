@@ -27,12 +27,12 @@ namespace OneHamsa.Dexterity.Builtins
             throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
         }
         
-        public override int GetValue() {
+        public override bool GetValue() {
             var value = GetValueBeforeNegation();
-            return negate ? (value + 1) % 2 : value;
+            return negate ? !value : value;
         }
 
-        private int GetValueBeforeNegation() {
+        private bool GetValueBeforeNegation() {
             switch (takeValueWhen) {
                 case TakeValueWhen.AnyEqualsTrue:
                     foreach (var field in outputFields)
@@ -40,28 +40,28 @@ namespace OneHamsa.Dexterity.Builtins
                         if (field.node == null || !field.node.isActiveAndEnabled)
                             continue;
                         
-                        if (field.GetBooleanValue())
-                            return 1;
+                        if (field.GetValue())
+                            return true;
                     }
-                    return 0;
+                    return false;
                 case TakeValueWhen.AnyEqualsFalse:
                     foreach (var field in outputFields) {
-                        if (field.node != null && field.node.isActiveAndEnabled && field.GetBooleanValue())
-                            return 0;
+                        if (field.node != null && field.node.isActiveAndEnabled && field.GetValue())
+                            return false;
                     }
-                    return 1;
+                    return true;
                 case TakeValueWhen.AllEqual:
-                    int? prevValue = null;
+                    bool? prevValue = null;
                     foreach (var field in outputFields) {
-                        var value = field.node == null || !field.node.isActiveAndEnabled ? 0 : field.GetValue();
+                        var value = field.node != null && field.node.isActiveAndEnabled && field.GetValue();
                         if (prevValue.HasValue && prevValue.Value != value)
-                            return 0;
+                            return false;
 
                         prevValue = value;
                     }
-                    return prevValue.HasValue ? prevValue.Value : 0;
+                    return prevValue.HasValue && prevValue.Value;
             }
-            return 0;
+            return false;
         }
 
         protected override void Initialize(FieldNode context)

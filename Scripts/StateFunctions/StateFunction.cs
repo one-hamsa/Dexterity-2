@@ -34,8 +34,7 @@ namespace OneHamsa.Dexterity
             // Condition
             [Field]
             public string condition_fieldName;
-            [FieldValue(nameof(condition_fieldName), proxy: true)]
-            public int condition_fieldValue;
+            public bool condition_fieldValue;
             public bool condition_negate;
             [NonSerialized]
             private int condition_fieldId = -1;
@@ -77,7 +76,7 @@ namespace OneHamsa.Dexterity
             {
                 switch (type) {
                     case Type.Condition:
-                        condition_fieldId = Database.instance.GetFieldID(condition_fieldName);
+                        condition_fieldId = Database.instance.GetStateID(condition_fieldName);
                         break;
                     case Type.Result:
                         result_stateId = Database.instance.GetStateID(result_stateName);
@@ -107,7 +106,7 @@ namespace OneHamsa.Dexterity
 
         List<Step> IStepList.steps => steps;
 
-        internal int Evaluate(List<(int field, int mask)> mask)
+        internal int Evaluate(List<(int field, bool mask)> mask)
         {
             List<(Step step, int depth)> usedStepCahce;
             if (Application.IsPlaying(this))
@@ -144,30 +143,6 @@ namespace OneHamsa.Dexterity
                         yield return state;
                 }
             }
-        }
-        public static IEnumerable<string> EnumerateFieldNames(IEnumerable<IStepList> assets)
-        {
-            if (assets == null)
-                yield break;
-
-            namesSet.Clear();
-            foreach (var asset in assets) {
-                if (asset == null)
-                    continue; 
-
-                foreach (var field in asset.GetFieldNames()) {
-                    if (namesSet.Add(field))
-                        yield return field;
-                }
-            }
-        }
-
-        // XXX this proxy code is stupid and unnecessary in theory, but something about interface inheritance 
-        //. + default implementation is not working well. so here we go.
-        HashSet<string> IHasStates.GetFieldNames()
-        {
-            fieldNames ??= (this as IStepList).GetStepListFieldNames().ToHashSet();
-            return fieldNames;
         }
 
         HashSet<string> IHasStates.GetStateNames()

@@ -18,15 +18,15 @@ namespace OneHamsa.Dexterity
             }
         }
         
-        private static int GetValue(List<(int field, int value)> mask, int field)
+        private static bool GetValue(List<(int field, bool value)> mask, int field)
         {
             foreach (var pair in mask)
                 if (pair.field == field)
                     return pair.value;
-            return FieldNode.emptyFieldValue;
+            return false;
         }
 
-        static int Evaluate(List<(Step step, int depth)> cache, List<(int,int)> mask) {
+        static int Evaluate(List<(Step step, int depth)> cache, List<(int,bool)> mask) {
             var conditionMetDepth = -1;
             foreach (var (step, depth) in cache) {
                 if (conditionMetDepth < depth - 1) {

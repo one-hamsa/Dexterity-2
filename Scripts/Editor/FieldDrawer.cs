@@ -24,18 +24,10 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            var fieldsEnum = DexteritySettingsProvider.settings.fieldDefinitions
-                .Select(f => f.GetName());
+            var fieldsEnum = DexteritySettingsProvider.settings.fieldDefinitions.AsEnumerable();
             var attr = (FieldAttribute)attribute;
             if (attr.allowNull) {
                 fieldsEnum = new[] { "(None)" }.Concat(fieldsEnum);
-            }
-
-            if (property.serializedObject.targetObject is IGateContainer gateContainer)
-            {
-                // get internal fields
-                fieldsEnum = fieldsEnum.Concat(gateContainer.GetInternalFieldDefinitions()
-                    .Select(fd => fd.GetName()));
             }
 
             var fields = fieldsEnum.ToArray();

@@ -20,13 +20,13 @@ namespace OneHamsa.Dexterity.Builtins
         // only proxy when parent is found
         public override bool proxy => parent != null;
 
-        public override int GetValue()
+        public override bool GetValue()
         {
             if (parent == null)
-                return 0;
+                return false;
 
             var value = parent.GetOutputField(fieldId).GetValue();
-            return negate ? (value + 1) % 2 : value;
+            return negate ? !value : value;
         }
 
         public override void RefreshReferences()
@@ -54,7 +54,7 @@ namespace OneHamsa.Dexterity.Builtins
             context.onParentTransformChanged += RefreshReferences;
             context.onEnabled += RefreshReferences;
 
-            fieldId = Database.instance.GetFieldID(fieldName);
+            fieldId = Database.instance.GetStateID(fieldName);
             if (child == null)
                 child = context.transform;
             RefreshReferences();

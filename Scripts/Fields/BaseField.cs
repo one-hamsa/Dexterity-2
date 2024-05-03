@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Builtins;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
@@ -62,15 +63,10 @@ namespace OneHamsa.Dexterity
         public string relatedFieldName;
 
         /// <summary>
-        /// field definition, set on runtime
+        /// state id, set on runtime
         /// </summary>
         [NonSerialized]
-        public FieldDefinition definition;
-        /// <summary>
-        /// field definition id, set on runtime
-        /// </summary>
-        [NonSerialized]
-        public int definitionId = -1;
+        public int stateId = -1;
 
         /// <summary>
         /// true if the field is initialized
@@ -91,7 +87,7 @@ namespace OneHamsa.Dexterity
         /// <summary>
         /// returns the field value calculated by the provider
         /// </summary>
-        public abstract int GetValue();
+        public abstract bool GetValue();
 
         public virtual BaseField CreateDeepClone()
         {
@@ -101,12 +97,11 @@ namespace OneHamsa.Dexterity
         /// <summary>
         /// dispatched by the node when initializing a new field
         /// </summary>
-        public void Initialize(FieldNode context, int definitionId)
+        public void Initialize(FieldNode context, int stateId)
         {
-            this.definitionId = definitionId;
-            definition = Database.instance.GetFieldDefinition(definitionId);
+            this.stateId = stateId;
 
-            if (definitionId == -1 || string.IsNullOrEmpty(definition.GetName()))
+            if (stateId == -1)
                 throw new FieldInitializationException();
 
             this.context = context;
@@ -141,7 +136,7 @@ namespace OneHamsa.Dexterity
 
         public override string ToString()
         {
-            return $"{ToShortString()} -> {this.GetValueAsString()}";
+            return $"{ToShortString()} -> {GetValue()}";
         }
 
         public virtual string ToShortString() {

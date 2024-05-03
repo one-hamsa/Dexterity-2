@@ -21,19 +21,5 @@ namespace OneHamsa.Dexterity
             }
             return stateNames;
         }
-
-        HashSet<string> IHasStates.GetFieldNames()
-        {
-            var nodes = GetNodes();
-            if (nodes == null || nodes.Count == 0)
-                return emptySet;
-            
-            var fieldNames = new HashSet<string>();
-            foreach (var node in nodes)
-            {
-                fieldNames.UnionWith(node.GetFieldNames());
-            }
-            return fieldNames;
-        }
     }
 }

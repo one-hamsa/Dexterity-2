@@ -10,8 +10,5 @@ namespace OneHamsa.Dexterity
 
         HashSet<string> IHasStates.GetStateNames()
             => GetNode() != null ? GetNode().GetStateNames() : emptySet;
-
-        HashSet<string> IHasStates.GetFieldNames()
-            => GetNode() != null ? GetNode().GetFieldNames() : emptySet;
     }
 }

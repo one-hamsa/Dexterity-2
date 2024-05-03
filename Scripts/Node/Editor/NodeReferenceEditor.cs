@@ -29,8 +29,6 @@ namespace OneHamsa.Dexterity
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
                 reference, ref foldoutOpen);
-            
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
 
             serializedObject.ApplyModifiedProperties();
 
@@ -85,37 +83,24 @@ namespace OneHamsa.Dexterity
                 GUILayout.BeginHorizontal();
                 var origColor = GUI.color;
 
-                var whitelist = gateContainer.GetWhitelistedFieldNames();
-                var fields = DexteritySettingsProvider.settings.fieldDefinitions.Select(fd => fd.GetName())
-                    .Where(f => whitelist == null || whitelist.Contains(f))
-                    .Concat(gateContainer.GetInternalFieldDefinitions().Select(fd => fd.GetName()))
-                    .ToArray();
-                
-                var fieldExistsInFunction = fields.Contains(kv.Key);
-                var fieldIsInternal = FieldDefinition.IsInternalName(kv.Key);
-
-                if (string.IsNullOrEmpty(kv.Key) || !fieldExistsInFunction)
+                var fields = DexteritySettingsProvider.settings.fieldDefinitions.ToArray();
+                if (string.IsNullOrEmpty(kv.Key))
                     GUI.color = Color.yellow;
                 else
-                    GUI.color = !fieldIsInternal ? Color.green : Color.cyan;
+                    GUI.color = Color.green;
 
                 GUILayout.Label(!string.IsNullOrEmpty(kv.Key) ? kv.Key : "<unassigned>", EditorStyles.largeLabel);
 
-                var definition = ExtractDefinition(gateContainer, kv.Key);
                 if (!string.IsNullOrEmpty(kv.Key))
                 {
-                    if (definition.GetName() != null)
-                    {
-                        // get value
-                        var liveInstance = Application.IsPlaying(gatesProp.serializedObject.targetObject) 
-                                           && gateContainer.node != null;
-                        var value = liveInstance
-                            ? gateContainer.node.GetOutputField(kv.Key).GetValue()
-                            : FieldNode.defaultFieldValue;
+                    // get value
+                    var liveInstance = Application.IsPlaying(gatesProp.serializedObject.targetObject) 
+                                       && gateContainer.node != null;
+                    var value = liveInstance && gateContainer.node.GetOutputField(kv.Key).GetValue();
 
-                        GUILayout.FlexibleSpace();
-                        DrawFieldValue(definition, value, liveInstance);
-                    }
+                    GUILayout.FlexibleSpace();
+                    DrawFieldValue(value, liveInstance);
+                    
                     GUI.color = Color.green;
 
                     if (GUILayout.Button("+", EditorStyles.miniButtonRight, GUILayout.Width(20)))
@@ -131,13 +116,6 @@ namespace OneHamsa.Dexterity
                 GUILayout.EndHorizontal();
 
                 DrawSeparator(!string.IsNullOrEmpty(kv.Key) ? Color.green : Color.yellow);
-
-                if (!fieldExistsInFunction)
-                {
-                    GUI.color = Color.yellow;
-                    EditorGUILayout.LabelField($"Add field to state function", EditorStyles.helpBox);
-                    GUI.color = origColor;
-                }
 
                 var indexInFieldType = 0;
                 foreach ((var i, var gateProp) in kv.Value)
@@ -190,19 +168,18 @@ namespace OneHamsa.Dexterity
                     EditorGUI.EndProperty();
                     EditorGUILayout.EndHorizontal();
 
-                    if (definition.type == FieldNode.FieldType.Boolean) {
-                        GUI.contentColor = new Color(.7f, .7f, .7f);
-                        EditorGUILayout.PropertyField(gateProp.FindPropertyRelative(nameof(Gate.overrideType)));
+                    GUI.contentColor = new Color(.7f, .7f, .7f);
+                    EditorGUILayout.PropertyField(gateProp.FindPropertyRelative(nameof(Gate.overrideType)));
 
-                        GUI.backgroundColor = origColor;
-                        GUI.contentColor = origColor;
+                    GUI.backgroundColor = origColor;
+                    GUI.contentColor = origColor;
 
-                        if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive)
-                            && gate.overrideType.HasFlag(Gate.OverrideType.Additive) 
-                            && indexInFieldType > 0) {
-                            EditorGUILayout.HelpBox("This gate will override everything above it.", MessageType.Warning);
-                        }
+                    if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive)
+                        && gate.overrideType.HasFlag(Gate.OverrideType.Additive) 
+                        && indexInFieldType > 0) {
+                        EditorGUILayout.HelpBox("This gate will override everything above it.", MessageType.Warning);
                     }
+                        
                     GUI.backgroundColor = origColor;
                     GUI.contentColor = origColor;
 
@@ -257,13 +234,6 @@ namespace OneHamsa.Dexterity
             return updated;
         }
 
-        private static FieldDefinition ExtractDefinition(IGateContainer gateContainer, string fieldName)
-        {
-            return !string.IsNullOrEmpty(fieldName)
-                ? DexteritySettingsProvider.GetFieldDefinitionByName(gateContainer, fieldName)
-                : default;
-        }
-
         private static Type[] referencesTypes;
         private static string[] referencesTypesNames;
 
@@ -284,9 +254,9 @@ namespace OneHamsa.Dexterity
                 Utils.GetNiceName(referencesTypesNames, suffix: "Field").ToArray());
 
             var field = (BaseField)Utils.GetTargetObjectOfProperty(property);
-            if (field != null && field.initialized)
+            if (field is { initialized: true })
             {
-                DrawFieldValue(field.definition, field.GetValue(), true);
+                DrawFieldValue(field.GetValue(), true);
             }
             EditorGUILayout.EndHorizontal();
 
@@ -358,7 +328,7 @@ namespace OneHamsa.Dexterity
                 .ToArray();
         }
 
-        static void DrawFieldValue(FieldDefinition definition, int value, bool liveInstance)
+        static void DrawFieldValue(bool value, bool liveInstance)
         {
             // get value
             string valueName = "";
@@ -366,35 +336,22 @@ namespace OneHamsa.Dexterity
 
             if (liveInstance)
             {
-                switch (definition.type)
+                switch (value)
                 {
-                    case FieldNode.FieldType.Boolean when value == 0:
-                    case FieldNode.FieldType.Boolean when value == FieldNode.defaultFieldValue:
+                    case false:
                         GUI.color = Color.red;
                         valueName = "false";
                         break;
-                    case FieldNode.FieldType.Boolean when value == 1:
+                    case true:
                         GUI.color = Color.green;
                         valueName = "true";
-                        break;
-                    case FieldNode.FieldType.Enum:
-                        GUI.color = new Color(1, .5f, 0);
-                        valueName = definition.enumValues[value];
                         break;
                 }
             }
             else
             {
                 GUI.color = Color.gray;
-                switch (definition.type)
-                {
-                    case FieldNode.FieldType.Boolean:
-                        valueName = "Boolean";
-                        break;
-                    case FieldNode.FieldType.Enum:
-                        valueName = "Enum";
-                        break;
-                }
+                valueName = "";
             }
 
             var style = new GUIStyle(EditorStyles.helpBox);

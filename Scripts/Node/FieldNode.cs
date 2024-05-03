@@ -22,7 +22,7 @@ namespace OneHamsa.Dexterity
             [Field]
             public string outputFieldName;
             [FieldValue(nameof(outputFieldName), proxy = true)]
-            public int value;
+            public bool value;
 
             public int outputFieldDefinitionId { get; private set; } = -1;
 
@@ -34,13 +34,13 @@ namespace OneHamsa.Dexterity
                 if (fieldId != -1)
                 {
                     outputFieldDefinitionId = fieldId;
-                    outputFieldName = Database.instance.GetFieldDefinition(fieldId).GetName();
+                    outputFieldName = Database.instance.GetStateAsString(fieldId);
                     return true;
                 }
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
-                return (outputFieldDefinitionId = Database.instance.GetFieldID(outputFieldName)) != -1;
+                return (outputFieldDefinitionId = Database.instance.GetStateID(outputFieldName)) != -1;
             }
         }
         #endregion Data Definitions
@@ -51,9 +51,6 @@ namespace OneHamsa.Dexterity
         [SerializeField]
         public List<Gate> customGates = new();
         
-        [SerializeField]
-        public List<FieldDefinition> internalFieldDefinitions = new();
-
         [SerializeField]
         public List<OutputOverride> overrides = new();
 
@@ -148,10 +145,6 @@ namespace OneHamsa.Dexterity
 
             if (!_performedFirstInitialization_FieldNode)
             {
-                // register all internal fields
-                foreach (var field in internalFieldDefinitions)
-                    Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
-
                 using var _ = HashSetPool<NodeReference>.Get(out var visitedNodeReferences);
                 using var __ = ListPool<Gate>.Get(out var nodeGates);
 
@@ -177,10 +170,6 @@ namespace OneHamsa.Dexterity
                 {
                     // reverse the order [^1]
                     var reference = _orderedStack.Pop();
-
-                    // register all internal fields
-                    foreach (var field in reference.internalFieldDefinitions)
-                        Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
 
                     // register all functions
                     foreach (var stateFunc in reference.GetStateFunctionAssetsIncludingParents())
@@ -235,7 +224,7 @@ namespace OneHamsa.Dexterity
         {
             foreach (var name in GetFieldNames())
             {
-                yield return Database.instance.GetFieldID(name);
+                yield return Database.instance.GetStateID(name);
             }
         }
         
@@ -274,24 +263,6 @@ namespace OneHamsa.Dexterity
                 myFieldNames.Add(name);
             
             return myFieldNames;
-        }
-        
-        public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
-        {
-            foreach (var reference in referenceAssets)
-            {
-                if (reference == null)
-                    continue;
-
-                foreach (var fieldDefinition in reference.GetInternalFieldDefinitions())
-                    yield return fieldDefinition;
-            }
-            foreach (var fieldDefinition in internalFieldDefinitions)
-            {
-                var f = fieldDefinition;
-                f.isInternal = true;
-                yield return f;
-            }
         }
         #endregion General Methods
 
@@ -364,11 +335,11 @@ namespace OneHamsa.Dexterity
             }
 
             // make sure output field for gate is initialized
-            GetOutputField(gate.outputFieldDefinitionId);
+            GetOutputField(gate.outputStateId);
 
             try
             {
-                InitializeField(gate.outputFieldDefinitionId, gate.field);
+                InitializeField(gate.outputStateId, gate.field);
             }
             catch (BaseField.FieldInitializationException e)
             {
@@ -386,26 +357,26 @@ namespace OneHamsa.Dexterity
         }
 
         /// <summary>
-        /// Returns the node's output field. Slower than GetOutputField(int fieldId)
+        /// Returns the node's output field. Slower than GetOutputField(int stateId)
         /// </summary>
         /// <param name="name">Field name</param>
         /// <returns></returns>
         public OutputField GetOutputField(string name) 
-            => GetOutputField(Database.instance.GetFieldID(name));
+            => GetOutputField(Database.instance.GetStateID(name));
 
         /// <summary>
         /// Returns the node's output field. Faster than GetOutputField(string name)
         /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="stateId">State ID (from Manager)</param>
         /// <returns></returns>
-        public OutputField GetOutputField(int fieldId)
+        public OutputField GetOutputField(int stateId)
         {
             // lazy initialization
             OutputField output;
-            if (!outputFields.TryGetValue(fieldId, out output))
+            if (!outputFields.TryGetValue(stateId, out output))
             {
                 output = new OutputField();
-                output.Initialize(this, fieldId);
+                output.Initialize(this, stateId);
                 output.onValueChanged += MarkStateDirty;
 
                 AuditField(output);
@@ -432,7 +403,7 @@ namespace OneHamsa.Dexterity
                 nonOutputFields.Add(field);
             }
             else
-                outputFields.AddOrUpdate(o.definitionId, o);
+                outputFields.AddOrUpdate(o.stateId, o);
         }
         private void RemoveAudit(BaseField field)
         {
@@ -475,18 +446,13 @@ namespace OneHamsa.Dexterity
         #endregion Fields & Gates
 
         #region State Reduction
-        private void GenerateFieldMask(List<(int field, int value)> fieldMask)
+        private void GenerateFieldMask(List<(int field, bool value)> fieldMask)
         {
             fieldMask.Clear();
 
             foreach (var fieldId in stateFieldIdsCache)
             {
                 var value = GetOutputField(fieldId).GetValue();
-                // if this field isn't provided just assume default
-                if (value == emptyFieldValue)
-                {
-                    value = defaultFieldValue;
-                }
                 fieldMask.Add((fieldId, value));
             }
         }
@@ -512,71 +478,35 @@ namespace OneHamsa.Dexterity
             
             (this as IStepList).PopulateStepCache(usedStepCahce);
 
-            using (ListPool<(int field, int value)>.Get(out var fieldMask))
+            using (ListPool<(int field, bool value)>.Get(out var fieldMask))
             {
                 GenerateFieldMask(fieldMask);
                 return IStepList.Evaluate(usedStepCahce, fieldMask);
             }
         }
 
-        private void MarkStateDirty(FieldNode.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        private void MarkStateDirty(FieldNode.OutputField field, bool oldValue, bool newValue) => stateDirty = true;
         #endregion State Reduction
 
         #region Overrides
         /// <summary>
         /// Sets a boolean override value
         /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
+        /// <param name="stateId">state ID (from Manager)</param>
         /// <param name="value">Bool value for field</param>
-        public void SetOverride(int fieldId, bool value)
+        public void SetOverride(int stateId, bool value)
         {
-            var definition = Database.instance.GetFieldDefinition(fieldId);
-            if (definition.type != FieldType.Boolean)
-                Debug.LogWarning($"setting a boolean override for a non-boolean field {definition.GetName()}", this);
-
-            SetOverrideRaw(fieldId, value ? 1 : 0);
-        }
-
-        /// <summary>
-        /// Sets an enum override value
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        /// <param name="value">Enum value for field (should appear in field definition)</param>
-        public void SetOverride(int fieldId, string value)
-        {
-            var definition = Database.instance.GetFieldDefinition(fieldId);
-            if (definition.type != FieldType.Enum)
-                Debug.LogWarning($"setting an enum (string) override for a non-enum field {definition.GetName()}", this);
-
-            int index;
-            if ((index = Array.IndexOf(definition.enumValues, value)) == -1)
-            {
-                Debug.LogError($"trying to set enum {definition.GetName()} value to {value}, " +
-                    $"but it is not a valid enum value", this);
-                return;
-            }
-
-            SetOverrideRaw(fieldId, index);
-        }
-
-        /// <summary>
-        /// Sets raw override value
-        /// </summary>
-        /// <param name="fieldId">Field definition ID (from Manager)</param>
-        /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
-        public void SetOverrideRaw(int fieldId, int value)
-        {
-            if (!cachedOverrides.Contains(fieldId))
+            if (!cachedOverrides.Contains(stateId))
             {
                 var newOverride = new OutputOverride();
-                newOverride.Initialize(fieldId);
+                newOverride.Initialize(stateId);
 
                 overrides.Add(newOverride);
                 CacheFieldOverrides();
             }
-            var overrideOutput = cachedOverrides[fieldId];
+            var overrideOutput = cachedOverrides[stateId];
             overrideOutput.value = value;
-            GetOutputField(fieldId).CacheValue();
+            GetOutputField(stateId).CacheValue();
         }
 
         /// <summary>
@@ -704,12 +634,6 @@ namespace OneHamsa.Dexterity
         #endregion Overrides
 
         #region Interface Implementation (Editor)
-        IEnumerable<FieldDefinition> IGateContainer.GetInternalFieldDefinitions() 
-            => GetInternalFieldDefinitions();
-
-        HashSet<string> IGateContainer.GetWhitelistedFieldNames()
-            => GetFieldNames();
-
         FieldNode IGateContainer.node => this;
 
         public int GetLastEvaluationResult() => GetActiveState();

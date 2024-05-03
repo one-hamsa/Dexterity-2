@@ -35,13 +35,13 @@ namespace OneHamsa.Dexterity.Builtins
             binding = null;
         }
 
-        public override int GetValue() 
+        public override bool GetValue() 
         {
             if (!binding.IsValid() || !binding.IsInitialized())
-                return negate ? 1 : 0;
+                return negate;
 
-            var value = binding.Boolean_GetValue() ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            var value = binding.Boolean_GetValue();
+            return negate ? !value : value;
         }
     }
 }

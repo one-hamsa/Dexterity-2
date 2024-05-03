@@ -54,7 +54,6 @@ namespace OneHamsa.Dexterity.Builtins
                 .ToHashSet();
 
         HashSet<string> IHasStates.GetStateNames() => GetStates();
-        HashSet<string> IHasStates.GetFieldNames() => GetStates();
 
         public void Initialize()
         {

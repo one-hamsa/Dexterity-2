@@ -50,33 +50,7 @@ namespace OneHamsa.Dexterity
         public double deltaTime => Mathf.Min(Time.maximumDeltaTime, Time.unscaledDeltaTime) * timeScale;
         public double timeScale = 1d;
         
-        public ListSet<string> fieldNames = new(32);
         public ListSet<string> stateNames = new(32);
-        public ListSet<string> internalFieldNames = new(32);
-        public Dictionary<int, FieldDefinition> internalFields = new(32);
-
-        /// <summary>
-        /// returns the field ID, useful for quickly getting the field definition.
-        /// only use on Awake, never on Update.
-        /// </summary>
-        /// <param name="name">Field name</param>
-        /// <returns>Field Definition ID (runtime, may vary from run to run)</returns>
-        public int GetFieldID(string name)
-        {
-            if (fieldNames.Count == 0)
-                Debug.LogWarning($"tried to get field id of {name} but fieldNames is empty");
-
-            var id = fieldNames.IndexOf(name);
-            if (id == -1)
-            {
-                // try to find in internal
-                var internalId = internalFieldNames.IndexOf(name);
-                if (internalId != -1)
-                    // internal fields are negative and start from -2
-                    id = -2 - internalId;
-            }
-            return id;
-        }
 
         /// <summary>
         /// returns the state ID, this is the state reference throughout the code.
@@ -95,27 +69,6 @@ namespace OneHamsa.Dexterity
                 RegisterState(name);
 
             return stateNames.IndexOf(name);
-        }
-
-        /// <summary>
-        /// returns field definition by ID - fast.
-        /// </summary>
-        /// <param name="id">Field Definition ID</param>
-        /// <returns>corresponding Field Definition</returns>
-        public FieldDefinition GetFieldDefinition(int id)
-        {
-            if (id == -1)
-            {
-                throw new Exception("asked for field id == -1");
-            }
-            if (id < -1)
-            {
-                // internal field
-                if (!internalFields.TryGetValue(id, out var field))
-                    throw new Exception($"internal field {id} not found");
-                return field;
-            }
-            return settings.fieldDefinitions[id];
         }
 
         /// <summary>
@@ -143,39 +96,10 @@ namespace OneHamsa.Dexterity
         /// <param name="stateFunction">Step List to register</param>
         public void Register(IHasStates stateHolder)
         {
-            foreach (var fieldName in stateHolder.GetFieldNames())
-            {
-                if (!FieldDefinition.IsInternalName(fieldName))
-                    RegisterField(fieldName);
-            }
-
             foreach (var state in stateHolder.GetStateNames())
                 RegisterState(state);
         }
 
-        /// <summary>
-        /// Registers an internal field, adding it to the internal field list
-        /// </summary>
-        /// <param name="fieldDefinition"></param>
-        public void RegisterInternalFieldDefinition(FieldDefinition fieldDefinition)
-        {
-            fieldDefinition.isInternal = true;
-            internalFieldNames.Add(fieldDefinition.GetName());
-            
-            var fieldId = GetFieldID(fieldDefinition.GetName());
-            if (internalFields.TryGetValue(fieldId, out var existingField))
-            {
-                if (!existingField.Equals(fieldDefinition))
-                {
-                    Debug.LogError($"internal field {fieldDefinition.GetName()} already exists " +
-                                   $"with different definition, this is currently not supported");
-                }
-            }
-            else
-            {
-                internalFields.Add(fieldId, fieldDefinition);
-            }
-        }
 
         /// <summary>
         /// Builds cache for runtime uses
@@ -183,7 +107,7 @@ namespace OneHamsa.Dexterity
         private void Initialize()
         {
             for (var i = 0; i < settings.fieldDefinitions.Length; ++i)
-                RegisterField(settings.fieldDefinitions[i].GetName());
+                RegisterField(settings.fieldDefinitions[i]);
         }
 
         private void RegisterField(string fieldName)
@@ -193,7 +117,7 @@ namespace OneHamsa.Dexterity
                 Debug.LogError("tried to register empty field name");
                 return;
             }
-            fieldNames.Add(fieldName);
+            stateNames.Add(fieldName);
         }
 
         private void RegisterState(string stateName)
@@ -210,8 +134,6 @@ namespace OneHamsa.Dexterity
         /// Uninitializes state (useful for editor)
         /// </summary>
         private void Uninitialize() {
-            fieldNames = null;
-            internalFieldNames.Clear();
             stateNames.Clear();
         }
 

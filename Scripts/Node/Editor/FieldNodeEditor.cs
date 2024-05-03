@@ -117,10 +117,8 @@ namespace OneHamsa.Dexterity
                     continue;
                 
                 var definition = DexteritySettingsProvider.GetFieldDefinitionByName(node, o.outputFieldName);
-                if (string.IsNullOrEmpty(definition.GetName()))
-                    definition.SetName_Editor($"(unknown: {o.outputFieldName})");
                     
-                o.name = $"{definition.GetName()} = {Utils.ConvertFieldValueToText(o.value, definition)}";
+                o.name = $"{definition} = {o.value}";
             }
 
             var overridesProp = serializedObject.FindProperty(nameof(FieldNode.overrides));
@@ -132,8 +130,6 @@ namespace OneHamsa.Dexterity
             if (targets.Length <= 1)
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(FieldNode.customGates)),
                     node, ref gateFoldoutOpen);
-            
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
         }
 
         protected override void ShowFieldValues()
@@ -155,26 +151,26 @@ namespace OneHamsa.Dexterity
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
-            foreach (var pair in outputFields.keyValuePairs.OrderBy(f => f.Value.GetValue() == FieldNode.emptyFieldValue))
+            foreach (var pair in outputFields.keyValuePairs.OrderBy(f => !f.Value.GetValue()))
             {
                 var field = pair.Value;
                 var value = field.GetValueWithoutOverride();
-                string strValue = Utils.ConvertFieldValueToText(value, field.definition);
+                string strValue = value.ToString();
 
-                if (value == FieldNode.emptyFieldValue)
+                if (!value)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";
                 }
-                if (overrides.TryGetValue(field.definitionId, out var valueOverride))
+                if (overrides.TryGetValue(field.stateId, out var valueOverride))
                 {
                     GUI.color = Color.magenta;
-                    strValue = $"{Utils.ConvertFieldValueToText(valueOverride.value, field.definition)} ({StrikeThrough(strValue)})";
+                    strValue = $"{valueOverride.value} ({StrikeThrough(strValue)})";
                     unusedOverrides.Remove(valueOverride);
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(field.definition.GetName());
+                EditorGUILayout.LabelField(Database.instance.GetStateAsString(field.stateId));
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField(strValue);
                 EditorGUILayout.EndHorizontal();
@@ -213,7 +209,7 @@ namespace OneHamsa.Dexterity
                 foreach (var pair in (t as FieldNode).outputFields.keyValuePairs)
                 {
                     var output = pair.Value;
-                    GUILayout.Label(output.definition.GetName(), EditorStyles.boldLabel);
+                    GUILayout.Label(Database.instance.GetStateAsString(output.stateId), EditorStyles.boldLabel);
 
                     ShowUpstreams(output, t as FieldNode);
 
@@ -243,9 +239,8 @@ namespace OneHamsa.Dexterity
                     {
                         var origColor = GUI.contentColor;
                         var upstreamFieldName = upstreamField.ToShortString();
-                        var upstreamValue = upstreamField.GetValueAsString();
-                        if (upstreamField.definition.type == FieldNode.FieldType.Boolean)
-                            GUI.contentColor = upstreamField.GetBooleanValue() ? Color.green : Color.red;
+                        var upstreamValue = upstreamField.GetValue().ToString();
+                        GUI.contentColor = upstreamField.GetValue() ? Color.green : Color.red;
 
                         EditorGUILayout.BeginHorizontal();
                         EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");

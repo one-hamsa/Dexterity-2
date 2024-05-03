@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity
             public Modifier.PropertyBase property;
         }
 
-        public FieldDefinition[] fieldDefinitions;
+        public string[] fieldDefinitions;
 
         [SerializeReference]
         public ITransitionStrategy defaultTransitionStrategy;

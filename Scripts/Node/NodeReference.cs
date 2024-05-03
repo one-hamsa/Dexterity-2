@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity
             [SerializeReference]
             public BaseField field;
 
-            public int outputFieldDefinitionId { get; private set; } = -1;
+            public int outputStateId { get; private set; } = -1;
 
             public Gate CreateDeepClone()
             {
@@ -34,7 +34,7 @@ namespace OneHamsa.Dexterity
                 ret.outputFieldName = outputFieldName;
                 ret.overrideType = overrideType;
                 ret.field = field.CreateDeepClone();
-                ret.outputFieldDefinitionId = outputFieldDefinitionId;
+                ret.outputStateId = outputStateId;
                 return ret;
             }
 
@@ -43,7 +43,7 @@ namespace OneHamsa.Dexterity
                 if (string.IsNullOrEmpty(outputFieldName))
                     return false;
 
-                return (outputFieldDefinitionId = Database.instance.GetFieldID(outputFieldName)) != -1;
+                return (outputStateId = Database.instance.GetStateID(outputFieldName)) != -1;
             }
 
             public override string ToString()
@@ -59,9 +59,6 @@ namespace OneHamsa.Dexterity
 
         [SerializeField]
         public List<Gate> gates = new();
-        
-        [SerializeField]
-        public List<FieldDefinition> internalFieldDefinitions = new();
 
         [NonSerialized]
         public FieldNode owner;
@@ -136,30 +133,6 @@ namespace OneHamsa.Dexterity
         {
             stateNames ??= StateFunction.EnumerateStateNames(GetStateFunctionAssetsIncludingParents()).ToHashSet();
             return stateNames;
-        }
-
-        public HashSet<string> GetFieldNames()
-        {
-            fieldNames ??= StateFunction.EnumerateFieldNames(GetStateFunctionAssetsIncludingParents()).ToHashSet();
-            return fieldNames;
-        }
-
-        public IEnumerable<FieldDefinition> GetInternalFieldDefinitions()
-        {
-            foreach (var parent in extends)
-            {
-                if (parent == null)
-                    continue;
-                foreach (var field in parent.GetInternalFieldDefinitions())
-                    yield return field;
-            }
-
-            foreach (var field in internalFieldDefinitions)
-            {
-                var f = field;
-                f.isInternal = true;
-                yield return f;
-            }
         }
 
         private void OnValidate() {

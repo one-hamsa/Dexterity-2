@@ -34,13 +34,13 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        public override int GetValue() 
+        public override bool GetValue() 
         {
             if (objectCtx == null)
-                return negate ? 1 : 0;
+                return negate;
 
-            var value = objectCtx.Boolean_GetValue() ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            var value = objectCtx.Boolean_GetValue();
+            return negate ? !value : value;
         }
     }
 }
