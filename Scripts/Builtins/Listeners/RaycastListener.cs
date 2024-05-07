@@ -17,6 +17,12 @@ namespace OneHamsa.Dexterity.Builtins
         public IRaycastController pressingController { get; private set; }
         private RaycastHit lastHit;
 
+        public IEnumerable<IRaycastController> EnumerateHoveringControllers()
+        {
+            foreach (var c in controllers)
+                yield return c;
+        }
+
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
         {
             controllers.Add(controller);
