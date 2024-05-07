@@ -13,6 +13,7 @@ namespace OneHamsa.Dexterity
         [Serializable]
         public class Gate
         {
+            [Flags]
             public enum OverrideType {
                 Additive = 1,
                 Subtractive = 2,

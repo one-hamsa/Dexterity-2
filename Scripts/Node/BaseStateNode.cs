@@ -66,6 +66,8 @@ namespace OneHamsa.Dexterity
 
         [NonSerialized]
         private bool _performedFirstInitialization;
+        
+        public bool initialized { get; private set; }
 
         #endregion Private Properties
 
@@ -230,10 +232,12 @@ namespace OneHamsa.Dexterity
             // mark state as dirty - important if node was re-enabled
             stateDirty = true;
             _performedFirstInitialization = true;
+            initialized = true;
         }
 
         protected virtual void Uninitialize(bool duringTeardown)
         {
+            initialized = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

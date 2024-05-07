@@ -73,7 +73,9 @@ namespace OneHamsa.Dexterity
             protected OutputOverride fieldOverride
             {
                 get {
-                    if (node == null) {
+                    // perform pointer null check without invoking Unity's Equals
+                    if (Equals(node, null)) 
+                    {
                         cachedOverride = null;
                     } else {
                         if (overridesDirtyIncrement == node.overridesDirtyIncrement)
@@ -301,13 +303,13 @@ namespace OneHamsa.Dexterity
                             {
                                 var found = false;
 
-                                if (gate.overrideType.HasFlag(Gate.OverrideType.Additive))
+                                if ((gate.overrideType & Gate.OverrideType.Additive) != 0)
                                 {
                                     result |= gate.field.GetBooleanValue();
                                     found = true;
                                 }
 
-                                if (gate.overrideType.HasFlag(Gate.OverrideType.Subtractive))
+                                if ((gate.overrideType & Gate.OverrideType.Subtractive) != 0)
                                 {
                                     result &= gate.field.GetBooleanValue();
                                     found = true;
