@@ -13,9 +13,7 @@ namespace OneHamsa.Dexterity
     public class FieldNodeEditor : BaseStateNodeEditor
     {
         static bool fieldValuesDebugOpen;
-        static bool upstreamDebugOpen;
         FieldNode node;
-        bool gateFoldoutOpen;
         
         private HashSet<FieldNode.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
@@ -23,7 +21,6 @@ namespace OneHamsa.Dexterity
 
         protected void OnEnable()
         {
-            gateFoldoutOpen = false;
             fieldValuesDebugOpen = Application.IsPlaying(target);
         }
 
@@ -131,7 +128,7 @@ namespace OneHamsa.Dexterity
         {
             if (targets.Length <= 1)
                 gatesUpdated = NodeReferenceEditor.ShowGates(serializedObject.FindProperty(nameof(FieldNode.customGates)),
-                    node, ref gateFoldoutOpen);
+                    node);
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
         }
@@ -155,13 +152,13 @@ namespace OneHamsa.Dexterity
                     outputFields.Count == 0 ? MessageType.Warning : MessageType.Info);
             }
 
-            foreach (var pair in outputFields.keyValuePairs.OrderBy(f => f.Value.GetValue() == FieldNode.emptyFieldValue))
+            foreach (var pair in outputFields.keyValuePairs.OrderBy(f => f.Value.value == BaseField.emptyFieldValue))
             {
                 var field = pair.Value;
                 var value = field.GetValueWithoutOverride();
                 string strValue = Utils.ConvertFieldValueToText(value, field.definition);
 
-                if (value == FieldNode.emptyFieldValue)
+                if (value == BaseField.emptyFieldValue)
                 {
                     GUI.color = Color.gray;
                     strValue = "(empty)";
@@ -196,84 +193,6 @@ namespace OneHamsa.Dexterity
             }
 
             Repaint();
-        }
-
-        protected override void ShowAllTargetsDebug()
-        {
-            if (!Application.IsPlaying(target))
-                return;
-
-            if (!(upstreamDebugOpen = EditorGUILayout.Foldout(upstreamDebugOpen, "Upstreams", true, EditorStyles.foldoutHeader)))
-                return;
-
-            foreach (var t in targets) {
-                if (targets.Length > 1)
-                    EditorGUILayout.LabelField(t.name, EditorStyles.whiteBoldLabel);
-
-                foreach (var pair in (t as FieldNode).outputFields.keyValuePairs)
-                {
-                    var output = pair.Value;
-                    GUILayout.Label(output.definition.GetName(), EditorStyles.boldLabel);
-
-                    ShowUpstreams(output, t as FieldNode);
-
-                    GUILayout.Space(5);
-                }
-
-                GUILayout.Space(10);
-            }
-            
-        }
-
-        private static void ShowUpstreams(BaseField field, FieldNode context, HashSet<BaseField> parentUpstreams = null)
-        {
-            var upstreams = HashSetPool<BaseField>.Get();
-            try
-            {
-                if (parentUpstreams != null)
-                {
-                    upstreams.UnionWith(parentUpstreams);
-                }
-                upstreams.Add(field);
-
-                if (Manager.instance.graph.edges.TryGetValue(field, out var upstreamFields))
-                {
-                    EditorGUI.indentLevel++;
-                    foreach (var upstreamField in upstreamFields)
-                    {
-                        var origColor = GUI.contentColor;
-                        var upstreamFieldName = upstreamField.ToShortString();
-                        var upstreamValue = upstreamField.GetValueAsString();
-                        if (upstreamField.definition.type == FieldNode.FieldType.Boolean)
-                            GUI.contentColor = upstreamField.GetBooleanValue() ? Color.green : Color.red;
-
-                        EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField($"{upstreamFieldName} = {upstreamValue}");
-                        GUI.contentColor = origColor;
-                        GUILayout.FlexibleSpace();
-                        if (upstreamField.context != context && upstreamField.context != null && GUILayout.Button(upstreamField.context.name))
-                        {
-                            Selection.activeObject = upstreamField.context;
-                        }
-
-                        EditorGUILayout.EndHorizontal();
-
-                        if (upstreams.Contains(upstreamField))
-                        {
-                            EditorGUILayout.HelpBox($"Cyclic dependency in {upstreamFieldName}", MessageType.Error);
-                            continue;
-                        }
-
-                        ShowUpstreams(upstreamField, context, upstreams);
-                    }
-
-                    EditorGUI.indentLevel--;
-                }
-            }
-            finally
-            {
-                HashSetPool<BaseField>.Release(upstreams);
-            }
         }
 
         protected override void ShowWarnings()

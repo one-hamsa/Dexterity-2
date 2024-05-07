@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity
                 Debug.LogError($"GetBooleanValue: {field.definition.GetName()} is not of type boolean");
                 return default;
             }
-            return field.GetValue() == 1;
+            return field.value == 1;
         }
         public static string GetEnumValue(this BaseField field)
         {
@@ -20,15 +20,16 @@ namespace OneHamsa.Dexterity
                 Debug.LogError($"GetEnumValue: {field.definition.GetName()} is not of type enum");
                 return null;
             }
-            var value = field.GetValue();
-            if (value == FieldNode.emptyFieldValue)
+
+            var value = field.value;
+            if (value == BaseField.emptyFieldValue)
                 value = 0;
 
             return field.definition.enumValues[value];
         }
 
         public static string GetValueAsString(this BaseField field) {
-            if (field.GetValue() == FieldNode.emptyFieldValue)
+            if (field.value == BaseField.emptyFieldValue)
                 return "(empty)";
 
             switch (field.definition.type) {
@@ -37,7 +38,7 @@ namespace OneHamsa.Dexterity
                 case FieldNode.FieldType.Enum:
                     return field.GetEnumValue().ToString();
                 default:
-                    return field.GetValue().ToString();
+                    return field.value.ToString();
             }
         }
     }

@@ -5,7 +5,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
-    public class EnumField : BaseField
+    public class EnumField : UpdateableField
     {
         public BindingEnumNode targetNode;
         [EnumField(nameof(targetNode))]
@@ -13,12 +13,6 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
 
         private int cachedEnumValue;
-
-        public override int GetValue()
-        {
-            var value = targetNode != null && targetNode.GetEnumValue() == cachedEnumValue ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
-        }
 
         protected override void Initialize(FieldNode context)
         {
@@ -33,6 +27,13 @@ namespace OneHamsa.Dexterity.Builtins
             // initialize just to be sure
             targetNode.InitializeBinding();
             cachedEnumValue = Convert.ToInt32(Enum.Parse(targetNode.bindingType, targetField));
+        }
+
+        public override void Update()
+        {
+            var v = targetNode.initialized && targetNode.GetEnumValue() == cachedEnumValue ? 1 : 0;
+            SetValue(negate ? (v + 1) % 2 : v);
+            
         }
     }
 }

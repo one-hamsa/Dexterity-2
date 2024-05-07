@@ -1,4 +1,3 @@
-using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Scripting;
@@ -11,15 +10,17 @@ namespace OneHamsa.Dexterity.Builtins
         DexterityUIHoverFieldProvider provider = null;
         public class DexterityUIHoverFieldProvider : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         {
-            public bool hover { get;  private set; }
-            public void OnPointerEnter(PointerEventData eventData) => hover = true;
-            public void OnPointerExit(PointerEventData eventData) => hover = false;
+            internal UIHoverField field;
+
+            public void OnPointerEnter(PointerEventData eventData) => field.SetValue(1);
+            public void OnPointerExit(PointerEventData eventData) => field.SetValue(0);
         }
 
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
-            provider = context.gameObject.GetOrAddComponent<DexterityUIHoverFieldProvider>();
+            provider = context.gameObject.AddComponent<DexterityUIHoverFieldProvider>();
+            provider.field = this;
         }
         public override void Finalize(FieldNode context)
         {
@@ -27,7 +28,5 @@ namespace OneHamsa.Dexterity.Builtins
 
             UnityEngine.Object.Destroy(provider);
         }
-
-        public override int GetValue() => (provider && provider.hover) ? 1 : 0;
     }
 }

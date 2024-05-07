@@ -12,24 +12,23 @@ namespace OneHamsa.Dexterity.Builtins
         public Transform child;
         public bool negate;
 
-        FieldNode parent = null;
+        FieldNode parent;
         int fieldId;
 
-        List<Transform> parentsTransform;
-
-        // only proxy when parent is found
-        public override bool proxy => parent != null;
-
-        public override int GetValue()
+        protected override void OnUpstreamsChanged(List<BaseField> upstreams = null)
         {
+            base.OnUpstreamsChanged(upstreams);
+            
             if (parent == null)
-                return 0;
-
-            var value = parent.GetOutputField(fieldId).GetValue();
-            return negate ? (value + 1) % 2 : value;
+                SetValue(0, upstreams);
+            else
+            {
+                var v = parent.GetOutputField(fieldId).value;
+                SetValue(negate ? (v + 1) % 2 : v, upstreams);
+            }
         }
-
-        public override void RefreshReferences()
+        
+        private void RefreshReferences()
         {
             var lastParent = parent;
             var transformParent = child.parent;
@@ -50,7 +49,6 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Initialize(context);
 
-            parentsTransform = new();
             context.onParentTransformChanged += RefreshReferences;
             context.onEnabled += RefreshReferences;
 

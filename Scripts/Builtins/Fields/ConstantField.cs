@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -8,6 +9,10 @@ namespace OneHamsa.Dexterity.Builtins
         [FieldValue(nameof(BaseField.relatedFieldName), proxy = true)]
         public int constant;
 
-        public override int GetValue() => constant;
+        protected override void Initialize(FieldNode context)
+        {
+            base.Initialize(context);
+            SetValue(constant);
+        }
     }
 }

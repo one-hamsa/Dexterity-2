@@ -23,7 +23,7 @@ namespace OneHamsa.Dexterity
             foreach (var pair in mask)
                 if (pair.field == field)
                     return pair.value;
-            return FieldNode.emptyFieldValue;
+            return BaseField.emptyFieldValue;
         }
 
         static int Evaluate(List<(Step step, int depth)> cache, List<(int,int)> mask) {

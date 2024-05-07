@@ -67,15 +67,15 @@ namespace OneHamsa.Dexterity.Builtins
             if (!string.IsNullOrEmpty(settings.visibleFieldName))
                 visibleField = node.GetOutputField(settings.visibleFieldName);
 
-            pressedField.onBooleanValueChanged += HandlePress;
+            pressedField.onValueChanged += HandlePress;
         }
         protected virtual void OnDisable()
         {
             if (pressedField != null)
-                pressedField.onBooleanValueChanged -= HandlePress;
+                pressedField.onValueChanged -= HandlePress;
         }
 
-        private void HandlePress(FieldNode.OutputField field, bool oldValue, bool newValue)
+        private void HandlePress(BaseField.ValueChangeEvent e)
         {
             // don't handle if hidden
             if (visibleField != null && !visibleField.GetBooleanValue())
@@ -85,21 +85,21 @@ namespace OneHamsa.Dexterity.Builtins
             if (disabledField != null && disabledField.GetBooleanValue())
                 return;
 
-            switch (newValue)
+            switch (e.GetNewValueAsBool())
             {
-                case true when !oldValue:
+                case true when !e.GetOldValueAsBool():
                     onPressDown?.Invoke();
                     break;
-                case false when oldValue:
+                case false when e.GetOldValueAsBool():
                     onPressUp?.Invoke();
                     break;
             }
 
             // manually refresh hover value - we might be in the middle of a cache update
-            hoverField.CacheValue();
+            hoverField.RefreshUpstreams();
 
             // only handle if unpressed while on object
-            if (oldValue && !newValue && hoverField.GetBooleanValue())
+            if (e.GetOldValueAsBool() && !e.GetNewValueAsBool() && hoverField.GetBooleanValue())
                 OnPressComplete();
         }
 
