@@ -7,27 +7,10 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
-    public class BindingField : BaseField
+    public class BindingField : UpdateableField
     {
-        public class BindingFieldProvider : MonoBehaviour
-        {
-            internal BindingField field;
-
-            private void Update()
-            {
-                if (!field.binding.IsValid() || !field.binding.IsInitialized())
-                    field.SetValue(field.negate ? 1 : 0);
-                else
-                {
-                    var v = field.binding.Boolean_GetValue() ? 1 : 0;
-                    field.SetValue(field.negate ? (v + 1) % 2 : v);
-                }
-            }
-        }
-        
         public BoolObjectBinding binding;
         public bool negate;
-        private BindingFieldProvider provider;
 
         public override BaseField CreateDeepClone()
         {
@@ -49,17 +32,20 @@ namespace OneHamsa.Dexterity.Builtins
                 Debug.LogError($"{nameof(BindingField)}: Failed to initialize binding for {context}", context);
                 return;
             }
-            
-            provider = context.gameObject.GetOrAddComponent<BindingFieldProvider>();
-            provider.field = this;
         }
 
-        public override void Finalize(FieldNode context)
+        public override void Update()
         {
-            base.Finalize(context);
+            if (!binding.IsValid() || !binding.IsInitialized())
+                SetValue(negate ? 1 : 0);
+            else
+            {
+                var v = binding.Boolean_GetValue() ? 1 : 0;
+                SetValue(negate ? (v + 1) % 2 : v);
+            }
             
-            if (provider != null)
-                UnityEngine.Object.Destroy(provider);
+            // always set pending update, we can't know when the binding will change
+            SetPendingUpdate();
         }
     }
 }
