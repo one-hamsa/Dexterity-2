@@ -1,25 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    internal struct RaycastControllerFieldProvider : IRaycastReceiver
+    public class RaycastControllerFieldProvider : IRaycastReceiver
     {
-        private HashSet<IRaycastController> controllers;
-        private HashSet<IRaycastController> receivedPressStart;
-        private List<IRaycastController> controllersToClear;
+        private HashSet<IRaycastController> controllers = new();
+        private HashSet<IRaycastController> receivedPressStart = new();
+        private List<IRaycastController> controllersToClear = new();
         
         public bool stayPressedOutOfBounds;
 
-        public static RaycastControllerFieldProvider Create()
-        {
-            return new RaycastControllerFieldProvider
-            {
-                controllers = new HashSet<IRaycastController>(),
-                receivedPressStart = new HashSet<IRaycastController>(),
-                controllersToClear = new List<IRaycastController>(),
-            };
-        }
+        public event Action onChanged;
 
         public bool GetHover(string castTag = null) 
         {
@@ -55,16 +48,23 @@ namespace OneHamsa.Dexterity.Builtins
 
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
         {
-            controllers.Add(controller);
+            var changed = controllers.Add(controller);
             if (controller.wasPressedThisFrame)
-                receivedPressStart.Add(controller);
+                changed |= receivedPressStart.Add(controller);
+            
+            if (changed)
+                onChanged?.Invoke();
         }
 
         void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
             if(stayPressedOutOfBounds) return;
-            controllers.Remove(controller);
-            receivedPressStart.Remove(controller);
+
+            var changed = controllers.Remove(controller);
+            changed |= receivedPressStart.Remove(controller);
+            
+            if (changed)
+                onChanged?.Invoke();
         }
     }
 }

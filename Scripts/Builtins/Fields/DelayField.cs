@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -32,6 +33,9 @@ namespace OneHamsa.Dexterity.Builtins
 					_lastValue = source.value;
 					_timer = 0;
 				}
+				else
+					// request another update next frame
+					SetPendingUpdate();
 			}
 
 			if (_lastValue == 0)
@@ -41,6 +45,9 @@ namespace OneHamsa.Dexterity.Builtins
 					_lastValue = source.value;
 					_timer = 0;
 				}
+				else
+					// request another update next frame
+					SetPendingUpdate();
 			}
 
 			_timer += Time.unscaledDeltaTime;
