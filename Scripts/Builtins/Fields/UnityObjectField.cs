@@ -39,7 +39,7 @@ namespace OneHamsa.Dexterity.Builtins
             using var _ = new ScopedProfile($"UnityObjectField.Update {targetObject.name}.{targetProperty}");
             #endif
             
-            if (objectCtx == null)
+            if (objectCtx == null || (targetObject is MonoBehaviour mb && !mb.isActiveAndEnabled))
                 SetValue(negate ? 1 : 0);
 
             else
