@@ -33,7 +33,7 @@ namespace OneHamsa.Dexterity.Builtins
         }
         public delegate void PressAnywhereHandler(PressAnywhereEvent e);
         
-        const float rayLength = 100f;
+        const float rayLength = 500f;
         const int maxHits = 20;
 
         // RaycastReceiver filter
