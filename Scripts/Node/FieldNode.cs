@@ -569,6 +569,9 @@ namespace OneHamsa.Dexterity
                 CacheFieldOverrides();
             }
             var overrideOutput = cachedOverrides[fieldId];
+            if (overrideOutput.value == value)
+                return;
+            
             overrideOutput.value = value;
             GetOutputField(fieldId).RefreshUpstreams();
         }
@@ -583,6 +586,7 @@ namespace OneHamsa.Dexterity
             {
                 overrides.Remove(@override);
                 CacheFieldOverrides();
+                GetOutputField(fieldId).RefreshUpstreams();
             }
             else
             {
