@@ -237,7 +237,8 @@ namespace OneHamsa.Dexterity
 
         protected virtual void Uninitialize(bool duringTeardown)
         {
-            initialized = false;
+            if (duringTeardown)
+                initialized = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
