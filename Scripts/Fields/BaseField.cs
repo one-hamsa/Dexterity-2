@@ -104,7 +104,17 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public HashSet<BaseField> GetUpstreamFields() => upstreamFields;
         
-        public event Action<ValueChangeEvent> onValueChanged;
+        private List<Action<ValueChangeEvent>> onValueChangedHandlers = new();
+        public event Action<ValueChangeEvent> onValueChanged
+        {
+            add
+            {
+                if (!onValueChangedHandlers.Contains(value))
+                    onValueChangedHandlers.Add(value);
+            }
+            
+            remove => onValueChangedHandlers.Remove(value);
+        }
         
         public struct ValueChangeEvent
         {
@@ -150,14 +160,32 @@ namespace OneHamsa.Dexterity
             }
             try
             {
-                upstreams.Add(this);
-                onValueChanged?.Invoke(new ValueChangeEvent
+                using var _ = ListPool<Action<ValueChangeEvent>>.Get(out var tempHandlers);
+                tempHandlers.AddRange(onValueChangedHandlers);
+                
+                // branch upstreams for each handler
+                foreach (var action in tempHandlers)
                 {
-                    field = this,
-                    oldValue = oldValue,
-                    newValue = v,
-                    visitedFields = upstreams
-                });
+                    try
+                    {
+                        using (ListPool<BaseField>.Get(out var branch))
+                        {
+                            branch.AddRange(upstreamFields);
+                            branch.Add(this);
+                            action(new ValueChangeEvent
+                            {
+                                field = this,
+                                oldValue = oldValue,
+                                newValue = v,
+                                visitedFields = branch
+                            });
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e, context);
+                    }
+                }
             }
             finally
             {
@@ -212,8 +240,9 @@ namespace OneHamsa.Dexterity
             return $"{ToShortString()} -> {this.GetValueAsString()}";
         }
 
-        public virtual string ToShortString() {
-            return $"{GetType().Name}";
+        public virtual string ToShortString()
+        {
+            return $"{GetType().Name} ({definition.GetName()})";
         }
 
         /// <summary>
