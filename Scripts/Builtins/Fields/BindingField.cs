@@ -1,6 +1,6 @@
-using System.Collections.Generic;
+// #define BINDING_DEEP_PROFILE
+
 using System.Data;
-using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -36,6 +36,10 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override void Update()
         {
+            #if BINDING_DEEP_PROFILE
+            using var _ = new ScopedProfile($"BindingField.Update {binding.target.name}.{binding.methodName}");
+            #endif
+            
             if (!binding.IsValid() || !binding.IsInitialized())
                 SetValue(negate ? 1 : 0);
             else

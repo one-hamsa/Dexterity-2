@@ -1,3 +1,5 @@
+// #define BINDING_DEEP_PROFILE
+
 using UnityEngine;
 using System;
 using UnityEngine.Scripting;
@@ -33,6 +35,10 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override void Update()
         {
+            #if BINDING_DEEP_PROFILE
+            using var _ = new ScopedProfile($"UnityObjectField.Update {targetObject.name}.{targetProperty}");
+            #endif
+            
             if (objectCtx == null)
                 SetValue(negate ? 1 : 0);
 
