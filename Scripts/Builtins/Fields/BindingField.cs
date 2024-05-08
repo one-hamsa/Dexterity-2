@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity.Builtins
             using var _ = new ScopedProfile($"BindingField.Update {binding.target.name}.{binding.methodName}");
             #endif
             
-            if (!binding.IsValid() || !binding.IsInitialized())
+            if (!binding.IsInitialized() || binding.target is MonoBehaviour { isActiveAndEnabled: false })
                 SetValue(negate ? 1 : 0);
             else
             {
