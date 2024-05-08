@@ -12,12 +12,11 @@ namespace OneHamsa.Dexterity
     {
         public const int emptyFieldValue = -1;
         public const int defaultFieldValue = 0;
-        
+
         /// <summary>
         /// all the fields this field is dependent upon. 
-        /// initialized once to save performance
         /// </summary>
-        private HashSet<BaseField> upstreamFields = new();
+        private HashSet<BaseField> upstreamFields;
 
         /// <summary>
         /// adds an upstream field
@@ -104,11 +103,13 @@ namespace OneHamsa.Dexterity
         /// </summary>
         public HashSet<BaseField> GetUpstreamFields() => upstreamFields;
         
-        private List<Action<ValueChangeEvent>> onValueChangedHandlers = new();
+        private List<Action<ValueChangeEvent>> onValueChangedHandlers;
         public event Action<ValueChangeEvent> onValueChanged
         {
             add
             {
+                // lazy init
+                onValueChangedHandlers ??= new List<Action<ValueChangeEvent>>();
                 if (!onValueChangedHandlers.Contains(value))
                     onValueChangedHandlers.Add(value);
             }
@@ -150,6 +151,9 @@ namespace OneHamsa.Dexterity
             value = v;
 
             if (oldValue == v)
+                return;
+            
+            if (onValueChangedHandlers == null)
                 return;
             
             var leasedUpstreams = false;
@@ -196,7 +200,13 @@ namespace OneHamsa.Dexterity
 
         public virtual BaseField CreateDeepClone()
         {
-             return MemberwiseClone() as BaseField;
+             var clone = (BaseField)MemberwiseClone();
+             
+             // safety
+             clone.upstreamFields = null;
+             clone.onValueChangedHandlers = null;
+
+             return clone;
         }
 
         /// <summary>
@@ -211,6 +221,7 @@ namespace OneHamsa.Dexterity
                 throw new FieldInitializationException();
 
             value = emptyFieldValue;
+            upstreamFields = new HashSet<BaseField>();
             this.context = context;
             Initialize(context);
             initialized = true;

@@ -6,37 +6,47 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public class RaycastControllerFieldProvider : IRaycastReceiver
     {
-        private HashSet<IRaycastController> controllers = new();
-        private HashSet<IRaycastController> receivedPressStart = new();
+        private List<IRaycastController> controllers = new();
+        private List<IRaycastController> receivedPressStart = new();
         private List<IRaycastController> controllersToClear = new();
         
         public bool stayPressedOutOfBounds;
 
         public event Action onChanged;
 
-        public bool GetHover(string castTag = null) 
+        public bool GetHover(string castTag = null)
         {
-            foreach (var ctrl in controllers) {
+            // foreach enumerator not cached for interfaces on IL2CPP
+            for (var index = 0; index < controllers.Count; index++)
+            {
+                var ctrl = controllers[index];
                 if (!string.IsNullOrEmpty(castTag) && !ctrl.CompareTag(castTag))
                     continue;
                 return true;
             }
+
             return false;
         }
         public bool GetPress(string castTag = null)
         {
             controllersToClear.Clear();
-            foreach (var ctrl in controllers) {
+            
+            // foreach enumerator not cached for interfaces on IL2CPP
+            for (var index = 0; index < controllers.Count; index++)
+            {
+                var ctrl = controllers[index];
                 if (!string.IsNullOrEmpty(castTag) && !ctrl.CompareTag(castTag))
                     continue;
 
                 if (ctrl.isPressed && receivedPressStart.Contains(ctrl))
                     return true;
 
-                if (!ctrl.isPressed && stayPressedOutOfBounds) {
+                if (!ctrl.isPressed && stayPressedOutOfBounds)
+                {
                     controllersToClear.Add(ctrl);
                 }
             }
+
             for (int i = 0; i < controllersToClear.Count; i++)
             {
                 var controller = controllersToClear[i];
@@ -48,9 +58,18 @@ namespace OneHamsa.Dexterity.Builtins
 
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
         {
-            var changed = controllers.Add(controller);
-            if (controller.wasPressedThisFrame)
-                changed |= receivedPressStart.Add(controller);
+            var changed = false;
+            if (!controllers.Contains(controller))
+            {
+                controllers.Add(controller);
+                changed = true;
+            }
+
+            if (controller.wasPressedThisFrame && !receivedPressStart.Contains(controller))
+            {
+                receivedPressStart.Add(controller);
+                changed = true;
+            }
             
             if (changed)
                 onChanged?.Invoke();
@@ -58,7 +77,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
-            if(stayPressedOutOfBounds) return;
+            if(stayPressedOutOfBounds && controller.isPressed) return;
 
             var changed = controllers.Remove(controller);
             changed |= receivedPressStart.Remove(controller);
