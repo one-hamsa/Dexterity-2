@@ -210,6 +210,7 @@ namespace OneHamsa.Dexterity
             if (definitionId == -1 || string.IsNullOrEmpty(definition.GetName()))
                 throw new FieldInitializationException();
 
+            value = emptyFieldValue;
             this.context = context;
             Initialize(context);
             initialized = true;
