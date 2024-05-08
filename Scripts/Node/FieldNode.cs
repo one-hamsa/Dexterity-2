@@ -342,8 +342,12 @@ namespace OneHamsa.Dexterity
             if (duringTeardown)
                 field.Finalize(this);
             
-            foreach (var upstreamField in field.GetUpstreamFields())
-                FinalizeField(upstreamField, duringTeardown);
+            var upstreams = field.GetUpstreamFields();
+            if (upstreams != null)
+            {
+                foreach (var upstreamField in field.GetUpstreamFields())
+                    FinalizeField(upstreamField, duringTeardown);
+            }
 
             if (duringTeardown)
                 RemoveAudit(field);

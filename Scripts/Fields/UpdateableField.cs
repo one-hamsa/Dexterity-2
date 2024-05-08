@@ -23,7 +23,8 @@ namespace OneHamsa.Dexterity.Builtins
         {
             base.Finalize(context);
             
-            Manager.instance.RemoveUpdateableField(this);
+            if (Manager.instance != null)
+                Manager.instance.RemoveUpdateableField(this);
         }
         
         public abstract void Update();
