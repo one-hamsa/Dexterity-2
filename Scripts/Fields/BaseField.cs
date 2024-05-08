@@ -57,8 +57,13 @@ namespace OneHamsa.Dexterity
                 fields.AddRange(upstreamFields);
 
                 foreach (var field in fields)
-                    RemoveUpstreamField(field);
+                {
+                    if (upstreamFields.Remove(field))
+                        field.onValueChanged -= OnUpstreamValueChanged;
+                }
             }
+            
+            OnUpstreamValueChanged(default);
         }
 
         private void OnUpstreamValueChanged(ValueChangeEvent changeEvent)

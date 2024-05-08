@@ -34,6 +34,7 @@ namespace OneHamsa.Dexterity.Builtins
             var v = targetNode.initialized && targetNode.GetEnumValue() == cachedEnumValue ? 1 : 0;
             SetValue(negate ? (v + 1) % 2 : v);
             
+            SetPendingUpdate();
         }
     }
 }

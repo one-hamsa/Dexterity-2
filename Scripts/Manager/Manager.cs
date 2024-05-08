@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Builtins;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
@@ -43,7 +45,7 @@ namespace OneHamsa.Dexterity
 
         public DexteritySettings settings;
         private HashSet<Modifier> modifiers = new();
-        private List<Modifier> modifiersActiveList = new();
+        private HashSet<UpdateableField> updateableFields = new();
 
         /// <summary>
         /// Adds a modifier to the update pool
@@ -64,6 +66,18 @@ namespace OneHamsa.Dexterity
         /// </summary>
         /// <param name="modifier">modifier to remove</param>
         public void RemoveModifier(Modifier modifier) => modifiers.Remove(modifier);
+        
+        /// <summary>
+        /// Adds an updateable field to the update pool
+        /// </summary>
+        /// <param name="field">field to add</param>
+        public void AddUpdateableField(UpdateableField field) => updateableFields.Add(field);
+
+        /// <summary>
+        /// Removes an updateable field from the update pool
+        /// </summary>
+        /// <param name="field">field to remove</param>
+        public void RemoveUpdateableField(UpdateableField field) => updateableFields.Remove(field);
 
         protected void Awake()
         {
@@ -78,26 +92,58 @@ namespace OneHamsa.Dexterity
         
         protected void Update()
         {
-            using var _ = new ScopedProfile("Dexterity: Update Modifiers");
-            // update all modifiers
-            modifiersActiveList.Clear();
-            modifiersActiveList.AddRange(modifiers);
-            foreach (var modifier in modifiersActiveList)
+            
+            // update all updateable fields
+            if (updateableFields.Count > 0)
             {
-                try
+                using (new ScopedProfile("Dexterity: Update Updateable Fields"))
+                using (ListPool<UpdateableField>.Get(out var updateableFieldsActiveList))
                 {
-                    modifier.Refresh();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e, modifier);
-                    // remove modifier from update pool if object is destroyed
-                    if (modifier == null)
+                    updateableFieldsActiveList.AddRange(updateableFields);
+                    foreach (var field in updateableFieldsActiveList)
                     {
-                        Debug.LogWarning($"Modifier of type {modifier.GetType().Name} was destroyed but not removed, " +
-                                         $"the exception above was probably caused by that reason. " +
-                                         $"removing from update pool");
-                        modifiers.Remove(modifier);
+                        if (!field.pendingUpdate)
+                            continue;
+
+                        field.pendingUpdate = false;
+                        try
+                        {
+                            field.Update();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e, field.context);
+                        }
+                    }
+                }
+            }
+
+            // update all modifiers
+            if (modifiers.Count > 0)
+            {
+                using (new ScopedProfile("Dexterity: Update Modifiers"))
+                using (ListPool<Modifier>.Get(out var modifiersActiveList))
+                {
+                    modifiersActiveList.AddRange(modifiers);
+                    foreach (var modifier in modifiersActiveList)
+                    {
+                        try
+                        {
+                            modifier.Refresh();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e, modifier);
+                            // remove modifier from update pool if object is destroyed
+                            if (modifier == null)
+                            {
+                                Debug.LogWarning(
+                                    $"Modifier of type {modifier.GetType().Name} was destroyed but not removed, " +
+                                    $"the exception above was probably caused by that reason. " +
+                                    $"removing from update pool");
+                                modifiers.Remove(modifier);
+                            }
+                        }
                     }
                 }
             }
