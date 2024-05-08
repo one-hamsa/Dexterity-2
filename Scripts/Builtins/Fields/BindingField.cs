@@ -39,17 +39,26 @@ namespace OneHamsa.Dexterity.Builtins
             #if BINDING_DEEP_PROFILE
             using var _ = new ScopedProfile($"BindingField.Update {binding.target.name}.{binding.methodName}");
             #endif
-            
-            if (!binding.IsInitialized() || binding.target is MonoBehaviour { isActiveAndEnabled: false })
-                SetValue(negate ? 1 : 0);
-            else
+
+            try
             {
-                var v = binding.Boolean_GetValue() ? 1 : 0;
-                SetValue(negate ? (v + 1) % 2 : v);
+                if (!binding.IsInitialized() || binding.target is MonoBehaviour { isActiveAndEnabled: false })
+                    SetValue(negate ? 1 : 0);
+                else
+                {
+                    var v = binding.Boolean_GetValue() ? 1 : 0;
+                    SetValue(negate ? (v + 1) % 2 : v);
+                }
+
+                // always set pending update, we can't know when the binding will change
+                SetPendingUpdate();
             }
-            
-            // always set pending update, we can't know when the binding will change
-            SetPendingUpdate();
+            catch (MissingReferenceException)
+            {
+                // target was destroyed, it's ok, stop updating
+                SetValue(negate ? 1 : 0);
+                Finalize(context);
+            }
         }
     }
 }
