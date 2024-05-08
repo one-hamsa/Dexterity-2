@@ -18,18 +18,18 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
 
         List<FieldNode.OutputField> outputFields;
-
-        // we always report about someone else's field, so mark as proxy
-        public override bool proxy => true;
         
         public override BaseField CreateDeepClone()
         {
             throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
         }
-        
-        public override int GetValue() {
-            var value = GetValueBeforeNegation();
-            return negate ? (value + 1) % 2 : value;
+
+        protected override void OnUpstreamsChanged(List<BaseField> upstreams)
+        {
+            base.OnUpstreamsChanged(upstreams);
+            
+            var v = GetValueBeforeNegation();
+            SetValue(negate ? (v + 1) % 2 : v);
         }
 
         private int GetValueBeforeNegation() {
@@ -37,7 +37,7 @@ namespace OneHamsa.Dexterity.Builtins
                 case TakeValueWhen.AnyEqualsTrue:
                     foreach (var field in outputFields)
                     {
-                        if (field.node == null || !field.node.isActiveAndEnabled)
+                        if (!field.node.initialized || !field.node.isActiveAndEnabled)
                             continue;
                         
                         if (field.GetBooleanValue())
@@ -46,14 +46,14 @@ namespace OneHamsa.Dexterity.Builtins
                     return 0;
                 case TakeValueWhen.AnyEqualsFalse:
                     foreach (var field in outputFields) {
-                        if (field.node != null && field.node.isActiveAndEnabled && field.GetBooleanValue())
+                        if (field.node.initialized && field.node.isActiveAndEnabled && field.GetBooleanValue())
                             return 0;
                     }
                     return 1;
                 case TakeValueWhen.AllEqual:
                     int? prevValue = null;
                     foreach (var field in outputFields) {
-                        var value = field.node == null || !field.node.isActiveAndEnabled ? 0 : field.GetValue();
+                        var value = !field.node.initialized || !field.node.isActiveAndEnabled ? 0 : field.value;
                         if (prevValue.HasValue && prevValue.Value != value)
                             return 0;
 

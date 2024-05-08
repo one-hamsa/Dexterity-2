@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using OneHamsa.Dexterity.Utilities;
+using UnityEngine;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
@@ -7,6 +10,9 @@ namespace OneHamsa.Dexterity
     // will automatically serialize fields under "parameters" to custom editor
     public abstract class BaseField
     {
+        public const int emptyFieldValue = -1;
+        public const int defaultFieldValue = 0;
+        
         /// <summary>
         /// all the fields this field is dependent upon. 
         /// initialized once to save performance
@@ -23,19 +29,22 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            if (upstreamFields.Add(field)) {
-                Manager.instance.SetDirty(field);
-                Manager.instance.SetDirty(this);
+            if (upstreamFields.Add(field))
+            {
+                field.onValueChanged += OnUpstreamValueChanged;
+                OnUpstreamValueChanged(default);
             }
         }
+
         /// <summary>
         /// removes an existing upstream field
         /// </summary>
         protected void RemoveUpstreamField(BaseField field)
         {
-            if (upstreamFields.Remove(field)) {
-                Manager.instance.SetDirty(field);
-                Manager.instance.SetDirty(this);
+            if (upstreamFields.Remove(field))
+            {
+                field.onValueChanged -= OnUpstreamValueChanged;
+                OnUpstreamValueChanged(default);
             }
         }
         /// <summary>
@@ -43,11 +52,18 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected void ClearUpstreamFields()
         {
-            foreach (var field in upstreamFields)
-                Manager.instance.SetDirty(field);
-            upstreamFields.Clear();
+            using (ListPool<BaseField>.Get(out var fields))
+            {
+                fields.AddRange(upstreamFields);
 
-            Manager.instance.SetDirty(this);
+                foreach (var field in fields)
+                    RemoveUpstreamField(field);
+            }
+        }
+
+        private void OnUpstreamValueChanged(ValueChangeEvent changeEvent)
+        {
+            OnUpstreamsChanged(changeEvent.visitedFields);
         }
 
         /// <summary>
@@ -79,19 +95,71 @@ namespace OneHamsa.Dexterity
         public bool initialized;
 
         /// <summary>
-        /// is the field a dependency itself, or is it only reflecting another node's outputs?
-        /// </summary>
-        public virtual bool proxy { get; protected set; } = false;
-
-        /// <summary>
         /// returns the field this provider relies on. 
         /// </summary>
         public HashSet<BaseField> GetUpstreamFields() => upstreamFields;
+        
+        public event Action<ValueChangeEvent> onValueChanged;
+        
+        public struct ValueChangeEvent
+        {
+            public BaseField field;
+            public int oldValue;
+            public int newValue;
+
+            public List<BaseField> visitedFields;
+            
+            public bool GetOldValueAsBool() => oldValue != 0;
+            public bool GetNewValueAsBool() => newValue != 0;
+        }
 
         /// <summary>
-        /// returns the field value calculated by the provider
+        /// returns the last field value calculated by the provider
         /// </summary>
-        public abstract int GetValue();
+        public int value { get; private set; } = emptyFieldValue;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void SetValue(int v, List<BaseField> upstreams = null)
+        {
+            if (upstreams != null && upstreams.Contains(this))
+            {
+                #if UNITY_EDITOR
+                foreach (var field in upstreams)
+                    Debug.Log($"Circular Upstream: {field.ToShortString()} ({field.context.gameObject.GetPath()})", field.context);
+                Debug.Log($"Circular Upstream: {ToShortString()} ({context.gameObject.GetPath()})", context);
+                #endif
+                throw new Exception("Circular dependency detected: " + string.Join(" -> ", upstreams));
+            }
+            
+            var oldValue = value;
+            value = v;
+
+            if (oldValue == v)
+                return;
+            
+            var leasedUpstreams = false;
+            if (upstreams == null)
+            {
+                upstreams = ListPool<BaseField>.Get();
+                leasedUpstreams = true;
+            }
+            try
+            {
+                upstreams.Add(this);
+                onValueChanged?.Invoke(new ValueChangeEvent
+                {
+                    field = this,
+                    oldValue = oldValue,
+                    newValue = v,
+                    visitedFields = upstreams
+                });
+            }
+            finally
+            {
+                if (leasedUpstreams)
+                    ListPool<BaseField>.Release(upstreams);
+            }
+        }
 
         public virtual BaseField CreateDeepClone()
         {
@@ -130,14 +198,9 @@ namespace OneHamsa.Dexterity
         }
 
         /// <summary>
-        /// dispatched by the graph before updating
+        /// dispatched when the field should recalculate its value
         /// </summary>
-        public virtual void RefreshReferences() { }
-
-        /// <summary>
-        /// dispatched by the graph when value can be cached
-        /// </summary>
-        public virtual void CacheValue() { }
+        protected virtual void OnUpstreamsChanged(List<BaseField> upstreams = null) { }
 
         public override string ToString()
         {

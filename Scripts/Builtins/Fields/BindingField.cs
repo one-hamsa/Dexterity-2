@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Data;
+using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -7,8 +9,25 @@ namespace OneHamsa.Dexterity.Builtins
     [Preserve]
     public class BindingField : BaseField
     {
+        public class BindingFieldProvider : MonoBehaviour
+        {
+            internal BindingField field;
+
+            private void Update()
+            {
+                if (!field.binding.IsValid() || !field.binding.IsInitialized())
+                    field.SetValue(field.negate ? 1 : 0);
+                else
+                {
+                    var v = field.binding.Boolean_GetValue() ? 1 : 0;
+                    field.SetValue(field.negate ? (v + 1) % 2 : v);
+                }
+            }
+        }
+        
         public BoolObjectBinding binding;
         public bool negate;
+        private BindingFieldProvider provider;
 
         public override BaseField CreateDeepClone()
         {
@@ -24,24 +43,23 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (binding.IsInitialized())
                 return;
-            
+
             if (!binding.Initialize())
+            {
                 Debug.LogError($"{nameof(BindingField)}: Failed to initialize binding for {context}", context);
+                return;
+            }
+            
+            provider = context.gameObject.GetOrAddComponent<BindingFieldProvider>();
+            provider.field = this;
         }
 
         public override void Finalize(FieldNode context)
         {
             base.Finalize(context);
-            binding = null;
-        }
-
-        public override int GetValue() 
-        {
-            if (!binding.IsValid() || !binding.IsInitialized())
-                return negate ? 1 : 0;
-
-            var value = binding.Boolean_GetValue() ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            
+            if (provider != null)
+                UnityEngine.Object.Destroy(provider);
         }
     }
 }

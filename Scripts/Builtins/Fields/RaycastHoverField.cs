@@ -3,28 +3,31 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
-    public class RaycastHoverField : BaseField
+    public class RaycastHoverField : UpdateableField
     {
         [TagSelector] public string tag = "Untagged";
-        DexterityRaycastFieldProvider provider;
+        private RaycastControllerFieldProvider provider;
         private NodeRaycastRouter router;
 
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
-            provider = new DexterityRaycastFieldProvider();
+            
+            provider = RaycastControllerFieldProvider.Create();
             router = context.GetRaycastRouter();
             router.AddReceiver(provider);
         }
-
+        
         public override void Finalize(FieldNode context)
         {
-            base.Finalize(context);
             router.RemoveReceiver(provider);
-            router = null;
-            provider = null;
+            
+            base.Finalize(context);
         }
 
-        public override int GetValue() => provider != null && provider.GetHover(tag) ? 1 : 0;
+        public override void Update()
+        {
+            SetValue(provider.GetHover(tag) ? 1 : 0);
+        }
     }
 }

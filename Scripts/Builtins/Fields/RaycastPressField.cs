@@ -3,18 +3,18 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
-    public class RaycastPressField : BaseField
+    public class RaycastPressField : UpdateableField
     {
         [TagSelector] public string tag = "Untagged";
         public bool stayPressedOutOfBounds = false;
-        DexterityRaycastFieldProvider provider;
+        private RaycastControllerFieldProvider provider;
         private NodeRaycastRouter router;
 
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
 
-            provider = new DexterityRaycastFieldProvider();
+            provider = RaycastControllerFieldProvider.Create();
             provider.stayPressedOutOfBounds = stayPressedOutOfBounds;
             router = context.GetRaycastRouter();
             router.AddReceiver(provider);
@@ -22,12 +22,13 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override void Finalize(FieldNode context)
         {
-            base.Finalize(context);
             router.RemoveReceiver(provider);
-            router = null;
-            provider = null;
+            base.Finalize(context);
         }
 
-        public override int GetValue() => provider != null && provider.GetPress(tag) ? 1 : 0;
+        public override void Update()
+        {
+            SetValue(provider.GetPress(tag) ? 1 : 0);
+        }
     }
 }

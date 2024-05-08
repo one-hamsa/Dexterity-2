@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -17,17 +18,18 @@ namespace OneHamsa.Dexterity.Builtins
             throw new System.Data.DataException($"Attempting to DeepClone field of type {GetType()} - this is not allowed");
         }
 
-        public override int GetValue()
-        {
-            var value = targetNode.GetActiveState() == targetStateId ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
-        }
-
         protected override void Initialize(FieldNode context)
         {
             base.Initialize(context);
             
             targetStateId = Database.instance.GetStateID(targetState);
+            targetNode.onStateChanged += OnTargetNodeStateChanged;
+        }
+
+        private void OnTargetNodeStateChanged(int oldState, int newState)
+        {
+            var v = targetNode.GetActiveState() == targetStateId ? 1 : 0;
+            SetValue(negate ? (v + 1) % 2 : v);
         }
     }
 }

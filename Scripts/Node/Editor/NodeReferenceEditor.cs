@@ -14,7 +14,7 @@ namespace OneHamsa.Dexterity
     public class NodeReferenceEditor : Editor
     {
         NodeReference reference;
-        bool foldoutOpen = true;
+        static bool foldoutOpen = false;
         private static Dictionary<string, List<(int arrayIndex, SerializedProperty prop)>> gatesByField = new();
 
         public override void OnInspectorGUI()
@@ -28,7 +28,7 @@ namespace OneHamsa.Dexterity
             EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
 
             var gatesUpdated = ShowGates(serializedObject.FindProperty(nameof(NodeReference.gates)),
-                reference, ref foldoutOpen);
+                reference);
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(FieldNode.internalFieldDefinitions)));
 
@@ -49,7 +49,7 @@ namespace OneHamsa.Dexterity
         }
 
 
-        internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer, ref bool foldoutOpen)
+        internal static bool ShowGates(SerializedProperty gatesProp, IGateContainer gateContainer)
         {
             var rect = EditorGUILayout.BeginVertical();
             EditorGUI.BeginProperty(rect, GUIContent.none, gatesProp);
@@ -110,8 +110,8 @@ namespace OneHamsa.Dexterity
                         var liveInstance = Application.IsPlaying(gatesProp.serializedObject.targetObject) 
                                            && gateContainer.node != null;
                         var value = liveInstance
-                            ? gateContainer.node.GetOutputField(kv.Key).GetValue()
-                            : FieldNode.defaultFieldValue;
+                            ? gateContainer.node.GetOutputField(kv.Key).value
+                            : BaseField.defaultFieldValue;
 
                         GUILayout.FlexibleSpace();
                         DrawFieldValue(definition, value, liveInstance);
@@ -286,7 +286,7 @@ namespace OneHamsa.Dexterity
             var field = (BaseField)Utils.GetTargetObjectOfProperty(property);
             if (field != null && field.initialized)
             {
-                DrawFieldValue(field.definition, field.GetValue(), true);
+                DrawFieldValue(field.definition, field.value, true);
             }
             EditorGUILayout.EndHorizontal();
 
@@ -368,8 +368,7 @@ namespace OneHamsa.Dexterity
             {
                 switch (definition.type)
                 {
-                    case FieldNode.FieldType.Boolean when value == 0:
-                    case FieldNode.FieldType.Boolean when value == FieldNode.defaultFieldValue:
+                    case FieldNode.FieldType.Boolean when value == BaseField.defaultFieldValue:
                         GUI.color = Color.red;
                         valueName = "false";
                         break;

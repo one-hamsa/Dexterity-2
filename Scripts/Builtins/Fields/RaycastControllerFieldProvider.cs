@@ -3,13 +3,23 @@ using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    internal class DexterityRaycastFieldProvider : IRaycastReceiver
+    internal struct RaycastControllerFieldProvider : IRaycastReceiver
     {
-        private readonly HashSet<IRaycastController> controllers = new();
-        private readonly HashSet<IRaycastController> receivedPressStart = new();
+        private HashSet<IRaycastController> controllers;
+        private HashSet<IRaycastController> receivedPressStart;
+        private List<IRaycastController> controllersToClear;
         
-        public bool stayPressedOutOfBounds = false;
-        List<IRaycastController> controllersToClear = new();
+        public bool stayPressedOutOfBounds;
+
+        public static RaycastControllerFieldProvider Create()
+        {
+            return new RaycastControllerFieldProvider
+            {
+                controllers = new HashSet<IRaycastController>(),
+                receivedPressStart = new HashSet<IRaycastController>(),
+                controllersToClear = new List<IRaycastController>(),
+            };
+        }
 
         public bool GetHover(string castTag = null) 
         {

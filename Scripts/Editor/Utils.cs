@@ -81,11 +81,11 @@ namespace OneHamsa.Dexterity
             string strValue = value.ToString();
             switch (definition.type)
             {
-                case FieldNode.FieldType.Boolean when value != FieldNode.emptyFieldValue:
+                case FieldNode.FieldType.Boolean when value != BaseField.emptyFieldValue:
                     strValue = value == 1 ? "True" : "False";
                     break;
 
-                case FieldNode.FieldType.Enum when value != FieldNode.emptyFieldValue:
+                case FieldNode.FieldType.Enum when value != BaseField.emptyFieldValue:
                     strValue = definition.enumValues[(int)value];
                     break;
             }

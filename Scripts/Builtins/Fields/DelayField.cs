@@ -4,7 +4,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
 	[Preserve]
-	public class DelayField : BaseField
+	public class DelayField : UpdateableField
 	{
 		[Tooltip("Delay when value changes from FALSE to TRUE")]
 		public float delayTrue;
@@ -15,31 +15,36 @@ namespace OneHamsa.Dexterity.Builtins
 
 		private int _lastValue;
 		private float _timer;
-		
-		public override int GetValue() {
-			if (_lastValue > 0) {
-				if (_timer > delayFalse) {
-					_lastValue = source.GetValue();
-					_timer = 0;
-				}
-			}
-			
-			if (_lastValue == 0) {
-				if (_timer > delayTrue) {
-					_lastValue = source.GetValue();
-					_timer = 0;
-				}
-			}
-			
-			_timer += Time.unscaledDeltaTime;
-			return _lastValue;
-		}
 
 		protected override void Initialize(FieldNode context) {
 			base.Initialize(context);
 			
 			ClearUpstreamFields();
 			AddUpstreamField(source);
+		}
+
+		public override void Update()
+		{
+			if (_lastValue > 0)
+			{
+				if (_timer > delayFalse)
+				{
+					_lastValue = source.value;
+					_timer = 0;
+				}
+			}
+
+			if (_lastValue == 0)
+			{
+				if (_timer > delayTrue)
+				{
+					_lastValue = source.value;
+					_timer = 0;
+				}
+			}
+
+			_timer += Time.unscaledDeltaTime;
+			SetValue(_lastValue);
 		}
 
 		public override BaseField CreateDeepClone() {

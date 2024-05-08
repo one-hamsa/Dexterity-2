@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -19,8 +20,11 @@ namespace OneHamsa.Dexterity.Builtins
             return clone;
         }
 
-        public override int GetValue() {
-            return first?.GetValue() == 1 && second?.GetValue() == 1 ? 1 : 0;
+        protected override void OnUpstreamsChanged(List<BaseField> upstreams = null)
+        {
+            base.OnUpstreamsChanged(upstreams);
+            
+            SetValue(first?.value == 1 && second?.value == 1 ? 1 : 0);
         }
 
         protected override void Initialize(FieldNode context) {

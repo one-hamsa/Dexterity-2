@@ -29,16 +29,17 @@ namespace OneHamsa.Dexterity.Builtins
         
         int fieldId;
 
-        // only proxy when children are found
-        public override bool proxy => children != null && children.Count > 0;
-
-        public override int GetValue()
+        protected override void OnUpstreamsChanged(List<BaseField> upstreams = null)
         {
+            base.OnUpstreamsChanged(upstreams);
+            
             if (children == null)
-                return 0;
-
-            var value = GetValueBeforeNegation();
-            return negate ? (value + 1) % 2 : value;
+                SetValue(0, upstreams);
+            else
+            {
+                var v = GetValueBeforeNegation();
+                SetValue(negate ? (v + 1) % 2 : v, upstreams);
+            }
         }
 
         private int GetValueBeforeNegation() {
@@ -65,7 +66,7 @@ namespace OneHamsa.Dexterity.Builtins
                 case TakeValueWhen.AllEqual:
                     int? prevValue = null;
                     foreach (var child in children) {
-                        var value = !child.initialized ? 0 : child.GetOutputField(fieldId).GetValue();
+                        var value = !child.initialized ? 0 : child.GetOutputField(fieldId).value;
                         if (prevValue.HasValue && prevValue.Value != value)
                             return 0;
 
@@ -76,7 +77,7 @@ namespace OneHamsa.Dexterity.Builtins
             return 0;
         }
 
-        public override void RefreshReferences()
+        private void RefreshReferences()
         {
             prevChildren.Clear();
             if (children != null)

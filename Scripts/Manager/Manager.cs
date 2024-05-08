@@ -45,23 +45,6 @@ namespace OneHamsa.Dexterity
         private HashSet<Modifier> modifiers = new();
         private List<Modifier> modifiersActiveList = new();
 
-        public Graph graph { get; private set; }
-        /// <summary>
-        /// Registers a field to the graph.
-        /// </summary>
-        /// <param name="field">BaseField to register to the graph</param>
-        public void RegisterField(BaseField field) => graph.AddNode(field);
-        /// <summary>
-        /// Removes a registered field from the graph.
-        /// </summary>
-        /// <param name="field">BaseField remove from the graph</param>
-        public void UnregisterField(BaseField field) => graph.RemoveNode(field);
-        /// <summary>
-        /// Marks a field as dirty (forces re-sorting).
-        /// </summary>
-        /// <param name="field">BaseField to mark as dirty</param>
-        public void SetDirty(BaseField field) => graph.SetDirty(field);
-        
         /// <summary>
         /// Adds a modifier to the update pool
         /// </summary>
@@ -86,9 +69,6 @@ namespace OneHamsa.Dexterity
         {
             if (Database.instance == null)
                 Database.Create(settings);
-         
-            // create graph instance
-            graph = gameObject.AddComponent<Graph>();
         }
         
         protected void OnDestroy()
@@ -96,17 +76,8 @@ namespace OneHamsa.Dexterity
             Database.Destroy();
         }
         
-        protected void Start()
-        {
-            // enable on start to let all nodes register to graph during OnEnable
-            graph.started = true;
-        }
-        
         protected void Update()
         {
-            // update graph
-            graph.Refresh();
-
             using var _ = new ScopedProfile("Dexterity: Update Modifiers");
             // update all modifiers
             modifiersActiveList.Clear();

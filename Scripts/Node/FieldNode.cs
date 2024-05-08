@@ -317,8 +317,7 @@ namespace OneHamsa.Dexterity
             foreach (var pair in outputFields.keyValuePairs)
             {
                 var output = pair.Value;
-                output.RefreshReferences();
-                output.CacheValue();
+                output.RefreshUpstreams();
             }
         }
 
@@ -328,8 +327,6 @@ namespace OneHamsa.Dexterity
                 return;
 
             field.Initialize(this, definitionId);
-                
-            Manager.instance.RegisterField(field);
                 
             foreach (var upstreamField in field.GetUpstreamFields())
                 InitializeField(definitionId, upstreamField);
@@ -344,9 +341,6 @@ namespace OneHamsa.Dexterity
 
             if (duringTeardown)
                 field.Finalize(this);
-            
-            if (Manager.instance != null)
-                Manager.instance.UnregisterField(field);
             
             foreach (var upstreamField in field.GetUpstreamFields())
                 FinalizeField(upstreamField, duringTeardown);
@@ -481,11 +475,11 @@ namespace OneHamsa.Dexterity
 
             foreach (var fieldId in stateFieldIdsCache)
             {
-                var value = GetOutputField(fieldId).GetValue();
+                var value = GetOutputField(fieldId).value;
                 // if this field isn't provided just assume default
-                if (value == emptyFieldValue)
+                if (value == BaseField.emptyFieldValue)
                 {
-                    value = defaultFieldValue;
+                    value = BaseField.defaultFieldValue;
                 }
                 fieldMask.Add((fieldId, value));
             }
@@ -519,7 +513,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        private void MarkStateDirty(FieldNode.OutputField field, int oldValue, int newValue) => stateDirty = true;
+        private void MarkStateDirty(BaseField.ValueChangeEvent e) => stateDirty = true;
         #endregion State Reduction
 
         #region Overrides
@@ -576,7 +570,7 @@ namespace OneHamsa.Dexterity
             }
             var overrideOutput = cachedOverrides[fieldId];
             overrideOutput.value = value;
-            GetOutputField(fieldId).CacheValue();
+            GetOutputField(fieldId).RefreshUpstreams();
         }
 
         /// <summary>

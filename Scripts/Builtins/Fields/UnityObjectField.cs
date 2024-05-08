@@ -1,14 +1,11 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
-using UnityEngine.Events;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
     [Obsolete, Preserve]
-    public class UnityObjectField : BaseField
+    public class UnityObjectField : UpdateableField
     {
         public UnityEngine.Object targetObject;
         [ObjectValue(objectFieldName: nameof(targetObject), ObjectValueContext.ValueType.Boolean)]
@@ -34,13 +31,16 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        public override int GetValue() 
+        public override void Update()
         {
             if (objectCtx == null)
-                return negate ? 1 : 0;
+                SetValue(negate ? 1 : 0);
 
-            var value = objectCtx.Boolean_GetValue() ? 1 : 0;
-            return negate ? (value + 1) % 2 : value;
+            else
+            {
+                var v = objectCtx.Boolean_GetValue() ? 1 : 0;
+                SetValue(negate ? (v + 1) % 2 : v);
+            }
         }
     }
 }
