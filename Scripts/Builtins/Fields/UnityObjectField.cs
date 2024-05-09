@@ -38,17 +38,26 @@ namespace OneHamsa.Dexterity.Builtins
             #if BINDING_DEEP_PROFILE
             using var _ = new ScopedProfile($"UnityObjectField.Update {targetObject.name}.{targetProperty}");
             #endif
-            
-            if (objectCtx == null || (targetObject is MonoBehaviour mb && !mb.isActiveAndEnabled))
-                SetValue(negate ? 1 : 0);
 
-            else
+            try
             {
-                var v = objectCtx.Boolean_GetValue() ? 1 : 0;
-                SetValue(negate ? (v + 1) % 2 : v);
+                if (objectCtx == null || (targetObject is MonoBehaviour mb && !mb.isActiveAndEnabled))
+                    SetValue(negate ? 1 : 0);
+
+                else
+                {
+                    var v = objectCtx.Boolean_GetValue() ? 1 : 0;
+                    SetValue(negate ? (v + 1) % 2 : v);
+                }
+
+                SetPendingUpdate();
             }
-            
-            SetPendingUpdate();
+            catch (MissingReferenceException)
+            {
+                // target was destroyed, it's ok, stop updating
+                SetValue(negate ? 1 : 0);
+                Finalize(context);
+            }
         }
     }
 }
