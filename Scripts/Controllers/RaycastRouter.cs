@@ -53,6 +53,7 @@ namespace OneHamsa.Dexterity
 
         void IRaycastReceiver.Resolve(List<IRaycastReceiver> receivers)
         {
+            this.receivers.RemoveWhere(x => x == null);
             receivers.AddRange(this.receivers);
         }
     }
