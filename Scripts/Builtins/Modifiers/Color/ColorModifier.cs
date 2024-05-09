@@ -31,13 +31,12 @@ namespace OneHamsa.Dexterity.Builtins
             AddSupportedComponent<IColorModifierSupport>((c)=> c.GetColor(), (c, color)=> c.SetColor(color));
             AddSupportedComponent<SpriteRenderer>((c) => c.color, (c, color) => c.color = color);
             AddSupportedComponent<TMP_Text>((c) => c.color, (c, color) => c.color = color);
-            AddSupportedComponent<CanvasGroup>((c) => new Color(1f, 1f, 1f, c.alpha), (c, color) => c.alpha = color.a);
             AddSupportedComponent<LineRenderer>((c) => new Color(1f, 1f, 1f, c.startColor.a), (c, color) =>
             {
                 c.startColor = color;
                 c.endColor = color;
             });
-
+            AddSupportedComponent<CanvasGroup>((c) => new Color(1f, 1f, 1f, c.alpha), (c, color) => c.alpha = color.a);
         }
 
         [Serializable]
@@ -142,7 +141,8 @@ namespace OneHamsa.Dexterity.Builtins
                 return ("Only alpha will be applied to CanvasGroup's alpha", LogType.Warning);
             if (component == null) 
                 return ("No supported component found", LogType.Error);
-            return base.GetEditorComment();
+            
+            return ($"Selected component: {component.GetType().Name}", LogType.Log);
         }
         #endif
 

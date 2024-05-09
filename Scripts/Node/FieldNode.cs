@@ -564,6 +564,7 @@ namespace OneHamsa.Dexterity
         /// <param name="value">Field value (0 or 1 for booleans, index for enums)</param>
         public void SetOverrideRaw(int fieldId, int value)
         {
+            bool isNew = false;
             if (!cachedOverrides.Contains(fieldId))
             {
                 var newOverride = new OutputOverride();
@@ -571,9 +572,10 @@ namespace OneHamsa.Dexterity
 
                 overrides.Add(newOverride);
                 CacheFieldOverrides();
+                isNew = true;
             }
             var overrideOutput = cachedOverrides[fieldId];
-            if (overrideOutput.value == value)
+            if (overrideOutput.value == value && !isNew)
                 return;
             
             overrideOutput.value = value;
