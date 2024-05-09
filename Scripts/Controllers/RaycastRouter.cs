@@ -34,6 +34,11 @@ namespace OneHamsa.Dexterity
 
         public void AddReceiver(IRaycastReceiver receiver)
         {
+            if (receiver == null) {
+                Debug.LogError("Trying to add a null receiver!");
+                return;
+            }
+            
             receivers.Add(receiver);
         }
         public void RemoveReceiver(IRaycastReceiver receiver)
@@ -53,7 +58,6 @@ namespace OneHamsa.Dexterity
 
         void IRaycastReceiver.Resolve(List<IRaycastReceiver> receivers)
         {
-            this.receivers.RemoveWhere(x => x == null);
             receivers.AddRange(this.receivers);
         }
     }
