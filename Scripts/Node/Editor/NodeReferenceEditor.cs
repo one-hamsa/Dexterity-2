@@ -351,7 +351,7 @@ namespace OneHamsa.Dexterity
         private static void RefreshReferenceTypes()
         {
             referencesTypes = TypeCache.GetTypesDerivedFrom<BaseField>()
-                            .Where(t => t != typeof(FieldNode.OutputField))
+                            .Where(t => t != typeof(FieldNode.OutputField) && !t.IsAbstract)
                             .ToArray();
             referencesTypesNames = referencesTypes
                 .Select(t => t.ToString())
