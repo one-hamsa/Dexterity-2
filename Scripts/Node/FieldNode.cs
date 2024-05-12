@@ -336,7 +336,7 @@ namespace OneHamsa.Dexterity
 
         void FinalizeField(BaseField field, bool duringTeardown = false)
         {
-            if (field == null || field is OutputField)  // OutputFields are never removed
+            if (field is null or OutputField or { initialized: false })  // OutputFields are never removed
                 return;
 
             if (duringTeardown)
