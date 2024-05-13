@@ -12,6 +12,8 @@ namespace OneHamsa.Dexterity.Builtins
 		private bool _pressed;
 		private float _pressDuration;
 
+		public bool isActuallyDragged => _pressed && _pressDuration > maxClickDuration;
+
 		public UnityEvent onDragStart;
 		public UnityEvent<Ray> onDrag;
 		public UnityEvent onDragEnd;
