@@ -12,9 +12,11 @@ namespace OneHamsa.Dexterity.Builtins
 		private bool _pressed;
 		private float _pressDuration;
 
+		public IRaycastController draggingRaycastController => _controller;
+
 		public bool isActuallyDragged => _pressed && _pressDuration > maxClickDuration;
 
-		public UnityEvent onDragStart;
+		public UnityEvent<IRaycastController> onDragStart;
 		public UnityEvent<Ray> onDrag;
 		public UnityEvent onDragEnd;
 		public UnityEvent onDragCancel;
@@ -47,7 +49,7 @@ namespace OneHamsa.Dexterity.Builtins
 			_pressed = true;
 			_pressDuration = 0;
 			_controller = raycastListener.pressingController;
-			onDragStart?.Invoke();
+			onDragStart?.Invoke(raycastListener.pressingController);
 			InvokeOnDrag();
 		}
 
