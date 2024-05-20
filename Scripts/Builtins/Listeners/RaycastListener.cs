@@ -51,7 +51,7 @@ namespace OneHamsa.Dexterity.Builtins
                 {
                     if (controller.wasPressedThisFrame)
                     {
-                        SetPressing(controllers.First());
+                        SetPressing(controller);
                         break;
                     }
                 }
