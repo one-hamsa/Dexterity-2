@@ -15,6 +15,8 @@ namespace OneHamsa.Dexterity
 
         Vector2 scroll { get; }
 
+        public bool showVisibleRay { get; }
+
         public Quaternion rotation => Quaternion.LookRotation(forward, up);
         
 		public ref struct RaycastEvent

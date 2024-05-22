@@ -62,8 +62,9 @@ namespace OneHamsa.Dexterity.Builtins
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
         public Color debugHitColor = new Color(1f, .25f, 0f);
 
-        public bool current =>
-            enabled && ((lastControllerPressed == null && defaultController) || lastControllerPressed == this);
+        public bool current => enabled && ((lastControllerPressed == null && defaultController) || lastControllerPressed == this);
+
+        public bool showVisibleRay { get;  set; } = true;
 
         public Ray ray { get; private set; }
         public Ray displayRay { get; private set; }

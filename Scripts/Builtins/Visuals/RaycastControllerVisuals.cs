@@ -61,7 +61,7 @@ namespace OneHamsa.Dexterity.Builtins
             Vector3 point0 = Vector3.zero;
             Vector3 point1 = transform.InverseTransformPoint(controller.ray.GetPoint(length));
             
-            lineRenderer.enabled = controller.current && isVisible;
+            lineRenderer.enabled = controller.current && controller.showVisibleRay && isVisible;
             lineRenderer.SetPosition(0, point0);
             lineRenderer.SetPosition(1, point1);
         }
