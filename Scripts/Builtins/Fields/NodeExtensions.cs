@@ -8,7 +8,11 @@ namespace OneHamsa.Dexterity.Builtins
     {
         public static NodeRaycastRouter GetRaycastRouter(this BaseStateNode node)
         {
-            var router = node.GetOrAddComponent<NodeRaycastRouter>();
+            var existing = node.GetComponent<NodeRaycastRouter>();
+            if (existing)
+                return existing;
+            
+            var router = node.gameObject.AddComponent<NodeRaycastRouter>();
             router.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
             return router;
         }

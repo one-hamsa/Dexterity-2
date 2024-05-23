@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using OneHamsa.Dexterity.Utilities;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -7,6 +6,8 @@ namespace OneHamsa.Dexterity
 {
     public class NodeRaycastRouter : MonoBehaviour, IRaycastReceiver
     {
+        public bool recurseNodes = true;
+        
         private readonly HashSet<IRaycastReceiver> receivers = new();
         private readonly List<RaycastRouter> routers = new();
         
@@ -56,6 +57,9 @@ namespace OneHamsa.Dexterity
             while (queue.Count > 0) {
                 var current = queue[0];
                 queue.RemoveAt(0);
+                
+                if (!recurseNodes && current != transform && current.GetComponent<BaseStateNode>() != null)
+                    continue;
 
                 // TODO wrong order
                 foreach (Transform child in current) 
