@@ -36,6 +36,7 @@ namespace OneHamsa.Dexterity
 
     public struct DexterityRaycastHit
     {
+	    public int priority;
 	    public float distance;
 	    public Vector3 point;
 	    public Collider collider;

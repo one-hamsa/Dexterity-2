@@ -86,7 +86,12 @@ namespace OneHamsa.Dexterity.Builtins
         protected Transform _transform;
 
         private static readonly Comparer<DexterityRaycastHit> raycastDistanceComparer
-            = Comparer<DexterityRaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
+            = Comparer<DexterityRaycastHit>.Create((a, b) =>
+            {
+                if (a.priority != b.priority)
+                    return a.priority.CompareTo(b.priority);
+                return a.distance.CompareTo(b.distance);
+            });
         
         protected virtual void Awake()
         {
@@ -258,6 +263,7 @@ namespace OneHamsa.Dexterity.Builtins
                 dexHit.point = hit.point;
                 dexHit.transform = hit.collider.transform;
                 dexHit.collider = hit.collider;
+                dexHit.priority = IRaycastPriorityGroup.GetPriority(dexHit.transform);
                 hits[i] = dexHit;
             }
             
@@ -290,8 +296,8 @@ namespace OneHamsa.Dexterity.Builtins
             // find closest hit, prefer receivers that were hit last frame
             for (int i = 0; i < numHits; ++i)
             {
-                // short circuit if we already found a hit and this hit is further than the last one
-                if (didHit && !Mathf.Approximately(hit.distance, hits[i].distance))
+                // short circuit if we already found a hit and this hit is further than the last one (or lower priority)
+                if (didHit && (hit.priority < hits[i].priority || !Mathf.Approximately(hit.distance, hits[i].distance)))
                     break;
 
                 using (ListPool<IRaycastReceiver>.Get(out var receiversBeforeFilter))
