@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity.Builtins
     [Preserve]
     public class BindingField : UpdateableField
     {
-        public BoolObjectBinding binding;
+        public BoolObjectBinding binding = new();
         public bool negate;
 
         public override BaseField CreateDeepClone()
