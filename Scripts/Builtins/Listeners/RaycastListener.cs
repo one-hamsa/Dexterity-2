@@ -13,24 +13,20 @@ namespace OneHamsa.Dexterity.Builtins
         public event Action onRelease;
         public bool pressing => pressingController != null;
 
-        public readonly HashSet<IRaycastController> controllers = new();
+        [NonSerialized]
+        public readonly List<IRaycastController> hoveringControllers = new();
         public IRaycastController pressingController { get; private set; }
         private RaycastHit lastHit;
 
-        public IEnumerable<IRaycastController> EnumerateHoveringControllers()
-        {
-            foreach (var c in controllers)
-                yield return c;
-        }
-
         void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
         {
-            controllers.Add(controller);
+            if (!hoveringControllers.Contains(controller))
+                hoveringControllers.Add(controller);
         }
 
         void IRaycastReceiver.ClearHit(IRaycastController controller)
         {
-            controllers.Remove(controller);
+            hoveringControllers.Remove(controller);
         }
 
         public void SetPressing(IRaycastController controller) {
@@ -47,7 +43,7 @@ namespace OneHamsa.Dexterity.Builtins
         private void LateUpdate() {
             if (!pressing)
             {
-                foreach (var controller in controllers)
+                foreach (var controller in hoveringControllers)
                 {
                     if (controller.wasPressedThisFrame)
                     {
