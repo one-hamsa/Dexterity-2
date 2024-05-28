@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -9,6 +7,6 @@ namespace OneHamsa.Dexterity
         [Tooltip("Lower is higher priority, default = 0")]
         public int priority;
 
-        int IRaycastPriorityGroup.priority => priority;
+        public virtual int GetPriorityForHit(DexterityRaycastHit hit) => priority;
     }
 }

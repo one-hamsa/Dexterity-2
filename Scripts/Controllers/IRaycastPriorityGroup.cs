@@ -6,13 +6,15 @@ namespace OneHamsa.Dexterity
 {
     public interface IRaycastPriorityGroup
     {
-        public int priority { get; }
+        public const int ABORT_PRIORITY = 99999;
+        
+        public int GetPriorityForHit(DexterityRaycastHit hit);
 
-        public static int GetPriority(Transform t)
+        public static int GetPriority(DexterityRaycastHit hit)
         {
-            var group = t.GetComponentInParent<IRaycastPriorityGroup>();
+            var group = hit.transform.GetComponentInParent<IRaycastPriorityGroup>();
             if (group != null)
-                return group.priority;
+                return group.GetPriorityForHit(hit);
             
             return 0;
         }

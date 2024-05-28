@@ -263,8 +263,16 @@ namespace OneHamsa.Dexterity.Builtins
                 dexHit.point = hit.point;
                 dexHit.transform = hit.collider.transform;
                 dexHit.collider = hit.collider;
-                dexHit.priority = IRaycastPriorityGroup.GetPriority(dexHit.transform);
-                hits[i] = dexHit;
+                dexHit.priority = IRaycastPriorityGroup.GetPriority(dexHit);
+                if (dexHit.priority >= IRaycastPriorityGroup.ABORT_PRIORITY)
+                {
+                    // Abort this hit
+                    colldierHits[i] = colldierHits[numHits-1];
+                    numHits--;
+                    i--;
+                }
+                else
+                    hits[i] = dexHit;
             }
             
             for (int i = 0; i < resolvers.Count; i++)
