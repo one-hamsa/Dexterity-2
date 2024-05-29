@@ -85,5 +85,12 @@ namespace OneHamsa.Dexterity.Builtins
             if (changed)
                 onChanged?.Invoke();
         }
+
+        public void ClearAll()
+        {
+            controllers.Clear();
+            receivedPressStart.Clear();
+            controllersToClear.Clear();
+        }
     }
 }

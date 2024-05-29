@@ -17,13 +17,15 @@ namespace OneHamsa.Dexterity.Builtins
             router.AddReceiver(provider);
             
             provider.onChanged += SetPendingUpdate;
+            context.onDisabled += provider.ClearAll;
         }
         
         public override void Finalize(FieldNode context)
         {
             router.RemoveReceiver(provider);
             provider.onChanged -= SetPendingUpdate;
-            
+            context.onDisabled -= provider.ClearAll;
+
             base.Finalize(context);
         }
 
