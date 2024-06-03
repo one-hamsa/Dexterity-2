@@ -21,6 +21,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
 
             provider = context.gameObject.AddComponent<DexterityUIPressFieldProvider>();
+            provider.field = this;
         }
         public override void Finalize(FieldNode context)
         {
