@@ -423,9 +423,8 @@ namespace OneHamsa.Dexterity.Builtins
         }
 
         public virtual bool isPressed => false;
-        bool IRaycastController.isPressed => isPressed;
+        public bool wasPressedThisFrame => pressStartFrame == Time.frameCount;
         bool IRaycastController.CompareTag(string other) => gameObject.CompareTag(other);
-        bool IRaycastController.wasPressedThisFrame => pressStartFrame == Time.frameCount;
         Vector3 IRaycastController.position => transform.position;
         Vector3 IRaycastController.forward => transform.forward;
         Vector3 IRaycastController.up => transform.up;
