@@ -1,5 +1,6 @@
 // #define BINDING_DEEP_PROFILE
 
+using System;
 using System.Data;
 using UnityEngine;
 using UnityEngine.Scripting;
@@ -42,7 +43,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             try
             {
-                if (!binding.IsInitialized() || binding.target == null || binding.target is MonoBehaviour { isActiveAndEnabled: false })
+                if (!binding.IsInitialized() || binding.target is MonoBehaviour { isActiveAndEnabled: false })
                     SetValue(negate ? 1 : 0);
                 else
                 {
@@ -58,6 +59,16 @@ namespace OneHamsa.Dexterity.Builtins
                 // target was destroyed, it's ok, stop updating
                 SetValue(negate ? 1 : 0);
                 Finalize(context);
+            } 
+            catch (NullReferenceException) 
+            {
+                if (binding != null && binding.target == null) {
+                    // target was destroyed, it's ok, stop updating
+                    SetValue(negate ? 1 : 0);
+                    Finalize(context);
+                } else {
+                    throw;
+                }
             }
         }
     }
