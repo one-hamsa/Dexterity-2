@@ -42,7 +42,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             try
             {
-                if (!binding.IsInitialized() || binding.target is MonoBehaviour { isActiveAndEnabled: false })
+                if (!binding.IsInitialized() || binding.target == null || binding.target is MonoBehaviour { isActiveAndEnabled: false })
                     SetValue(negate ? 1 : 0);
                 else
                 {
