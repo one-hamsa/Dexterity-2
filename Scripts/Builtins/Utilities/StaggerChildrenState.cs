@@ -116,6 +116,12 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             // stagger next
             current = allNodes[index];
 
+            if (current.initialized == false) 
+            {
+                Next();
+                return;
+            }
+            
             if (skipIfNotInDestinationState && current.GetNextStateWithoutOverride() != destStateId)
             {
                 Next();
