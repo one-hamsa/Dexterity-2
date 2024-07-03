@@ -161,14 +161,25 @@ namespace OneHamsa.Dexterity
                 {
                     foreach (var modifier in modifiers)
                     {
-                        if (modifier is ISupportPropertyFreeze freeze)
+                        try
                         {
-                            var activeProp = modifier.properties.First(p => p.state == state);
-                            freeze.FreezeProperty(activeProp);
+                            if (modifier is ISupportPropertyFreeze freeze)
+                            {
+                                ModifierEditor.SyncModifierStates(modifier);
+                                var activeProp = modifier.properties.First(p => p.state == state);
+                                freeze.FreezeProperty(activeProp);
+                            }
+                            else
+                            {
+                                Debug.LogWarning(
+                                    $"Modifier {modifier.name} does not support property freeze, skipping.", modifier);
+                            }
                         }
-                        else 
+                        catch (Exception e)
                         {
-                            Debug.LogWarning($"Modifier {modifier.name} does not support property freeze, skipping.", modifier);
+                            Debug.LogError($"Failed to save modifier {modifier.name} for state {state}",
+                                modifier);
+                            Debug.LogException(e, modifier);
                         }
                     }
                 }
