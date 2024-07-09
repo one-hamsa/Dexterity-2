@@ -9,6 +9,9 @@ namespace OneHamsa.Dexterity
     {
         public List<string> manualStates = new();
         private int activeStateIndex;
+        
+        public int ActiveStateIndex => activeStateIndex;
+        public string ActiveState => manualStates[activeStateIndex];
 
         protected override IEnumerable<(string enumOption, int enumValue)> GetEnumOptions()
         {
