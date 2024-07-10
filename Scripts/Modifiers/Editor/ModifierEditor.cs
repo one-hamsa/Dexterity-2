@@ -63,7 +63,7 @@ namespace OneHamsa.Dexterity
             foreach (var m in targets.Cast<Modifier>())
             {
                 var node = m.GetNode();
-                if (node != null && node.ShouldAutoSyncModifiersStates() && SyncModifierStates(m))
+                if (node != null && node.ShouldAutoSyncModifiersStates() && m.SyncStates())
                     serializedObject.Update();
 
                 var targetStates = m.properties.Select(p => p.state).ToList();
@@ -171,7 +171,7 @@ namespace OneHamsa.Dexterity
                 icon.text = "New State";
                 if (GUILayout.Button(icon))
                 {
-                    AddStateToModifier(modifier, "New State");
+                    modifier.AddState("New State");
                 }
             }
 
@@ -196,82 +196,6 @@ namespace OneHamsa.Dexterity
                 foreach (var target in targets)
                     (target as Modifier).ForceTransitionUpdate();
             }
-        }
-
-        public static bool SyncModifierStates(Modifier m)
-        {
-            if (m.manualStateEditing)
-            {
-                if (m.properties.FindIndex(p => p.state == StateFunction.kDefaultState) == 0)
-                    return false;
-
-                RemoveStateFromModifier(m, StateFunction.kDefaultState);
-                var newProp = AddStateToModifier(m, StateFunction.kDefaultState);
-                // move to be the first (because first is the fallback in case of missing state)
-                m.properties.Remove(newProp);
-                m.properties.Insert(0, newProp);
-                
-                return true;
-            }
-
-            // don't sync if can't find any node
-            if (m.GetNode() == null)
-                return false;
-            
-            var states = ((IHasStates)m).GetStateNames().ToHashSet();
-            var targetStates = m.properties.Select(p => p?.state).ToList();
-            var changed = false;
-            foreach (var state in states)
-            {
-                if (!targetStates.Contains(state))
-                {
-                    AddStateToModifier(m, state);
-                    changed = true;
-                }
-            }
-
-            for (var i = 0; i < targetStates.Count; i++)
-            {
-                var state = targetStates[i];
-                if (state == null
-                    || !states.Contains(state)
-                    || targetStates.IndexOf(state) != i)
-                {
-                    RemoveStateFromModifier(m, state);
-                    changed = true;
-                }
-            }
-
-            return changed;
-        }
-        private static Modifier.PropertyBase AddStateToModifier(Modifier m, string state)
-        {
-            // get property info, iterate through parent classes to support inheritance
-            Type propType = null;
-            var objType = m.GetType();
-            while (propType == null)
-            {
-                var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
-                propType = attr?.propertyType
-                    ?? (!string.IsNullOrEmpty(attr.propertyName) ? objType.GetNestedType(attr.propertyName) : null);
-                    
-                objType = objType.BaseType;
-            }
-
-            var newProp = (Modifier.PropertyBase)Activator.CreateInstance(propType);
-            newProp.state = state;
-            m.properties.Add(newProp);
-            if (m is ISupportPropertyFreeze supportPropertyFreeze) 
-                supportPropertyFreeze.FreezeProperty(newProp);
-            EditorUtility.SetDirty(m);
-            
-            return newProp;
-        }
-        
-        private static void RemoveStateFromModifier(Modifier m, string state)
-        {
-            m.properties.RemoveAll(p => p?.state == state);
-            EditorUtility.SetDirty(m);
         }
 
 

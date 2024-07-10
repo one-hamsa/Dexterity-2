@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using OneHamsa.Dexterity.Utilities;
+using UnityEditor;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -461,5 +463,93 @@ namespace OneHamsa.Dexterity
         public virtual (string, LogType) GetEditorComment() => default;
         #endif
         
+        
+        public bool SyncStates()
+        {
+            if (manualStateEditing)
+            {
+                if (properties.FindIndex(p => p.state == StateFunction.kDefaultState) == 0)
+                    return false;
+
+                RemoveState(StateFunction.kDefaultState);
+                var newProp = AddState(StateFunction.kDefaultState);
+                // move to be the first (because first is the fallback in case of missing state)
+                properties.Remove(newProp);
+                properties.Insert(0, newProp);
+                
+                return true;
+            }
+
+            // don't sync if can't find any node
+            if (GetNode() == null)
+                return false;
+            
+            var states = ((IHasStates)this).GetStateNames().ToHashSet();
+            var targetStates = properties.Select(p => p?.state).ToList();
+            var changed = false;
+            foreach (var state in states)
+            {
+                if (!targetStates.Contains(state))
+                {
+                    AddState(state);
+                    changed = true;
+                }
+            }
+
+            for (var i = 0; i < targetStates.Count; i++)
+            {
+                var state = targetStates[i];
+                if (state == null
+                    || !states.Contains(state)
+                    || targetStates.IndexOf(state) != i)
+                {
+                    RemoveState(state);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        public PropertyBase AddState(string state)
+        {
+            // get property info, iterate through parent classes to support inheritance
+            Type propType = null;
+            var objType = GetType();
+            while (propType == null)
+            {
+                var attr = objType.GetCustomAttribute<ModifierPropertyDefinitionAttribute>(true);
+                propType = attr?.propertyType
+                    ?? (!string.IsNullOrEmpty(attr.propertyName) ? objType.GetNestedType(attr.propertyName) : null);
+                    
+                objType = objType.BaseType;
+            }
+
+            var newProp = (Modifier.PropertyBase)Activator.CreateInstance(propType);
+            newProp.state = state;
+            properties.Add(newProp);
+            if (this is ISupportPropertyFreeze supportPropertyFreeze) 
+                supportPropertyFreeze.FreezeProperty(newProp);
+            
+            #if UNITY_EDITOR
+            EditorUtility.SetDirty(this);
+            #endif
+            
+            return newProp;
+        }
+
+        public void RemoveState(string state)
+        {
+            properties.RemoveAll(p => p?.state == state);
+            #if UNITY_EDITOR
+            EditorUtility.SetDirty(this);
+            #endif
+        }
+
+        private void OnValidate()
+        {
+            if (!Application.IsPlaying(this))
+                SyncStates();
+        }
     }
 }

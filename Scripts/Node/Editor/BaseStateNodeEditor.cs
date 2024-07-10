@@ -130,7 +130,7 @@ namespace OneHamsa.Dexterity
             {
                 // make sure all are up to date
                 foreach (var modifier in modifiers)
-                    ModifierEditor.SyncModifierStates(modifier);
+                    modifier.SyncStates();
             }
             else
             {
@@ -140,7 +140,7 @@ namespace OneHamsa.Dexterity
                 if (GUILayout.Button("Sync Now"))
                 {
                     foreach (var modifier in modifiers)
-                        ModifierEditor.SyncModifierStates(modifier);
+                        modifier.SyncStates();
                 }
             }
 
@@ -165,7 +165,7 @@ namespace OneHamsa.Dexterity
                         {
                             if (modifier is ISupportPropertyFreeze freeze)
                             {
-                                ModifierEditor.SyncModifierStates(modifier);
+                                modifier.SyncStates();
                                 var activeProp = modifier.properties.First(p => p.state == state);
                                 freeze.FreezeProperty(activeProp);
                             }
