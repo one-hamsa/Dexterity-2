@@ -9,9 +9,7 @@ namespace OneHamsa.Dexterity
     {
         public List<string> manualStates = new();
         private int activeStateIndex;
-        
-        public int ActiveStateIndex => activeStateIndex;
-        public string ActiveState => manualStates[activeStateIndex];
+        private bool initializedFromInitialState;
 
         protected override IEnumerable<(string enumOption, int enumValue)> GetEnumOptions()
         {
@@ -23,7 +21,13 @@ namespace OneHamsa.Dexterity
 
         protected override void Initialize()
         {
-            activeStateIndex = manualStates.IndexOf(initialState);
+            // once per lifetime, set the state from the initial state
+            if (!initializedFromInitialState)
+            {
+                activeStateIndex = manualStates.IndexOf(initialState);
+                initializedFromInitialState = true;
+            }
+
             base.Initialize();
         }
 
@@ -44,6 +48,19 @@ namespace OneHamsa.Dexterity
             
             activeStateIndex = indexOf;
             stateDirty = true;
+        }
+        
+        /// <summary>
+        /// Get state by name
+        /// </summary>
+        public string GetStateAsString()
+        {
+            if (activeStateIndex < 0 || activeStateIndex >= manualStates.Count)
+            {
+                Debug.LogError($"State index {activeStateIndex} out of bounds in {name}", this);
+                return null;
+            }
+            return manualStates[activeStateIndex];
         }
 
         #if UNITY_EDITOR
