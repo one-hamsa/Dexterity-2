@@ -209,7 +209,7 @@ namespace OneHamsa.Dexterity
                 return;
             
             var node = GetNode();
-            if (!enabled || node == null || !node.enabled)
+            if (!enabled || node == null || !node.enabled || !node.initialized)
                 return;
             
             CacheDelays();
