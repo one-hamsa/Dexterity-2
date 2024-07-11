@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -21,6 +22,8 @@ namespace OneHamsa.Dexterity
 
         [NonSerialized]
         private bool _performedFirstInitialization_BindingEnumNode;
+
+        private StringBuilder sb;
 
         public int bindingValue
         {
@@ -52,10 +55,17 @@ namespace OneHamsa.Dexterity
             if (!binding.IsValid()) 
                 return;
             
-            if (!binding.Initialize() && Application.IsPlaying(this))
+            if (!binding.Initialize())
             {
-                Debug.LogError($"Failed to initialize binding for {name}", this);
-                enabled = false;
+                if (Application.IsPlaying(this))
+                {
+                    Debug.LogError($"Failed to initialize binding for {name}: {binding}", this);
+                    enabled = false;
+                }
+                else
+                {
+                    Debug.LogWarning($"Failed to initialize binding for {name}: {binding}", this);
+                }
             }
         }
 
@@ -129,6 +139,19 @@ namespace OneHamsa.Dexterity
                 // it's ok in editor!
             }
             CacheEnumOptions();
+        }
+
+        public override string ToString()
+        {
+            sb ??= new System.Text.StringBuilder();
+            sb.Clear();
+            
+            sb.Append(base.ToString());
+            sb.Append(" (");
+            sb.Append(binding);
+            sb.Append(")");
+            
+            return sb.ToString();
         }
     }
 }

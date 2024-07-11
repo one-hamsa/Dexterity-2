@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -36,16 +37,25 @@ namespace OneHamsa.Dexterity
         protected AssignDelegate assign;
         public Type type { get; private set; }
         protected ValueType actualObjectValueType;
+        private StringBuilder sb;
+
+        public override string ToString()
+        {
+            sb ??= new StringBuilder();
+            sb.Clear();
+            
+            sb.Append(target.name);
+            sb.Append('.');
+            sb.Append(methodName);
+            return sb.ToString();
+        }
 
         public bool IsValid() => target != null && !string.IsNullOrEmpty(methodName);
         public bool IsInitialized() => assign != null;
         public bool Initialize()
         {
             if (!IsValid())
-            {
-                Debug.LogError($"target or method is null");
                 return false;
-            }
             
             var methodInfo = target.GetType().GetMethod(methodName, 
                 BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
@@ -76,7 +86,6 @@ namespace OneHamsa.Dexterity
                 return true;
             }
 
-            Debug.LogError($"could not find reflected method {methodName} in {target.name}");
             return false;
         }
 
