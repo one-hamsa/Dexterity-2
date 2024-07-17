@@ -79,11 +79,18 @@ namespace OneHamsa.Dexterity
                         // Core.instance.timeScale doesn't behave nicely in editor, so we have to do it manually
                         modifier.ProgressTime_Editor(dt * speed);
 
-                        modifier.Refresh();
-                        var changed = modifier.IsChanged();
-                        anyChanged |= changed;
-                        if (changed)
-                            EditorUtility.SetDirty(modifier);
+                        try
+                        {
+                            modifier.Refresh();
+                            var changed = modifier.IsChanged();
+                            anyChanged |= changed;
+                            if (changed)
+                                EditorUtility.SetDirty(modifier);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e, modifier);
+                        }
                     }
 
                     if (anyChanged)
