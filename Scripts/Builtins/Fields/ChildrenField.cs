@@ -28,6 +28,8 @@ namespace OneHamsa.Dexterity.Builtins
         private static IEqualityComparer<HashSet<FieldNode>> comparer;
         
         int fieldId;
+        
+        private FieldNode _parentContext;
 
         protected override void OnUpstreamsChanged(List<BaseField> upstreams = null)
         {
@@ -139,43 +141,43 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected override void Initialize(FieldNode context)
         {
-            base.Initialize(context);
-
             prevChildren = new();
             childrenPath = new();
             workQueue ??= new();
-            comparer = HashSet<FieldNode>.CreateSetComparer();
+            comparer ??= HashSet<FieldNode>.CreateSetComparer();
             
             fieldId = Database.instance.GetFieldID(fieldName);
-            var activeContext = context;
+
+            base.Initialize(context);
+        }
+
+        public override void OnNodeEnabled()
+        {
+            base.OnNodeEnabled();
+            _parentContext = context;
             if (parent == null)
-                parent = context.transform;
+                parent = context.transform; // Only so we can see in inspector which parent was chosen
             else
-                activeContext = parent.GetComponentInParent<FieldNode>();
+                _parentContext = parent.GetComponentInParent<FieldNode>();
             
-            if (activeContext == null)
+            if (_parentContext == null)
                 Debug.LogError("ChildrenField: cannot locate the FieldNode associated with given context", context);
             else
             {
-                activeContext.onChildTransformChanged += RefreshReferences;
-                activeContext.onEnabled += RefreshReferences;
+                _parentContext.onChildTransformChanged += RefreshReferences;
+                _parentContext.onEnabled += RefreshReferences;
             }
             RefreshReferences();
-            
         }
-        
-        public override void Finalize(FieldNode context)
+
+        public override void OnNodeDisabled()
         {
-            base.Finalize(context);
-
-            var activeContext = context;
-            if (parent != null)
-                activeContext = parent.GetComponentInParent<FieldNode>();
-
-            if (activeContext != null)
+            base.OnNodeDisabled();
+            if (_parentContext != null)
             {
-                activeContext.onChildTransformChanged -= RefreshReferences;
-                activeContext.onEnabled -= RefreshReferences;
+                _parentContext.onChildTransformChanged -= RefreshReferences;
+                _parentContext.onEnabled -= RefreshReferences;
+                _parentContext = null;
             }
         }
 

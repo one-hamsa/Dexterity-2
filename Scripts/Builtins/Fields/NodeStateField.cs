@@ -23,27 +23,31 @@ namespace OneHamsa.Dexterity.Builtins
             base.Initialize(context);
             
             targetStateId = Database.instance.GetStateID(targetState);
+        }
+
+        public override void OnNodeEnabled()
+        {
+            base.OnNodeEnabled();
             targetNode.onStateChanged += OnTargetNodeStateChanged;
-            targetNode.onEnabled += TestNodeState;
-            targetNode.onDisabled += TestNodeState;
+            targetNode.onEnabled += SetValueAccordingToNodeState;
+            targetNode.onDisabled += SetValueAccordingToNodeState;
             
             if (targetNode.initialized)
                 OnTargetNodeStateChanged(0, targetNode.GetActiveState());
         }
 
-        public override void Finalize(FieldNode context)
+        public override void OnNodeDisabled()
         {
-            base.Finalize(context);
-            
+            base.OnNodeDisabled();
             if (targetNode != null)
             {
                 targetNode.onStateChanged -= OnTargetNodeStateChanged;
-                targetNode.onEnabled -= TestNodeState;
-                targetNode.onDisabled -= TestNodeState;
+                targetNode.onEnabled -= SetValueAccordingToNodeState;
+                targetNode.onDisabled -= SetValueAccordingToNodeState;
             }
         }
 
-        private void TestNodeState()
+        private void SetValueAccordingToNodeState()
         {
             var v = targetNode.GetActiveState() == targetStateId ? 1 : 0;
             SetValue(negate ? (v + 1) % 2 : v);
@@ -51,7 +55,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         private void OnTargetNodeStateChanged(int oldState, int newState)
         {
-            TestNodeState();
+            SetValueAccordingToNodeState();
         }
     }
 }

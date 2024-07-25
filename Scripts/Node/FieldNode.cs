@@ -94,7 +94,7 @@ namespace OneHamsa.Dexterity
             foreach (var pair in outputFields.keyValuePairs)
             {
                 pair.Value.onValueChanged -= MarkStateDirty;
-                pair.Value.Finalize(this);
+                pair.Value.Uninitialize(this);
             }
 
             outputFields.Clear();
@@ -133,7 +133,7 @@ namespace OneHamsa.Dexterity
 
         private static Stack<NodeReference> _processingStack = new(128);
         private static Stack<NodeReference> _orderedStack = new(128);
-        
+
         protected override void Initialize()
         {
             // one more chance to run hotfix in case references changed but OnValidate() wasn't called
@@ -223,12 +223,12 @@ namespace OneHamsa.Dexterity
                 activeState = GetNextState();
         }
 
-        protected override void Uninitialize(bool duringTeardown)
+        protected override void Uninitialize()
         {
             foreach (var gate in customGates)
-                FinalizeGate(gate, duringTeardown);
+                UninitializeGate(gate);
             
-            base.Uninitialize(duringTeardown);
+            base.Uninitialize();
         }
 
         public IEnumerable<int> GetFieldIDs()
@@ -301,12 +301,12 @@ namespace OneHamsa.Dexterity
         void RestartFields()
         {
             // unregister all fields. this might be triggered by editor, so go through this list
-            //. in case original serialized data had changed (instead of calling FinalizeGate(gates))
+            //. in case original serialized data had changed (instead of calling UninitializeGate(gates))
             using (var _ = ListPool<BaseField>.Get(out var list))
             {
                 list.AddRange(nonOutputFields);
                 foreach (var field in list)
-                    FinalizeField(field);
+                    UninitializeField(field);
             }
 
             // re-register all gates
@@ -334,23 +334,21 @@ namespace OneHamsa.Dexterity
             AuditField(field);
         }
 
-        void FinalizeField(BaseField field, bool duringTeardown = false)
+        void UninitializeField(BaseField field)
         {
             if (field is null or OutputField or { initialized: false })  // OutputFields are never removed
                 return;
 
-            if (duringTeardown)
-                field.Finalize(this);
+            field.Uninitialize(this);
             
             var upstreams = field.GetUpstreamFields();
             if (upstreams != null)
             {
                 foreach (var upstreamField in field.GetUpstreamFields())
-                    FinalizeField(upstreamField, duringTeardown);
+                    UninitializeField(upstreamField);
             }
 
-            if (duringTeardown)
-                RemoveAudit(field);
+            RemoveAudit(field);
         }
 
         private void InitializeGate(Gate gate)
@@ -372,14 +370,14 @@ namespace OneHamsa.Dexterity
             {
                 Debug.LogException(e, this);
                 Debug.LogWarning($"caught FieldInitializationException, removing {gate} from {name}.{gate.outputFieldName}", this);
-                FinalizeGate(gate, true);
+                UninitializeGate(gate);
             }
 
             SetDirty();
         }
-        private void FinalizeGate(Gate gate, bool duringTeardown = false)
+        private void UninitializeGate(Gate gate)
         {
-            FinalizeField(gate.field, duringTeardown);
+            UninitializeField(gate.field);
             SetDirty();
         }
 

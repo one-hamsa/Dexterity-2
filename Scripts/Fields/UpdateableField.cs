@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using OneHamsa.Dexterity.Utilities;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -8,21 +9,20 @@ namespace OneHamsa.Dexterity.Builtins
         // field to avoid indirection
         [NonSerialized]
         public bool pendingUpdate;
+
         
         protected void SetPendingUpdate() => pendingUpdate = true;
 
-        protected override void Initialize(FieldNode context)
+        public override void OnNodeEnabled()
         {
-            base.Initialize(context);
-            
+            base.OnNodeEnabled();
             Manager.instance.AddUpdateableField(this);
             SetPendingUpdate();
         }
-        
-        public override void Finalize(FieldNode context)
+
+        public override void OnNodeDisabled()
         {
-            base.Finalize(context);
-            
+            base.OnNodeDisabled();
             if (Manager.instance != null)
                 Manager.instance.RemoveUpdateableField(this);
         }

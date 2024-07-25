@@ -58,14 +58,14 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 // target was destroyed, it's ok, stop updating
                 SetValue(negate ? 1 : 0);
-                Finalize(context);
+                Uninitialize(context);
             } 
             catch (NullReferenceException) 
             {
                 if (binding != null && binding.target == null) {
                     // target was destroyed, it's ok, stop updating
                     SetValue(negate ? 1 : 0);
-                    Finalize(context);
+                    Uninitialize(context);
                 } else {
                     throw;
                 }

@@ -232,14 +232,33 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected virtual void Initialize(FieldNode context)
         {
+            context.onEnabled += OnNodeEnabled;
+            context.onDisabled += OnNodeDisabled;
+            
+            // might happen during initialization - if so, wait for node's onEnabled event
+            if (context.initialized && context.isActiveAndEnabled)
+                OnNodeEnabled();
         }
 
         /// <summary>
         /// dispatched by the node when the field is destroyed
         /// </summary>
-        public virtual void Finalize(FieldNode context)
+        public virtual void Uninitialize(FieldNode context)
         {
+            context.onEnabled -= OnNodeEnabled;
+            context.onDisabled -= OnNodeDisabled;
+            if (!context.isActiveAndEnabled)
+                OnNodeDisabled();
+            
             this.context = null;
+        }
+
+        public virtual void OnNodeEnabled()
+        {
+        }
+
+        public virtual void OnNodeDisabled()
+        {
         }
 
         /// <summary>

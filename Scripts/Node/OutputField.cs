@@ -67,41 +67,32 @@ namespace OneHamsa.Dexterity
 
             protected override void Initialize(FieldNode context)
             {
-                base.Initialize(context);
-
                 // save reference to node
                 node = context;
                 originalNodeName = node.name;
                 
-                node.onEnabled += OnNodeEnabled;
-                node.onDisabled += OnNodeDisabled;
+                base.Initialize(context);
             }
 
-            public override void Finalize(FieldNode context)
+            public override void Uninitialize(FieldNode context)
             {
-                base.Finalize(context);
+                base.Uninitialize(context);
 
                 SetValue(defaultFieldValue);
-                
-                if (node != null)
-                {
-                    node.onEnabled -= OnNodeEnabled;
-                    node.onDisabled -= OnNodeDisabled;
-                }
-                
                 node = null;
-                
                 finalized = true;
             }
 
-            private void OnNodeEnabled()
+            public override void OnNodeEnabled()
             {
+                base.OnNodeEnabled();
                 // if the node is enabled, we might need to update the value
                 RefreshUpstreams();
             }
-            
-            private void OnNodeDisabled()
+
+            public override void OnNodeDisabled()
             {
+                base.OnNodeDisabled();
                 // if the node is disabled, we might need to reset the value
                 RefreshUpstreams();
             }

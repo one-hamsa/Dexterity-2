@@ -80,7 +80,7 @@ namespace OneHamsa.Dexterity
 
         protected virtual void OnDestroy()
         {
-            Uninitialize(true);
+            Uninitialize();
         }
 
         protected void OnEnable()
@@ -102,8 +102,6 @@ namespace OneHamsa.Dexterity
 
         protected void OnDisable()
         {
-            Uninitialize(false);
-
             onDisabled?.Invoke();
         }
 
@@ -235,10 +233,9 @@ namespace OneHamsa.Dexterity
             initialized = true;
         }
 
-        protected virtual void Uninitialize(bool duringTeardown)
+        protected virtual void Uninitialize()
         {
-            if (duringTeardown)
-                initialized = false;
+            initialized = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -442,7 +439,6 @@ namespace OneHamsa.Dexterity
         public virtual void Allocate()
         {
             Initialize();
-            Uninitialize(false);
         }
     }
 }

@@ -10,23 +10,31 @@ namespace OneHamsa.Dexterity.Builtins
 
         protected override void Initialize(FieldNode context)
         {
-            base.Initialize(context);
-            
             provider = new RaycastControllerFieldProvider();
             router = context.GetRaycastRouter();
-            router.AddReceiver(provider);
-            
             provider.onChanged += SetPendingUpdate;
-            context.onDisabled += provider.ClearAll;
+            
+            base.Initialize(context);
         }
         
-        public override void Finalize(FieldNode context)
+        public override void Uninitialize(FieldNode context)
         {
-            router.RemoveReceiver(provider);
             provider.onChanged -= SetPendingUpdate;
-            context.onDisabled -= provider.ClearAll;
 
-            base.Finalize(context);
+            base.Uninitialize(context);
+        }
+
+        public override void OnNodeEnabled()
+        {
+            base.OnNodeEnabled();
+            router.AddReceiver(provider);
+        }
+
+        public override void OnNodeDisabled()
+        {
+            base.OnNodeDisabled();
+            router.RemoveReceiver(provider);
+            provider.ClearAll();
         }
 
         public override void Update()

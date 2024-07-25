@@ -9,6 +9,8 @@ namespace OneHamsa.Dexterity.Builtins
     {
         [Field]
         public string fieldName;
+        // TODO: using child as Transform doesn't give us an API to know when/if this child is moved in hierarchy
+        //       So it might lead to stale parent references in case this child is moved to be under a different node
         public Transform child;
         public bool negate;
 
@@ -47,21 +49,30 @@ namespace OneHamsa.Dexterity.Builtins
         
         protected override void Initialize(FieldNode context)
         {
-            base.Initialize(context);
-
-            context.onParentTransformChanged += RefreshReferences;
-            context.onEnabled += RefreshReferences;
-
             fieldId = Database.instance.GetFieldID(fieldName);
+            base.Initialize(context);
+        }
+
+        public override void OnNodeEnabled()
+        {
+            base.OnNodeEnabled();
             if (child == null)
+            {
+                context.onParentTransformChanged += RefreshReferences;
+                context.onEnabled += RefreshReferences;
                 child = context.transform;
+            }
+            else
+            {
+                // TODO: We cannot detect hierarchy changes when child is explicitly set!
+            }
+            
             RefreshReferences();
         }
 
-        public override void Finalize(FieldNode context)
+        public override void OnNodeDisabled()
         {
-            base.Finalize(context);
-
+            base.OnNodeDisabled();
             if (context != null)
             {
                 context.onParentTransformChanged -= RefreshReferences;
