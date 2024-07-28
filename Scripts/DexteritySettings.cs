@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using OneHamsa.Dexterity.Builtins;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -19,8 +20,7 @@ namespace OneHamsa.Dexterity
 
         public FieldDefinition[] fieldDefinitions;
 
-        [SerializeReference]
-        public ITransitionStrategy defaultTransitionStrategy;
+        public SimpleStrategy defaultTransitionStrategy;
         public List<SavedProperty> namedProperties = new();
 
         private Dictionary<(Type, string), Modifier.PropertyBase> namedPropertiesCache = new();
@@ -32,7 +32,8 @@ namespace OneHamsa.Dexterity
                 Debug.LogError($"No default transition strategy set in {name}", this);
                 return null;
             }
-            return DeepClone(defaultTransitionStrategy);
+
+            return SimpleStrategy.CloneFrom(defaultTransitionStrategy);
         }
         
         public void SavePropertyAs(Modifier.PropertyBase property, string name)
@@ -71,21 +72,6 @@ namespace OneHamsa.Dexterity
             {
                 if (t == type)
                     yield return name;
-            }
-        }
-        
-        // Return a deep clone of an object of type T.
-        private static T DeepClone<T>(T obj)
-        {
-            using (MemoryStream memory_stream = new MemoryStream())
-            {
-                // Serialize the object into the memory stream.
-                BinaryFormatter formatter = new BinaryFormatter();
-                formatter.Serialize(memory_stream, obj);
-
-                // Rewind the stream and use it to create a new object.
-                memory_stream.Position = 0;
-                return (T)formatter.Deserialize(memory_stream);
             }
         }
     }

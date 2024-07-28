@@ -19,6 +19,19 @@ namespace OneHamsa.Dexterity.Builtins
         public float transitionTime = 1f;
         public TransitionStyle style = TransitionStyle.ContinuousLerp;
 
+        /// <summary>
+        /// creates a new SimpleStrategy from an existing one
+        /// </summary>
+        public static SimpleStrategy CloneFrom(SimpleStrategy original)
+        {
+            return new SimpleStrategy
+            {
+                transitionSpeed = original.transitionSpeed,
+                transitionTime = original.transitionTime,
+                style = original.style
+            };
+        }
+
         protected override float GetStateValue(int state, int currentState, float currentValue, double deltaTime)
         {
             var targetValue = state == currentState ? 1 : 0;

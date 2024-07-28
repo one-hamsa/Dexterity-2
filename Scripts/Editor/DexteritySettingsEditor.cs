@@ -84,7 +84,7 @@ namespace OneHamsa.Dexterity
             GUILayout.Label("Defaults", EditorStyles.whiteLargeLabel);
 
             var p = serializedObject.FindProperty(nameof(DexteritySettings.defaultTransitionStrategy));
-            var strategyDefined = TransitionBehaviourEditor.ShowStrategy(target, p);
+            EditorGUILayout.PropertyField(p);
 
             EditorGUILayout.Space(15);
             
