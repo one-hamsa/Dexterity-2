@@ -260,7 +260,7 @@ namespace OneHamsa.Dexterity
         public Material GetModifiedMaterial(Material baseMaterial)
         {
             // Return the base material if invalid or if this component is disabled
-            if (!enabled || baseMaterial == null || !overrideMaterial)
+            if (!isActiveAndEnabled || baseMaterial == null || !overrideMaterial)
                 return baseMaterial;
             
             if (component == null || materialType != MaterialType.Graphic)
