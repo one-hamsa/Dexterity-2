@@ -108,11 +108,11 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             isStaggerDone = false;
             current = null;
 
-            // wait for all gameObjects to get Awake() and OnEnable()
-            yield return null;
-            
             foreach (var node in GetNodes())
                 node.SetStateOverride(sourceStateId);
+            
+            // wait for all gameObjects to get Awake() and OnEnable()
+            yield return null;
 
             // only start now if not recursive
             if (transform.parent == null || transform.parent.GetComponentInParent<StaggerChildrenState>() == null)
