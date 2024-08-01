@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.Profiling;
 
 namespace OneHamsa.Dexterity
 {
@@ -140,18 +141,24 @@ namespace OneHamsa.Dexterity
             if (!_performedFirstInitialization_FieldNode)
                 FixSteps();
 
+            Profiler.BeginSample("FieldNode Initialize: EnsureValidState");
             if (!EnsureValidState())
             {
                 enabled = false;
+                Profiler.EndSample();
                 return;
             }
+            Profiler.EndSample();
 
             if (!_performedFirstInitialization_FieldNode)
             {
+                Profiler.BeginSample("FieldNode Initialize: Register internal fields");
                 // register all internal fields
                 foreach (var field in internalFieldDefinitions)
                     Database.instance.RegisterInternalFieldDefinition(fieldDefinition: field);
+                Profiler.EndSample();
 
+                Profiler.BeginSample("FieldNode Initialize: Build processing stack");
                 using var _ = HashSetPool<NodeReference>.Get(out var visitedNodeReferences);
                 using var __ = ListPool<Gate>.Get(out var nodeGates);
 
@@ -172,7 +179,9 @@ namespace OneHamsa.Dexterity
                         _processingStack.Push(currentNodeRef.extends[i]);
                     }
                 }
+                Profiler.EndSample();
 
+                Profiler.BeginSample("FieldNode Initialize: register stack");
                 while (_orderedStack.Count > 0)
                 {
                     // reverse the order [^1]
@@ -192,6 +201,7 @@ namespace OneHamsa.Dexterity
 
                 // Add our own custom gates last
                 customGates.InsertRange(0, nodeGates);
+                Profiler.EndSample();
             }
 
             // run base initialize after registering states
@@ -199,28 +209,40 @@ namespace OneHamsa.Dexterity
 
             if (!_performedFirstInitialization_FieldNode)
             {
+                Profiler.BeginSample("FieldNode Initialize: Initialize steps");
                 // then initialize step list
                 (this as IStepList).InitializeSteps();
 
                 // find all fields that are used by this node's state function
                 stateFieldIdsCache = ListPool<int>.Get();
                 stateFieldIdsCache.AddRange(GetFieldIDs());
-                
+                Profiler.EndSample();
+
                 // go through all the fields. initialize them, register them to manager and add them to internal structure
+                Profiler.BeginSample("FieldNode Initialize: Restart Fields");
                 RestartFields();
+                Profiler.EndSample();
 
                 // cache overrides to allow quick access internally
+                Profiler.BeginSample("FieldNode Initialize: Cache Field Overrides");
                 CacheFieldOverrides();
+                Profiler.EndSample();
                 
                 // To trigger caching of step list
-                var _ = GetNextState();
-            }
-
-            _performedFirstInitialization_FieldNode = true;
-            
-            // last chance: if there are field overrides, reroute initial state
-            if (cachedOverrides.Count > 0)
+                Profiler.BeginSample("FieldNode Initialize: GetNextState (caching of step list)");
                 activeState = GetNextState();
+                
+                _performedFirstInitialization_FieldNode = true;
+                Profiler.EndSample();
+            }
+            else
+            {
+                Profiler.BeginSample("FieldNode Initialize: GetNextState (caching of step list)");
+                // last chance: if there are field overrides, reroute initial state
+                if (cachedOverrides.Count > 0)
+                    activeState = GetNextState();
+                Profiler.EndSample();
+            }
         }
 
         protected override void Uninitialize()
@@ -628,6 +650,8 @@ namespace OneHamsa.Dexterity
         
         public void FixSteps()
         {
+            Profiler.BeginSample("Fix Steps");
+
             // fix duplicate IDs
             using var _ = HashSetPool<int>.Get(out var ids);
             for (int i = 0; i < customSteps.Count; i++)
@@ -646,6 +670,7 @@ namespace OneHamsa.Dexterity
             
             AddReferencesToStateFunctions();
             AddFallbackStateIfNeeded();
+            Profiler.EndSample();
         }
 
         private void AddReferencesToStateFunctions()

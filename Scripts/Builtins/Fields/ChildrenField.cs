@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
+using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -24,7 +26,7 @@ namespace OneHamsa.Dexterity.Builtins
 
         HashSet<FieldNode> children, prevChildren;
         HashSet<string> childrenPath;
-        private static Queue<Transform> workQueue;
+        private static Queue<FieldNode> workQueue;
         private static IEqualityComparer<HashSet<FieldNode>> comparer;
         
         int fieldId;
@@ -81,23 +83,29 @@ namespace OneHamsa.Dexterity.Builtins
 
         private void RefreshReferences()
         {
+            Profiler.BeginSample("ChildrenField: RefreshReferences (Union with)");
             prevChildren.Clear();
             if (children != null)
                 prevChildren.UnionWith(children);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("ChildrenField: RefreshReferences (Nodes Iter)");
+            using var _ = ListPool<FieldNode>.Get(out var nodesList); 
             // check if children transforms stay the same
-            var nodesIter = recursive 
-                ? GetNodesInChildrenRecursive() 
-                : GetNodesInImmediateChildren();
+            GetNodesInChildrenRecursive(nodesList);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("ChildrenField: RefreshReferences (Fill children)");
             if (children == null)
                 children = new HashSet<FieldNode>();
             else
                 children.Clear();
                 
-            foreach (var child in nodesIter) 
+            foreach (var child in nodesList) 
                 children.Add(child);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("ChildrenField: RefreshReferences (Upstream Fields)");
             if (!comparer.Equals(children, prevChildren)) {
                 ClearUpstreamFields();
                 foreach (var child in children)
@@ -106,37 +114,32 @@ namespace OneHamsa.Dexterity.Builtins
                 // proxy might have changed - re-calculate node's outputs
                 context.SetDirty();
             }
+            Profiler.EndSample();
         }
 
-        private IEnumerable<FieldNode> GetNodesInChildrenRecursive()
+        private void GetNodesInChildrenRecursive(List<FieldNode> output)
         {
-            // all children, but stop recursing when finding nodes
             workQueue.Clear();
-            workQueue.Enqueue(parent);
+            workQueue.Enqueue(context);
 
-            while (workQueue.Count > 0) {
-                var transform = workQueue.Dequeue();
-                var node = transform.GetComponent<FieldNode>();
-                if (transform != parent && node != null)
+            while (workQueue.Count > 0)
+            {
+                var cur = workQueue.Dequeue();
+                foreach (var childNode in cur.childrenNodes)
                 {
-                    yield return node;
-                    
-                    if (!recurseWhenFindingNode)
-                        continue;
+                    if (childNode is FieldNode childFieldNode)
+                    {
+                        output.Add(childFieldNode);
+
+                        if (!recurseWhenFindingNode)
+                            continue;
+                        
+                        workQueue.Enqueue(childFieldNode);
+                    }
                 }
-
-                foreach (Transform child in transform)
-                    workQueue.Enqueue(child);
             }
-        }
-
-        private IEnumerable<FieldNode> GetNodesInImmediateChildren()
-        {
-            for (var i = 0; i < parent.childCount; i++) {
-                var child = parent.GetChild(i).GetComponent<FieldNode>();
-                if (child != null)
-                    yield return child;
-            }
+            
+            workQueue.Clear();
         }
 
         protected override void Initialize(FieldNode context)
@@ -164,7 +167,7 @@ namespace OneHamsa.Dexterity.Builtins
                 Debug.LogError("ChildrenField: cannot locate the FieldNode associated with given context", context);
             else
             {
-                _parentContext.onChildTransformChanged += RefreshReferences;
+                _parentContext.onChildNodesChanged += RefreshReferences;
                 _parentContext.onEnabled += RefreshReferences;
             }
             RefreshReferences();
@@ -175,7 +178,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.OnNodeDisabled();
             if (_parentContext != null)
             {
-                _parentContext.onChildTransformChanged -= RefreshReferences;
+                _parentContext.onChildNodesChanged -= RefreshReferences;
                 _parentContext.onEnabled -= RefreshReferences;
                 _parentContext = null;
             }

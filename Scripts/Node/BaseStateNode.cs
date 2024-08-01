@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.Profiling;
 using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
@@ -45,8 +46,8 @@ namespace OneHamsa.Dexterity
         public event Action onEnabled;
         public event Action onDisabled;
 
-        public event Action onParentTransformChanged;
-        public event Action onChildTransformChanged;
+        public event Action onParentNodeChanged;
+        public event Action onChildNodesChanged;
         
         public event Action<int, int> onStateChanged;
         #endregion Public Properties
@@ -60,7 +61,9 @@ namespace OneHamsa.Dexterity
         double pendingStateChangeTime;
         int pendingState = -1;
 
-        private BaseStateNode parentNode;
+        internal bool hasParentNode;
+        internal BaseStateNode parentNode;
+        internal List<BaseStateNode> childrenNodes = new(4);
 
         internal HashSet<Modifier> nodeModifiers = new();
 
@@ -86,58 +89,97 @@ namespace OneHamsa.Dexterity
         protected void OnEnable()
         {
             Initialize();
-            OnTransformParentChanged();
+            
+            UpdateParentNode();
 
+            Profiler.BeginSample("onEnabled Invoke");
             // initialize can disable the node
             if (enabled)
                 onEnabled?.Invoke();
+            Profiler.EndSample();
         }
 
         private void UpdateParentNode()
         {
-            var transformParent = transform.parent;
-            if (transformParent != null)
-                parentNode = transformParent.GetComponentInParent<BaseStateNode>();
-        }
-
-        protected void OnDisable()
-        {
-            onDisabled?.Invoke();
-        }
-
-        private void OnTransformParentChanged()
-        {
+            Profiler.BeginSample("UpdateParentNode");
             var prevParentNode = parentNode;
-            
-            UpdateParentNode();
-            
-            if (parentNode != prevParentNode)
+            var hadPrevParent = hasParentNode;
+            var transformParent = transform.parent;
+
+            if (isActiveAndEnabled && transformParent != null)
+                parentNode = transformParent.GetComponentInParent<BaseStateNode>();
+            else
+                parentNode = null;
+
+            if (prevParentNode != parentNode)
             {
+                if (hasParentNode)
+                    prevParentNode.RemoveChild(this);
+                hasParentNode = parentNode != null;
+                if (hasParentNode)
+                    parentNode.AddChild(this);
+                
+                Profiler.BeginSample("UpdateParentNode: Notify children changed");
                 // Let all (previous) parents know their children have updated (this is done because OnTransformChildrenChanged()
                 // is not recursive in the Unity implementation)
                 var ancestorNode = prevParentNode;
-                while (ancestorNode != null)
+                while (hadPrevParent)
                 {
-                    ancestorNode.OnTransformChildrenChanged();
+                    ancestorNode.onChildNodesChanged?.Invoke();
+                    hadPrevParent = ancestorNode.hasParentNode;
                     ancestorNode = ancestorNode.parentNode;
                 }
 
                 // Let all (new) parents know their children have updated (this is done because OnTransformChildrenChanged()
                 // is not recursive in the Unity implementation)
                 ancestorNode = parentNode;
-                while (ancestorNode != null)
+                hadPrevParent = hasParentNode;
+                while (hadPrevParent)
                 {
-                    ancestorNode.OnTransformChildrenChanged();
+                    ancestorNode.onChildNodesChanged?.Invoke();
+                    hadPrevParent = ancestorNode.hasParentNode;
                     ancestorNode = ancestorNode.parentNode;
                 }
+                Profiler.EndSample();
+                
             }
-            
-            onParentTransformChanged?.Invoke();
+
+            Profiler.BeginSample("UpdateParentNode: Invoke parent changed");
+            onParentNodeChanged?.Invoke();
+            Profiler.EndSample();
+
+            Profiler.EndSample();
         }
 
-        private void OnTransformChildrenChanged()
+        private void AddChild(BaseStateNode childNode)
         {
-            onChildTransformChanged?.Invoke();
+            #if UNITY_EDITOR
+            if (childrenNodes.Contains(childNode))
+                Debug.LogError($"Child node {childNode.name} is already a child of {name}");
+            #endif
+            childrenNodes.Add(childNode);
+            onChildNodesChanged?.Invoke();
+        }
+
+        private void RemoveChild(BaseStateNode childNode)
+        {
+            #if UNITY_EDITOR
+            if (!childrenNodes.Contains(childNode))
+                Debug.LogError($"Child node {childNode.name} is NOT a child of {name}");
+            #endif
+            childrenNodes.Remove(childNode);
+            onChildNodesChanged?.Invoke();
+        }
+
+        protected void OnDisable()
+        {
+            UpdateParentNode();
+            onDisabled?.Invoke();
+        }
+
+        private void OnTransformParentChanged()
+        {
+            UpdateParentNode();
         }
 
         protected void Update() => UpdateInternal(ignoreDelays: false);
@@ -196,9 +238,12 @@ namespace OneHamsa.Dexterity
 
         protected virtual void Initialize()
         {
+            Profiler.BeginSample("Register");
             // register my states 
             Database.instance.Register(this);
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Caching");
             if (!_performedFirstInitialization)
             {
                 // cache delays (from string to int)
@@ -206,7 +251,9 @@ namespace OneHamsa.Dexterity
                 // cache overrides to allow quick access internally
                 CacheStateOverride();
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("Initial State ID");
             if (!GetStateNames().Contains(initialState))
             {
                 initialStateId = GetStateIDs().ElementAt(0);
@@ -218,10 +265,12 @@ namespace OneHamsa.Dexterity
                 // find default state and define initial state
                 initialStateId = Database.instance.GetStateID(initialState);
             }
+            
             if (initialStateId == -1)
             {
                 Debug.LogError($"internal error: initialState == -1 after initialization", this);
                 enabled = false;
+                Profiler.EndSample();
                 return;
             }
             
@@ -231,6 +280,7 @@ namespace OneHamsa.Dexterity
             stateDirty = true;
             _performedFirstInitialization = true;
             initialized = true;
+            Profiler.EndSample();
         }
 
         protected virtual void Uninitialize()
