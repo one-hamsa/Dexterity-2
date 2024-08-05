@@ -56,8 +56,8 @@ namespace OneHamsa.Dexterity
         {
             if (!IsValid())
                 return false;
-            
-            var methodInfo = target.GetType().GetMethod(methodName, 
+
+            var methodInfo = Reflection.GetMethod(target.GetType(), methodName,
                 BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (methodInfo != null)
             {
@@ -67,8 +67,7 @@ namespace OneHamsa.Dexterity
                 return true;
             }
 
-            var fieldInfo = target.GetType().GetField(methodName, 
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            var fieldInfo = Reflection.GetField(target.GetType(),methodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (fieldInfo != null) {
                 type = fieldInfo.FieldType;
                 FindActualValueType(supportedTypes);
@@ -76,8 +75,7 @@ namespace OneHamsa.Dexterity
                 return true;
             }
             
-            var propertyInfo = target.GetType().GetProperty(methodName, 
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            var propertyInfo = Reflection.GetProperty(target.GetType(), methodName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             if (propertyInfo != null) 
             {
                 type = propertyInfo.PropertyType;
