@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Scripting;
@@ -81,13 +82,37 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             destStateId = Database.instance.GetStateID(destinationState);
         }
 
-        private void Start()
+        private void OnEnable()
+        {
+            StartCoroutine(StartStagger());
+        }
+        
+        private void OnDisable()
+        {
+            StopAllCoroutines();
+            
+            foreach (var node in GetNodes())
+            {
+                if (onStateChanged.TryGetValue(node, out var onNodeStateChanged))
+                {
+                    node.SetStateDelay(sourceStateId, destStateId, 0);
+                    node.onStateChanged -= onNodeStateChanged;
+                    onStateChanged.Remove(node);
+                    // TODO remove onStaggerDone recursive subscription
+                }
+            }
+        }
+
+        private IEnumerator StartStagger()
         {
             isStaggerDone = false;
             current = null;
-            
+
             foreach (var node in GetNodes())
                 node.SetStateOverride(sourceStateId);
+            
+            // wait for all gameObjects to get Awake() and OnEnable()
+            yield return null;
 
             // only start now if not recursive
             if (transform.parent == null || transform.parent.GetComponentInParent<StaggerChildrenState>() == null)
@@ -167,20 +192,6 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
                 current.JumpToState(sourceStateId);
             
             current.ClearStateOverride();
-        }
-        
-        private void OnDisable()
-        {
-            foreach (var node in GetNodes())
-            {
-                if (onStateChanged.TryGetValue(node, out var onNodeStateChanged))
-                {
-                    node.SetStateDelay(sourceStateId, destStateId, 0);
-                    node.onStateChanged -= onNodeStateChanged;
-                    onStateChanged.Remove(node);
-                    // TODO remove onStaggerDone recursive subscription
-                }
-            }
         }
         
         private float GetDelayForNode(BaseStateNode node, bool isFirst)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -32,6 +33,7 @@ namespace OneHamsa.Dexterity.Builtins
         
         private void RefreshReferences()
         {
+            Profiler.BeginSample("Parent Field: Refresh references");
             var lastParent = parent;
             var transformParent = child.parent;
             parent = transformParent != null ? transformParent.GetComponentInParent<FieldNode>() : null;
@@ -45,6 +47,7 @@ namespace OneHamsa.Dexterity.Builtins
                 // proxy might have changed - re-calculate node's outputs
                 context.SetDirty();
             }
+            Profiler.EndSample();
         }
         
         protected override void Initialize(FieldNode context)
@@ -58,7 +61,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.OnNodeEnabled();
             if (child == null)
             {
-                context.onParentTransformChanged += RefreshReferences;
+                context.onParentNodeChanged += RefreshReferences;
                 context.onEnabled += RefreshReferences;
                 child = context.transform;
             }
@@ -75,7 +78,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.OnNodeDisabled();
             if (context != null)
             {
-                context.onParentTransformChanged -= RefreshReferences;
+                context.onParentNodeChanged -= RefreshReferences;
                 context.onEnabled -= RefreshReferences;
             }
         }
