@@ -83,7 +83,8 @@ namespace OneHamsa.Dexterity
         {
             if (bindingType == null)
             {
-                yield return (initialState, 0);
+                yield return (booleanFalseState, 0);
+                yield return (booleanTrueState, 1);
                 yield break;
             }
 
