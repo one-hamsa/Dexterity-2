@@ -196,6 +196,23 @@ namespace OneHamsa.Dexterity.Builtins
         }
         public static List<RaycastFilter> GetFilters() => filters;
 
+        public readonly struct FilterContext : IDisposable
+        {
+            private readonly RaycastFilter filter;
+
+            public FilterContext(RaycastFilter filter)
+            {
+                this.filter = filter;
+                AddFilter(filter);
+            }
+
+            public void Dispose()
+            {
+                RemoveFilter(filter);
+            }
+        }
+        public static FilterContext DisableAll => new(_ => false);
+
         /// <summary>
         /// Handle a press event from this controller.
         /// </summary>
