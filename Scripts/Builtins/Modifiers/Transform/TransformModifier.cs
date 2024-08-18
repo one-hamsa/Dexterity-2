@@ -28,16 +28,22 @@ namespace OneHamsa.Dexterity.Builtins
             if (!transitionChanged)
                 return;
 
-            var rotationOffset = baseRotation;
             var positionOffset = basePosition;
+            var rotationOffset = Quaternion.identity;
+            
             foreach (var kv in transitionState.keyValuePairs)
             {
-                var property = GetProperty(kv.Key) as Property;
+                var property = (Property)GetProperty(kv.Key);
                 var value = kv.Value;
 
                 positionOffset += Vector3.Lerp(Vector3.zero, property.position, value);
-                rotationOffset = Quaternion.Slerp(rotationOffset, baseRotation * property.rotation, value);
+                
+                // Create a rotation for this property and blend it (use Lerp for efficiency - we're blending from identity)
+                Quaternion propertyRotation = Quaternion.Lerp(Quaternion.identity, property.rotation, value);
+                rotationOffset *= propertyRotation;
             }
+            
+            rotationOffset = baseRotation * rotationOffset;
 
             _transform.SetLocalPositionAndRotation(positionOffset, rotationOffset);
         }
