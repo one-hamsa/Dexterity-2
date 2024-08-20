@@ -60,18 +60,22 @@ namespace OneHamsa.Dexterity
 
         protected override void Initialize()
         {
-            foreach (var stateProxy in stateProxies)
+            for (var index = 0; index < stateProxies.Count; index++)
             {
+                var stateProxy = stateProxies[index];
                 if (stateProxy.sourceNode == null)
                 {
-                    Debug.LogError($"StateProxyNode {name} has a null source node for state {stateProxy.outStateName}.", this);
-                    enabled = false;
-                    return;
+                    // remove null source nodes
+                    stateProxies.RemoveAt(index);
+                    index--;
+                    continue;
                 }
 
                 if (string.IsNullOrEmpty(stateProxy.inStateName))
                 {
-                    Debug.LogError($"StateProxyNode {name} has a null in state name for source node {stateProxy.sourceNode.name}.", this);
+                    Debug.LogError(
+                        $"StateProxyNode {name} has a null in state name for source node {stateProxy.sourceNode.name}.",
+                        this);
                     enabled = false;
                     return;
                 }
