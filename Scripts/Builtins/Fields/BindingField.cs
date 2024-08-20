@@ -35,6 +35,12 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
+        public override void Uninitialize(FieldNode context)
+        {
+            base.Uninitialize(context);
+            binding = null;
+        }
+
         public override void Update()
         {
             #if BINDING_DEEP_PROFILE

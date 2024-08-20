@@ -81,6 +81,7 @@ namespace OneHamsa.Dexterity
                 SetValue(defaultFieldValue);
                 node = null;
                 finalized = true;
+                cachedGates.Clear();
             }
 
             public override void OnNodeEnabled()
