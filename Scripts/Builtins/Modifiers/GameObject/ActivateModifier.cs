@@ -27,6 +27,9 @@ namespace OneHamsa.Dexterity.Builtins
             base.HandleNodeStateChange(oldState, newState);
             var node = GetNode();
             if (this != null && node != null && node.isActiveAndEnabled && enabled)
+	            // FIXME this isn't ideal. it can be called from OnEnable, which means the other components on this gameObject
+				//. might never get initialized once (and skip their OnEnable/OnDisable).
+				//. consider using Start() as the entry point for first-time enabling
                 gameObject.SetActive(((Property)GetProperty(newState)).active);
         }
 
