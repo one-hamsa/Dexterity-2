@@ -209,50 +209,115 @@ namespace OneHamsa.Dexterity
                     break;
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
-                    if (!overrideMaterial)
+                    GetMaterialControl();
+                    if (rendererControlType == RendererControlType.PropertyBlock)
                     {
-                        propertyBlock.Clear();
-                        ((Renderer)component).SetPropertyBlock(propertyBlock);
-                        return;
+                        SetPropertyBlock();
                     }
-                    
-                    foreach (var kv in intOverrides)
+                    else
                     {
-                        propertyBlock.SetInt(kv.Key, kv.Value);
+                        SetExternalControl();
                     }
-                    
-                    foreach (var kv in floatOverrides)
-                    {
-                        propertyBlock.SetFloat(kv.Key, kv.Value);
-                    }
-                    
-                    foreach (var kv in vectorOverrides)
-                    {
-                        propertyBlock.SetVector(kv.Key, kv.Value);
-                    }
-                    
-                    foreach (var kv in colorOverrides)
-                    {
-                        propertyBlock.SetColor(kv.Key, kv.Value);
-                    }
-                    
-                    foreach (var kv in textureOverrides)
-                    {
-                        propertyBlock.SetTexture(kv.Key, kv.Value);
-                    }
-                    
-                    foreach (var kv in matrixOverrides)
-                    {
-                        propertyBlock.SetMatrix(kv.Key, kv.Value);
-                    }
-                    ((Renderer)component).SetPropertyBlock(propertyBlock);
+
+
                     break;
             }
         }
 
-        private void GetPropertyBlock()
+        private void SetExternalControl()
         {
+            foreach (var kv in intOverrides)
+            {
+                _externalMaterialControl.SetInt(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in floatOverrides)
+            {
+                _externalMaterialControl.SetFloat(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in vectorOverrides)
+            {
+                _externalMaterialControl.SetVector(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in colorOverrides)
+            {
+                _externalMaterialControl.SetColor(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in textureOverrides)
+            {
+                _externalMaterialControl.SetTexture(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in matrixOverrides)
+            {
+                _externalMaterialControl.SetMatrix(kv.Key, kv.Value);
+            }
+        }
+
+        void SetPropertyBlock()
+        {
+            if (!overrideMaterial)
+            {
+                propertyBlock.Clear();
+                ((Renderer)component).SetPropertyBlock(propertyBlock);
+                return;
+            }
+                    
+            foreach (var kv in intOverrides)
+            {
+                propertyBlock.SetInt(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in floatOverrides)
+            {
+                propertyBlock.SetFloat(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in vectorOverrides)
+            {
+                propertyBlock.SetVector(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in colorOverrides)
+            {
+                propertyBlock.SetColor(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in textureOverrides)
+            {
+                propertyBlock.SetTexture(kv.Key, kv.Value);
+            }
+                    
+            foreach (var kv in matrixOverrides)
+            {
+                propertyBlock.SetMatrix(kv.Key, kv.Value);
+            }
+            ((Renderer)component).SetPropertyBlock(propertyBlock);
+        }
+
+        enum RendererControlType
+        {
+            None,
+            PropertyBlock,
+            ExternalControl
+        }
+        
+        RendererControlType rendererControlType = RendererControlType.None;
+        IExternalMaterialControl _externalMaterialControl;
+        private void GetMaterialControl()
+        {
+            if(rendererControlType != RendererControlType.None)
+                return;
+            _externalMaterialControl= GetComponent<IExternalMaterialControl>();
+            if(_externalMaterialControl != null) 
+            {
+                rendererControlType = RendererControlType.ExternalControl;
+                return;
+            }
+            rendererControlType = RendererControlType.PropertyBlock;
             propertyBlock ??= new();
             ((Renderer)component).GetPropertyBlock(propertyBlock);
         }
@@ -330,7 +395,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetInt(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetInt(id);
                     
@@ -356,7 +421,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetFloat(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetFloat(id);
                     
@@ -384,7 +449,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetVector(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetVector(id);
                     
@@ -412,7 +477,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetColor(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetColor(id);
                     
@@ -440,7 +505,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetTexture(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetTexture(id);
                     
@@ -468,7 +533,7 @@ namespace OneHamsa.Dexterity
                     return graphic.materialForRendering.GetMatrix(id);
                 
                 case MaterialType.Renderer:
-                    GetPropertyBlock();
+                    GetMaterialControl();
                     if (!propertyBlock.isEmpty)
                         return propertyBlock.GetMatrix(id);
                     
