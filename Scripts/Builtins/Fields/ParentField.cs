@@ -80,6 +80,7 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 context.onParentNodeChanged -= RefreshReferences;
                 context.onEnabled -= RefreshReferences;
+                child = null;
             }
         }
     }
