@@ -32,8 +32,10 @@ namespace OneHamsa.Dexterity.Builtins
         protected virtual void OnDisable() => Update();
 
         // Update is called once per frame
-        protected virtual void Update()
-        {
+        private float _length;
+        protected virtual void Update() {
+            if (controller.didHit)
+                _length = Vector3.Distance(controller.ray.origin, controller.hit.point);
             UpdateSourceLineRenderer();
             UpdateDestinationLineRenderer();
         }
@@ -57,7 +59,7 @@ namespace OneHamsa.Dexterity.Builtins
                 lineRenderer.widthMultiplier = _width * s;
             }
             
-            float length = controller.didHit ? Mathf.Min(controller.hit.distance, maxLength) : maxLength;
+            float length = controller.didHit ? Mathf.Min(_length, maxLength) : maxLength;
             Vector3 point0 = Vector3.zero;
             Vector3 point1 = transform.InverseTransformPoint(controller.ray.GetPoint(length));
             
@@ -80,10 +82,10 @@ namespace OneHamsa.Dexterity.Builtins
                 destinationLineRenderer.widthMultiplier = _destWidth * f;
             }
             
-            float length = Mathf.Min(controller.hit.distance, maxDestLength);
-            Vector3 point0 = transform.InverseTransformPoint(controller.ray.GetPoint(controller.hit.distance));
-            Vector3 point1 = transform.InverseTransformPoint(controller.ray.GetPoint(controller.hit.distance - length * .01f));
-            Vector3 point2 = transform.InverseTransformPoint(controller.ray.GetPoint(controller.hit.distance - length));
+            float length = Mathf.Min(_length, maxDestLength);
+            Vector3 point0 = transform.InverseTransformPoint(controller.ray.GetPoint(_length));
+            Vector3 point1 = transform.InverseTransformPoint(controller.ray.GetPoint(_length - length * .01f));
+            Vector3 point2 = transform.InverseTransformPoint(controller.ray.GetPoint(_length - length));
             
             destinationLineRenderer.SetPosition(0, point0);
             destinationLineRenderer.SetPosition(1, point1); 
