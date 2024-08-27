@@ -309,17 +309,15 @@ namespace OneHamsa.Dexterity
         IExternalMaterialControl _externalMaterialControl;
         private void GetMaterialControl()
         {
-            if(rendererControlType != RendererControlType.None)
-                return;
-            _externalMaterialControl= GetComponent<IExternalMaterialControl>();
-            if(_externalMaterialControl != null) 
+            if (rendererControlType == RendererControlType.None)
             {
-                rendererControlType = RendererControlType.ExternalControl;
-                return;
+                _externalMaterialControl= GetComponent<IExternalMaterialControl>();
+                rendererControlType = _externalMaterialControl != null ? RendererControlType.ExternalControl : RendererControlType.PropertyBlock;
             }
-            rendererControlType = RendererControlType.PropertyBlock;
-            propertyBlock ??= new();
-            ((Renderer)component).GetPropertyBlock(propertyBlock);
+            if(rendererControlType == RendererControlType.PropertyBlock){
+                propertyBlock ??= new();
+                ((Renderer)component).GetPropertyBlock(propertyBlock);
+            }
         }
 
         public Material GetModifiedMaterial(Material baseMaterial)
