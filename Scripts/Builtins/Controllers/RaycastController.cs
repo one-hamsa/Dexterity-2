@@ -88,7 +88,9 @@ namespace OneHamsa.Dexterity.Builtins
         private static readonly Comparer<DexterityRaycastHit> raycastDistanceComparer
             = Comparer<DexterityRaycastHit>.Create((a, b) =>
             {
-                if (a.priority != b.priority)
+                if (a.priority != IRaycastPriorityGroup.IGNORE_PRIORITY && 
+                    b.priority != IRaycastPriorityGroup.IGNORE_PRIORITY && 
+                    a.priority != b.priority)
                     return a.priority.CompareTo(b.priority);
                 return a.distance.CompareTo(b.distance);
             });

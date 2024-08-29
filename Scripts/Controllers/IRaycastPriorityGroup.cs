@@ -7,6 +7,7 @@ namespace OneHamsa.Dexterity
     public interface IRaycastPriorityGroup
     {
         public const int ABORT_PRIORITY = 99999;
+        public const int IGNORE_PRIORITY = ABORT_PRIORITY - 1; // compare against distance only
         
         public int GetPriorityForHit(DexterityRaycastHit hit);
 
