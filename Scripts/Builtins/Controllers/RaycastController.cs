@@ -16,6 +16,8 @@ namespace OneHamsa.Dexterity.Builtins
         {
             public RaycastController controller;
             public bool propagate;
+            public readonly int id = nextId++;
+            private static int nextId = 0;
 
             public void StopPropagation()
             {
@@ -236,7 +238,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (onAnyPress != null)
             {
-                var args = new PressAnywhereEvent { controller = this, propagate = true };
+                var args = new PressAnywhereEvent { controller = this, propagate = true, };
                 onAnyPress.Invoke(args);
                 if (!args.propagate)
                     return;
