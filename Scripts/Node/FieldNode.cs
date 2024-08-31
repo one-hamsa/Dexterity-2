@@ -638,7 +638,7 @@ namespace OneHamsa.Dexterity
             // this will cause editor to crash if selecting multiple nodes, so we call it from CustomEditor instead
             // FixSteps();
 
-            if (Application.IsPlaying(this))
+            if (Application.IsPlaying(this) && Database.instance != null)
                 CacheFieldOverrides();
         }
 
