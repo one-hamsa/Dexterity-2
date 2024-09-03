@@ -7,7 +7,7 @@ namespace OneHamsa.Dexterity
     public class BindingEnumNodeEditor : BaseStateNodeEditor
     {
         public override void OnInspectorGUI() {
-            Legacy_OnInspectorGUI();
+            Legacy_OnInspectorGUIWithValidate();
         }
         
         protected override void ShowFields()

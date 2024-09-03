@@ -546,7 +546,7 @@ namespace OneHamsa.Dexterity
             #endif
         }
 
-        private void OnValidate()
+        public void OnInspectorChangeDetected()
         {
             if (!Application.IsPlaying(this))
                 SyncStates();

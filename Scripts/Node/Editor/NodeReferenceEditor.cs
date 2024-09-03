@@ -19,6 +19,8 @@ namespace OneHamsa.Dexterity
 
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginChangeCheck();
+            
             reference = target as NodeReference;
             serializedObject.Update();
 
@@ -41,6 +43,12 @@ namespace OneHamsa.Dexterity
             // always update if it's a live view
             if (reference.owner != null)
                 this.Repaint();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                if (target is NodeReference nodeReference)                
+                    nodeReference.OnInspectorChangeDetected();
+            }
         }
 
         private void ShowExtends()

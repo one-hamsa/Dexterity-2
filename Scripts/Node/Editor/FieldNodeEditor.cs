@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System;
+using UnityEditor.UIElements;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
@@ -50,7 +51,10 @@ namespace OneHamsa.Dexterity
             // TODO 
             // EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);
             
-            root.Add(new IMGUIContainer(Legacy_OnInspectorGUI));
+            root.Add(new IMGUIContainer(Legacy_OnInspectorGUIWithValidate));
+            
+            // This registers to something that replaced OnValidate
+            root.RegisterCallback<SerializedPropertyChangeEvent>((e) => { OnInspectorChangeDetected(); });
 
             return root;
         }

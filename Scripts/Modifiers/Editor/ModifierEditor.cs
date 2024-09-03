@@ -41,6 +41,14 @@ namespace OneHamsa.Dexterity
 
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginChangeCheck();
+            OnInspectorGUI_Internal();
+            if (EditorGUI.EndChangeCheck())
+                ((Modifier)target).OnInspectorChangeDetected();
+        }
+        
+        private void OnInspectorGUI_Internal()
+        {
             if (targets.Length == 1)
             {
                 var (comment, type) = modifier.GetEditorComment();

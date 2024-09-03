@@ -23,6 +23,20 @@ namespace OneHamsa.Dexterity
         private bool modifiersCacheInvalidated => modifiers == null || lastModifiersUpdateTime < EditorApplication.timeSinceStartup - 1f;
         private double lastModifiersUpdateTime;
 
+        protected void Legacy_OnInspectorGUIWithValidate()
+        {
+            EditorGUI.BeginChangeCheck();
+            Legacy_OnInspectorGUI();
+            if (EditorGUI.EndChangeCheck())
+                OnInspectorChangeDetected();
+        }
+
+        protected void OnInspectorChangeDetected()
+        {
+            if (target is BaseStateNode baseStateNode)
+                baseStateNode.OnInspectorChangeDetected();
+        }
+
         protected virtual void Legacy_OnInspectorGUI()
         {
             states.Clear();
