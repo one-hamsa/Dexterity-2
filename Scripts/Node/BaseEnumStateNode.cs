@@ -88,8 +88,8 @@ namespace OneHamsa.Dexterity
             return enumToStateId[enumValue];
         }
 
-        public override void OnInspectorChangeDetected() {
-            base.OnInspectorChangeDetected();
+        protected override void OnValidate() {
+            base.OnValidate();
             
             if (Application.IsPlaying(this)) 
                 return;

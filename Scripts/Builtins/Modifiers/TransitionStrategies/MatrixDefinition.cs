@@ -72,7 +72,7 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        public void OnInspectorChangeDetected() {
+        private void OnValidate() {
             for (var i = 0; i < rows.Count; ++i)
             {
                 var row = rows[i];

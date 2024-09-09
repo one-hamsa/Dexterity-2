@@ -462,7 +462,7 @@ namespace OneHamsa.Dexterity
             autoSyncModifiersStates = !autoSyncModifiersStates;
         }
 
-        public virtual void OnInspectorChangeDetected()
+        protected virtual void OnValidate()
         {
             if (Application.IsPlaying(this))
                 return;

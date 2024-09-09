@@ -632,9 +632,9 @@ namespace OneHamsa.Dexterity
         }
 
         // update overrides when selected to allow setting overrides from editor
-        public override void OnInspectorChangeDetected()
+        protected override void OnValidate()
         {
-            base.OnInspectorChangeDetected();
+            base.OnValidate();
             // this will cause editor to crash if selecting multiple nodes, so we call it from CustomEditor instead
             // FixSteps();
 

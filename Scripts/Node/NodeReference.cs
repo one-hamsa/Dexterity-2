@@ -163,7 +163,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        public virtual void OnInspectorChangeDetected() {
+        private void OnValidate() {
             // add all state functions from references
             foreach (var reference in extends) {
                 if (reference == null)

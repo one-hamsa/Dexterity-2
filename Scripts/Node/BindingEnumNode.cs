@@ -124,9 +124,9 @@ namespace OneHamsa.Dexterity
             base.UpdateInternal(ignoreDelays);
         }
 
-        public override void OnInspectorChangeDetected() 
+        protected override void OnValidate() 
         {
-            base.OnInspectorChangeDetected();
+            base.OnValidate();
             
             if (Application.IsPlaying(this)) 
                 return;
