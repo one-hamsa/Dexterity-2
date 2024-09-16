@@ -108,6 +108,9 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
             isStaggerDone = false;
             current = null;
 
+            // wait for start
+            yield return new WaitForEndOfFrame();
+            
             foreach (var node in GetNodes())
                 node.SetStateOverride(sourceStateId);
             
