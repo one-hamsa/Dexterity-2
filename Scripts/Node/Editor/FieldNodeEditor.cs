@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System;
+using UnityEditor.UIElements;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
@@ -46,6 +47,8 @@ namespace OneHamsa.Dexterity
             // disallow editing in play mode - this would require re-initialization of StepList
             foldout.SetEnabled(!Application.IsPlaying(target));
             root.Add(foldout);
+            root.Add(new PropertyField(
+                serializedObject.FindProperty(nameof(FieldNode.passRaycastEventsToParentNodes))));
             
             // TODO 
             // EditorGUILayout.HelpBox($"State functions are added automatically from references. You can change the order and add manual ones.", MessageType.Info);

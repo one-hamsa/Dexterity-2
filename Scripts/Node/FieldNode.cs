@@ -11,7 +11,7 @@ namespace OneHamsa.Dexterity
 
     [AddComponentMenu("Dexterity/Field Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public partial class FieldNode : BaseStateNode, IGateContainer, IStepList
+    public partial class FieldNode : BaseStateNode, IGateContainer, IStepList, IRaycastReceiver
     {
         #region Data Definitions
         [Serializable]
@@ -60,6 +60,9 @@ namespace OneHamsa.Dexterity
 
         public List<StateFunction.Step> customSteps = new();
 
+        [SerializeField, Tooltip("Toggle this off if you want raycast event to stop at this node")] 
+        public bool passRaycastEventsToParentNodes = true;
+
         #endregion Serialized Fields
 
         #region Public Properties
@@ -85,6 +88,9 @@ namespace OneHamsa.Dexterity
 
         [NonSerialized]
         private bool _performedFirstInitialization_FieldNode;
+        
+        private readonly HashSet<IRaycastReceiver> receivers = new();
+        private readonly List<RaycastRouter> routers = new();
 
         #endregion Private Properties
 
@@ -758,5 +764,34 @@ namespace OneHamsa.Dexterity
             // To trigger caching of step list
             _ = GetNextState();
         }
+
+        public void AddReceiver(IRaycastReceiver receiver) 
+        {
+            receivers.Add(receiver);
+        }
+        
+        public void RemoveReceiver(IRaycastReceiver receiver) 
+        {
+            receivers.Remove(receiver);
+        }
+
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
+        {
+            foreach (var receiver in receivers)
+            {
+                if (receiver is MonoBehaviour { isActiveAndEnabled: false })
+                    continue;
+                receiver.ReceiveHit(controller, ref raycastEvent);
+            }
+        }
+
+        void IRaycastReceiver.ClearHit(IRaycastController controller)
+        {
+            foreach (var receiver in receivers) {
+                receiver.ClearHit(controller);
+            }
+        }
+
+        bool IRaycastReceiver.ShouldRecurseParents() => passRaycastEventsToParentNodes;
     }
 }

@@ -11,5 +11,7 @@ namespace OneHamsa.Dexterity
         {
             receivers.Add(this);
         }
+        
+        bool ShouldRecurseParents() => true;
     }
 }

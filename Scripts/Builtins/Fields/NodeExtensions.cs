@@ -6,17 +6,6 @@ namespace OneHamsa.Dexterity.Builtins
 {
     public static class NodeExtensions
     {
-        public static NodeRaycastRouter GetRaycastRouter(this BaseStateNode node)
-        {
-            var existing = node.GetComponent<NodeRaycastRouter>();
-            if (existing)
-                return existing;
-            
-            var router = node.gameObject.AddComponent<NodeRaycastRouter>();
-            router.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
-            return router;
-        }
-        
         public static void AddUpstream(this FieldNode.OutputField field, FieldNode.OutputField other, 
             NodeReference.Gate.OverrideType overrideType = NodeReference.Gate.OverrideType.Additive,
             bool negate = false)

@@ -6,12 +6,10 @@ namespace OneHamsa.Dexterity.Builtins
     {
         [TagSelector] public string tag = "Untagged";
         protected RaycastControllerFieldProvider provider;
-        private NodeRaycastRouter router;
 
         protected override void Initialize(FieldNode context)
         {
             provider = new RaycastControllerFieldProvider();
-            router = context.GetRaycastRouter();
             provider.onChanged += SetPendingUpdate;
             
             base.Initialize(context);
@@ -27,13 +25,13 @@ namespace OneHamsa.Dexterity.Builtins
         public override void OnNodeEnabled()
         {
             base.OnNodeEnabled();
-            router.AddReceiver(provider);
+            context.AddReceiver(provider);
         }
 
         public override void OnNodeDisabled()
         {
             base.OnNodeDisabled();
-            router.RemoveReceiver(provider);
+            context.RemoveReceiver(provider);
             provider.ClearAll();
         }
 

@@ -330,8 +330,26 @@ namespace OneHamsa.Dexterity.Builtins
                     break;
 
                 using (ListPool<IRaycastReceiver>.Get(out var receiversBeforeFilter))
+                using (ListPool<IRaycastReceiver>.Get(out var tempReceivers))
                 {
-                    hits[i].transform.gameObject.GetComponents(receiversBeforeFilter);
+                    receiversBeforeFilter.Clear();
+                    
+                    // find the top receiver in the hierarchy
+                    var topReceiver = hits[i].transform.gameObject.GetComponentInParent<IRaycastReceiver>();
+                    // then get all receivers on the same object
+                    // now add rest of hierarchy
+                    var currentReceiver = topReceiver;
+                    while (currentReceiver != null)
+                    {
+                        ((MonoBehaviour)currentReceiver).gameObject.GetComponents(tempReceivers);
+                        receiversBeforeFilter.AddRange(tempReceivers);
+                        
+                        if (!currentReceiver.ShouldRecurseParents())
+                            break;
+                        
+                        currentReceiver = ((MonoBehaviour)currentReceiver).transform.parent?.GetComponentInParent<IRaycastReceiver>();
+                    }
+
                     if (receiversBeforeFilter.Count != 0)
                     {
                         // filter hit
