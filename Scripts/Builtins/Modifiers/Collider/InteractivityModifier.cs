@@ -14,7 +14,6 @@ namespace OneHamsa.Dexterity.Builtins
         public override bool animatableInEditor => false;
 
         private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
-        private HierarchyListener hierarchyListener;
         private bool dirty;
 
         [Serializable]
@@ -27,16 +26,6 @@ namespace OneHamsa.Dexterity.Builtins
         protected override void OnEnable()
         {
             dirty = true;
-
-            if (recursive)
-            {
-                hierarchyListener = gameObject.GetOrAddComponent<HierarchyListener>();
-                hierarchyListener.hideFlags = HideFlags.HideInInspector | HideFlags.HideAndDontSave;
-
-                hierarchyListener.onChildAdded += OnChildAdded;
-                hierarchyListener.onChildRemoved += OnChildRemoved;
-            }
-
             base.OnEnable();
 
         }
@@ -44,13 +33,6 @@ namespace OneHamsa.Dexterity.Builtins
         protected override void OnDisable()
         {
             base.OnDisable();
-
-            if (hierarchyListener != null)
-            {
-                hierarchyListener.onChildAdded -= OnChildAdded;
-                hierarchyListener.onChildRemoved -= OnChildRemoved;
-            }
-            
             PruneStaleColliders();
             
             foreach (var c in cachedColliders)
@@ -64,17 +46,7 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        private void OnChildAdded(Transform child)
-        {
-            // can be optimized - look only at child
-            dirty = true;
-        }
-
-        private void OnChildRemoved(Transform child)
-        {
-            // can be optimized - look only at child
-            dirty = true;
-        }
+        public void SetDirty() => dirty = true;
 
         private void LateUpdate()
         {
