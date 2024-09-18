@@ -116,12 +116,12 @@ namespace OneHamsa.Dexterity
         }
         public override int GetEnumValue() => Convert.ToInt32(bindingValue);
         
-        protected override void UpdateInternal(bool ignoreDelays)
+        protected override void RefreshInternal(bool ignoreDelays)
         {
             // since this type of node is using a data source, state should always be considered dirty
             stateDirty = true;
             
-            base.UpdateInternal(ignoreDelays);
+            base.RefreshInternal(ignoreDelays);
         }
 
         protected override void OnValidate() 

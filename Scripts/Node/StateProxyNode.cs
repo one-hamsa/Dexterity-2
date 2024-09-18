@@ -93,13 +93,13 @@ namespace OneHamsa.Dexterity
             defaultStateId = Database.instance.GetStateID(defaultStateName);
         }
         
-        protected override void UpdateInternal(bool ignoreDelays)
+        protected override void RefreshInternal(bool ignoreDelays)
         {
             // since this type of node is using a data source, state should always be considered dirty
             // XXX optimization: listen to nodes' onStateChange events and only set dirty when necessary
             stateDirty = true;
             
-            base.UpdateInternal(ignoreDelays);
+            base.RefreshInternal(ignoreDelays);
         }
 
         public override int GetNextStateWithoutOverride()

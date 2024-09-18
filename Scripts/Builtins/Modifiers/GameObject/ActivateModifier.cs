@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity.Builtins
         protected override void OnDisable()
         {
             if (Manager.instance != null)
-                Manager.instance.RemoveModifier(this);
+                Manager.instance.UnsubscribeFromUpdates(this);
             
             // don't cleanup node registrations
         }

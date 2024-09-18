@@ -45,13 +45,14 @@ namespace OneHamsa.Dexterity
 
         public DexteritySettings settings;
         private HashSet<Modifier> modifiers = new();
+        private HashSet<BaseStateNode> nodes = new();
         private HashSet<UpdateableField> updateableFields = new();
 
         /// <summary>
         /// Adds a modifier to the update pool
         /// </summary>
         /// <param name="modifier">modifier to add</param>
-        public void AddModifier(Modifier modifier)
+        public void SubscribeToUpdates(Modifier modifier)
         {
             if (modifier == null)
             {
@@ -65,7 +66,27 @@ namespace OneHamsa.Dexterity
         /// Removes a modifier from the update pool
         /// </summary>
         /// <param name="modifier">modifier to remove</param>
-        public void RemoveModifier(Modifier modifier) => modifiers.Remove(modifier);
+        public void UnsubscribeFromUpdates(Modifier modifier) => modifiers.Remove(modifier);
+
+        /// <summary>
+        /// Adds a node to the update pool
+        /// </summary>
+        /// <param name="node">node to add</param>
+        public void SubscribeToUpdates(BaseStateNode node)
+        {
+            if (node == null)
+            {
+                Debug.LogError("Cannot add null node", node);
+                return;
+            }
+            nodes.Add(node);
+        }
+        
+        /// <summary>
+        /// Removes a node from the update pool
+        /// </summary>
+        /// <param name="node">node to remove</param>
+        public void UnsubscribeFromUpdates(BaseStateNode node) => nodes.Remove(node);
         
         /// <summary>
         /// Adds an updateable field to the update pool
@@ -113,6 +134,27 @@ namespace OneHamsa.Dexterity
                         catch (Exception e)
                         {
                             Debug.LogException(e, field.context);
+                        }
+                    }
+                }
+            }
+            
+            // update all nodes
+            if (nodes.Count > 0)
+            {
+                using (new ScopedProfile("Dexterity: Update Nodes"))
+                using (ListPool<BaseStateNode>.Get(out var nodesActiveList))
+                {
+                    nodesActiveList.AddRange(nodes);
+                    foreach (var node in nodesActiveList)
+                    {
+                        try
+                        {
+                            node.Refresh();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e, node);
                         }
                     }
                 }

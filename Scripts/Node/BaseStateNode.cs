@@ -88,15 +88,32 @@ namespace OneHamsa.Dexterity
 
         protected void OnEnable()
         {
-            Initialize();
-            
-            UpdateParentNode();
+            Profiler.BeginSample("Dexterity: BaseStateNode.OnEnable");
+            try
+            {
+                Initialize();
 
-            Profiler.BeginSample("onEnabled Invoke");
-            // initialize can disable the node
-            if (enabled)
-                onEnabled?.Invoke();
-            Profiler.EndSample();
+                UpdateParentNode();
+
+                // initialize can disable the node
+                if (enabled)
+                {
+                    Manager.instance.SubscribeToUpdates(this);
+                    onEnabled?.Invoke();
+                }
+            }
+            finally
+            {
+                Profiler.EndSample();
+            }
+        }
+
+        protected void OnDisable()
+        {
+            UpdateParentNode();
+            if (Manager.instance != null)
+                Manager.instance.UnsubscribeFromUpdates(this);
+            onDisabled?.Invoke();
         }
 
         private void UpdateParentNode()
@@ -171,20 +188,14 @@ namespace OneHamsa.Dexterity
             onChildNodesChanged?.Invoke();
         }
 
-        protected void OnDisable()
-        {
-            UpdateParentNode();
-            onDisabled?.Invoke();
-        }
-
         private void OnTransformParentChanged()
         {
             UpdateParentNode();
         }
 
-        protected void Update() => UpdateInternal(ignoreDelays: false);
+        public void Refresh() => RefreshInternal(ignoreDelays: false);
 
-        protected virtual void UpdateInternal(bool ignoreDelays)
+        protected virtual void RefreshInternal(bool ignoreDelays)
         {
             // doing this here gives the editor a chance to intervene
             deltaTime = Database.instance.deltaTime * timeScale;
@@ -363,7 +374,7 @@ namespace OneHamsa.Dexterity
                 return;
             
             // make sure state is up-to-date
-            UpdateInternal(ignoreDelays: ignoreDelays);
+            RefreshInternal(ignoreDelays: ignoreDelays);
 
             foreach (var modifier in GetModifiers())
             {
@@ -381,7 +392,7 @@ namespace OneHamsa.Dexterity
                 return;
             
             // make sure state is up-to-date
-            UpdateInternal(ignoreDelays: true);
+            RefreshInternal(ignoreDelays: true);
 
             foreach (var modifier in GetModifiers())
             {

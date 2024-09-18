@@ -162,7 +162,7 @@ namespace OneHamsa.Dexterity
         {
             // subscribe to refreshes (removed when transition ends)
             if (isActiveAndEnabled && Manager.instance != null)
-                Manager.instance.AddModifier(this);
+                Manager.instance.SubscribeToUpdates(this);
             
             HandleStateChange(renderedState, GetNodeActiveStateWithDelay());
         }
@@ -334,7 +334,7 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            Manager.instance.AddModifier(this);
+            Manager.instance.SubscribeToUpdates(this);
             _node.nodeModifiers.Add(this);
 
             if (_node.isActiveAndEnabled)
@@ -354,7 +354,7 @@ namespace OneHamsa.Dexterity
             base.OnDisable();
             
             if (Manager.instance != null)
-                Manager.instance.RemoveModifier(this);
+                Manager.instance.UnsubscribeFromUpdates(this);
             
             if (_node != null) {
                 _node.onEnabled -= HandleNodeEnabled;
@@ -386,7 +386,7 @@ namespace OneHamsa.Dexterity
             
             if (!IsChanged() && Manager.instance != null)
                 // unsubscribe from refreshes until state changes
-                Manager.instance.RemoveModifier(this);
+                Manager.instance.UnsubscribeFromUpdates(this);
             
             if (renderedState != activeState)
                 HandleStateChange(renderedState, activeState);
