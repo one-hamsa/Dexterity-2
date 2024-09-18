@@ -152,7 +152,8 @@ namespace OneHamsa.Dexterity
                 
             }
 
-            return null;
+            // just return something
+            return properties[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
