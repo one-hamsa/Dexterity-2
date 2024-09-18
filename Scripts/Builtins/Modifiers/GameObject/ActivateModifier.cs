@@ -33,7 +33,18 @@ namespace OneHamsa.Dexterity.Builtins
                 gameObject.SetActive(((Property)GetProperty(newState)).active);
         }
 
-        protected override void OnDisable()
+	    public override void HandleStateChange(int oldState, int newState)
+	    {
+		    if (!Application.IsPlaying(this))
+		    {
+			    // during edit time, there won't be node state changes, so handle it here
+                gameObject.SetActive(((Property)GetProperty(newState)).active);
+		    }
+		    
+		    base.HandleStateChange(oldState, newState);
+	    }
+
+	    protected override void OnDisable()
         {
             if (Manager.instance != null)
                 Manager.instance.UnsubscribeFromUpdates(this);
