@@ -301,8 +301,8 @@ namespace OneHamsa.Dexterity
                     
                     modifiers.Add(modifier);   
                 }
-                if (skippedModifiersCount > 0)
-                    Debug.Log($"Editor Preview: not animating {skippedModifiersCount} modifiers\n{skippedModifiersPaths}");
+                // if (skippedModifiersCount > 0)
+                //     Debug.Log($"Editor Preview: not animating {skippedModifiersCount} modifiers\n{skippedModifiersPaths}");
 
                 coro = EditorCoroutineUtility.StartCoroutine(
                     EditorTransitions.TransitionAsync(modifiers, 
