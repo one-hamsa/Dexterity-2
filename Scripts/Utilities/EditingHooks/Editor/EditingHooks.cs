@@ -5,8 +5,10 @@ using UnityEngine.SceneManagement;
 
 namespace OneHamsa.Dexterity.Utilities {
 	[InitializeOnLoad]
-	static class EditingHooks {
-		static EditingHooks() {
+	static class EditingHooks 
+	{
+		static EditingHooks() 
+		{
 			PrefabStage.prefabStageOpened -= OnPrefabStageOpened;
 			PrefabStage.prefabStageOpened += OnPrefabStageOpened;
 			PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
@@ -24,14 +26,28 @@ namespace OneHamsa.Dexterity.Utilities {
 			EditorSceneManager.sceneSaving += OnSceneSaving;
 			EditorSceneManager.sceneSaved -= OnSceneSaved;
 			EditorSceneManager.sceneSaved += OnSceneSaved;
-
-			Selection.selectionChanged -= OnSelected;
-			Selection.selectionChanged += OnSelected;
-
+			
 			EditorApplication.playModeStateChanged -= OnPlayModeStateChanged; 
-			EditorApplication.playModeStateChanged += OnPlayModeStateChanged; 
+			EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 
-			currentlySelectedHook = Selection.activeGameObject;
+			EditorApplication.delayCall -= ForceRefresh;
+			EditorApplication.delayCall += ForceRefresh;
+		}
+
+		private static void ForceRefresh()
+		{
+			EditorApplication.delayCall -= ForceRefresh;
+			
+			if (PrefabStageUtility.GetCurrentPrefabStage() != null) {
+				OnPrefabStageOpened(PrefabStageUtility.GetCurrentPrefabStage());
+			}
+
+			if (SceneManager.loadedSceneCount > 0) {
+				for (int i = 0; i < SceneManager.loadedSceneCount; i++) {
+					var scene = SceneManager.GetSceneAt(i);
+					OnSceneOpened(scene, OpenSceneMode.Additive);
+				}
+			}
 		}
 
 		private static void OnPlayModeStateChanged(PlayModeStateChange state)
@@ -57,6 +73,7 @@ namespace OneHamsa.Dexterity.Utilities {
 		private static void OnSceneOpened(UnityEngine.SceneManagement.Scene scene, OpenSceneMode mode) {
 			var roots = scene.GetRootGameObjects();
 			foreach (var root in roots) {
+				Debug.Log($"found root {root.name}");
 				ISceneEditingHooks[] hooks = root.GetComponentsInChildren<ISceneEditingHooks>(true);
 				foreach (ISceneEditingHooks hook in hooks) {
 					if (hook as Component == null) continue; // in case it got destroyed by one of the other hooks
@@ -104,32 +121,6 @@ namespace OneHamsa.Dexterity.Utilities {
 			foreach (IPrefabEditingHooks hook in hooks) {
 				if (hook as Component == null) continue; // in case it got destroyed by one of the other hooks
 				hook.OnPrefabSaved();
-			}
-		}
-
-		static GameObject currentlySelectedHook;
-
-		private static void OnSelected() {
-			var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
-			var nowSelected = Selection.activeGameObject != null ? Selection.activeGameObject : null;
-			nowSelected = prefabStage != null && prefabStage.IsPartOfPrefabContents(nowSelected) ? nowSelected : null;
-			if (nowSelected != currentlySelectedHook) {
-				if (currentlySelectedHook != null) {
-					Transform current = currentlySelectedHook.transform;
-					while (current != null) {
-						current.GetComponent<IPrefabEditingHooks>()?.OnDeselected();
-						current = current.parent;
-					}
-				}
-
-				currentlySelectedHook = nowSelected;
-				if (currentlySelectedHook != null) {
-					Transform current = currentlySelectedHook.transform;
-					while (current != null) {
-						current.GetComponent<IPrefabEditingHooks>()?.OnSelected();
-						current = current.parent;
-					}
-				}
 			}
 		}
 
