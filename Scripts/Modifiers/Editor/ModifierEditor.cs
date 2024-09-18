@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using Unity.EditorCoroutines.Editor;
+using UnityEngine.Pool;
 using Object = UnityEngine.Object;
 
 namespace OneHamsa.Dexterity
@@ -15,10 +16,8 @@ namespace OneHamsa.Dexterity
         static Dictionary<string, bool> foldedStates = new();
         bool strategyExists { get; set; }
         protected Modifier modifier { get; set; }
-        static List<SerializedProperty> stateProps = new(8);
         private EditorCoroutine coro;
-        private List<SerializedProperty> customProps = new();
-        private List<(string stateName, SerializedProperty prop, int index)> sortedStateProps = new();
+        // private  sortedStateProps = new();
         private bool hasUpdateOverride;
         private string lastAnimatedState;
         private bool propertiesUpdated { get; set; } 
@@ -94,7 +93,7 @@ namespace OneHamsa.Dexterity
 
             ShowNode(states);
 
-            customProps.Clear();
+            using var _ = ListPool<SerializedProperty>.Get(out var customProps);
             var parent = serializedObject.GetIterator();
             foreach (var prop in Utils.GetVisibleChildren(parent))
             {
@@ -255,6 +254,9 @@ namespace OneHamsa.Dexterity
         {
             var updated = false;
             var properties = serializedObject.FindProperty(nameof(Modifier.properties));
+            
+            using var _ = ListPool<(string stateName, SerializedProperty prop, int index)>.Get(out var sortedStateProps);
+            
             sortedStateProps.Clear();
             for (var i = 0; i < properties.arraySize; ++i)
             {
@@ -491,7 +493,7 @@ namespace OneHamsa.Dexterity
                 }
             }
 
-            stateProps.Clear();
+            using var _ = ListPool<SerializedProperty>.Get(out var stateProps);
             // fields
             foreach (var field in Utils.GetChildren(serializedProperty))
             {
