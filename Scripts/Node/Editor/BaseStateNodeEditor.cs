@@ -20,9 +20,18 @@ namespace OneHamsa.Dexterity
 
         private int previewStateIndex;
         private HashSet<Modifier> modifiers;
-        private bool modifiersCacheInvalidated => modifiers == null || lastModifiersUpdateTime < EditorApplication.timeSinceStartup - 1f;
+        private bool modifiersCacheInvalidated 
+            => modifiers == null || (lastModifiersUpdateTime < lastChangeTime 
+                                     // don't invalidate cache if editor transition is in place
+                                     && coro == null);
         private double lastModifiersUpdateTime;
+        public static double lastChangeTime;
 
+        static BaseStateNodeEditor()
+        {
+            EditorApplication.hierarchyChanged += () => lastChangeTime = EditorApplication.timeSinceStartup;
+        }
+        
         protected virtual void Legacy_OnInspectorGUI()
         {
             states.Clear();

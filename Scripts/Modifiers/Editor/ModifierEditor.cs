@@ -91,7 +91,13 @@ namespace OneHamsa.Dexterity
             
             propertiesUpdated = false;
 
+            EditorGUI.BeginChangeCheck();
             ShowNode(states);
+            if (EditorGUI.EndChangeCheck())
+            {
+                // node for modifier changed - update last change time
+                BaseStateNodeEditor.lastChangeTime = Time.realtimeSinceStartup;
+            }
 
             using var _ = ListPool<SerializedProperty>.Get(out var customProps);
             var parent = serializedObject.GetIterator();

@@ -111,7 +111,7 @@ namespace OneHamsa.Dexterity
         protected void OnDisable()
         {
             UpdateParentNode();
-            if (Manager.instance != null)
+            if (Manager.isAlive)
                 Manager.instance.UnsubscribeFromUpdates(this);
             onDisabled?.Invoke();
         }

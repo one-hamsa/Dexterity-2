@@ -162,7 +162,7 @@ namespace OneHamsa.Dexterity
         protected virtual void HandleNodeStateChange(int oldState, int newState)
         {
             // subscribe to refreshes (removed when transition ends)
-            if (isActiveAndEnabled && Manager.instance != null)
+            if (isActiveAndEnabled && Manager.isAlive)
                 Manager.instance.SubscribeToUpdates(this);
             
             HandleStateChange(renderedState, GetNodeActiveStateWithDelay());
@@ -354,7 +354,7 @@ namespace OneHamsa.Dexterity
         {
             base.OnDisable();
             
-            if (Manager.instance != null)
+            if (Manager.isAlive)
                 Manager.instance.UnsubscribeFromUpdates(this);
             
             if (_node != null) {
@@ -385,7 +385,7 @@ namespace OneHamsa.Dexterity
 
             base.Refresh();
             
-            if (!IsChanged() && Manager.instance != null)
+            if (!IsChanged() && Manager.isAlive)
                 // unsubscribe from refreshes until state changes
                 Manager.instance.UnsubscribeFromUpdates(this);
             

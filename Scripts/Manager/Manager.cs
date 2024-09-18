@@ -23,25 +23,33 @@ namespace OneHamsa.Dexterity
         {
             get
             {
+                if (isAlive) 
+                    return inst;
+                
+#if UNITY_EDITOR
+                if (!EditorApplication.isPlaying)
+                {
+                    Debug.LogWarning("Trying to access Manager in edit mode, returning null. " +
+                                     "If you want to check if Manager is alive, use Manager.isAlive instead.");
+                    return null;
+                }
+
+                // This seems to catch the 'tear-down' state of the editor and avoid the long delay when quitting play-mode
+                // (because every modifier/field tries to access Manager.instance and Unity decided it is now null) 
+                if (!EditorApplication.isPlayingOrWillChangePlaymode)
+                    return null;
+#endif
+                    
+                inst = FindObjectOfType<Manager>();
                 if (inst == null)
                 {
-                    // This seems to catch the 'tear-down' state of the editor and avoid the long delay when quitting play-mode
-                    // (because every modifier/field tries to access Manager.instance and Unity decided it is now null) 
-                    #if UNITY_EDITOR
-                    if (EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
-                        return null;
-                    #endif
-                    
-                    inst = FindObjectOfType<Manager>();
-                    if (inst == null)
-                    {
-                        // manager is already dead
-                        return null;
-                    }
+                    // manager is already dead
+                    return null;
                 }
                 return inst;
             }
         }
+        public static bool isAlive => inst != null;
 
         public DexteritySettings settings;
         private HashSet<Modifier> modifiers = new();

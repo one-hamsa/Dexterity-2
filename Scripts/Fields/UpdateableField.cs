@@ -23,7 +23,7 @@ namespace OneHamsa.Dexterity.Builtins
         public override void OnNodeDisabled()
         {
             base.OnNodeDisabled();
-            if (Manager.instance != null)
+            if (Manager.isAlive)
                 Manager.instance.RemoveUpdateableField(this);
         }
         
