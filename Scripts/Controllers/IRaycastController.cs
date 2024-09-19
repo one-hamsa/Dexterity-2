@@ -39,6 +39,7 @@ namespace OneHamsa.Dexterity
 	    public int priority;
 	    public float distance;
 	    public Vector3 point;
+	    public Vector3 normal;
 	    public Collider collider;
 	    public Transform transform;
     }

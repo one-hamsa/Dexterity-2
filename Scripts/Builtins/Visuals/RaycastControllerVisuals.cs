@@ -14,11 +14,11 @@ namespace OneHamsa.Dexterity.Builtins
         private float _width;
         private float _destWidth;
         
-        RaycastController controller;
+        protected RaycastController controller;
         
         protected virtual bool isVisible => isActiveAndEnabled;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             controller = GetComponent<RaycastController>();
             lineRenderer.useWorldSpace = false;
