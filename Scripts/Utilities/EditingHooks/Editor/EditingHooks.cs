@@ -73,7 +73,6 @@ namespace OneHamsa.Dexterity.Utilities {
 		private static void OnSceneOpened(UnityEngine.SceneManagement.Scene scene, OpenSceneMode mode) {
 			var roots = scene.GetRootGameObjects();
 			foreach (var root in roots) {
-				Debug.Log($"found root {root.name}");
 				ISceneEditingHooks[] hooks = root.GetComponentsInChildren<ISceneEditingHooks>(true);
 				foreach (ISceneEditingHooks hook in hooks) {
 					if (hook as Component == null) continue; // in case it got destroyed by one of the other hooks
