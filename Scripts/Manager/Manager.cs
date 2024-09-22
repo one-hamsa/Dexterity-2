@@ -111,7 +111,10 @@ namespace OneHamsa.Dexterity
         protected void Awake()
         {
             if (Database.instance == null)
+            {
                 Database.Create(settings);
+                settings.RuntimeInit();
+            }
         }
         
         protected void OnDestroy()

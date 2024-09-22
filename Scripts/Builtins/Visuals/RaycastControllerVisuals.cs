@@ -5,8 +5,8 @@ namespace OneHamsa.Dexterity.Builtins
     [RequireComponent(typeof(RaycastController))]
     public class RaycastControllerVisuals : MonoBehaviour
     {
-        [SerializeField] LineRenderer lineRenderer;
-        [SerializeField] LineRenderer destinationLineRenderer;
+        [SerializeField] protected LineRenderer lineRenderer;
+        [SerializeField] protected LineRenderer destinationLineRenderer;
         [SerializeField] float maxLength = 10;
         [SerializeField] float maxDestLength = 1;
         [SerializeField] bool scale;
@@ -68,7 +68,7 @@ namespace OneHamsa.Dexterity.Builtins
             lineRenderer.SetPosition(1, point1);
         }
 
-        private void UpdateDestinationLineRenderer()
+        protected virtual void UpdateDestinationLineRenderer()
         {
             if (destinationLineRenderer == null)
                 return;

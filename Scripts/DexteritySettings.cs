@@ -25,6 +25,13 @@ namespace OneHamsa.Dexterity
 
         private Dictionary<(Type, string), Modifier.PropertyBase> namedPropertiesCache = new();
 
+        internal const string HoverState = "Hover";
+        internal const string PressedState = "Pressed";
+        internal const string DisabledState = "Disabled";
+        internal int HoverStateId;
+        internal int PressedStateId;
+        internal int DisabledStateId;
+
         public ITransitionStrategy CreateDefaultTransitionStrategy()
         {
             if (defaultTransitionStrategy == null)
@@ -73,6 +80,26 @@ namespace OneHamsa.Dexterity
                 if (t == type)
                     yield return name;
             }
+        }
+
+        public void RuntimeInit()
+        {
+            // Cache the values of common states
+            HoverStateId = Database.instance.GetStateID(HoverState);
+            PressedStateId = Database.instance.GetStateID(PressedState);
+            DisabledStateId = Database.instance.GetStateID(DisabledState);
+        }
+
+        public IRaycastController.RaycastEvent.Result GetResultFromState(int activeState)
+        {
+            if (activeState == PressedStateId)
+                return IRaycastController.RaycastEvent.Result.Accepted;
+            if (activeState == HoverStateId)
+                return IRaycastController.RaycastEvent.Result.CanAccept;
+            if (activeState == DisabledStateId)
+                return IRaycastController.RaycastEvent.Result.CannotAccept;
+            
+            return IRaycastController.RaycastEvent.Result.Default;
         }
     }
 }

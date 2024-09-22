@@ -79,9 +79,13 @@ namespace OneHamsa.Dexterity.Builtins
         private readonly RaycastHit[] colldierHits = new RaycastHit[maxHits];
         private readonly List<IRaycastReceiver> lastReceivers = new(4);
         private IRaycastController.RaycastEvent.Result lastEventResult;
+        private FieldNode lastEventResultNode;
 
         [Preserve]
         public IRaycastController.RaycastEvent.Result GetLastEventResult() => lastEventResult;
+
+        [Preserve]
+        public FieldNode GetLastEventResultNode() => lastEventResultNode;
 
         public delegate bool RaycastFilter(IRaycastReceiver receiver);
 
@@ -433,6 +437,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (closestReceivers != null)
             {
                 didHit = true;
+                bool bHaveResults = false;
                 // foreach enumerator not cached for interfaces on IL2CPP
                 for (var i = 0; i < closestReceivers.Count; i++)
                 {
@@ -445,8 +450,12 @@ namespace OneHamsa.Dexterity.Builtins
                     try
                     {
                         receiver.ReceiveHit(this, ref hitEvent);
-                        if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default)
+                        if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default && !bHaveResults)
+                        {
                             lastEventResult = hitEvent.result;
+                            lastEventResultNode = hitEvent.hitNode;
+                            bHaveResults = true;
+                        }
 
                         lastReceivers.Add(receiver);
                     }

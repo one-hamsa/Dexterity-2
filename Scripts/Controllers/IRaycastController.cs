@@ -31,6 +31,7 @@ namespace OneHamsa.Dexterity
 			
 			public DexterityRaycastHit hit;
 			public Result result;
+			public FieldNode hitNode;
 		}
     }
 
