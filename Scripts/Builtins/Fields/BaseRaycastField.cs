@@ -33,6 +33,7 @@ namespace OneHamsa.Dexterity.Builtins
             base.OnNodeDisabled();
             context.RemoveReceiver(provider);
             provider.ClearAll();
+            SetValue(0);
         }
 
         public override void Update()
