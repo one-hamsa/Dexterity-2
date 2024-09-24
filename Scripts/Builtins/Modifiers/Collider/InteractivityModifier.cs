@@ -1,19 +1,18 @@
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using OneHamsa.Dexterity.Utilities;
 using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity.Builtins
 {
     public class InteractivityModifier : Modifier
     {
+        [Tooltip("If true, will also control colliders under nested InteractivityModifiers")]
         public bool recursive = true;
         private List<Collider> cachedColliders = new();
         public override bool animatableInEditor => false;
 
-        private static Dictionary<Collider, HashSet<InteractivityModifier>> colliderDisabledBy = new();
+        private InteractivityModifier parent;
         private bool dirty;
 
         [Serializable]
@@ -27,23 +26,44 @@ namespace OneHamsa.Dexterity.Builtins
         {
             dirty = true;
             base.OnEnable();
+            
+            var node = GetNode();
+            if (node != null)
+            {
+                node.onChildNodesChanged += SetDirty;
+            }
 
+            var parent = transform.parent != null
+                ? transform.parent.GetComponentInParent<InteractivityModifier>()
+                : null;
+            
+            if (parent != null && parent.recursive)
+            {
+                this.parent = parent;
+                parent.SetDirty();
+                parent.GetNode().onStateChanged += HandleParentStateChange;
+            }
+            else
+                this.parent = null;
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            PruneStaleColliders();
             
-            foreach (var c in cachedColliders)
+            var node = GetNode();
+            if (node != null)
             {
-                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
-                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
-                
-                disablers.Remove(this);
-                
-                c.enabled = disablers.Count == 0;
+                node.onChildNodesChanged -= SetDirty;
             }
+
+            if (parent != null)
+            {
+                parent.GetNode().onStateChanged -= HandleParentStateChange;
+                parent.SetDirty();
+            }
+
+            RefreshInteractive();
         }
 
         public void SetDirty() => dirty = true;
@@ -57,39 +77,61 @@ namespace OneHamsa.Dexterity.Builtins
                 // collect colliders
                 RefreshTrackedColliders();
                 // update colliders
-                HandleStateChange(GetNodeActiveStateWithoutDelay(), GetNodeActiveStateWithoutDelay());
+                RefreshInteractive();
             }
+        }
+
+        private void RefreshInteractive()
+        {
+            PruneStaleColliders();
+            
+            var interactive = GetMyInteractive();
+            
+            // if relevant, consider parent too
+            if (parent != null)
+                interactive &= parent.GetMyInteractive();
+
+            foreach (var c in cachedColliders)
+                c.enabled = interactive;
         }
 
         private void RefreshTrackedColliders()
         {
             cachedColliders.Clear();
             if (recursive)
+            {
                 GetComponentsInChildren(true, cachedColliders);
+                
+                // clear out any colliders that are under other InteractivityModifiers
+                for (var i = cachedColliders.Count - 1; i >= 0; i--)
+                {
+                    if (cachedColliders[i].GetComponentInParent<InteractivityModifier>() != this)
+                        cachedColliders.RemoveAt(i);
+                }
+            }
             else
                 GetComponents(cachedColliders);
         }
 
         public override void HandleStateChange(int oldState, int newState) {
             base.HandleStateChange(oldState, newState);
+            RefreshInteractive();
+        }
+        private void HandleParentStateChange(int oldState, int newState)
+        {
+            RefreshInteractive();
+        }
+
+        private bool GetMyInteractive()
+        {
+            if (parent != null && !parent.GetMyInteractive())
+                return false;
+
+            if (!isActiveAndEnabled)
+                // ignore
+                return true;
             
-            PruneStaleColliders();
-            
-            var property = (Property)GetProperty(newState);
-            var shouldDisable = !property.interactive;
-
-            foreach (var c in cachedColliders)
-            {
-                if (!colliderDisabledBy.TryGetValue(c, out var disablers))
-                    colliderDisabledBy[c] = disablers = new HashSet<InteractivityModifier>();
-
-                if (shouldDisable)
-                    disablers.Add(this);
-                else
-                    disablers.Remove(this);
-
-                c.enabled = disablers.Count == 0;
-            }
+            return ((Property)GetProperty(GetNodeActiveStateWithDelay())).interactive;
         }
 
         /// <summary>
@@ -101,23 +143,8 @@ namespace OneHamsa.Dexterity.Builtins
             for (var i = cachedColliders.Count - 1; i >= 0; i--) 
             {
                 if (cachedColliders[i] == null || !cachedColliders[i].transform.IsChildOf(transform))
-                {
-                    if (colliderDisabledBy.TryGetValue(cachedColliders[i], out var disablers))
-                        disablers.Remove(this);
                     cachedColliders.RemoveAt(i);
-                }
             }
-            
-            // use aux list to avoid allocations
-            using var _ = ListPool<Collider>.Get(out var colliderDisabledByTmp);
-            foreach (var c in colliderDisabledBy.Keys)
-            {
-                if (c == null)
-                    colliderDisabledByTmp.Add(c);
-            }
-            
-            foreach (var c in colliderDisabledByTmp)
-                colliderDisabledBy.Remove(c);
         }
         
         public override void Refresh()
