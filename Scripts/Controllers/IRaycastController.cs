@@ -27,6 +27,7 @@ namespace OneHamsa.Dexterity
 				CanAccept,
 				CannotAccept,
 				Accepted,
+				HideHint,
 			}
 			
 			public Result result;
