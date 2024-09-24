@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -9,11 +8,14 @@ namespace OneHamsa.Dexterity.Builtins
     {
         [Tooltip("If true, will also control colliders under nested InteractivityModifiers")]
         public bool recursive = true;
+        
         private List<Collider> cachedColliders = new();
         public override bool animatableInEditor => false;
 
         private InteractivityModifier parent;
         private bool dirty;
+        
+        private event Action onInteractiveChanged;
 
         [Serializable]
         public class Property : PropertyBase
@@ -41,7 +43,7 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 this.parent = parent;
                 parent.SetDirty();
-                parent.GetNode().onStateChanged += HandleParentStateChange;
+                parent.onInteractiveChanged += RefreshInteractive;
             }
             else
                 this.parent = null;
@@ -59,7 +61,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (parent != null)
             {
-                parent.GetNode().onStateChanged -= HandleParentStateChange;
+                parent.onInteractiveChanged -= RefreshInteractive;
                 parent.SetDirty();
             }
 
@@ -93,6 +95,8 @@ namespace OneHamsa.Dexterity.Builtins
 
             foreach (var c in cachedColliders)
                 c.enabled = interactive;
+            
+            onInteractiveChanged?.Invoke();
         }
 
         private void RefreshTrackedColliders()
@@ -105,7 +109,8 @@ namespace OneHamsa.Dexterity.Builtins
                 // clear out any colliders that are under other InteractivityModifiers
                 for (var i = cachedColliders.Count - 1; i >= 0; i--)
                 {
-                    if (cachedColliders[i].GetComponentInParent<InteractivityModifier>() != this)
+                    var parent = cachedColliders[i].GetComponentInParent<InteractivityModifier>();
+                    if (parent != this && parent.enabled)
                         cachedColliders.RemoveAt(i);
                 }
             }
@@ -115,10 +120,6 @@ namespace OneHamsa.Dexterity.Builtins
 
         public override void HandleStateChange(int oldState, int newState) {
             base.HandleStateChange(oldState, newState);
-            RefreshInteractive();
-        }
-        private void HandleParentStateChange(int oldState, int newState)
-        {
             RefreshInteractive();
         }
 
