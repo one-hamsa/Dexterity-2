@@ -26,9 +26,13 @@ namespace OneHamsa.Dexterity
         private Dictionary<(Type, string), Modifier.PropertyBase> namedPropertiesCache = new();
 
         internal const string HoverState = "Hover";
+        internal const string ToggledHoverState = "Toggled Hover";
+        internal const string DisabledHoverState = "Disabled Hover";
         internal const string PressedState = "Pressed";
         internal const string DisabledState = "Disabled";
         internal int HoverStateId;
+        internal int ToggledHoverStateId;
+        internal int DisabledHoverStateId;
         internal int PressedStateId;
         internal int DisabledStateId;
 
@@ -86,6 +90,8 @@ namespace OneHamsa.Dexterity
         {
             // Cache the values of common states
             HoverStateId = Database.instance.GetStateID(HoverState);
+            ToggledHoverStateId = Database.instance.GetStateID(ToggledHoverState);
+            DisabledHoverStateId = Database.instance.GetStateID(DisabledHoverState);
             PressedStateId = Database.instance.GetStateID(PressedState);
             DisabledStateId = Database.instance.GetStateID(DisabledState);
         }
@@ -94,9 +100,9 @@ namespace OneHamsa.Dexterity
         {
             if (activeState == PressedStateId)
                 return IRaycastController.RaycastResult.Result.Accepted;
-            if (activeState == HoverStateId)
+            if (activeState == HoverStateId || activeState == ToggledHoverStateId)
                 return IRaycastController.RaycastResult.Result.CanAccept;
-            if (activeState == DisabledStateId)
+            if (activeState == DisabledStateId || activeState == DisabledHoverStateId)
                 return IRaycastController.RaycastResult.Result.CannotAccept;
             
             return IRaycastController.RaycastResult.Result.Default;
