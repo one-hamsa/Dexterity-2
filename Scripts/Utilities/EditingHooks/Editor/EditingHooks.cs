@@ -38,6 +38,9 @@ namespace OneHamsa.Dexterity.Utilities {
 		{
 			EditorApplication.delayCall -= ForceRefresh;
 			
+			if (EditorApplication.isPlayingOrWillChangePlaymode) 
+				return;
+			
 			if (PrefabStageUtility.GetCurrentPrefabStage() != null) {
 				OnPrefabStageOpened(PrefabStageUtility.GetCurrentPrefabStage());
 			}
