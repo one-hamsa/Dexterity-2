@@ -775,21 +775,21 @@ namespace OneHamsa.Dexterity
             receivers.Remove(receiver);
         }
 
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent rayCastEvent)
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastResult hitResult)
         {
             foreach (var receiver in receivers)
             {
                 if (receiver is MonoBehaviour { isActiveAndEnabled: false })
                     continue;
-                receiver.ReceiveHit(controller, ref rayCastEvent);
+                receiver.ReceiveHit(controller, ref hitResult);
             }
             
             // Set the result back to the rayCastEvent that hit me
             var result = Manager.instance.settings.GetResultFromState(GetActiveState());
-            if (result != IRaycastController.RaycastEvent.Result.Default)
+            if (result != IRaycastController.RaycastResult.Result.Default)
             {
-                rayCastEvent.result = result;
-                rayCastEvent.hitNode = this;
+                hitResult.result = result;
+                hitResult.hitReceiver = this;
             }
         }
 

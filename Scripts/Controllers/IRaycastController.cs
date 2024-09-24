@@ -19,7 +19,7 @@ namespace OneHamsa.Dexterity
 
         public Quaternion rotation => Quaternion.LookRotation(forward, up);
         
-		public ref struct RaycastEvent
+		public struct RaycastResult
 		{
 			public enum Result
 			{
@@ -29,9 +29,8 @@ namespace OneHamsa.Dexterity
 				Accepted,
 			}
 			
-			public DexterityRaycastHit hit;
 			public Result result;
-			public FieldNode hitNode;
+			public IRaycastReceiver hitReceiver;
 		}
     }
 

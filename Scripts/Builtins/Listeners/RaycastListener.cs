@@ -18,7 +18,7 @@ namespace OneHamsa.Dexterity.Builtins
         public IRaycastController pressingController { get; private set; }
         private RaycastHit lastHit;
 
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastResult hitResult)
         {
             if (!hoveringControllers.Contains(controller))
                 hoveringControllers.Add(controller);

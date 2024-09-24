@@ -46,7 +46,7 @@ namespace OneHamsa.Dexterity
             receivers.Remove(receiver);
         }
         
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent hitEvent)
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastResult hitResult)
         {
             Debug.LogError($"RaycastRouter.ReceiveHit() should never be called.", this);
         }

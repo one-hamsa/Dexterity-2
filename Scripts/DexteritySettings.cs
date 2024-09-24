@@ -90,16 +90,16 @@ namespace OneHamsa.Dexterity
             DisabledStateId = Database.instance.GetStateID(DisabledState);
         }
 
-        public IRaycastController.RaycastEvent.Result GetResultFromState(int activeState)
+        public IRaycastController.RaycastResult.Result GetResultFromState(int activeState)
         {
             if (activeState == PressedStateId)
-                return IRaycastController.RaycastEvent.Result.Accepted;
+                return IRaycastController.RaycastResult.Result.Accepted;
             if (activeState == HoverStateId)
-                return IRaycastController.RaycastEvent.Result.CanAccept;
+                return IRaycastController.RaycastResult.Result.CanAccept;
             if (activeState == DisabledStateId)
-                return IRaycastController.RaycastEvent.Result.CannotAccept;
+                return IRaycastController.RaycastResult.Result.CannotAccept;
             
-            return IRaycastController.RaycastEvent.Result.Default;
+            return IRaycastController.RaycastResult.Result.Default;
         }
     }
 }

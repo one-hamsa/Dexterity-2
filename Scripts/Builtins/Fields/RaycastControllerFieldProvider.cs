@@ -56,7 +56,7 @@ namespace OneHamsa.Dexterity.Builtins
             return false;
         }
 
-        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastEvent raycastEvent)
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastResult hitResult)
         {
             var changed = false;
             if (!controllers.Contains(controller))

@@ -78,14 +78,13 @@ namespace OneHamsa.Dexterity.Builtins
         private readonly DexterityRaycastHit[] hits = new DexterityRaycastHit[maxHits];
         private readonly RaycastHit[] colldierHits = new RaycastHit[maxHits];
         private readonly List<IRaycastReceiver> lastReceivers = new(4);
-        private IRaycastController.RaycastEvent.Result lastEventResult;
-        private FieldNode lastEventResultNode;
+        private IRaycastController.RaycastResult lastRaycastResult;
 
         [Preserve]
-        public IRaycastController.RaycastEvent.Result GetLastEventResult() => lastEventResult;
+        public IRaycastController.RaycastResult.Result GetLastEventResult() => lastRaycastResult.result;
 
         [Preserve]
-        public FieldNode GetLastEventResultNode() => lastEventResultNode;
+        public IRaycastReceiver GetLastEventResultReceiver() => lastRaycastResult.hitReceiver;
 
         public delegate bool RaycastFilter(IRaycastReceiver receiver);
 
@@ -433,7 +432,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             lastReceivers.Clear();
 
-            lastEventResult = IRaycastController.RaycastEvent.Result.Default;
+            lastRaycastResult = new IRaycastController.RaycastResult();
             if (closestReceivers != null)
             {
                 didHit = true;
@@ -442,18 +441,13 @@ namespace OneHamsa.Dexterity.Builtins
                 for (var i = 0; i < closestReceivers.Count; i++)
                 {
                     var receiver = closestReceivers[i];
-                    var hitEvent = new IRaycastController.RaycastEvent
-                    {
-                        hit = hit,
-                        result = IRaycastController.RaycastEvent.Result.Default
-                    };
+                    var hitEvent = new IRaycastController.RaycastResult();
                     try
                     {
                         receiver.ReceiveHit(this, ref hitEvent);
-                        if (hitEvent.result != IRaycastController.RaycastEvent.Result.Default && !bHaveResults)
+                        if (hitEvent.hitReceiver != null && !bHaveResults)
                         {
-                            lastEventResult = hitEvent.result;
-                            lastEventResultNode = hitEvent.hitNode;
+                            lastRaycastResult = hitEvent;
                             bHaveResults = true;
                         }
 
