@@ -109,8 +109,9 @@ namespace OneHamsa.Dexterity.Builtins
                 // clear out any colliders that are under other InteractivityModifiers
                 for (var i = cachedColliders.Count - 1; i >= 0; i--)
                 {
-                    var parent = cachedColliders[i].GetComponentInParent<InteractivityModifier>();
-                    if (parent != this && parent.enabled)
+                    var parent = cachedColliders[i].GetComponentInParent<InteractivityModifier>(true);
+                    if (parent != this && parent.enabled && (parent.recursive || parent.gameObject == cachedColliders[i].gameObject))
+                        // owned by another InteractivityModifier
                         cachedColliders.RemoveAt(i);
                 }
             }
