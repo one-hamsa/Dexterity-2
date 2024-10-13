@@ -347,10 +347,11 @@ namespace OneHamsa.Dexterity.Builtins
                     {
                         ((MonoBehaviour)currentReceiver).gameObject.GetComponents(tempReceivers);
                         receiversBeforeFilter.AddRange(tempReceivers);
-                        
-                        if (!currentReceiver.ShouldRecurseParents())
+
+                        bool shouldBlockParent = ((MonoBehaviour)currentReceiver).TryGetComponent(out IBlockRaycastParentPropagation _);
+                        if (shouldBlockParent)
                             break;
-                        
+
                         currentReceiver = ((MonoBehaviour)currentReceiver).transform.parent?.GetComponentInParent<IRaycastReceiver>();
                     }
 

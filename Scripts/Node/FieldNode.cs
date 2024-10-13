@@ -60,9 +60,6 @@ namespace OneHamsa.Dexterity
 
         public List<StateFunction.Step> customSteps = new();
 
-        [SerializeField, Tooltip("Toggle this off if you want raycast event to stop at this node")] 
-        public bool passRaycastEventsToParentNodes = true;
-
         #endregion Serialized Fields
 
         #region Public Properties
@@ -799,7 +796,5 @@ namespace OneHamsa.Dexterity
                 receiver.ClearHit(controller);
             }
         }
-
-        bool IRaycastReceiver.ShouldRecurseParents() => passRaycastEventsToParentNodes;
     }
 }
