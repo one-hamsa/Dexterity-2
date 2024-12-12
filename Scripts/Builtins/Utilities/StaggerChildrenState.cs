@@ -110,10 +110,13 @@ namespace OneHamsa.Dexterity.Builtins.Utilities
 
             // wait for start
             yield return new WaitForEndOfFrame();
-            
+
             foreach (var node in GetNodes())
+            {
                 node.SetStateOverride(sourceStateId);
-            
+                node.JumpToState();
+            }
+
             // wait for all gameObjects to get Awake() and OnEnable()
             yield return null;
 
