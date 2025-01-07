@@ -72,6 +72,9 @@ namespace OneHamsa.Dexterity
             {
                 DestroyImmediate(modifiedMaterial);
             }
+            // lose reference to the material - this object might be pooled
+            modifiedMaterial = null;
+            
             SetMaterialDirty();
         }
 
