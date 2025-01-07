@@ -151,12 +151,15 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static RaycastFilter CreateTransformFilter(Transform root, RaycastFilter orFilter = null)
         {
-            // cache all transforms
-            var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
+            // Cache all instance IDs of transforms
+            var childReceiverIds = root.GetComponentsInChildren<IRaycastReceiver>(true)
+                .Select(r => ((Component)r).GetInstanceID())
+                .ToHashSet();
 
             bool Filter(IRaycastReceiver r)
             {
-                if (childReceivers.Contains(r) || (orFilter != null && orFilter(r)))
+                var id = ((Component)r).GetInstanceID();
+                if (childReceiverIds.Contains(id) || (orFilter != null && orFilter(r)))
                     return true;
 
                 return ((Component)r).transform.IsChildOf(root);
@@ -167,13 +170,17 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static RaycastFilter CreateTransformBlockingFilter(Transform root)
         {
-            // cache all transforms
-            var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
+            // cache all instance IDs of transforms
+            var childReceiverIds = root.GetComponentsInChildren<IRaycastReceiver>(true)
+                .Select(r => ((Component)r).GetInstanceID())
+                .ToHashSet();
+
             return Filter;
 
             bool Filter(IRaycastReceiver r)
             {
-                if (childReceivers.Contains(r))
+                var id = ((Component)r).GetInstanceID();
+                if (childReceiverIds.Contains(id))
                     return false;
 
                 return !((Component)r).transform.IsChildOf(root);
