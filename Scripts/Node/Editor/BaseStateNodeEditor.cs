@@ -130,6 +130,9 @@ namespace OneHamsa.Dexterity
 
         private void ShowModifiers()
         {
+            if (!baseNode.enabled)
+                return;
+            
             var _modifiers = GetModifiers();
             if (_modifiers == null)
                 return;
@@ -426,6 +429,110 @@ namespace OneHamsa.Dexterity
             EditorUtility.SetDirty(simpleEnumNode);
             
             Undo.CollapseUndoOperations(group);
+        }
+
+        [MenuItem("CONTEXT/BaseStateNode/Convert to Binding Enum Node")]
+        private static void ConvertToBindingEnumNode(MenuCommand command)
+        {
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Convert to Binding Enum Node");
+            var group = Undo.GetCurrentGroup();
+            
+            var baseNode = (BaseStateNode)command.context;
+            var bindingEnumNode = Undo.AddComponent<BindingEnumNode>(baseNode.gameObject);
+            bindingEnumNode.initialState = baseNode.initialState;
+            bindingEnumNode.delays = baseNode.delays;
+            bindingEnumNode.overrideState = baseNode.overrideState;
+            bindingEnumNode.SetAutoSyncModifiersStates(false);
+
+            foreach (var modifier in GetModifiers(baseNode))
+            {
+                Undo.RecordObject(modifier, "Convert to Binding Enum Node");
+                modifier._node = bindingEnumNode;
+                EditorUtility.SetDirty(modifier);
+            }
+            
+            Undo.RecordObject(baseNode, "Convert to Binding Enum Node");
+            baseNode.enabled = false;
+            EditorUtility.SetDirty(baseNode);
+
+            EditorUtility.SetDirty(bindingEnumNode);
+            
+            Undo.CollapseUndoOperations(group);
+        }
+        
+        [MenuItem("CONTEXT/BaseStateNode/Rename State...")]
+        private static void RenameState(MenuCommand command)
+        {
+            var baseNode = (BaseStateNode)command.context;
+            RenameStateDialog.Create(baseNode);
+        }
+
+        public class RenameStateDialog : EditorWindow
+        {
+            private BaseStateNode baseNode;
+            private string stateName;
+            private string error;
+            private string newStateName;
+
+            public static RenameStateDialog Create(BaseStateNode baseNode)
+            {
+                var dialog = GetWindow<RenameStateDialog>();
+                dialog.baseNode = baseNode;
+                dialog.stateName = baseNode.initialState;
+                dialog.error = null;
+                dialog.titleContent = new GUIContent("Rename State");
+                dialog.Show();
+                return dialog;
+            }
+
+            private void OnGUI()
+            {
+                EditorGUILayout.LabelField("Rename State", EditorStyles.whiteLargeLabel);
+                EditorGUILayout.Space();
+                var states = baseNode.GetStateNames().ToList();
+                stateName = states[EditorGUILayout.Popup("State", states.IndexOf(stateName), states.ToArray())];
+                newStateName = EditorGUILayout.TextField("New Name", newStateName);
+                if (error != null)
+                    EditorGUILayout.HelpBox(error, MessageType.Error);
+                EditorGUILayout.Space();
+                if (GUILayout.Button("Rename"))
+                {
+                    if (string.IsNullOrEmpty(stateName))
+                    {
+                        error = "State name can't be empty";
+                        return;
+                    }
+                    
+                    if (string.IsNullOrEmpty(newStateName))
+                    {
+                        error = "New state name can't be empty";
+                        return;
+                    }
+
+                    // group undo
+                    Undo.IncrementCurrentGroup();
+                    var group = Undo.GetCurrentGroup();
+                    
+                    baseNode.RenameState(stateName, newStateName);
+                    RenameModifierStates();
+                    
+                    EditorUtility.SetDirty(baseNode);
+
+                    Undo.CollapseUndoOperations(group);
+                    
+                    Close();
+                }
+            }
+
+            private void RenameModifierStates()
+            {
+                foreach (var modifier in GetModifiers(baseNode))
+                {
+                    modifier.RenameState(stateName, newStateName);
+                    EditorUtility.SetDirty(modifier);
+                }
+            }
         }
     }
 }

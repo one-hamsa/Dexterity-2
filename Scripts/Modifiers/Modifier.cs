@@ -552,5 +552,23 @@ namespace OneHamsa.Dexterity
             if (!Application.IsPlaying(this))
                 SyncStates();
         }
+
+        #if UNITY_EDITOR
+        public void RenameState(string oldStateName, string newStateName)
+        {
+            var renameCount = 0;
+            foreach (var prop in properties)
+            {
+                if (prop.state == oldStateName)
+                {
+                    prop.state = newStateName;
+                    renameCount++;
+                }
+            }
+            
+            if (renameCount > 0)
+                Debug.Log($"Renamed {renameCount} properties from {oldStateName} to {newStateName} in {name}", this);
+        }
+        #endif
     }
 }
