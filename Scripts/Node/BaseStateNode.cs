@@ -492,6 +492,21 @@ namespace OneHamsa.Dexterity
         
         #if UNITY_EDITOR
         public virtual void InitializeEditor() { }
+
+        public virtual void RenameState(string oldStateName, string newStateName)
+        {
+            if (initialState == oldStateName)
+            {
+                initialState = newStateName;
+                Debug.Log($"Renamed initial state {oldStateName} to {newStateName} in {name}", this);
+            }
+
+            if (overrideState == oldStateName)
+            {
+                overrideState = newStateName;
+                Debug.Log($"Renamed override state {oldStateName} to {newStateName} in {name}", this);
+            }
+        }
         #endif
 
         /// <summary>
