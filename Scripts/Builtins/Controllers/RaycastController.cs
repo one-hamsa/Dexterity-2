@@ -151,15 +151,12 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static RaycastFilter CreateTransformFilter(Transform root, RaycastFilter orFilter = null)
         {
-            // Cache all instance IDs of transforms
-            var childReceiverIds = root.GetComponentsInChildren<IRaycastReceiver>(true)
-                .Select(r => ((Component)r).GetInstanceID())
-                .ToHashSet();
+            // cache all transforms
+            var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
 
             bool Filter(IRaycastReceiver r)
             {
-                var id = ((Component)r).GetInstanceID();
-                if (childReceiverIds.Contains(id) || (orFilter != null && orFilter(r)))
+                if (childReceivers.Contains(r) || (orFilter != null && orFilter(r)))
                     return true;
 
                 return ((Component)r).transform.IsChildOf(root);
@@ -170,17 +167,13 @@ namespace OneHamsa.Dexterity.Builtins
 
         public static RaycastFilter CreateTransformBlockingFilter(Transform root)
         {
-            // cache all instance IDs of transforms
-            var childReceiverIds = root.GetComponentsInChildren<IRaycastReceiver>(true)
-                .Select(r => ((Component)r).GetInstanceID())
-                .ToHashSet();
-
+            // cache all transforms
+            var childReceivers = root.GetComponentsInChildren<IRaycastReceiver>(true).ToHashSet();
             return Filter;
 
             bool Filter(IRaycastReceiver r)
             {
-                var id = ((Component)r).GetInstanceID();
-                if (childReceiverIds.Contains(id))
+                if (childReceivers.Contains(r))
                     return false;
 
                 return !((Component)r).transform.IsChildOf(root);
@@ -243,7 +236,14 @@ namespace OneHamsa.Dexterity.Builtins
             // When changing controllers, the first click shouldn't actually do anything besides changing controllers
             if (!wasCurrent)
                 return;
-
+            
+#if UNITY_PS5
+            if (LoadingBlackScreenManagement.IsAlphaVisible)
+            {
+                return;
+            }
+#endif
+            
             pressStartFrame = Time.frameCount;
 
             if (onAnyPress != null)
@@ -274,6 +274,14 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (!current)
                 return;
+            
+#if UNITY_PS5
+            if (LoadingBlackScreenManagement.IsAlphaVisible 
+                && LoadingBlackScreenManagement.IsFinished)
+            {
+                return;
+            }
+#endif
 
             var pos = _transform.position;
             var f = _transform.forward;
