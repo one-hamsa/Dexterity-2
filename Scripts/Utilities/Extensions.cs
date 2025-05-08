@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Utilities {
@@ -47,6 +48,25 @@ namespace OneHamsa.Dexterity.Utilities {
                 name = go.name + "/" + name;
             }
             return name;
+        }
+                
+        public static bool FastContains<T>(this List<T> list, T obj)
+        {
+	        for (int i = 0; i < list.Count; i++)
+		        if (ReferenceEquals(list[i], obj))
+			        return true;
+
+	        return false;
+        }
+
+
+        public static int FastIndexOf<T>(this List<T> list, T obj)
+        {
+	        for (int i = 0; i < list.Count; i++)
+		        if (ReferenceEquals(list[i], obj))
+			        return i;
+
+	        return -1;
         }
     }
 }

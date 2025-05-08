@@ -6,6 +6,7 @@ using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 using UnityEngine.Scripting;
 using Debug = UnityEngine.Debug;
+using OneHamsa.Dexterity.Utilities;
 
 namespace OneHamsa.Dexterity.Builtins
 {
@@ -64,7 +65,7 @@ namespace OneHamsa.Dexterity.Builtins
         [Header("Debug")] public Color debugColliderColor = new Color(1f, .5f, 0f);
         public Color debugHitColor = new Color(1f, .25f, 0f);
 
-        public bool current => enabled && ((lastControllerPressed == null && defaultController) || lastControllerPressed == this);
+        public bool current => enabled && ((ReferenceEquals(lastControllerPressed, null) && defaultController) || ReferenceEquals(lastControllerPressed, this));
 
         public bool showVisibleRay { get;  set; } = true;
 
@@ -425,7 +426,7 @@ namespace OneHamsa.Dexterity.Builtins
                     // no new receivers
                     closestReceivers == null
                     // this receiver is no longer relevant
-                    || !closestReceivers.Contains(receiver))
+                    || !closestReceivers.FastContains(receiver))
                 {
                     try
                     {
