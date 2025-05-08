@@ -65,6 +65,25 @@ namespace OneHamsa.Dexterity
 
         #if UNITY_EDITOR
         public void Cache_Editor() => CacheEnumOptions();
-        #endif
+
+        public override void RenameState(string oldStateName, string newStateName)
+        {
+            base.RenameState(oldStateName, newStateName);
+            
+            var index = manualStates.IndexOf(oldStateName);
+            if (index != -1)
+            {
+                manualStates[index] = newStateName;
+                Debug.Log($"Renamed state {oldStateName} to {newStateName} in {name}", this);
+            }
+            else
+            {
+                Debug.LogError($"State {oldStateName} not found in {name}", this);
+            }
+            
+            Cache_Editor();
+        }
+
+#endif
     }
 }

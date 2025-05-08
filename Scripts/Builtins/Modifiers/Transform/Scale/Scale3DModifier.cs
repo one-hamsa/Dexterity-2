@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.UI;
@@ -37,6 +35,9 @@ namespace OneHamsa.Dexterity.Builtins
             scale.z *= baseScale.z;
 
             _transform.localScale = scale;
+            
+            if (_transform is RectTransform rectTransform)
+                LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
         public void FreezeValue()

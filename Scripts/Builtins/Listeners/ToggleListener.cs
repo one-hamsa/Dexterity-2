@@ -52,6 +52,11 @@ namespace OneHamsa.Dexterity.Builtins
             FireEvents();
         }
 
+        public void Toggle(bool value) {
+            toggled = value;
+            FireEvents();
+        }
+
         public void ToggleOn()
         {
             toggled = true;
