@@ -547,12 +547,6 @@ namespace OneHamsa.Dexterity
             #endif
         }
 
-        private void OnValidate()
-        {
-            if (!Application.IsPlaying(this))
-                SyncStates();
-        }
-
         #if UNITY_EDITOR
         public void RenameState(string oldStateName, string newStateName)
         {
