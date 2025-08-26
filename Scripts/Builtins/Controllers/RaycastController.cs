@@ -380,8 +380,23 @@ namespace OneHamsa.Dexterity.Builtins
                             {
                                 if (r is MonoBehaviour { isActiveAndEnabled: false })
                                     continue;
-                                if (filters.Count > 0 && !filters[^1](r))
-                                    continue;
+                                if (filters.Count > 0)
+                                {
+                                    var filter = filters[^1];
+                                    try
+                                    {
+                                        if (!filter(r)) 
+                                            continue;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.LogException(e, r as MonoBehaviour);
+                                        // remove faulty filter
+                                        if (TryRemoveFilter(filter))
+                                            Debug.LogWarning($"Raycast filter {filter.Method?.Name} removed due to exception");
+                                    }
+                                }
+
                                 potentialReceiversA.Add(r);
                             }
                         }
