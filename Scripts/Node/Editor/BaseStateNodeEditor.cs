@@ -11,8 +11,8 @@ namespace OneHamsa.Dexterity
     {
         static bool modifiersDebugOpen;
         private static int speedIndex = -1;
-        
-        BaseStateNode baseNode;
+
+        private BaseStateNode baseNode => (BaseStateNode)target;
         private HashSet<string> states = new();
         private List<string> previewStates = new();
         private List<string> previewStateNames = new();
@@ -45,8 +45,6 @@ namespace OneHamsa.Dexterity
                 }
                 first = false;
             }
-
-            baseNode = target as BaseStateNode;
 
             serializedObject.Update();
 

@@ -13,13 +13,8 @@ namespace OneHamsa.Dexterity
     public class TransitionBehaviourEditor : Editor
     {
         bool strategyDefined { get; set; }
-        TransitionBehaviour transitionBehaviour { get; set; }
+        TransitionBehaviour transitionBehaviour => (TransitionBehaviour)target;
         private static bool advancedFoldout { get; set; }
-
-        private void OnEnable() 
-        {
-            transitionBehaviour = target as TransitionBehaviour;
-        }
 
         public override void OnInspectorGUI()
         {

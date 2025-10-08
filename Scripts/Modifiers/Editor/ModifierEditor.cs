@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity
     {
         static Dictionary<string, bool> foldedStates = new();
         bool strategyExists { get; set; }
-        protected Modifier modifier { get; set; }
+        protected Modifier modifier => (Modifier)target;
         private EditorCoroutine coro;
         // private  sortedStateProps = new();
         private bool hasUpdateOverride;
@@ -24,8 +24,6 @@ namespace OneHamsa.Dexterity
 
         private void OnEnable() 
         {
-            modifier = (Modifier)target;
-            
             var myUpdateType = modifier.GetType() 
                 .GetMethod(nameof(Modifier.Refresh), 
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
