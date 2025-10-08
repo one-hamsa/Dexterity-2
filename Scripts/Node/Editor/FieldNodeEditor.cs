@@ -18,7 +18,6 @@ namespace OneHamsa.Dexterity
         
         private HashSet<FieldNode.OutputOverride> unusedOverrides = new();
         private bool gatesUpdated;
-        private StepListView stepListView;
 
         protected void OnEnable()
         {
@@ -36,12 +35,7 @@ namespace OneHamsa.Dexterity
             foldout.style.marginLeft = 10;
             foldout.contentContainer.style.unityFontStyleAndWeight = FontStyle.Normal;
             
-            stepListView = new StepListView(serializedObject, nameof(FieldNode.customSteps));
-            foreach (var node in targets.OfType<FieldNode>())
-            {
-                node.onStateChanged += OnNodeStateChanged;
-            }
-            
+            var stepListView = new StepListView(serializedObject, nameof(FieldNode.customSteps));
             foldout.Add(stepListView);
             
             // disallow editing in play mode - this would require re-initialization of StepList
@@ -54,26 +48,6 @@ namespace OneHamsa.Dexterity
             root.Add(new IMGUIContainer(Legacy_OnInspectorGUI));
 
             return root;
-        }
-
-        private void OnNodeStateChanged(int oldState, int newState)
-        {
-            try 
-            {
-                stepListView.RefreshItems();
-            }
-            catch (Exception e) 
-            {
-                Debug.LogException(e, target);
-            }
-        }
-
-        private void OnDestroy()
-        {
-            foreach (var node in targets.OfType<FieldNode>())
-            {
-                node.onStateChanged -= OnNodeStateChanged;
-            }
         }
 
         private void Legacy_OnInspectorGUI_ChooseReference() {

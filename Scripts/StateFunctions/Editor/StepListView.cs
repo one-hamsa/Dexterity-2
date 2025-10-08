@@ -15,9 +15,12 @@ namespace OneHamsa.Dexterity
         private readonly string propertyName;
         IStepList stepList;
         Dictionary<StateFunction.Step, int> stepToDepth;
+        private readonly List<FieldNode> fieldNodes = new();
 
         public StepListView(SerializedObject serializedObject, string propertyName) : base()
         {
+            RegisterCallback<AttachToPanelEvent>(OnAttach);
+            RegisterCallback<DetachFromPanelEvent>(OnDetach);
             styleSheets.Add(Resources.Load<StyleSheet>("StepListView"));
             
             this.serializedObject = serializedObject;
@@ -42,13 +45,41 @@ namespace OneHamsa.Dexterity
             itemsRemoved += HandleItemsRemoved;
 
             RebuildDataAndCache(isMutated: false);
-
-            Undo.undoRedoPerformed += HandleUndoRedo;
         }
         
-        ~StepListView()
+        private void OnAttach(AttachToPanelEvent evt)
+        {
+            Undo.undoRedoPerformed += HandleUndoRedo;
+            
+            foreach (var node in serializedObject.targetObjects.OfType<FieldNode>())
+            {
+                node.onStateChanged += OnNodeStateChanged;
+                fieldNodes.Add(node);
+            }
+        }
+
+        private void OnDetach(DetachFromPanelEvent evt)
         {
             Undo.undoRedoPerformed -= HandleUndoRedo;
+            
+            foreach (var node in fieldNodes)
+            {
+                node.onStateChanged -= OnNodeStateChanged;
+            }
+
+            fieldNodes.Clear();
+        }
+
+        private void OnNodeStateChanged(int oldState, int newState)
+        {
+            try 
+            {
+                RefreshItems();
+            }
+            catch (Exception e) 
+            {
+                Debug.LogException(e);
+            }
         }
 
         private void HandleUndoRedo()
@@ -172,7 +203,7 @@ namespace OneHamsa.Dexterity
                     stateNamePf.style.flexGrow = 1;
                     rest.Add(stateNamePf);
                     
-                    rest.EnableInClassList("selected", step.initialized 
+                    rest.EnableInClassList("selected", Application.isPlaying && step.initialized 
                         && stepList.GetLastEvaluationResult() == step.GetResultStateID());
                     break;
 
@@ -183,7 +214,7 @@ namespace OneHamsa.Dexterity
                     refPf.style.flexGrow = 1;
                     rest.Add(refPf);
                     
-                    rest.EnableInClassList("selected", step.initialized && step.reference_stateFunction != null
+                    rest.EnableInClassList("selected", Application.isPlaying && step.initialized && step.reference_stateFunction != null
                         && step.reference_stateFunction.GetLastEvaluationResult() != StateFunction.emptyStateId);
                     break;
             }
