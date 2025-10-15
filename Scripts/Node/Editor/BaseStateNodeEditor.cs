@@ -144,9 +144,8 @@ namespace OneHamsa.Dexterity
             }
             else
             {
-                EditorGUILayout.HelpBox($"Auto-Sync for modifiers states is disabled, " +
-                                        $"states might not be synced", MessageType.Warning);
-                
+                ShowAutoSyncDisabledWarning();
+
                 if (GUILayout.Button("Sync Now"))
                 {
                     foreach (var modifier in modifiers)
@@ -211,6 +210,12 @@ namespace OneHamsa.Dexterity
                 EditorGUILayout.LabelField(GetPath(m.gameObject), EditorStyles.miniLabel);
                 GUI.contentColor = origColor;
             }
+        }
+
+        protected virtual void ShowAutoSyncDisabledWarning()
+        {
+            EditorGUILayout.HelpBox($"Auto-Sync for modifiers states is disabled, " +
+                                    $"states might be out-of-sync", MessageType.Warning);
         }
 
         private void ShowDelays()

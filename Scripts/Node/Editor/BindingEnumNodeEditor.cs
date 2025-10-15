@@ -21,5 +21,14 @@ namespace OneHamsa.Dexterity
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.intMaxState)));
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(BindingEnumNode.intOutOfBoundsState)));
         }
+
+        protected override void ShowAutoSyncDisabledWarning()
+        {
+            var binding = ((BindingEnumNode)target).binding;
+            if (!binding.IsValid())
+                EditorGUILayout.HelpBox("Binding is not valid, states will not be auto-synced with modifiers", MessageType.Warning);
+            else
+                base.ShowAutoSyncDisabledWarning();
+        }
     }
 }
