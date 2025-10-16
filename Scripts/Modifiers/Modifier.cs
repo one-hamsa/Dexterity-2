@@ -283,7 +283,13 @@ namespace OneHamsa.Dexterity
         {
             // maybe it didn't happen because node was disabled
             InitializeCacheData();
-            
+            if (!EnsureValidState())
+            {
+                if (Application.IsPlaying(this))
+                    enabled = false;
+                return;
+            }
+
             activeState = GetNode().GetActiveState();
             try
             {
@@ -427,7 +433,7 @@ namespace OneHamsa.Dexterity
                 return false;
             }
 
-            if (properties.Count == 0 || propertiesCache == null || propertiesCache.Count == 0)
+            if (properties.Count == 0 || (_node.enabled && (propertiesCache == null || propertiesCache.Count == 0)))
             {
                 #if UNITY_EDITOR
                 Debug.Log($"No properties found for modifier {name} ({GetType().Name})", this);
