@@ -67,11 +67,15 @@ namespace OneHamsa.Dexterity.Builtins
             component.Play(activeStateName, 0, currentNormalizedTime);
             component.speed = 0f; // Pause the animation so it stays at this timestamp
 
+#if UNITY_EDITOR
             // Force animator to update in edit mode so the animation seeks immediately
             if (!Application.isPlaying)
             {
-                component.Update(0f);
+                var aw = UnityEditor.EditorWindow.GetWindow<UnityEditor.AnimationWindow>();
+                if (aw != null)
+                    aw.time = targetTimestamp;
             }
+#endif
         }
 
         public void FreezeProperty(PropertyBase property)
@@ -89,7 +93,6 @@ namespace OneHamsa.Dexterity.Builtins
 
             var prop = (Property)property;
 
-            var stateInfo = component.GetCurrentAnimatorStateInfo(0);
             var clips = component.runtimeAnimatorController.animationClips;
             foreach (var clip in clips)
             {
