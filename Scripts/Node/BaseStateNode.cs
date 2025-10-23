@@ -447,6 +447,12 @@ namespace OneHamsa.Dexterity
             overrideState = null;
 #endif
         }
+
+        public void SetStateOverride_Slow(string stateName) 
+        {
+            SetStateOverride(Database.instance.GetStateID(stateName));
+        }
+
         /// <summary>
         /// Overrides state to manual value
         /// </summary>
