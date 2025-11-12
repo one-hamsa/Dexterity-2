@@ -11,6 +11,7 @@ namespace OneHamsa.Dexterity.Builtins
     public class ToggleListener : MonoBehaviour
     {
         public bool toggled;
+        public bool toggleOffWhenDisabled = false;
         public UnityEvent<bool> onToggle;
         public UnityEvent onToggleOn;
         public UnityEvent onToggleOff;
@@ -33,6 +34,8 @@ namespace OneHamsa.Dexterity.Builtins
         private void OnDisable()
         {
             clickListener.onClick.RemoveListener(OnClick);
+            if (toggleOffWhenDisabled && toggled)
+                ToggleOff();
         }
 
         private void OnClick() => Toggle();
