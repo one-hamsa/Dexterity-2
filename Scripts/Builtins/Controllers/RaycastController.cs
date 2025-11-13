@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity.Builtins
         const int maxHits = 20;
 
         // RaycastReceiver filter
-        private static readonly List<RaycastFilter> filters = new();
+        private static readonly List<(RaycastFilter filter, bool passthrough)> filters = new();
 
         // custom raycast resolvers
         private static readonly List<IRaycastResolver> resolvers = new();
@@ -130,9 +130,11 @@ namespace OneHamsa.Dexterity.Builtins
         /// <summary>
         /// Set Global Raycast Receiver filter
         /// </summary>
-        public static RaycastFilter AddFilter(RaycastFilter filter)
+        /// <param name="filter">Raycast filter</param>
+        /// <param name="passthrough">If true, the filter will be additive, meaning other filters may still affect the result</param>
+        public static RaycastFilter AddFilter(RaycastFilter filter, bool passthrough = false)
         {
-            filters.Add(filter);
+            filters.Add((filter, passthrough));
             return filter;
         }
 
@@ -146,7 +148,7 @@ namespace OneHamsa.Dexterity.Builtins
         public static RaycastFilter AddBlockingFilter(Transform root)
         {
             var filter = CreateTransformBlockingFilter(root);
-            AddFilter(filter);
+            AddFilter(filter, passthrough: true);
             return filter;
         }
 
@@ -198,18 +200,27 @@ namespace OneHamsa.Dexterity.Builtins
         
         public static bool TryRemoveFilter(RaycastFilter filter)
         {
-            return filters.Remove(filter);
+            for (var i = filters.Count - 1; i >= 0; i--)
+            {
+                if (filters[i].filter == filter)
+                {
+                    filters.RemoveAt(i);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static void ClearFilters(Predicate<RaycastFilter> predicate = null)
         {
             for (var i = filters.Count - 1; i >= 0; i--)
             {
-                if (predicate == null || predicate(filters[i]))
+                if (predicate == null || predicate(filters[i].filter))
                     filters.RemoveAt(i);
             }
         }
-        public static List<RaycastFilter> GetFilters() => filters;
+        public static List<(RaycastFilter filter, bool passthrough)> GetFilters() => filters;
 
         public readonly struct FilterContext : IDisposable
         {
@@ -380,22 +391,37 @@ namespace OneHamsa.Dexterity.Builtins
                             {
                                 if (r is MonoBehaviour { isActiveAndEnabled: false })
                                     continue;
-                                if (filters.Count > 0)
+                                
+                                int index = filters.Count - 1;
+                                bool shouldSkip = false;
+
+                                while (index >= 0)
                                 {
-                                    var filter = filters[^1];
+                                    var filter = filters[index];
+    
                                     try
                                     {
-                                        if (!filter(r)) 
-                                            continue;
+                                        if (!filter.filter(r))
+                                        {
+                                            shouldSkip = true;
+                                            break;
+                                        }
                                     }
                                     catch (Exception e)
                                     {
                                         Debug.LogException(e, r as MonoBehaviour);
-                                        // remove faulty filter
-                                        if (TryRemoveFilter(filter))
-                                            Debug.LogWarning($"Raycast filter {filter.Method?.Name} removed due to exception");
+                                        if (TryRemoveFilter(filter.filter))
+                                            Debug.LogWarning($"Raycast filter {filter.filter.Method?.Name} removed due to exception");
                                     }
+    
+                                    if (!filter.passthrough)
+                                        break;
+        
+                                    index--;
                                 }
+
+                                if (shouldSkip)
+                                    continue;
 
                                 potentialReceiversA.Add(r);
                             }

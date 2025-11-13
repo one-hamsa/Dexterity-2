@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity.Builtins
                 }
 
                 return true;
-            });
+            }, passthrough: true);
         }
         
         private void OnDisable()
