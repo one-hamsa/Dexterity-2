@@ -51,8 +51,16 @@ namespace OneHamsa.Dexterity.Builtins
 			pressed = false;
 			UpdateProgress(0);
 		}
-
-
+		
+		public void ManuallyTriggerPress()
+		{
+			OnPressDown();
+		}
+		public void ManuallyReleasePress()
+		{
+			OnPressUp();
+		}
+		
 		void Update()
 		{
 			if (pressed)
