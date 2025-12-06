@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Pool;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
@@ -38,6 +39,7 @@ namespace OneHamsa.Dexterity.Builtins
         FieldNode.OutputField visibleField;
         private int pressFrame = -1;
         private double pressTime = double.MinValue;
+        private List<BaseField.ValueChangeEvent> pendingEvents = new();
 
         [Preserve]
         public bool WasPressedThisFrame() => pressFrame == Time.frameCount - 1;
@@ -73,34 +75,50 @@ namespace OneHamsa.Dexterity.Builtins
         {
             if (pressedField != null)
                 pressedField.onValueChanged -= HandlePress;
+            pendingEvents.Clear();
         }
 
         private void HandlePress(BaseField.ValueChangeEvent e)
         {
-            // don't handle if hidden
-            if (visibleField != null && !visibleField.GetBooleanValue())
-                return;
+            pendingEvents.Add(e);
+        }
 
-            // don't handle if disabled
-            if (disabledField != null && disabledField.GetBooleanValue())
-                return;
-
-            switch (e.GetNewValueAsBool())
+        private void LateUpdate()
+        {
+            using var _ = ListPool<BaseField.ValueChangeEvent>.Get(out var eventsToProcess);
+            eventsToProcess.AddRange(pendingEvents);
+            pendingEvents.Clear();
+            
+            foreach (var e in eventsToProcess)
             {
-                case true when !e.GetOldValueAsBool():
-                    onPressDown?.Invoke();
-                    break;
-                case false when e.GetOldValueAsBool():
-                    onPressUp?.Invoke();
-                    break;
+                // don't handle if hidden
+                if (visibleField != null && !visibleField.GetBooleanValue())
+                    return;
+
+                // don't handle if disabled
+                if (disabledField != null && disabledField.GetBooleanValue())
+                    return;
+
+                switch (e.GetNewValueAsBool())
+                {
+                    case true when !e.GetOldValueAsBool():
+                        onPressDown?.Invoke();
+                        break;
+                    case false when e.GetOldValueAsBool():
+                        onPressUp?.Invoke();
+                        break;
+                }
+
+                // manually refresh hover value - we might be in the middle of a cache update
+                hoverField.RefreshUpstreams();
+
+                // only handle if unpressed while on object
+                if (e.GetOldValueAsBool() && !e.GetNewValueAsBool() && hoverField.GetBooleanValue())
+                {
+                    OnPressComplete();
+                    return;
+                }
             }
-
-            // manually refresh hover value - we might be in the middle of a cache update
-            hoverField.RefreshUpstreams();
-
-            // only handle if unpressed while on object
-            if (e.GetOldValueAsBool() && !e.GetNewValueAsBool() && hoverField.GetBooleanValue())
-                OnPressComplete();
         }
 
         protected virtual void OnPressComplete() => TriggerClick();
