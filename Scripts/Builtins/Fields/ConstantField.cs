@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [Preserve]
+    [Preserve, Serializable]
     public class ConstantField : BaseField
     {
         [FieldValue(nameof(BaseField.relatedFieldName), proxy = true)]

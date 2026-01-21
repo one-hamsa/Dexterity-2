@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +8,7 @@ namespace OneHamsa.Dexterity
 {
     public class MaterialLerpModifier : BaseMaterialModifier
     {
+        [Serializable]
         public class Property : PropertyBase
         {
             // custom params

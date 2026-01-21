@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity
@@ -6,6 +7,7 @@ namespace OneHamsa.Dexterity
     {
         public string materialColorName = "_Color";
 
+        [Serializable]
         public class Property : PropertyBase
         {
             // custom params

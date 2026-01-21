@@ -40,7 +40,7 @@ namespace OneHamsa.Dexterity
                     return null;
 #endif
                     
-                inst = FindObjectOfType<Manager>();
+                inst = FindFirstObjectByType<Manager>();
                 if (inst == null)
                 {
                     // manager is already dead
