@@ -5,6 +5,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
+    [System.Serializable]
     public class EnumField : UpdateableField
     {
         public BindingEnumNode targetNode;
