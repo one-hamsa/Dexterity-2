@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 
 namespace OneHamsa.Dexterity.Builtins
 {
+    [System.Serializable]
     public class NodeField : BaseField
     {
         public enum TakeValueWhen

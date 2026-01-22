@@ -5,6 +5,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
+    [System.Serializable]
     public class UIPressField : BaseField
     {
         DexterityUIPressFieldProvider provider = null;

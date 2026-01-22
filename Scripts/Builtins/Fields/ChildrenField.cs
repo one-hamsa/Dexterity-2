@@ -7,6 +7,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
+    [System.Serializable]
     public class ChildrenField : BaseField
     {
         public enum TakeValueWhen {

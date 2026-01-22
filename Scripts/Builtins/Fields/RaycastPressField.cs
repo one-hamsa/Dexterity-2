@@ -3,6 +3,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
+    [System.Serializable]
     public class RaycastPressField : BaseRaycastField
     {
         public bool stayPressedOutOfBounds = false;

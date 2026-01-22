@@ -4,6 +4,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Preserve]
+    [System.Serializable]
     public class NodeStateField : BaseField
     {
         public BaseStateNode targetNode;

@@ -7,6 +7,7 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     [Obsolete, Preserve]
+    [System.Serializable]
     public class UnityObjectField : UpdateableField
     {
         public UnityEngine.Object targetObject;
