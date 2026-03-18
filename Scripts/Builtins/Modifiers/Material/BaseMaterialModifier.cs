@@ -339,7 +339,11 @@ namespace OneHamsa.Dexterity
                 {
                     // Set a new name, to warn about editor modifications
                     name = $"{baseMaterial.name} OVERRIDE",
-                    hideFlags = HideFlags.HideAndDontSave | HideFlags.NotEditable
+                    // DontSave keeps it out of serialization; NotEditable prevents accidental edits.
+                    // Do NOT use HideAndDontSave — its DontUnloadUnusedAsset flag prevents cleanup
+                    // when the owning field is nulled by domain reload.
+                    hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor
+                              | HideFlags.DontSaveInBuild | HideFlags.NotEditable
                 };
             }
 #if UNITY_2022_1_OR_NEWER && UNITY_EDITOR
