@@ -349,7 +349,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transitionStrategy:
-    rid: -2
+    rid: 7255259723964090245
   _node: {fileID: 0}
   properties:
   - rid: 7255259722230530209
@@ -357,13 +357,15 @@ MonoBehaviour:
   - rid: 7255259722230530211
   - rid: 7255259722230530212
   delays: []
-  lastSeenStates: []
+  lastSeenStates:
+  - <Default>
+  - Disabled
+  - Disabled Hover
+  - Hover
   manualStateEditing: 0
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
     - rid: 7255259722230530209
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
@@ -392,6 +394,12 @@ MonoBehaviour:
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 0.92, b: 0.2, a: 1}
+    - rid: 7255259723964090245
+      type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
+      data:
+        transitionSpeed: 10
+        transitionTime: 1
+        style: 0
 --- !u!114 &77392964
 MonoBehaviour:
   m_ObjectHideFlags: 0
