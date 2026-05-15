@@ -14,7 +14,7 @@ public class TabGroup : MonoBehaviour
         for (var i = 0; i < transform.childCount; i++)
         {
             var current = i;
-            transform.GetChild(i).transform.GetComponent<ClickListener>()
+            transform.GetChild(i).transform.GetComponent<BaseClickListener>()
                 .onClick.AddListener(() => SelectTab(current));
         }
     }

@@ -7,7 +7,6 @@ using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [RequireComponent(typeof(ClickListener))]
     public class ToggleListener : MonoBehaviour
     {
         public bool toggled;
@@ -15,15 +14,21 @@ namespace OneHamsa.Dexterity.Builtins
         public UnityEvent<bool> onToggle;
         public UnityEvent onToggleOn;
         public UnityEvent onToggleOff;
-        
-        private ClickListener clickListener;
-        
+
+        private BaseClickListener clickListener;
+
         [Preserve]
         public bool IsToggled() => toggled;
 
         private void Awake()
         {
-            clickListener = GetComponent<ClickListener>();
+            clickListener = GetComponent<BaseClickListener>();
+            if (clickListener == null)
+            {
+                Debug.LogError($"ToggleListener on {name} requires a sibling BaseClickListener " +
+                               "(FieldNodeClickListener or HierarchyNodeClickListener).", this);
+                enabled = false;
+            }
         }
 
         private void OnEnable()
