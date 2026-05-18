@@ -1,5 +1,3 @@
-<!-- Last updated: 2026-05-17 (Phase 1 redesign — anonymous providers) -->
-
 # GraphProviders — Built-in leaf provider catalogue
 
 Each file here is a concrete `GraphStateProvider` subclass that ports an existing `BaseField` to the GraphNode system. Add one to the same GameObject as your `GraphNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an aggregator).

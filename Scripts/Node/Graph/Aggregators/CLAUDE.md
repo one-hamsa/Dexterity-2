@@ -1,5 +1,3 @@
-<!-- Last updated: 2026-05-17 (Phase 1 redesign — single-bool aggregator model) -->
-
 # GraphAggregator subclasses
 
 Aggregators are intermediate sources in a Dexterity graph: they consume the bool outputs of several upstream sources, combine them into a single bool, and feed that bool to either the Out node or another aggregator.
@@ -31,9 +29,9 @@ protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
 
 Example: a "Disabled" state that requires both a `ConstantProvider` (forced disable) AND a `BindingProvider` (data-driven disable) to be active simultaneously.
 
-## What about FirstMatch?
+## First-match priority
 
-Removed in the Phase 1 redesign. The Out node's ordered `stateInputs` IS first-match — the first port with any active source wins. If you need nested priority within a sub-graph, compose with multiple aggregators or wait for a `PriorityAggregator` (multi-output) if a real use case emerges.
+The Out node's ordered `stateInputs` is the first-match mechanism — the first port with any active source wins. Aggregators don't carry priority themselves; if you need nested priority within a sub-graph, compose with multiple aggregators feeding ordered ports.
 
 ## See also
 

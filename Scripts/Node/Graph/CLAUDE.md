@@ -1,5 +1,3 @@
-<!-- Last updated: 2026-05-17 (Phase 1 redesign — host-component model) -->
-
 # GraphNode — Runtime
 
 State node whose current state is decided by an explicit list of **named state inputs** on the node, fed by **bool-output sources** (providers and aggregators) that live as components on the **same GameObject** as the node. Wiring is via serialized `DexterityEdge` lists on each source, not via the transform tree.
@@ -109,10 +107,11 @@ Lookup is "topmost root wins": walking up from a node, the outermost `GraphNodeP
 
 Without a preview root, previewing a node only animates that single node. The component is purely declarative — no fields, no upstream-walking. Cross-node deps (`NodeStateProvider`) still evaluate correctly via on-demand `EvaluateTreeEditor` calls; the preview root just decides what *gets animated*, not what gets *computed*.
 
-## Phase 1 caveats
+## Authoring path
 
-- **No graph window yet.** Phase 1 ships with inspector-only authoring. The `DexterityEdge` custom drawer (under `Scripts/Node/Editor/`) restricts target dropdowns to same-host components and shows port-name dropdowns when targeting the Out node — usable but utilitarian. Phase 2 adds the new graph window.
-- **Sources are visible in the Inspector.** No `hideFlags = HideInInspector` in Phase 1 (transparency for debugging). Phase 3 hides them once authoring shifts entirely to the graph window.
+GraphNode authoring lives in the graph window (`Tools → Dexterity → Graph`, or the "Open Graph" button on a `GraphNode` inspector). Drag-to-connect edges, Spacebar to add a provider/aggregator, embedded inspectors per node.
+
+Sources carry `HideFlags.HideInInspector` (enforced by `DexterityGraphView.EnsureHideFlags` whenever the window opens a node). They still serialize normally and still show up in component reflection — they just don't appear in the Inspector. The `DexterityEdge` property drawer (`Scripts/Node/Editor/`) remains as a fallback path, used by debug inspectors and by anyone who removes the hideFlags manually.
 
 ## See also
 
