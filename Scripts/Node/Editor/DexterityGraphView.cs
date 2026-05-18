@@ -45,6 +45,24 @@ namespace OneHamsa.Dexterity
         internal Color ActiveColor => DexterityPreview.GetNodeColor(_node);
         internal static readonly Color s_inactiveColor = new Color(0.55f, 0.55f, 0.55f);
 
+        // The graph window is the curation surface — providers + aggregators are
+        // hidden from the Inspector so the host's component list stays clean.
+        // We re-apply on every touch (add, paste, rebuild) instead of relying on
+        // OnEnable, because that would require [ExecuteAlways] and the side effects
+        // it brings to subclass Update loops.
+        //
+        // NotEditable is deliberately NOT set: the graph window's embedded
+        // PropertyFields (UIElements) respect NotEditable by going read-only, which
+        // would defeat the only place we DO want to edit these. HideInInspector
+        // alone gives us the clean-component-list win without disabling the graph.
+        internal const HideFlags kSourceHideFlags = HideFlags.HideInInspector;
+        internal static void EnsureHideFlags(Component c)
+        {
+            if (c == null || c.hideFlags == kSourceHideFlags) return;
+            c.hideFlags = kSourceHideFlags;
+            EditorUtility.SetDirty(c);
+        }
+
         private GraphNode _node;
         private readonly Dictionary<Component, Node> _nodeByComponent = new();
         private readonly Dictionary<Port, string> _portStateName = new();   // for Out node ports
@@ -138,11 +156,20 @@ namespace OneHamsa.Dexterity
             AddElement(_outNodeView);
             _nodeByComponent[node] = _outNodeView;
 
-            // Build source nodes
+            // Build source nodes — also the natural sweep point for re-asserting
+            // hideFlags on any existing source whose flags drifted (older scenes,
+            // user accidentally cleared them via Debug Inspector, prefab serializer
+            // strip, etc.).
             foreach (var p in node.GetComponents<GraphStateProvider>())
+            {
+                EnsureHideFlags(p);
                 AddSourceNode(p, isAggregator: false);
+            }
             foreach (var a in node.GetComponents<GraphAggregator>())
+            {
+                EnsureHideFlags(a);
                 AddSourceNode(a, isAggregator: true);
+            }
 
             // Lay out / load positions
             ApplyStoredPositions();
@@ -536,6 +563,9 @@ namespace OneHamsa.Dexterity
                 // the default state — undo restores it, redo replays the paste.
                 Undo.RecordObject(newComp, "Paste");
                 EditorJsonUtility.FromJsonOverwrite(json, newComp);
+                // FromJsonOverwrite can copy the source's hideFlags too, but we want
+                // to assert the canonical value rather than trust the clipboard.
+                EnsureHideFlags(newComp);
                 EditorUtility.SetDirty(newComp);
                 // Nudge position so the paste doesn't sit exactly on top of the original.
                 var so = new SerializedObject(newComp);
@@ -570,14 +600,18 @@ namespace OneHamsa.Dexterity
             Undo.IncrementCurrentGroup();
             var group = Undo.GetCurrentGroup();
             var comp = Undo.AddComponent(_node.gameObject, type);
-            if (comp != null && graphPos.HasValue)
+            if (comp != null)
             {
-                var so = new SerializedObject(comp);
-                var posProp = so.FindProperty("graphPosition");
-                if (posProp != null)
+                EnsureHideFlags(comp);
+                if (graphPos.HasValue)
                 {
-                    posProp.vector2Value = graphPos.Value;
-                    so.ApplyModifiedProperties();
+                    var so = new SerializedObject(comp);
+                    var posProp = so.FindProperty("graphPosition");
+                    if (posProp != null)
+                    {
+                        posProp.vector2Value = graphPos.Value;
+                        so.ApplyModifiedProperties();
+                    }
                 }
             }
             Undo.SetCurrentGroupName($"Add {type.Name}");
