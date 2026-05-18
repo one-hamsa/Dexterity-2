@@ -51,10 +51,17 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        // Empty hooks so subclasses (GraphNodeLongPressListener) can override safely.
-        // The new model doesn't need provider subscription here — node.GetRawInput is polled.
-        protected virtual void OnEnable() { }
-        protected virtual void OnDisable() { }
+        // Hook into the node's input-change stream so the press-state diff loop in
+        // BaseClickListener.OnPressMayHaveChanged actually runs. Subclasses
+        // (GraphNodeLongPressListener) call base.OnEnable/OnDisable.
+        protected virtual void OnEnable()
+        {
+            if (node != null) node.onInputsMayHaveChanged += OnPressMayHaveChanged;
+        }
+        protected virtual void OnDisable()
+        {
+            if (node != null) node.onInputsMayHaveChanged -= OnPressMayHaveChanged;
+        }
 
         protected override bool IsPressed() => node != null && node.GetRawInput(settings.pressedStateName);
 

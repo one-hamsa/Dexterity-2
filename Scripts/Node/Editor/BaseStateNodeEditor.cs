@@ -136,9 +136,13 @@ namespace OneHamsa.Dexterity
                 return;
             var modifiers = _modifiers.ToList();
 
-            if (baseNode.ShouldAutoSyncModifiersStates())
+            // Skip auto-sync while the user is editing a text field. SyncStates
+            // reacts to the partial state name typed character-by-character, mutates
+            // the modifier's properties list, marks dirty, forces a repaint, and
+            // steals focus from the text field — making the field effectively
+            // un-editable. Resume syncing once focus leaves.
+            if (baseNode.ShouldAutoSyncModifiersStates() && !EditorGUIUtility.editingTextField)
             {
-                // make sure all are up to date
                 foreach (var modifier in modifiers)
                     modifier.SyncStates();
             }

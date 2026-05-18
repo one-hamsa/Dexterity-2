@@ -57,14 +57,21 @@ namespace OneHamsa.Dexterity
         public static bool IsAnimatable(GraphNode node) => node != null && s_animatable.Contains(node);
 
         /// <summary>
-        /// Per-node mode. <see cref="DexterityPreviewMode.Live"/> wins whenever the
-        /// node is initialized (correctly handles prefab-stage-in-play-mode: the
-        /// node won't be initialized there, so it stays in Preview/None).
+        /// Per-node mode.
+        /// <list type="bullet">
+        ///   <item><see cref="DexterityPreviewMode.Live"/> wins when the runtime
+        ///         Manager owns this node: <c>Application.isPlaying &amp;&amp; node.initialized</c>.
+        ///         Excludes prefab-stage nodes during play mode (those aren't initialized
+        ///         by Manager) — they fall through to Preview or None.</item>
+        ///   <item><see cref="DexterityPreviewMode.Preview"/> when our editor driver
+        ///         is animating this node.</item>
+        ///   <item><see cref="DexterityPreviewMode.None"/> otherwise.</item>
+        /// </list>
         /// </summary>
         public static DexterityPreviewMode GetNodeMode(GraphNode node)
         {
             if (node == null) return DexterityPreviewMode.None;
-            if (node.initialized) return DexterityPreviewMode.Live;
+            if (Application.isPlaying && node.initialized) return DexterityPreviewMode.Live;
             if (s_animatable.Contains(node)) return DexterityPreviewMode.Preview;
             return DexterityPreviewMode.None;
         }

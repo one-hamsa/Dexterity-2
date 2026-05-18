@@ -509,9 +509,9 @@ GameObject:
   - component: {fileID: 248788541}
   - component: {fileID: 248788540}
   - component: {fileID: 248788539}
-  - component: {fileID: 248788545}
   - component: {fileID: 248788544}
   - component: {fileID: 248788543}
+  - component: {fileID: 248788545}
   m_Layer: 0
   m_Name: Demo 4 - Node 2 (Dependent)
   m_TagString: Untagged
@@ -559,7 +559,6 @@ MonoBehaviour:
   - rid: 7255259722230530202
   delays: []
   lastSeenStates:
-  - <Default>
   - Hidden
   - Visible
   - Visible Hover
@@ -628,7 +627,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -686,6 +685,7 @@ MonoBehaviour:
   - target: {fileID: 248788540}
     targetPort: Visible
   graphPosition: {x: 0, y: 0}
+  mode: 0
   targetNode: {fileID: 1032287161}
   targetState: Toggled
   negate: 0
@@ -698,13 +698,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 248788537}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c65192a5d66353547a019b756962adc7, type: 3}
+  m_Script: {fileID: 11500000, guid: f740cf525ddfd3c4c8ba20b149cea4ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   outputs:
   - target: {fileID: 248788540}
     targetPort: Visible Hover
-  graphPosition: {x: 0, y: 0}
+  graphPosition: {x: 87, y: -87}
+  mode: 0
   targetNode: {fileID: 1032287161}
   targetState: Toggled Hover
   negate: 0
@@ -1556,8 +1557,8 @@ MonoBehaviour:
     - rid: 7255259722230530219
       type: {class: SimpleStrategy, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
-        transitionSpeed: 10
-        transitionTime: 1
+        transitionSpeed: 1
+        transitionTime: 5
         style: 0
 --- !u!114 &1032287163
 MonoBehaviour:
@@ -1572,7 +1573,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.3, g: 0.8, b: 0.35, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

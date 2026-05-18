@@ -16,6 +16,17 @@ namespace OneHamsa.Dexterity
         protected override void ShowFields()
         {
             DrawAggregatedResult();
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("stateInputs"));
+            if (EditorGUI.EndChangeCheck())
+            {
+                // Commit before notifying so graph windows reading the underlying
+                // GraphNode see the new list immediately.
+                serializedObject.ApplyModifiedProperties();
+                DexterityGraphWindow.NotifyStateInputsEdited();
+            }
+
             DrawOpenGraphButton();
         }
 
@@ -23,8 +34,9 @@ namespace OneHamsa.Dexterity
         {
             if (targets.Length > 1) return;
             EditorGUILayout.Space(2);
-            if (GUILayout.Button(new GUIContent("Open Hierarchy Graph",
-                    "Open the graph window for this node — interactive overrides drive Modifiers live.")))
+            if (GUILayout.Button(new GUIContent("Open Graph",
+                    "Open a graph window pinned to this node. Each click opens a new window — " +
+                    "you can have several open at once for different nodes.")))
             {
                 DexterityGraphWindow.OpenFor(node);
             }

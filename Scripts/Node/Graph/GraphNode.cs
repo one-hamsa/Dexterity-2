@@ -30,13 +30,23 @@ namespace OneHamsa.Dexterity
         // -- Source management (sources self-attach on enable) -----------------
         private readonly HashSet<IDexteritySource> _attached = new();
 
+        /// <summary>
+        /// Fires whenever any attached source's value may have changed (and when
+        /// sources attach/detach). Listeners that want to react to <b>raw input</b>
+        /// signals (e.g. <see cref="Builtins.GraphNodeClickListener"/> polling
+        /// <see cref="GetRawInput(string)"/>) subscribe here — <c>onStateChanged</c>
+        /// only fires on priority-resolved state transitions, which masks press-
+        /// under-disabled and similar cases the raw listener cares about.
+        /// </summary>
+        public event System.Action onInputsMayHaveChanged;
+
         internal void AttachSource(IDexteritySource source)
         {
             if (_attached.Add(source))
             {
-                source.onStateMayHaveChanged += MarkStateDirty;
+                source.onStateMayHaveChanged += OnSourceChanged;
                 _topoDirty = true;
-                MarkStateDirty();
+                OnSourceChanged();
             }
         }
 
@@ -44,13 +54,19 @@ namespace OneHamsa.Dexterity
         {
             if (_attached.Remove(source))
             {
-                source.onStateMayHaveChanged -= MarkStateDirty;
+                source.onStateMayHaveChanged -= OnSourceChanged;
                 _topoDirty = true;
-                MarkStateDirty();
+                OnSourceChanged();
             }
         }
 
-        private void MarkStateDirty() => stateDirty = true;
+        private void OnSourceChanged()
+        {
+            MarkStateDirty();
+            onInputsMayHaveChanged?.Invoke();
+        }
+
+        // MarkStateDirty inherited as public from BaseStateNode.
 
         // -- Evaluation caches --------------------------------------------------
         private bool _topoDirty = true;
@@ -69,37 +85,23 @@ namespace OneHamsa.Dexterity
         [System.NonSerialized] private int[] _stateInputIds;
         [System.NonSerialized] private bool _idsDirty = true;
 
-        private readonly HashSet<IDexteritySource> _liveScratch = new();
-
         private void EnsureCachesValid()
         {
-            // Self-heal: at edit time, providers/aggregators don't get OnEnable/OnDisable
-            // (no [ExecuteAlways]), so AttachSource/DetachSource isn't called. Re-collect
-            // host-local sources every call and invalidate if the live set differs from
-            // what we have cached (or if anything we held went null/destroyed).
-            _liveScratch.Clear();
-            GetComponents(typeof(GraphStateProvider), _scratchComponents);
-            foreach (var c in _scratchComponents) if (c != null) _liveScratch.Add((IDexteritySource)c);
-            GetComponents(typeof(GraphAggregator), _scratchComponents);
-            foreach (var c in _scratchComponents) if (c != null) _liveScratch.Add((IDexteritySource)c);
+            // At edit time providers don't get OnEnable/OnDisable, so the
+            // AttachSource/DetachSource path that flips _topoDirty at runtime
+            // never fires. Forcing a rebuild every call is cheaper than tracking
+            // edit-time invalidations explicitly — GetComponents on the host is
+            // O(N) over a handful of components, and edit-time eval is cool.
+            if (!Application.isPlaying)
+                _topoDirty = true;
 
-            if (!_topoDirty)
-            {
-                if (_liveScratch.Count != _allSources.Count) _topoDirty = true;
-                else
-                {
-                    for (var i = 0; i < _allSources.Count; i++)
-                    {
-                        var s = _allSources[i];
-                        if (s == null || !(s is UnityEngine.Object u) || u == null || !_liveScratch.Contains(s))
-                        { _topoDirty = true; break; }
-                    }
-                }
-            }
             if (!_topoDirty) return;
 
             _allSources.Clear();
-            foreach (var s in _liveScratch) _allSources.Add(s);
+            GetComponents(typeof(GraphStateProvider), _scratchComponents);
+            foreach (var c in _scratchComponents) _allSources.Add((IDexteritySource)c);
+            GetComponents(typeof(GraphAggregator), _scratchComponents);
+            foreach (var c in _scratchComponents) _allSources.Add((IDexteritySource)c);
 
             _sourcesByPort.Clear();
             for (var i = 0; i < _allSources.Count; i++)

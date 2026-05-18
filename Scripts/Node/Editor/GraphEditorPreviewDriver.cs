@@ -1,5 +1,6 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -9,170 +10,248 @@ using UnityEngine.SceneManagement;
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// Edit-time preview driver for GraphNodes.
+    /// Edit-time preview driver — holistic version. Mirrors the runtime
+    /// Manager loop closely instead of one-shot transitions, so:
+    /// <list type="bullet">
+    ///   <item><b>Per-node TransitionDelays are honored</b> — each node's
+    ///         <see cref="BaseStateNode.Refresh"/> handles pendingStateChangeTime
+    ///         exactly like at runtime.</item>
+    ///   <item><b>Cross-node dependencies cascade naturally</b> — when an upstream
+    ///         node transitions, its <c>onStateChanged</c> fires; downstream nodes'
+    ///         next-frame Refresh sees the new state via <c>GetActiveState()</c>
+    ///         (rather than the raw <c>EvaluateTreeEditor</c>), so they observe the
+    ///         upstream's delay before applying their own.</item>
+    ///   <item><b>Modifier transitions run in parallel under one Database session</b>
+    ///         — no per-transition Destroy/Create races.</item>
+    /// </list>
     ///
-    /// Animates Modifier transitions for the opt-in <see cref="DexterityPreview.AnimatableNodes"/>
-    /// set. Skips nodes that are <see cref="BaseStateNode.initialized"/> = true — those are Live
-    /// and the runtime Manager/Modifier loops drive them.
+    /// <para><b>Lifecycle (two states):</b></para>
+    /// <list type="bullet">
+    ///   <item><b>Idle</b>: no preview targets. No Database, no coroutine, no subscriptions
+    ///         on nodes.</item>
+    ///   <item><b>Running</b>: Database alive (timeScale = kPreviewSpeed); each driven
+    ///         node Allocate()'d (registered with Database, IDs cached); each driven
+    ///         modifier Allocate()'d; per-node onStateChanged handler subscribed to
+    ///         trigger modifier transitions; coroutine ticking every frame.</item>
+    /// </list>
+    /// <see cref="Resync"/> moves between the two whenever
+    /// <see cref="DexterityPreview.AnimatableNodes"/> changes.
     ///
-    /// <b>Why opt-in?</b> A scene may have hundreds of GraphNodes. Previewing every one
-    /// on every override change wastes work. The driver now only touches nodes the user
-    /// explicitly opted into via a graph window's Preview toggle (plus those nodes' upstream
-    /// <see cref="IDexteritySourceWithUpstreamNode"/> dependencies).
+    /// <para><b>Frame loop per tick:</b></para>
+    /// <list type="number">
+    ///   <item>Mark each driven node dirty + call <see cref="BaseStateNode.Refresh"/>.
+    ///         Cheap when nothing changed; applies delays + transitions when something has.
+    ///         Re-evaluating every node every frame is what gives cross-node deps
+    ///         their natural cascade — Node A's transition this frame becomes visible
+    ///         to Node B's eval next frame.</item>
+    ///   <item>For each modifier: <see cref="Modifier.ProgressTime_Editor"/> +
+    ///         <see cref="Modifier.Refresh"/>. SetDirty + scene-repaint when its output
+    ///         changed.</item>
+    /// </list>
     ///
-    /// All transitions are serialized through a single coroutine because
-    /// <see cref="EditorTransitions.TransitionAsync"/> owns the global Database singleton —
-    /// concurrent calls would race over its create/destroy.
+    /// <para><b>State-change bridge:</b> at runtime Modifier subscribes to its node's
+    /// <c>onStateChanged</c> in OnEnable. We can't run OnEnable at edit time, so the
+    /// driver hooks each driven node's <c>onStateChanged</c> itself and calls
+    /// <see cref="Modifier.PrepareTransition_Editor"/> on the owned modifiers with
+    /// (oldState, newState). The modifier then interpolates from old→new over its own
+    /// configured speed.</para>
     /// </summary>
     internal static class GraphEditorPreviewDriver
     {
         private const float kPreviewSpeed = 6f;
 
-        private class PendingTransition
-        {
-            public HashSet<Modifier> modifiers;
-            public string fromState;
-            public string toState;
-        }
+        private static EditorCoroutine s_loop;
+        private static readonly HashSet<GraphNode> s_nodes = new();
+        private static readonly Dictionary<GraphNode, HashSet<Modifier>> s_mods = new();
+        private static readonly Dictionary<GraphNode, Action<int, int>> s_handlers = new();
 
-        private static readonly Dictionary<BaseStateNode, PendingTransition> s_pending = new();
-        private static readonly Dictionary<GraphNode, string> s_renderedState = new();
-        private static bool s_running;
-
-        /// <summary>True while a Modifier transition coroutine is in flight.
-        /// Other editor code can use this to throttle expensive inspector redraws.</summary>
-        public static bool IsAnimating => s_running;
-
-        /// <summary>Fires when <see cref="IsAnimating"/> flips.</summary>
-        public static event System.Action onAnimatingChanged;
+        /// <summary>True while the driver coroutine is ticking (a preview session is live).</summary>
+        public static bool IsAnimating => s_loop != null;
+        public static event Action onAnimatingChanged;
 
         [InitializeOnLoadMethod]
         private static void Init()
         {
-            GraphPreviewOverrides.onChanged += ReevaluateAnimatableNodes;
-            EditorSceneManager.sceneOpened += OnSceneOpened;
-            EditorSceneManager.sceneClosing += OnSceneClosing;
-            DexterityPreview.onChanged += OnPreviewSetChanged;
+            DexterityPreview.onChanged += Resync;
+            GraphPreviewOverrides.onChanged += OnOverridesChanged;
+            EditorApplication.delayCall += Resync;
+            EditorSceneManager.sceneOpened += (_, __) => Resync();
+            EditorSceneManager.sceneClosing += (_, __) => Stop();
+            EditorApplication.playModeStateChanged += _ => Resync();
         }
 
-        private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
+        // ----- Lifecycle ------------------------------------------------------
+
+        /// <summary>Match the running state to <see cref="DexterityPreview.AnimatableNodes"/>.</summary>
+        private static void Resync()
         {
-            // New scene → drop stale baselines; the next preview registration will rebuild.
-            s_renderedState.Clear();
+            // At runtime Manager handles all of this — we get out of the way.
+            if (Application.isPlaying) { Stop(); return; }
+
+            var desired = new HashSet<GraphNode>();
+            foreach (var n in DexterityPreview.AnimatableNodes)
+                if (n != null) desired.Add(n);
+
+            if (s_nodes.SetEquals(desired)) return;
+
+            // Set changed → restart cleanly. Stop tears everything down; Start initializes
+            // the new set.
+            Stop();
+            if (desired.Count == 0) return;
+            foreach (var n in desired) s_nodes.Add(n);
+            Start();
         }
 
-        private static void OnSceneClosing(Scene scene, bool removingScene)
+        private static void Start()
         {
-            var dead = new List<GraphNode>();
-            foreach (var kv in s_renderedState)
-                if (kv.Key == null) dead.Add(kv.Key);
-            foreach (var k in dead) s_renderedState.Remove(k);
-        }
+            // 1) Fresh Database that lives for the entire preview session — every node
+            //    + modifier below uses Database.instance during Refresh / time tracking.
+            Database.Destroy();
+            var db = Database.Create(DexteritySettingsProvider.settings);
+            db.timeScale = kPreviewSpeed;
 
-        private static void OnPreviewSetChanged()
-        {
-            // Baseline newly-added animatable nodes from their current state so the user's
-            // first interaction with them animates correctly. Existing baselines stay.
-            foreach (var node in DexterityPreview.AnimatableNodes)
+            // 2) Discover modifiers per driven node. Shares the FieldNode-preview
+            //    discovery path (BaseStateNodeEditor.GetModifiers) so we behave the
+            //    same in edge cases (prefab stages, hideFlags filter, etc.).
+            s_mods.Clear();
+            foreach (var n in s_nodes)
             {
-                if (node == null) continue;
-                if (node.initialized) continue;          // Live — runtime owns the visual
-                if (s_renderedState.ContainsKey(node)) continue;
-                s_renderedState[node] = node.EvaluateTreeEditor() ?? node.initialState;
+                var mods = new HashSet<Modifier>();
+                foreach (var m in BaseStateNodeEditor.GetModifiers(n))
+                    if (m.animatableInEditor && m.gameObject.hideFlags == HideFlags.None)
+                        mods.Add(m);
+                s_mods[n] = mods;
             }
-        }
 
-        private static readonly HashSet<Modifier> s_modScratch = new();
+            // 3) Allocate everyone. Initialize registers states with Database (so
+            //    GetActiveState/GetStateID work) and sets initialized = true. From now
+            //    on each driven node behaves like a runtime-initialized node.
+            foreach (var n in s_nodes) n.Allocate();
+            foreach (var kv in s_mods) foreach (var m in kv.Value) m.Allocate();
 
-        /// <summary>
-        /// Returns animatable modifiers attached to <paramref name="node"/>. Shares
-        /// the discovery path with FieldNode previews via
-        /// <see cref="BaseStateNodeEditor.GetModifiers(BaseStateNode)"/> — runtime
-        /// uses the registered <c>nodeModifiers</c> set, edit-time falls back to a
-        /// scene scan filtered by <c>GetNode() == node</c>. We further filter by
-        /// <see cref="Modifier.animatableInEditor"/> since the preview driver only
-        /// animates the ones flagged that way.
-        /// </summary>
-        private static HashSet<Modifier> CollectAnimatableModifiers(GraphNode node)
-        {
-            s_modScratch.Clear();
-            foreach (var m in BaseStateNodeEditor.GetModifiers(node))
+            // 4) Snap each node to its current state without animating, then park its
+            //    modifiers at that state so they don't run a "from default" animation
+            //    when the preview window first opens.
+            foreach (var n in s_nodes)
             {
-                if (!m.animatableInEditor) continue;
-                s_modScratch.Add(m);
+                if (!n.isActiveAndEnabled) continue;
+                n.UpdateState(ignoreDelays: true);
+                var stateName = Database.instance.GetStateAsString(n.GetActiveState());
+                if (s_mods.TryGetValue(n, out var mods))
+                    foreach (var m in mods)
+                        m.PrepareTransition_Editor(stateName, stateName);
             }
-            return s_modScratch;
-        }
 
-        private static void ReevaluateAnimatableNodes()
-        {
-            // No-op unless something is actually being previewed.
-            if (DexterityPreview.AnimatableNodes.Count == 0) return;
-
-            foreach (var node in DexterityPreview.AnimatableNodes)
+            // 5) Bridge: subscribe a per-node handler to onStateChanged that re-primes
+            //    the node's modifiers with the new (old → new) target whenever the
+            //    node transitions during the frame loop.
+            s_handlers.Clear();
+            foreach (var n in s_nodes)
             {
-                if (node == null) continue;
-                if (node.initialized) continue;          // Live — runtime owns it
-
-                var newState = node.EvaluateTreeEditor() ?? node.initialState;
-
-                if (!s_renderedState.TryGetValue(node, out var prev))
-                {
-                    // First sighting (rare — preview-set entries are usually baselined).
-                    s_renderedState[node] = newState;
-                    continue;
-                }
-                if (newState == prev) continue;
-
-                s_renderedState[node] = newState;
-
-                // Per-node subtree scan — avoids the previous scene-global Resources scan.
-                var modifiers = CollectAnimatableModifiers(node);
-                if (modifiers.Count == 0) continue;
-                EnqueueTransition(node, new HashSet<Modifier>(modifiers), prev, newState);
+                var captured = n;
+                Action<int, int> handler = (oldS, newS) => OnNodeStateChanged(captured, oldS, newS);
+                n.onStateChanged += handler;
+                s_handlers[n] = handler;
             }
-        }
 
-        private static void EnqueueTransition(BaseStateNode owner, HashSet<Modifier> modifiers, string fromState, string toState)
-        {
-            if (string.IsNullOrEmpty(toState)) return;
-
-            s_pending[owner] = new PendingTransition
-            {
-                modifiers = modifiers,
-                fromState = string.IsNullOrEmpty(fromState) ? toState : fromState,
-                toState = toState,
-            };
-
-            if (!s_running) Pump();
-        }
-
-        private static void SetRunning(bool value)
-        {
-            if (s_running == value) return;
-            s_running = value;
+            // 6) Start the tick.
+            s_loop = EditorCoroutineUtility.StartCoroutineOwnerless(FrameLoop());
             onAnimatingChanged?.Invoke();
         }
 
-        private static void Pump()
+        private static IEnumerator FrameLoop()
         {
-            if (s_pending.Count == 0)
+            while (s_nodes.Count > 0 && Database.instance != null)
             {
-                SetRunning(false);
-                return;
+                yield return null;
+
+                // Tick nodes. MarkStateDirty every frame so each node always re-evaluates
+                // — this is what gives cross-node deps their cascade: Node B reading
+                // Node A.GetActiveState() will see A's just-applied transition next frame.
+                // (Refresh internally short-circuits when no actual change happened, so
+                // this is cheap.)
+                foreach (var n in s_nodes)
+                {
+                    if (n == null || !n.isActiveAndEnabled) continue;
+                    n.MarkStateDirty();
+                    n.Refresh();
+                }
+
+                // Tick modifiers. ProgressTime advances each one's edit-time clock; Refresh
+                // re-runs the transition strategy with that clock; IsChanged decides whether
+                // to SetDirty + RepaintAll.
+                bool anyChanged = false;
+                foreach (var kv in s_mods)
+                {
+                    foreach (var m in kv.Value)
+                    {
+                        if (m == null) continue;
+                        m.ProgressTime_Editor(Database.instance.deltaTime);
+                        try
+                        {
+                            m.Refresh();
+                            var changed = m.IsChanged();
+                            anyChanged |= changed;
+                            if (changed) EditorUtility.SetDirty(m);
+                        }
+                        catch (Exception e) { Debug.LogException(e); }
+                    }
+                }
+                if (anyChanged) SceneView.RepaintAll();
             }
 
-            SetRunning(true);
+            // Loop exited (Database destroyed or s_nodes cleared externally — usually
+            // via Stop() which also cancels this coroutine).
+            s_loop = null;
+            onAnimatingChanged?.Invoke();
+        }
 
-            var owner = s_pending.Keys.First();
-            var req = s_pending[owner];
-            s_pending.Remove(owner);
+        /// <summary>Node finished transitioning to a new state → re-prime its modifiers.</summary>
+        private static void OnNodeStateChanged(GraphNode node, int oldStateId, int newStateId)
+        {
+            if (Database.instance == null) return;
+            if (!s_mods.TryGetValue(node, out var mods)) return;
 
-            EditorCoroutineUtility.StartCoroutineOwnerless(
-                EditorTransitions.TransitionAsync(
-                    req.modifiers, req.fromState, req.toState,
-                    speed: kPreviewSpeed,
-                    onEnd: Pump));
+            var oldName = Database.instance.GetStateAsString(oldStateId);
+            var newName = Database.instance.GetStateAsString(newStateId);
+            foreach (var m in mods)
+                if (m != null) m.PrepareTransition_Editor(oldName, newName);
+        }
+
+        private static void OnOverridesChanged()
+        {
+            // Override flipped → every driven node should re-evaluate on its next
+            // Refresh. The frame loop already marks them dirty too, but doing it here
+            // synchronously means the response feels immediate.
+            if (s_loop == null) return;
+            foreach (var n in s_nodes)
+                if (n != null && n.isActiveAndEnabled) n.MarkStateDirty();
+        }
+
+        private static void Stop()
+        {
+            if (s_loop == null && s_nodes.Count == 0) return;
+            var wasRunning = s_loop != null;
+
+            if (s_loop != null) EditorCoroutineUtility.StopCoroutine(s_loop);
+            s_loop = null;
+
+            foreach (var kv in s_handlers)
+                if (kv.Key != null) kv.Key.onStateChanged -= kv.Value;
+            s_handlers.Clear();
+
+            // Wipe edit-time state on every driven node before destroying Database.
+            // Without this, `initialized` stays true and downstream NodeStateProviders
+            // read a frozen GetActiveState() — the dependent stays locked on the last
+            // preview state long after the session ended.
+            foreach (var n in s_nodes)
+                if (n != null) n.ResetEditorState();
+
+            s_mods.Clear();
+            s_nodes.Clear();
+
+            Database.Destroy();
+            if (wasRunning) onAnimatingChanged?.Invoke();
         }
     }
 }

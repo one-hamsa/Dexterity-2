@@ -22,18 +22,38 @@ namespace OneHamsa.Dexterity
     /// </summary>
     public class DexterityGraphWindow : EditorWindow
     {
+        /// <summary>
+        /// Fired by <see cref="GraphNodeEditor"/> when the user edits the stateInputs
+        /// list in the inspector. Every open graph window subscribes so its ports + edges
+        /// re-render against the new list without a manual selection change.
+        /// </summary>
+        internal static event System.Action onStateInputsEditedInInspector;
+        internal static void NotifyStateInputsEdited() => onStateInputsEditedInInspector?.Invoke();
+
         [MenuItem("Tools/Dexterity/Graph")]
         public static void Open()
         {
+            // Generic menu entry — single shared window that follows Selection.
             var w = GetWindow<DexterityGraphWindow>(false, "Dexterity Graph", true);
             w.minSize = new Vector2(480, 320);
         }
 
+        /// <summary>
+        /// Opens a fresh graph window pinned to the given node. Each call creates a
+        /// new independent window — the user can have several open at once, one per
+        /// node they're inspecting. The generic <see cref="Open"/> menu entry still
+        /// gives a single shared window that follows Selection.
+        /// </summary>
         public static void OpenFor(GraphNode node)
         {
-            Open();
-            var w = GetWindow<DexterityGraphWindow>();
+            var w = CreateWindow<DexterityGraphWindow>();
+            w.minSize = new Vector2(480, 320);
+            w.titleContent = new GUIContent(node != null
+                ? $"Graph: {node.name}"
+                : "Dexterity Graph");
+            // Pin to this node so it doesn't drift on Selection changes.
             w._pinnedNode = node;
+            if (w._pinToggle != null) w._pinToggle.SetValueWithoutNotify(true);
             w.RebuildFromSelection();
         }
 
@@ -96,6 +116,7 @@ namespace OneHamsa.Dexterity
             Undo.undoRedoPerformed += RebuildFromSelection;
             EditorApplication.hierarchyChanged += RebuildFromSelection;
             DexterityPreview.onChanged += RefreshModePill;
+            onStateInputsEditedInInspector += RebuildFromSelection;
 
             RefreshModePill();
             RebuildFromSelection();
@@ -107,6 +128,7 @@ namespace OneHamsa.Dexterity
             Undo.undoRedoPerformed -= RebuildFromSelection;
             EditorApplication.hierarchyChanged -= RebuildFromSelection;
             DexterityPreview.onChanged -= RefreshModePill;
+            onStateInputsEditedInInspector -= RebuildFromSelection;
 
             // Drop our preview-set membership cleanly.
             if (_registeredTarget != null)

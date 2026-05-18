@@ -10,7 +10,97 @@ namespace OneHamsa.Dexterity
 {
     public static class EditorTransitions
     {
-        public static IEnumerator TransitionAsync(IEnumerable<Modifier> modifiers, 
+        /// <summary>
+        /// Drive multiple modifier groups through their (fromState→toState) transitions
+        /// in parallel under a single shared <see cref="Database"/> session. Avoids the
+        /// race that one-at-a-time serialization was guarding against (each
+        /// <see cref="TransitionAsync"/> call does <c>Database.Destroy()</c> +
+        /// <c>Database.Create()</c>; running two concurrently would tear down each
+        /// other's instance). Use this when you have several independent transitions
+        /// to animate simultaneously (e.g. a parent node + dependent nodes).
+        /// </summary>
+        public static IEnumerator TransitionMultipleAsync(
+            IEnumerable<(IEnumerable<Modifier> modifiers, string fromState, string toState)> groups,
+            float speed = 1f, Action onEnd = null)
+        {
+            if (Application.isPlaying)
+            {
+                Debug.LogError($"{nameof(TransitionMultipleAsync)} called in play mode");
+                yield break;
+            }
+
+            // Flatten groups; remember per-modifier from/to so we prepare each correctly.
+            var pairs = new List<(Modifier m, string from, string to)>();
+            foreach (var (mods, from, to) in groups)
+                foreach (var m in mods)
+                    if (m != null) pairs.Add((m, from, to));
+
+            if (pairs.Count == 0) { onEnd?.Invoke(); yield break; }
+            if (pairs.Any(p => !p.m.animatableInEditor))
+            {
+                Debug.LogError($"{nameof(TransitionMultipleAsync)} called with non-animatable modifiers");
+                yield break;
+            }
+
+            // Record undo for every involved component.
+            foreach (var (m, _, _) in pairs)
+                Undo.RegisterCompleteObjectUndo(m.GetComponents<Component>().ToArray(), "Editor Transition");
+            Undo.FlushUndoRecordObjects();
+
+            void SetAllDirty()
+            {
+                foreach (var (m, _, _) in pairs)
+                {
+                    foreach (var obj in m.GetComponents<Component>().Cast<Object>())
+                        EditorUtility.SetDirty(obj);
+                    EditorUtility.SetDirty(m.gameObject);
+                }
+            }
+
+            try
+            {
+                // ONE Database session covering all parallel transitions.
+                Database.Destroy();
+                using var db = Database.Create(DexteritySettingsProvider.settings);
+
+                foreach (var (m, from, to) in pairs)
+                    m.PrepareTransition_Editor(from, to);
+
+                SetAllDirty();
+                bool anyChanged;
+                do
+                {
+                    var beforeYield = EditorApplication.timeSinceStartup;
+                    yield return null;
+                    var dt = EditorApplication.timeSinceStartup - beforeYield;
+                    if (Database.instance == null) break;
+
+                    anyChanged = false;
+                    foreach (var (m, _, _) in pairs)
+                    {
+                        if (m == null) continue;
+                        m.ProgressTime_Editor(dt * speed);
+                        try
+                        {
+                            m.Refresh();
+                            var changed = m.IsChanged();
+                            anyChanged |= changed;
+                            if (changed) EditorUtility.SetDirty(m);
+                        }
+                        catch (Exception e) { Debug.LogException(e, m); }
+                    }
+                    if (anyChanged) SceneView.RepaintAll();
+                } while (anyChanged);
+            }
+            finally
+            {
+                Database.Destroy();
+                onEnd?.Invoke();
+                SetAllDirty();
+            }
+        }
+
+        public static IEnumerator TransitionAsync(IEnumerable<Modifier> modifiers,
             string fromState, string toState, float speed = 1f, Action onEnd = null)
         {
             if (Application.isPlaying)

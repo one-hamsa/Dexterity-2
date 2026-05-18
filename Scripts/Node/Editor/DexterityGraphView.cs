@@ -10,8 +10,32 @@ namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// GraphView that visualizes and edits a single <see cref="GraphNode"/>'s graph.
-    /// Nodes correspond to the Out node and to each provider/aggregator on the host GO.
-    /// Edges are derived from each source's <see cref="DexterityEdge"/> outputs.
+    ///
+    /// <b>Data model.</b> Components on the host GameObject are the single source of
+    /// truth — every <see cref="GraphStateProvider"/> / <see cref="GraphAggregator"/>
+    /// + the <see cref="GraphNode"/> itself. Their serialized fields (<c>outputs</c>,
+    /// <c>stateInputs</c>, <c>graphPosition</c>) define the graph. The view is a
+    /// derived projection of those components — never mutated directly.
+    ///
+    /// <b>Mutation flow (visual → components):</b>
+    /// <list type="bullet">
+    /// <item>User-driven edge create/delete/move + node delete go through GraphView's
+    ///       <c>OnGraphViewChanged</c> → <see cref="CommitEdgeCreation"/> / Removal /
+    ///       <see cref="CommitMove"/> / <see cref="CommitSourceRemoval"/> — each writes
+    ///       to the underlying <see cref="SerializedObject"/> + calls
+    ///       <see cref="RequestRebuild"/>.</item>
+    /// <item>Programmatic mutations (search-window add, paste, stateInputs edit) also
+    ///       end in <see cref="RequestRebuild"/>.</item>
+    /// </list>
+    ///
+    /// <b>Rebuild flow (components → visual):</b> <see cref="RequestRebuild"/> is the
+    /// single entry point — it deduplicates within a frame (multiple mutations queue
+    /// exactly one rebuild). External events (<c>Selection</c>, <c>Undo</c>,
+    /// <c>hierarchyChanged</c>) feed in via the window's structural-diff check.
+    ///
+    /// No spaghetti: every "I changed something — please refresh" path lands in
+    /// <see cref="RequestRebuild"/>; every "actually apply the change to the model"
+    /// path runs through the GraphView-change callback above.
     /// </summary>
     public class DexterityGraphView : GraphView
     {
@@ -25,7 +49,8 @@ namespace OneHamsa.Dexterity
         private readonly Dictionary<Component, Node> _nodeByComponent = new();
         private readonly Dictionary<Port, string> _portStateName = new();   // for Out node ports
         private DexterityOutNodeView _outNodeView;
-        private bool _rebuilding;   // suppress GraphViewChange callback during programmatic clears
+        private bool _rebuilding;       // suppress GraphViewChange callback during programmatic clears
+        private bool _rebuildPending;   // de-dup multiple RequestRebuild calls within a frame
 
         public DexterityGraphView()
         {
@@ -43,10 +68,12 @@ namespace OneHamsa.Dexterity
             style.backgroundColor = new Color(0.16f, 0.16f, 0.18f);
 
             graphViewChanged = OnGraphViewChanged;
-            // Note: we deliberately do NOT set nodeCreationRequest. The default
-            // "Create Node" entry in the contextual menu would fire it and route
-            // through a SearchWindow we don't provide. Instead, BuildContextualMenu
-            // below adds explicit "Add Provider/X" + "Add Aggregator/X" entries.
+            // Spacebar + the "Create Node" context-menu entry → opens our SearchWindow.
+            nodeCreationRequest = OpenAddSourceSearchWindow;
+            // Copy / Paste / Duplicate of source nodes.
+            serializeGraphElements = SerializeForClipboard;
+            unserializeAndPaste = (op, data) => PasteFromClipboard(data);
+            canPasteSerializedData = data => data != null && data.StartsWith(kClipboardPrefix);
             this.RegisterCallback<KeyDownEvent>(OnKeyDown);
 
             // Refresh active-port highlight whenever overrides change.
@@ -54,6 +81,37 @@ namespace OneHamsa.Dexterity
             this.RegisterCallback<DetachFromPanelEvent>(_ =>
                 GraphPreviewOverrides.onChanged -= RefreshActiveHighlight);
         }
+
+        /// <summary>
+        /// Queue a graph rebuild after current event handling completes. Deduplicates —
+        /// any number of calls within a frame coalesce into one <see cref="RebuildGraph"/>.
+        /// All mutation sites in this file (and external callers like the Out-node
+        /// inspector when stateInputs changes) should go through this method rather
+        /// than scheduling their own <c>delayCall</c>.
+        /// </summary>
+        /// <param name="onAfterRebuild">Optional callback invoked once after the
+        /// rebuild completes (after node/edge instances exist). Multiple callbacks
+        /// across coalesced RequestRebuild() calls are all run in order.</param>
+        internal void RequestRebuild(System.Action onAfterRebuild = null)
+        {
+            if (onAfterRebuild != null)
+            {
+                var prev = _onAfterNextRebuild;
+                _onAfterNextRebuild = prev == null ? onAfterRebuild : () => { prev(); onAfterRebuild(); };
+            }
+            if (_rebuildPending) return;
+            _rebuildPending = true;
+            EditorApplication.delayCall += () =>
+            {
+                _rebuildPending = false;
+                RebuildGraph(_node);
+                var cb = _onAfterNextRebuild;
+                _onAfterNextRebuild = null;
+                cb?.Invoke();
+            };
+        }
+
+        private System.Action _onAfterNextRebuild;
 
         public void RebuildGraph(GraphNode node)
         {
@@ -97,53 +155,86 @@ namespace OneHamsa.Dexterity
         }
 
         /// <summary>
-        /// Highlight the currently-winning state-input port + every active edge.
-        /// An edge is active when its source's <see cref="IDexteritySource.IsActive"/>
-        /// is true. The node's <c>EvaluateTreeEditor()</c> call below ensures every
-        /// source (including aggregators via their `_cachedOutput`) reflects the
-        /// current pass — so no extra compute is needed to color edges, just a read.
+        /// Color ports as a pure projection of the data model. Edges derive their
+        /// color from port colors (via <c>Edge.UpdateEdgeControl</c>), so port
+        /// coloring is the stable channel — direct writes to <c>edgeControl</c>
+        /// get reset on every layout pass.
+        ///
+        /// <para><b>Rule (one principle, applied recursively via topo eval):</b></para>
+        /// <list type="bullet">
+        ///   <item><b>Source ports (input + output) on a provider/aggregator</b> →
+        ///         the owner's own <see cref="IDexteritySource.IsActive"/>. Aggregators
+        ///         compute IsActive from their inputs (AND/OR/etc.), so port color
+        ///         chains naturally through <c>GraphNode.EvaluateSources</c>'s topo
+        ///         order — no separate "any incoming active" heuristic.</item>
+        ///   <item><b>Out-node input ports</b> → "any connected source active" (raw
+        ///         signal indicator). Out has no IsActive of its own; each port is
+        ///         a state-input slot, and we want to see "the Press signal is on"
+        ///         even when a higher-priority state masks it.</item>
+        /// </list>
+        ///
+        /// <para>Edge between two cyan ports renders fully cyan. Cyan→gray gradient
+        /// (active source feeding a not-yet-firing aggregator) is the right visual:
+        /// "signal entering but not propagating through".</para>
         /// </summary>
         public void RefreshActiveHighlight()
         {
             if (_outNodeView == null) return;
 
-            // Reset all out-node port colors. (Edge colors are set per-edge below.)
-            foreach (var kv in _portStateName)
-                kv.Key.portColor = s_inactiveColor;
+            if (_node == null)
+            {
+                foreach (var kv in _portStateName) kv.Key.portColor = s_inactiveColor;
+                return;
+            }
 
-            if (_node == null) return;
-
-            // Drive a full evaluation so IsActive on every source is fresh.
-            // (At runtime, GetActiveState() reflects whatever the Manager last
-            //  evaluated; aggregator `_cachedOutput` lags by at most one frame.)
-            string activeState = null;
+            // Drive evaluation so every source's IsActive (and aggregator-cached
+            // outputs) reflect the current pass. Topo order inside EvaluateSources
+            // guarantees aggregator results are correct when we read them below.
             if (Application.isPlaying && _node.initialized)
-            {
-                var id = _node.GetActiveState();
-                if (id != -1) activeState = Database.instance.GetStateAsString(id);
-            }
+                _node.GetActiveState();
             else
+                _node.EvaluateTreeEditor();
+
+            var activeColor = ActiveColor;
+            var inactiveColor = s_inactiveColor;
+
+            // Source nodes: every port (in + out) reflects the source's own IsActive.
+            // Aggregator IsActive already accounts for its incoming logic, so this
+            // gives us the chain the user wants: A→B→C edges light up one step at a
+            // time as each node's IsActive flips true.
+            foreach (var kv in _nodeByComponent)
             {
-                activeState = _node.EvaluateTreeEditor() ?? _node.initialState;
+                if (kv.Value is DexteritySourceNodeView srcView && srcView.Component != null)
+                {
+                    var color = ((IDexteritySource)srcView.Component).IsActive
+                        ? activeColor : inactiveColor;
+                    srcView.OutputPort.portColor = color;
+                    if (srcView.IsAggregator && srcView.InputPort != null)
+                        srcView.InputPort.portColor = color;
+                }
             }
 
-            // Every edge: cyan if its source is active, gray otherwise. Covers
-            // provider→Out, provider→aggregator, and aggregator→Out/aggregator
-            // uniformly — they all carry a DexteritySourceNodeView on the output side.
+            // Out-node state-input ports: "any source feeding is active". Out is the
+            // sink — no IsActive of its own; each port surfaces the raw signal for
+            // its named state (visible even when priority-masked).
+            foreach (var kv in _portStateName)
+                kv.Key.portColor = AnyIncomingActive(kv.Key) ? activeColor : inactiveColor;
+
+            // Port-color changes don't auto-refresh edges — push the new colors now.
             foreach (var e in edges.ToList())
-            {
-                bool sourceActive = e.output?.node is DexteritySourceNodeView srcView
-                                    && srcView.Component != null
-                                    && ((IDexteritySource)srcView.Component).IsActive;
-                var color = sourceActive ? ActiveColor : s_inactiveColor;
-                e.edgeControl.inputColor = color;
-                e.edgeControl.outputColor = color;
-            }
+                e.UpdateEdgeControl();
+        }
 
-            // Highlight the winning state-input port (priority-respecting).
-            if (string.IsNullOrEmpty(activeState)) return;
-            var activePort = _outNodeView.GetInputPortForState(activeState);
-            if (activePort != null) activePort.portColor = ActiveColor;
+        private static bool AnyIncomingActive(Port port)
+        {
+            foreach (var e in port.connections)
+            {
+                if (e.output?.node is DexteritySourceNodeView src
+                    && src.Component != null
+                    && ((IDexteritySource)src.Component).IsActive)
+                    return true;
+            }
+            return false;
         }
 
         private void AddSourceNode(Component src, bool isAggregator)
@@ -332,7 +423,7 @@ namespace OneHamsa.Dexterity
         {
             if (snv.Component == null) return;
             Undo.DestroyObjectImmediate(snv.Component);
-            EditorApplication.delayCall += () => RebuildGraph(_node);
+            RequestRebuild();
         }
 
         private void CommitMove(Node n)
@@ -354,44 +445,102 @@ namespace OneHamsa.Dexterity
 
         public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
         {
-            // Skip base.BuildContextualMenu — its "Create Node" entry routes to
-            // nodeCreationRequest (unset) and does nothing. We provide a clear
-            // reflection-based picker instead.
-            var status = _node != null
-                ? DropdownMenuAction.Status.Normal
-                : DropdownMenuAction.Status.Disabled;
-
-            var providerTypes = TypeCache.GetTypesDerivedFrom<GraphStateProvider>()
-                .Where(t => !t.IsAbstract).OrderBy(t => t.Name).ToList();
-            var aggregatorTypes = TypeCache.GetTypesDerivedFrom<GraphAggregator>()
-                .Where(t => !t.IsAbstract).OrderBy(t => t.Name).ToList();
-
-            foreach (var t in providerTypes)
-            {
-                var type = t;
-                evt.menu.AppendAction($"Add Provider/{StripSuffix(type.Name, "Provider")}",
-                    _ => AddSourceOfType(type), status);
-            }
-            foreach (var t in aggregatorTypes)
-            {
-                var type = t;
-                evt.menu.AppendAction($"Add Aggregator/{StripSuffix(type.Name, "Aggregator")}",
-                    _ => AddSourceOfType(type), status);
-            }
-
-            if (_node == null)
-            {
-                evt.menu.AppendSeparator();
-                evt.menu.AppendAction("(select a GameObject with a GraphNode to enable)",
-                    null, DropdownMenuAction.Status.Disabled);
-            }
+            // Single entry that opens our SearchWindow picker (same as Spacebar).
+            // Base GraphView's contextual menu adds its own "Create Node" + cut/copy/paste/
+            // delete entries via nodeCreationRequest + the serialize/unserialize delegates
+            // we wired in the constructor, so we don't need to duplicate them here.
+            base.BuildContextualMenu(evt);
         }
 
-        private void AddSourceOfType(System.Type type)
+        private void OpenAddSourceSearchWindow(NodeCreationContext ctx)
         {
             if (_node == null) return;
-            Undo.AddComponent(_node.gameObject, type);
-            EditorApplication.delayCall += () => RebuildGraph(_node);
+            var provider = ScriptableObject.CreateInstance<DexterityAddSourceSearchProvider>();
+            provider.view = this;
+            // Convert screen position → graph-local so newly-added nodes spawn at the cursor.
+            var screenMouse = ctx.screenMousePosition;
+            var local = contentViewContainer.WorldToLocal(this.WorldToLocal(screenMouse));
+            provider.spawnGraphPos = local;
+            SearchWindow.Open(new SearchWindowContext(screenMouse), provider);
+        }
+
+        // ---- Copy / Paste / Duplicate ---------------------------------------
+        private const string kClipboardPrefix = "DEX_GRAPH:";
+
+        private string SerializeForClipboard(IEnumerable<GraphElement> elements)
+        {
+            // Only source nodes (providers/aggregators) are copyable. The Out node
+            // is a singleton per host and edges are derived from source outputs.
+            var sb = new System.Text.StringBuilder();
+            sb.Append(kClipboardPrefix);
+            bool first = true;
+            foreach (var e in elements)
+            {
+                if (e is not DexteritySourceNodeView snv || snv.Component == null) continue;
+                if (!first) sb.Append("\n---\n");
+                first = false;
+                sb.Append(snv.Component.GetType().AssemblyQualifiedName);
+                sb.Append("\n");
+                sb.Append(EditorJsonUtility.ToJson(snv.Component));
+            }
+            return sb.ToString();
+        }
+
+        private void PasteFromClipboard(string data)
+        {
+            if (_node == null || data == null || !data.StartsWith(kClipboardPrefix)) return;
+            var body = data.Substring(kClipboardPrefix.Length);
+            var pasted = new List<Component>();
+            foreach (var entry in body.Split(new[] { "\n---\n" }, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                var splitIdx = entry.IndexOf('\n');
+                if (splitIdx < 0) continue;
+                var typeName = entry.Substring(0, splitIdx);
+                var json = entry.Substring(splitIdx + 1);
+                var type = System.Type.GetType(typeName);
+                if (type == null) continue;
+                var newComp = Undo.AddComponent(_node.gameObject, type);
+                if (newComp == null) continue;
+                EditorJsonUtility.FromJsonOverwrite(json, newComp);
+                // Nudge position so the paste doesn't sit exactly on top of the original.
+                var so = new SerializedObject(newComp);
+                var posProp = so.FindProperty("graphPosition");
+                if (posProp != null)
+                {
+                    posProp.vector2Value = posProp.vector2Value + new Vector2(30, 30);
+                    so.ApplyModifiedProperties();
+                }
+                pasted.Add(newComp);
+            }
+            // Re-select pasted components in the graph view for immediate continued editing.
+            RequestRebuild(onAfterRebuild: () =>
+            {
+                ClearSelection();
+                foreach (var c in pasted)
+                {
+                    if (_nodeByComponent.TryGetValue(c, out var view))
+                        AddToSelection(view);
+                }
+            });
+        }
+
+        private void AddSourceOfType(System.Type type) => AddSourceOfTypeAt(type, null);
+
+        internal void AddSourceOfTypeAt(System.Type type, Vector2? graphPos)
+        {
+            if (_node == null) return;
+            var comp = Undo.AddComponent(_node.gameObject, type);
+            if (comp != null && graphPos.HasValue)
+            {
+                var so = new SerializedObject(comp);
+                var posProp = so.FindProperty("graphPosition");
+                if (posProp != null)
+                {
+                    posProp.vector2Value = graphPos.Value;
+                    so.ApplyModifiedProperties();
+                }
+            }
+            RequestRebuild();
         }
 
         private void OnKeyDown(KeyDownEvent evt)
@@ -442,12 +591,9 @@ namespace OneHamsa.Dexterity
                 "Initial / fallback state");
             body.Add(initialStateField);
 
-            var stateInputsField = new PropertyField(so.FindProperty("stateInputs"), "State inputs");
-            body.Add(stateInputsField);
-
-            // When stateInputs changes (add/remove/rename a port), rebuild ports + edges.
-            stateInputsField.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
-                EditorApplication.delayCall += () => view.RebuildGraph(node));
+            // stateInputs is edited in the GraphNode inspector — embedding the list
+            // here caused the whole graph to rebuild on every keystroke (each change
+            // event destroyed the text field and stole focus).
 
             body.Bind(so);
             extensionContainer.Add(body);
