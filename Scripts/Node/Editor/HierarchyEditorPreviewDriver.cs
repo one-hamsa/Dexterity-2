@@ -9,10 +9,8 @@ namespace OneHamsa.Dexterity
     /// <summary>
     /// Edit-time preview driver for HierarchyNodes. Subscribes once to
     /// <see cref="HierarchyPreviewOverrides.onChanged"/> and, on every change,
-    /// re-evaluates EVERY HierarchyNode in the scene, queueing a Modifier
-    /// transition for any whose state shifted. This works even when no graph
-    /// window is open and regardless of which window's tree the changed
-    /// provider belongs to.
+    /// re-evaluates every <see cref="HierarchyNode"/> in the scene, queueing
+    /// a Modifier transition for any whose state shifted.
     ///
     /// All transitions are serialized through a single coroutine because
     /// <see cref="EditorTransitions.TransitionAsync"/> owns the global Database
@@ -20,7 +18,7 @@ namespace OneHamsa.Dexterity
     /// </summary>
     internal static class HierarchyEditorPreviewDriver
     {
-        private const float kPreviewSpeed = 6f;   // crank up — preview should feel snappy
+        private const float kPreviewSpeed = 6f;
 
         private class PendingTransition
         {
@@ -43,8 +41,7 @@ namespace OneHamsa.Dexterity
         {
             if (Application.isPlaying) return;
 
-            // Group all animatable modifiers in the scene by their owning node,
-            // one Resources scan instead of one-per-node.
+            // Group all animatable modifiers in the scene by their owning node.
             var modByNode = new Dictionary<BaseStateNode, HashSet<Modifier>>();
             foreach (var m in Resources.FindObjectsOfTypeAll<Modifier>())
             {
@@ -63,8 +60,6 @@ namespace OneHamsa.Dexterity
 
                 if (!s_renderedState.TryGetValue(node, out var prev))
                 {
-                    // First sighting — record current state so subsequent changes can diff.
-                    // Don't animate from "nothing".
                     s_renderedState[node] = newState;
                     continue;
                 }

@@ -1,35 +1,36 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// Click listener for a <see cref="HierarchyNode"/>. Reads its press/hover/
-    /// disabled/hidden signals directly from <see cref="HierarchyStateProvider"/>
-    /// components in the node's subtree, matched by declared state name.
+    /// Click listener for a <see cref="HierarchyNode"/>. Reads press/hover/disabled/hidden
+    /// signals from the node's raw inputs (priority-independent) via
+    /// <see cref="HierarchyNode.GetRawInput(string)"/>.
     ///
-    /// Multiple providers per role is fine: e.g. a <c>UIPressProvider</c> and
-    /// a <c>RaycastPressProvider</c> both declaring <c>State = "Pressed"</c>
-    /// both feed the press role (OR-of-IsActive).
+    /// "Raw" means: the listener fires on press even when a higher-priority state
+    /// like <c>Disabled</c> currently masks the node's active state. If you want
+    /// priority-respecting behavior (don't react when disabled wins), prefer
+    /// <see cref="HierarchyNode.GetActiveState"/> directly in a custom listener.
     ///
-    /// Works in edit mode — the graph window's override pills drive this same
-    /// path, so press/click can be simulated without entering play.
+    /// A state name not declared on the node is treated as "no provider for that role".
+    /// Hover is permissive (no hover providers → treated as always-hovered) to preserve
+    /// the historical behavior of this listener.
     /// </summary>
     public class HierarchyNodeClickListener : BaseClickListener
     {
         [System.Serializable]
         public class Settings
         {
-            [Tooltip("State name of the press provider(s) — typically \"Pressed\".")]
+            [Tooltip("State name fed by press providers — typically \"Pressed\".")]
             public string pressedStateName = "Pressed";
 
-            [Tooltip("State name of the hover provider(s) — typically \"Hover\".")]
+            [Tooltip("State name fed by hover providers — typically \"Hover\".")]
             public string hoverStateName = "Hover";
 
-            [Tooltip("Optional. Active providers with this state suppress press semantics entirely.")]
+            [Tooltip("State name fed by disabled providers — suppresses press semantics.")]
             public string disabledStateName = "Disabled";
 
-            [Tooltip("Optional. Active providers with this state suppress press semantics entirely.")]
+            [Tooltip("State name fed by hidden providers — suppresses press semantics.")]
             public string hiddenStateName = "Hidden";
         }
 
@@ -37,11 +38,6 @@ namespace OneHamsa.Dexterity.Builtins
         protected HierarchyNode node;
 
         public Settings settings = new();
-
-        private readonly List<HierarchyStateProvider> _pressedProviders = new();
-        private readonly List<HierarchyStateProvider> _hoverProviders = new();
-        private readonly List<HierarchyStateProvider> _disabledProviders = new();
-        private readonly List<HierarchyStateProvider> _hiddenProviders = new();
 
         public HierarchyNode GetNode() => node;
 
@@ -55,46 +51,22 @@ namespace OneHamsa.Dexterity.Builtins
             }
         }
 
-        protected virtual void OnEnable()
-        {
-            CollectProvidersByState(settings.pressedStateName,  _pressedProviders);
-            CollectProvidersByState(settings.hoverStateName,    _hoverProviders);
-            CollectProvidersByState(settings.disabledStateName, _disabledProviders);
-            CollectProvidersByState(settings.hiddenStateName,   _hiddenProviders);
+        // Empty hooks so subclasses (HierarchyNodeLongPressListener) can override safely.
+        // The new model doesn't need provider subscription here — node.GetRawInput is polled.
+        protected virtual void OnEnable() { }
+        protected virtual void OnDisable() { }
 
-            foreach (var p in _pressedProviders)
-                p.onStateMayHaveChanged += OnPressMayHaveChanged;
+        protected override bool IsPressed() => node != null && node.GetRawInput(settings.pressedStateName);
+
+        protected override bool IsHover()
+        {
+            if (node == null) return false;
+            // Preserve historical permissive behavior: if no provider declares hover,
+            // treat as always-hovered (e.g. a non-spatial UI button has no hover input).
+            return !node.HasInputPort(settings.hoverStateName) || node.GetRawInput(settings.hoverStateName);
         }
 
-        protected virtual void OnDisable()
-        {
-            foreach (var p in _pressedProviders)
-                if (p != null) p.onStateMayHaveChanged -= OnPressMayHaveChanged;
-
-            _pressedProviders.Clear();
-            _hoverProviders.Clear();
-            _disabledProviders.Clear();
-            _hiddenProviders.Clear();
-        }
-
-        private void CollectProvidersByState(string stateName, List<HierarchyStateProvider> output)
-        {
-            output.Clear();
-            if (string.IsNullOrEmpty(stateName)) return;
-            foreach (var p in node.GetComponentsInChildren<HierarchyStateProvider>(includeInactive: true))
-                if (p.State == stateName) output.Add(p);
-        }
-
-        private static bool AnyActive(List<HierarchyStateProvider> providers)
-        {
-            for (var i = 0; i < providers.Count; i++)
-                if (providers[i].IsActive) return true;
-            return false;
-        }
-
-        protected override bool IsPressed()  => AnyActive(_pressedProviders);
-        protected override bool IsHover()    => _hoverProviders.Count == 0 || AnyActive(_hoverProviders);
-        protected override bool IsDisabled() => AnyActive(_disabledProviders);
-        protected override bool IsHidden()   => AnyActive(_hiddenProviders);
+        protected override bool IsDisabled() => node != null && node.GetRawInput(settings.disabledStateName);
+        protected override bool IsHidden()   => node != null && node.GetRawInput(settings.hiddenStateName);
     }
 }

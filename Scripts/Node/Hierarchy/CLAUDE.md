@@ -1,8 +1,8 @@
-<!-- Last updated: 2026-05-13 -->
+<!-- Last updated: 2026-05-17 (Phase 1 redesign — host-component model) -->
 
 # HierarchyNode — Runtime
 
-State node whose current state is computed by walking a tree of MonoBehaviour components in its transform subtree. Designed for UI-style stateful visuals where each input signal lives on its own GameObject (hover, press, "is selected", "is disabled", …) and can be authored as drop-in prefabs.
+State node whose current state is decided by an explicit list of **named state inputs** on the node, fed by **bool-output sources** (providers and aggregators) that live as components on the **same GameObject** as the node. Wiring is via serialized `DexterityEdge` lists on each source, not via the transform tree.
 
 ## Why this exists alongside FieldNode
 
@@ -10,91 +10,103 @@ State node whose current state is computed by walking a tree of MonoBehaviour co
 
 - Authoring is concentrated on one inspector.
 - The system relies on `Database` IDs and `Manager`-driven updates, so **nothing runs in edit mode** outside the narrow `EditorTransitions` preview path.
-- Cross-cutting concerns (e.g. "this prefab adds Hover behavior") have to be re-wired into the gate list every time.
 
 `HierarchyNode` flips it:
 
-- **Decoupled inputs.** Each input is a separate MonoBehaviour (`HierarchyStateProvider` subclass). Drop a `HoverProvider` prefab on any child GameObject — it self-registers with the nearest enclosing container on enable.
-- **Free-text states.** No `StateFunction` asset. State *names* are plain strings declared per provider; the active state is computed by walking the tree.
-- **Edit-time native.** Evaluation is pure string-in / string-out — no `Database`, no `Manager`. The graph window and inspector evaluate the tree synchronously whenever needed.
-- **Override-friendly.** A static `HierarchyPreviewOverrides` registry lets editor tooling pin any provider's `IsActive` to true/false/none for live preview.
+- **Decoupled inputs.** Each input is a separate MonoBehaviour (`HierarchyStateProvider` subclass), added to the host GameObject. Providers are anonymous bool sources — no state name on the provider.
+- **Explicit state list.** The Out node serializes an ordered `List<string> stateInputs` (port names = state names). First port with any active connected source wins. Falls back to `initialState`.
+- **Edges as references.** Each source has a `List<DexterityEdge> outputs`. Each edge = `{ Component target, string targetPort }`. Target is the Out node (with a port name) or another aggregator on the same GameObject.
+- **Edit-time native.** Evaluation is pure host-local component scan + bool math — no `Database`, no `Manager`. `HierarchyPreviewOverrides` lets editor tooling force any source's `IsActive`.
 
 ## Mental model
 
 ```
-HierarchyNode  (root of the tree, the BaseStateNode subclass)
-  ├── HierarchyStateProvider (leaf — declares one state, decides if it's active)
-  ├── HierarchyAggregator    (branch — combines its descendants into one state)
-  │     ├── HierarchyStateProvider
-  │     └── HierarchyStateProvider
-  └── HierarchyStateProvider
+GameObject "MyButton"
+├─ HierarchyNode  (the Out node — stateInputs: ["Disabled", "Pressed", "Hover"])
+├─ RaycastHoverProvider   ── edge → (Out, "Hover")
+├─ RaycastPressProvider   ── edge → (Out, "Pressed")
+├─ AllOfAggregator        ── edge → (Out, "Disabled")
+├─ ConstantProvider       ── edge → (AllOfAggregator)
+└─ BindingProvider        ── edge → (AllOfAggregator)
 ```
 
-Both leaves and aggregators implement `IHierarchyStateProvider`:
+All sources implement `IDexteritySource`:
 
-```
-bool TryGetState(out string state);
-IEnumerable<string> GetDeclaredStates();
+```csharp
+bool IsActive { get; }
+IReadOnlyList<DexterityEdge> Outputs { get; }
 event Action onStateMayHaveChanged;
+void NotifyExternalChanged();
 ```
 
-Evaluation is **first-match in transform-sibling order**: the node walks its direct children, the first whose `TryGetState` returns `true` wins. Aggregators interpose composite logic (rules, all-of combinations, …) before participating as if they were a single provider to their parent.
+**Evaluation: first port with any active source wins.** The Out node walks `stateInputs` in order. Aggregators are evaluated in **topological order** (their inputs are resolved first). Cycles fall back to `initialState` with an error log.
 
 ## Files in this folder
 
 | File | Purpose |
 |---|---|
-| `IHierarchyStateProvider.cs` | Provider interface — implemented by leaves and aggregators. |
-| `IHierarchyContainer.cs` | Internal interface — implemented by `HierarchyAggregator` and `HierarchyNode`. Just the register/unregister surface used by self-registering providers. |
-| `HierarchyUtils.cs` | Two helpers: `FindNearestContainer(transform)` (walk-up, mirrors `Modifier.TryFindNode`) and `CollectOrderedDirectProviders(root, output)` (DFS scan with stop-at-nested-container). |
-| `HierarchyStateProvider.cs` | Abstract leaf base. Holds the serialized `state` string. Subclasses override `bool ComputeIsActive()`. |
-| `HierarchyAggregator.cs` | Abstract branch base. Subclasses override `bool TryAggregate(orderedChildren, out result)` and `IEnumerable<string> GetDeclaredStates()`. |
-| `HierarchyNode.cs` | The `BaseStateNode` subclass. Owns root-level container registration, evaluates the tree, exposes `EvaluateTreeEditor()` for edit-time tooling. |
-| `HierarchyPreviewOverrides.cs` | Static override registry — `Set` / `Clear` / `ClearAll`, with an `onChanged` event the editor driver subscribes to globally. Lives in the runtime asmdef so overrides work in Play mode too. |
+| `DexterityEdge.cs` | Source-side edge struct: `{ Component target, string targetPort }`. |
+| `IDexteritySource.cs` | Common interface for anything with a bool output (providers + aggregators). |
+| `HierarchyStateProvider.cs` | Abstract leaf base. Anonymous bool source. Subclasses override `bool ComputeIsActive()`. |
+| `HierarchyAggregator.cs` | Abstract intermediate base. Anonymous bool source. Subclasses override `bool ComputeOutput(IReadOnlyList<bool> inputs)`. |
+| `HierarchyNode.cs` | The `BaseStateNode` subclass. Owns `stateInputs`, topo-sorted evaluation, `EvaluateTreeEditor()` for edit-time, and `GetRawInput(stateId)` for priority-independent input queries. |
+| `HierarchyPreviewOverrides.cs` | Static override registry — `Set` / `Clear` / `ClearAll` on `IDexteritySource`, with an `onChanged` event the editor driver subscribes to. Runtime asmdef so overrides work in Play mode too. |
 | `Aggregators/` | Concrete aggregator subclasses (see that folder's `CLAUDE.md`). |
 
 ## Lifecycle
 
+### Source attach/detach
+
+Each provider/aggregator's `OnEnable` calls `GetComponent<HierarchyNode>().AttachSource(this)`, which subscribes the node's `MarkStateDirty` handler to the source's `onStateMayHaveChanged`. Topology cache invalidates. `OnDisable` calls `DetachSource`.
+
+Execution order ensures the host node enables first (`Manager.nodeExecutionPriority`) before its sources (`Manager.nodeExecutionPriority + 1`).
+
 ### Runtime
 
-1. `HierarchyStateProvider.OnEnable` calls `HierarchyUtils.FindNearestContainer(transform)` and registers itself. Same for `HierarchyAggregator` (which is both a provider and a container).
-2. `HierarchyNode.Initialize` (inherited from `BaseStateNode`) registers the node and all its state names with `Database`, picks `initialStateId`, sets `stateDirty = true`.
-3. `Manager` calls `RefreshInternal` once per frame on subscribed nodes. When `stateDirty`, the node evaluates and possibly transitions.
-4. When a provider's value changes, it fires `onStateMayHaveChanged`. Containers subscribed to it forward the event up; the node sets `stateDirty`. Next `Refresh` picks it up.
+1. `HierarchyNode` initializes via `BaseStateNode.OnEnable → Initialize`. Registers states with `Database`, picks `initialStateId`.
+2. `Manager` calls `RefreshInternal` once per frame on subscribed nodes. When `stateDirty`, the node evaluates and possibly transitions.
+3. When a source's value changes, it fires `onStateMayHaveChanged`. The node sets `stateDirty = true`. Next `Refresh` re-evaluates: `EnsureCachesValid` (topo sort if dirty) → `EvaluateSources` (walks topo order) → first port with any active source wins.
 
 ### Edit time
 
-1. `OnEnable` doesn't run on plain MonoBehaviours in edit mode → no self-registration.
-2. `HierarchyGraphWindow` and `HierarchyEditorPreviewDriver` scan transform trees directly via `HierarchyUtils.CollectOrderedDirectProviders` whenever they need fresh state.
-3. `HierarchyNode.EvaluateTreeEditor()` returns the would-be state string by walking the tree — no `Database` needed.
-4. `HierarchyPreviewOverrides.Set/Clear` fires its `onChanged` event; the driver picks up and queues a Modifier transition for every node whose state shifted.
+1. Sources don't run `OnEnable` at edit time, but `OnValidate` fires `onStateMayHaveChanged` to push edit-time changes (and the inspector subscribes directly for live preview).
+2. Editor tools call `node.EvaluateTreeEditor()` to get the current state string without touching `Database`.
+3. `HierarchyPreviewOverrides.Set/Clear` fires `onChanged`; `HierarchyEditorPreviewDriver` queues Modifier transitions for every node whose state shifted.
+
+## Two query APIs on `HierarchyNode`
+
+- `GetActiveState() / activeState` — priority-respecting. The current effective state after first-match resolution. Inherited from `BaseStateNode`.
+- `GetRawInput(int stateId)` / `GetRawInput(string portName)` — **priority-independent**. Returns `true` iff any source feeding the port is currently active, even if a higher-priority state masks it. Use this when you want to react to a masked input (e.g. a click listener that fires on-press even when `Disabled` wins).
+
+Also: `HasInputPort(string)` reports whether the node declares a port with that name.
 
 ## State name discovery
 
-`HierarchyNode.GetStateNames()` returns:
+`HierarchyNode.GetStateNames()` returns the union of:
 
-- The `initialState` field's value.
-- `StateFunction.kDefaultState` (`"<Default>"`).
-- Every string returned by `IHierarchyStateProvider.GetDeclaredStates()` for every descendant provider / aggregator (recursive across aggregator subtrees too).
+- The `initialState` field's value (fallback state).
+- `StateFunction.kDefaultState` (`"<Default>"`) — always included.
+- Every string in `stateInputs`.
 
-`Modifier.SyncStates` reads this set, so `ColorModifier` / `TransformModifier` / etc. get one `Property` per discovered state automatically.
+`Modifier.SyncStates` reads this set, so modifiers get one property per state automatically.
 
 ## Override semantics
 
-`HierarchyStateProvider.IsActive` checks `HierarchyPreviewOverrides.TryGet(this, out var ov)` first. If an override exists, that value is returned regardless of `ComputeIsActive`. Otherwise falls through to subclass logic. Subclasses are responsible for being edit-time-safe — most concrete providers return `false` at edit time because their inputs aren't wired (no raycast controllers, no UI events) and that's fine; the override mechanism is how designers simulate state.
-
-Overrides apply at runtime too, which lets you cheat live game state from the graph window during testing.
+`IDexteritySource.IsActive` checks `HierarchyPreviewOverrides.TryGet(this, out var ov)` first. If an override exists, that value is returned regardless of `ComputeIsActive` / `ComputeOutput`. Overrides work on aggregators too — useful for debugging mid-graph signals.
 
 ## Cross-node dependencies
 
-`NodeStateProvider` (in `Builtins/HierarchyProviders/`) is the bridge — it's a `HierarchyStateProvider` that reports active when *another* `BaseStateNode` is in a named state. At runtime it subscribes to `targetNode.onStateChanged`; at edit time it compares strings via `targetNode.EvaluateTreeEditor()` (HierarchyNode targets only).
+`NodeStateProvider` (in `Builtins/HierarchyProviders/`) is still the bridge — a source that reports active when *another* `BaseStateNode` is in a named state. Runtime: subscribes to `targetNode.onStateChanged`; edit time: compares against `targetNode.EvaluateTreeEditor()` (HierarchyNode targets only).
 
-Graph window visualizes this as a "ghost" box of the target node, with an orange edge from the `NodeStateProvider` to it. Click the ghost to open the target's graph in a new window.
+## Phase 1 caveats
+
+- **No graph window yet.** Phase 1 ships with inspector-only authoring. The `DexterityEdge` custom drawer (under `Scripts/Node/Editor/`) restricts target dropdowns to same-host components and shows port-name dropdowns when targeting the Out node — usable but utilitarian. Phase 2 adds the new graph window.
+- **Sources are visible in the Inspector.** No `hideFlags = HideInInspector` in Phase 1 (transparency for debugging). Phase 3 hides them once authoring shifts entirely to the graph window.
 
 ## See also
 
 - `Aggregators/CLAUDE.md` — concrete aggregator subclasses.
-- `../Editor/CLAUDE.md` — inspector, graph window, preview driver.
-- `../../Builtins/HierarchyProviders/CLAUDE.md` — provider catalogue with `BaseField` ↔ provider mapping.
+- `../Editor/CLAUDE.md` — inspector, edge drawer, preview driver.
+- `../../Builtins/HierarchyProviders/CLAUDE.md` — provider catalogue.
 - `../BaseStateNode.cs` — parent class. Read this if you're adding a new node type.
 - `../FieldNode.cs` — compare against the classic node implementation.

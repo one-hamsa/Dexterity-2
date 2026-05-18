@@ -1,50 +1,39 @@
-<!-- Last updated: 2026-05-13 -->
+<!-- Last updated: 2026-05-17 (Phase 1 redesign — single-bool aggregator model) -->
 
 # HierarchyAggregator subclasses
 
-Aggregators are branch nodes in a HierarchyNode tree. They implement `IHierarchyStateProvider` (so they look like a single provider to their parent container) **and** `IHierarchyContainer` (so their child providers self-register with them instead of with the root node).
+Aggregators are intermediate sources in a Dexterity graph: they consume the bool outputs of several upstream sources, combine them into a single bool, and feed that bool to either the Out node or another aggregator.
 
-To add a new aggregator: subclass `HierarchyAggregator`, override:
+To add a new aggregator: subclass `HierarchyAggregator` and override:
 
-- `bool TryAggregate(IReadOnlyList<IHierarchyStateProvider> orderedChildren, out string result)` — strategy. Children are passed in transform-DFS order, with nested containers represented by themselves (their own subtrees are not flattened in).
-- `IEnumerable<string> GetDeclaredStates()` — every state name this aggregator can emit. Used by `HierarchyNode.GetStateNames()` so modifiers know about them.
+```csharp
+protected abstract bool ComputeOutput(IReadOnlyList<bool> inputs);
+```
 
-The base class handles registration with the parent container, child subscription (`onStateMayHaveChanged` propagation), and edit-time `OnValidate` change-firing.
+`inputs` is the IsActive value of every source whose `DexterityEdge` targets this aggregator, in stable but unspecified topological order. The base class handles override-aware `IsActive`, edge management, host attach/detach, and edit-time `OnValidate` signaling.
+
+Aggregators have no named input ports — they consume their incoming sources as a multiset of bools. (If a future use case needs labeled inputs, the schema can grow then.)
 
 ## Built-ins
 
-### `FirstMatchAggregator`
-
-Pass-through wrapper. First active child in transform order wins; the child's state name is the aggregator's output. Same semantics as the root `HierarchyNode`'s built-in behavior. Useful for **grouping** providers without changing semantics (e.g. for prefab organization) or for **nested first-match priority** within a subtree.
-
 ### `AllOfAggregator`
 
-Rule-based combiner. Each rule lists a set of required child state names; if every required state is currently active among the child providers, the rule fires and its output is the aggregator's result. Rules are evaluated in order; first match wins.
+Outputs `true` iff every connected input is active. Logical AND.
 
-**`onNoMatch` policy** controls what happens when no rule fires:
-- `PassthroughFirstActive` (default) — emit the first active child's state in sibling order. Lets you write *only the combination rules* — singletons fall through automatically. Sibling order becomes the singleton priority.
-- `Nothing` — contribute no state; the parent container falls through to its next sibling.
-
-Example UI button:
-
-```
-AllOfAggregator (onNoMatch = PassthroughFirstActive)
-  rules:
-    [Disabled, Hover] → "Disabled Hover"
-  children (sibling order = priority):
-    Disabled  (ConstantProvider)
-    Pressed   (ConstantProvider)
-    Hover     (ConstantProvider)
+```csharp
+protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
+{
+    if (inputs.Count == 0) return false;
+    foreach (var b in inputs) if (!b) return false;
+    return true;
+}
 ```
 
-| Inputs active | Wins by | Output |
-|---|---|---|
-| Disabled + Hover | rule | `Disabled Hover` |
-| Disabled | passthrough | `Disabled` |
-| Pressed (± Hover) | passthrough | `Pressed` |
-| Hover | passthrough | `Hover` |
+Example: a "Disabled" state that requires both a `ConstantProvider` (forced disable) AND a `BindingProvider` (data-driven disable) to be active simultaneously.
 
-Note that `"Hover"` is referenced *twice* across the configuration — once inside the rule's `required` list, once as a singleton passthrough fallback. There's only **one** Hover provider; reuse happens at the state-name level, not the provider level.
+## What about FirstMatch?
+
+Removed in the Phase 1 redesign. The Out node's ordered `stateInputs` IS first-match — the first port with any active source wins. If you need nested priority within a sub-graph, compose with multiple aggregators or wait for a `PriorityAggregator` (multi-output) if a real use case emerges.
 
 ## See also
 

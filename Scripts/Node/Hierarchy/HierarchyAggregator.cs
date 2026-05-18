@@ -5,100 +5,85 @@ using UnityEngine;
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// Branch node in the hierarchy tree: combines its direct child providers
-    /// (via subclass-defined logic) into a single state, and acts as a provider
-    /// to its own parent container.
+    /// Intermediate source: combines its incoming bool inputs (from other sources
+    /// whose <see cref="DexterityEdge"/>s target this aggregator) into a single
+    /// bool output via subclass-defined <see cref="ComputeOutput"/>.
+    ///
+    /// Anonymous — no state name. Routing is via the <see cref="outputs"/> edge list.
+    /// Self-attaches to the host node's source set on <see cref="OnEnable"/>.
+    ///
+    /// Aggregators have no named input ports — they consume the multiset of bools
+    /// from whichever sources happen to point at them. If a future use case requires
+    /// labeled inputs, the schema can grow then.
     /// </summary>
     [DefaultExecutionOrder(Manager.nodeExecutionPriority + 1)]
-    public abstract class HierarchyAggregator : MonoBehaviour, IHierarchyStateProvider, IHierarchyContainer
+    public abstract class HierarchyAggregator : MonoBehaviour, IDexteritySource
     {
-        private readonly HashSet<IHierarchyStateProvider> _registered = new();
-        private readonly List<IHierarchyStateProvider> _scratch = new();
-        private IHierarchyContainer _container;
+        [SerializeField, Tooltip("Outgoing edges: where this aggregator's bool output feeds.")]
+        protected List<DexterityEdge> outputs = new();
+
+        [SerializeField, HideInInspector]
+        protected Vector2 graphPosition;
 
         public event Action onStateMayHaveChanged;
 
-        public bool TryGetState(out string state)
+        public IReadOnlyList<DexterityEdge> Outputs => outputs;
+
+        /// <summary>
+        /// Subclass strategy — combine the current bool inputs into this aggregator's bool output.
+        /// Inputs are the IsActive values of all sources whose edge targets this aggregator,
+        /// in the order the host's evaluator topologically resolved them (stable but unspecified).
+        /// </summary>
+        protected abstract bool ComputeOutput(IReadOnlyList<bool> inputs);
+
+        // Re-evaluation state — managed by HierarchyNode during its eval pass.
+        [NonSerialized] internal List<IDexteritySource> incomingSources = new();
+        [NonSerialized] private bool _cachedOutput;
+
+        public bool IsActive
         {
-            _scratch.Clear();
-            HierarchyUtils.CollectOrderedDirectProviders(transform, _scratch);
-            return TryAggregate(_scratch, out state);
-        }
-
-        /// <summary>
-        /// Subclass strategy. Returns true with <paramref name="result"/> set if this
-        /// aggregator currently contributes a state; false otherwise.
-        /// </summary>
-        protected abstract bool TryAggregate(IReadOnlyList<IHierarchyStateProvider> orderedChildren, out string result);
-
-        /// <summary>
-        /// All state names this aggregator can ever output. Used to populate the node's state list.
-        /// </summary>
-        public abstract IEnumerable<string> GetDeclaredStates();
-
-        /// <summary>
-        /// Helper for aggregators that pass child states through: collects declared
-        /// states from all direct child providers in this aggregator's subtree.
-        /// </summary>
-        protected void AppendChildrenDeclaredStates(HashSet<string> output)
-        {
-            var list = new List<IHierarchyStateProvider>();
-            HierarchyUtils.CollectOrderedDirectProviders(transform, list);
-            foreach (var p in list)
+            get
             {
-                if (p == null) continue;
-                foreach (var s in p.GetDeclaredStates())
-                    output.Add(s);
+                if (HierarchyPreviewOverrides.TryGet(this, out var overridden))
+                    return overridden;
+
+                if (!isActiveAndEnabled)
+                    return false;
+
+                return _cachedOutput;
             }
         }
 
-        #region IHierarchyContainer
-        void IHierarchyContainer.RegisterProvider(IHierarchyStateProvider provider)
+        /// <summary>
+        /// Called by <see cref="HierarchyNode"/> in topological order during evaluation.
+        /// <paramref name="cache"/> contains pre-computed IsActive for every source already
+        /// processed in this pass (including this aggregator's inputs).
+        /// </summary>
+        internal void RecomputeFrom(Dictionary<IDexteritySource, bool> cache, List<bool> scratch)
         {
-            if (_registered.Add(provider))
+            scratch.Clear();
+            for (var i = 0; i < incomingSources.Count; i++)
             {
-                provider.onStateMayHaveChanged += OnChildChanged;
-                OnChildChanged();
+                var src = incomingSources[i];
+                if (src == null) continue;
+                scratch.Add(cache.TryGetValue(src, out var v) && v);
             }
+            _cachedOutput = ComputeOutput(scratch);
         }
 
-        void IHierarchyContainer.UnregisterProvider(IHierarchyStateProvider provider)
-        {
-            if (_registered.Remove(provider))
-            {
-                provider.onStateMayHaveChanged -= OnChildChanged;
-                OnChildChanged();
-            }
-        }
-        #endregion
-
-        private void OnChildChanged() => onStateMayHaveChanged?.Invoke();
+        public void NotifyExternalChanged() => onStateMayHaveChanged?.Invoke();
 
         protected virtual void OnEnable()
         {
-            _container = HierarchyUtils.FindNearestContainer(transform);
-            _container?.RegisterProvider(this);
+            if (TryGetComponent<HierarchyNode>(out var node))
+                node.AttachSource(this);
         }
 
         protected virtual void OnDisable()
         {
-            _container?.UnregisterProvider(this);
-            _container = null;
-
-            // unsubscribe from any still-registered children to avoid leaks
-            foreach (var p in _registered)
-                p.onStateMayHaveChanged -= OnChildChanged;
-            _registered.Clear();
-
+            if (TryGetComponent<HierarchyNode>(out var node))
+                node.DetachSource(this);
             onStateMayHaveChanged?.Invoke();
-        }
-
-        protected virtual void OnTransformParentChanged()
-        {
-            if (!isActiveAndEnabled) return;
-            _container?.UnregisterProvider(this);
-            _container = HierarchyUtils.FindNearestContainer(transform);
-            _container?.RegisterProvider(this);
         }
 
 #if UNITY_EDITOR

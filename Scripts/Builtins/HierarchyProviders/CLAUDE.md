@@ -1,13 +1,15 @@
-<!-- Last updated: 2026-05-13 -->
+<!-- Last updated: 2026-05-17 (Phase 1 redesign — anonymous providers) -->
 
 # HierarchyProviders — Built-in leaf provider catalogue
 
-Each file here is a concrete `HierarchyStateProvider` subclass that ports an existing `BaseField` to the HierarchyNode system. Drop one on any GameObject under a `HierarchyNode` (or under an intermediate `HierarchyAggregator`) and it self-registers on enable.
+Each file here is a concrete `HierarchyStateProvider` subclass that ports an existing `BaseField` to the HierarchyNode system. Add one to the same GameObject as your `HierarchyNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an aggregator).
 
 Each provider has:
-- A serialized `state` string (free text — the state name it reports when active).
+- A `List<DexterityEdge> outputs` (inherited from base) — where its bool output is fed.
 - Subclass-specific input fields (raycast tag, binding target, target node, etc.).
-- A `ComputeIsActive()` override that returns whether the provider is currently contributing its state.
+- A `ComputeIsActive()` override that returns the bool this provider currently contributes.
+
+Providers are **anonymous** — no state name on the provider. The state name is determined by which port the output edge feeds.
 
 ## Catalogue
 
@@ -28,7 +30,7 @@ Each provider has:
 
 **Polling providers** (Binding, Enum, Raycast): an internal `Update()` method compares current `ComputeIsActive()` against a cached `_lastActive` and fires `MarkChanged()` on diff. Necessary when the underlying source doesn't expose a change event.
 
-**Constant providers**: trivial — `ComputeIsActive()` returns the serialized flag directly. Useful as terminal fallback at the end of a sibling list.
+**Constant providers**: trivial — `ComputeIsActive()` returns the serialized flag directly. Useful as a terminal fallback at the end of an aggregator's inputs.
 
 ## Note on `NodeStateProvider`
 
@@ -36,7 +38,7 @@ Edit-time behavior is special. The base `IsActive` getter calls `ComputeIsActive
 - Runtime: compares `targetNode.GetActiveState()` (int) against a cached state ID.
 - Edit-time: compares `targetNode.EvaluateTreeEditor()` (string) against `targetState` — works for `HierarchyNode` targets without `Database`.
 
-This means cross-node dependencies "just work" in the graph window: toggle a provider override in Node A, Node B's `NodeStateProvider`s that target Node A see the change immediately.
+This means cross-node dependencies "just work" at edit time: toggle a provider override in Node A, Node B's `NodeStateProvider`s that target Node A see the change immediately via the driver.
 
 ## Adding a new provider
 

@@ -8,14 +8,14 @@ namespace OneHamsa.Dexterity
     [CustomEditor(typeof(HierarchyNode)), CanEditMultipleObjects]
     public class HierarchyNodeEditor : BaseStateNodeEditor
     {
-        private static bool s_treeFoldout = true;
+        private static bool s_sourcesFoldout = true;
 
         private HierarchyNode node => (HierarchyNode)target;
 
         private bool _livePreviewEnabled;
         private string _renderedState;
         private EditorCoroutine _transitionCoroutine;
-        private readonly HashSet<IHierarchyStateProvider> _subscribed = new();
+        private readonly HashSet<IDexteritySource> _subscribed = new();
 
         public override void OnInspectorGUI()
         {
@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity
         {
             DrawAggregatedResult();
             DrawOpenGraphButton();
-            DrawProviderTree();
+            DrawSources();
             DrawLivePreviewToggle();
         }
 
@@ -37,7 +37,7 @@ namespace OneHamsa.Dexterity
             if (GUILayout.Button(new GUIContent("Open Hierarchy Graph",
                     "Open the graph window for this node — interactive overrides drive Modifiers live.")))
             {
-                HierarchyGraphWindow.OpenFor(node);
+                DexterityGraphWindow.OpenFor(node);
             }
         }
 
@@ -70,90 +70,50 @@ namespace OneHamsa.Dexterity
             GUI.color = origColor;
         }
 
-        private void DrawProviderTree()
+        private void DrawSources()
         {
             if (targets.Length > 1) return;
 
-            s_treeFoldout = EditorGUILayout.Foldout(
-                s_treeFoldout, "Providers", true, EditorStyles.foldoutHeader);
-            if (!s_treeFoldout) return;
+            s_sourcesFoldout = EditorGUILayout.Foldout(
+                s_sourcesFoldout, "Sources on host", true, EditorStyles.foldoutHeader);
+            if (!s_sourcesFoldout) return;
 
             EditorGUI.indentLevel++;
-            DrawSubtree(node.transform);
+            foreach (var p in node.GetComponents<HierarchyStateProvider>())
+                DrawSourceRow(p, isAggregator: false);
+            foreach (var a in node.GetComponents<HierarchyAggregator>())
+                DrawSourceRow(a, isAggregator: true);
             EditorGUI.indentLevel--;
         }
 
-        private void DrawSubtree(Transform parent)
+        private void DrawSourceRow(Component src, bool isAggregator)
         {
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                var child = parent.GetChild(i);
+            var srcAsSource = (IDexteritySource)src;
 
-                if (child.TryGetComponent<HierarchyAggregator>(out var agg))
-                {
-                    DrawAggregatorRow(agg);
-                    EditorGUI.indentLevel++;
-                    DrawSubtree(child);
-                    EditorGUI.indentLevel--;
-                    continue;
-                }
-
-                // a nested node owns its own subtree
-                if (child.TryGetComponent<HierarchyNode>(out _))
-                    continue;
-
-                if (child.TryGetComponent<HierarchyStateProvider>(out var leaf))
-                    DrawLeafRow(leaf);
-
-                DrawSubtree(child);
-            }
-        }
-
-        private void DrawLeafRow(HierarchyStateProvider leaf)
-        {
             EditorGUILayout.BeginHorizontal();
 
-            var active = leaf.IsActive;
+            var active = srcAsSource.IsActive;
             var origColor = GUI.color;
-            GUI.color = active ? Color.green : new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = active
+                ? (isAggregator ? Color.yellow : Color.green)
+                : new Color(0.6f, 0.6f, 0.6f);
+
+            var typeLabel = src.GetType().Name;
             EditorGUILayout.LabelField(
-                new GUIContent($"{leaf.name} : {leaf.State}", leaf.GetType().Name),
-                GUILayout.MinWidth(120));
+                new GUIContent(typeLabel, isAggregator ? "Aggregator on host" : "Provider on host"),
+                GUILayout.MinWidth(180));
             GUI.color = origColor;
 
-            // Tri-state override toggle (— / ON / OFF) — same registry the graph window uses.
-            var hasOverride = HierarchyPreviewOverrides.TryGet(leaf, out var ov);
+            // Tri-state override toggle (— / ON / OFF).
+            var hasOverride = HierarchyPreviewOverrides.TryGet(srcAsSource, out var ov);
             var label = !hasOverride ? "—" : ov ? "ON" : "OFF";
             if (GUILayout.Button(new GUIContent(label, "Override IsActive: — / ON / OFF"),
                     EditorStyles.miniButton, GUILayout.Width(36)))
             {
-                if (!hasOverride) HierarchyPreviewOverrides.Set(leaf, true);
-                else if (ov) HierarchyPreviewOverrides.Set(leaf, false);
-                else HierarchyPreviewOverrides.Clear(leaf);
+                if (!hasOverride) HierarchyPreviewOverrides.Set(srcAsSource, true);
+                else if (ov) HierarchyPreviewOverrides.Set(srcAsSource, false);
+                else HierarchyPreviewOverrides.Clear(srcAsSource);
             }
-
-            if (GUILayout.Button("Select", GUILayout.MaxWidth(60)))
-                Selection.activeObject = leaf;
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawAggregatorRow(HierarchyAggregator agg)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            var aggState = agg.TryGetState(out var s) ? s : null;
-            var origColor = GUI.color;
-            GUI.color = !string.IsNullOrEmpty(aggState)
-                ? Color.yellow
-                : new Color(0.6f, 0.6f, 0.6f);
-
-            var label = $"{agg.name}  [{agg.GetType().Name}]  →  {(string.IsNullOrEmpty(aggState) ? "(idle)" : aggState)}";
-            EditorGUILayout.LabelField(new GUIContent(label), GUILayout.MinWidth(180));
-            GUI.color = origColor;
-
-            if (GUILayout.Button("Select", GUILayout.MaxWidth(60)))
-                Selection.activeObject = agg;
 
             EditorGUILayout.EndHorizontal();
         }
@@ -174,7 +134,7 @@ namespace OneHamsa.Dexterity
                 _livePreviewEnabled = newVal;
                 if (_livePreviewEnabled)
                 {
-                    SubscribeToAllProviders();
+                    SubscribeToAllSources();
                     _renderedState = node.EvaluateTreeEditor() ?? node.initialState;
                 }
                 else
@@ -199,44 +159,32 @@ namespace OneHamsa.Dexterity
 
         private void OnHierarchyChanged()
         {
-            if (_livePreviewEnabled) SubscribeToAllProviders();
+            if (_livePreviewEnabled) SubscribeToAllSources();
             Repaint();
         }
 
-        private void SubscribeToAllProviders()
+        private void SubscribeToAllSources()
         {
             UnsubscribeFromAll();
             if (node == null) return;
 
-            CollectAllProviders(node.transform, _subscribed);
-            foreach (var p in _subscribed)
-                p.onStateMayHaveChanged += OnProviderChanged;
+            foreach (var p in node.GetComponents<HierarchyStateProvider>())
+                _subscribed.Add(p);
+            foreach (var a in node.GetComponents<HierarchyAggregator>())
+                _subscribed.Add(a);
+
+            foreach (var s in _subscribed)
+                s.onStateMayHaveChanged += OnSourceChanged;
         }
 
         private void UnsubscribeFromAll()
         {
-            foreach (var p in _subscribed)
-                p.onStateMayHaveChanged -= OnProviderChanged;
+            foreach (var s in _subscribed)
+                if (s != null) s.onStateMayHaveChanged -= OnSourceChanged;
             _subscribed.Clear();
         }
 
-        private static void CollectAllProviders(Transform root, HashSet<IHierarchyStateProvider> output)
-        {
-            for (var i = 0; i < root.childCount; i++)
-            {
-                var c = root.GetChild(i);
-                if (c.TryGetComponent<HierarchyNode>(out _)) continue; // nested node owns its subtree
-
-                if (c.TryGetComponent<HierarchyAggregator>(out var agg))
-                    output.Add(agg);
-                if (c.TryGetComponent<HierarchyStateProvider>(out var leaf))
-                    output.Add(leaf);
-
-                CollectAllProviders(c, output);
-            }
-        }
-
-        private void OnProviderChanged()
+        private void OnSourceChanged()
         {
             if (target == null) return;
 
