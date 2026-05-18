@@ -16,7 +16,7 @@ Aggregators have no named input ports — they consume their incoming sources as
 
 ## Built-ins
 
-### `AllOfAggregator`
+### `AndAggregator`
 
 Outputs `true` iff every connected input is active. Logical AND.
 

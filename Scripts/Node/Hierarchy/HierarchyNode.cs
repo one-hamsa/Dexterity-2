@@ -63,6 +63,12 @@ namespace OneHamsa.Dexterity
         private readonly Dictionary<IDexteritySource, bool> _activeCache = new();
         private readonly List<bool> _aggInputScratch = new();
 
+        // Runtime-only: state-input port names resolved to Database int IDs.
+        // Built lazily on first runtime access (Database may not be alive at edit time).
+        // Parallel to stateInputs (same index, length == stateInputs.Count).
+        [System.NonSerialized] private int[] _stateInputIds;
+        [System.NonSerialized] private bool _idsDirty = true;
+
         private readonly HashSet<IDexteritySource> _liveScratch = new();
 
         private void EnsureCachesValid()
@@ -191,9 +197,13 @@ namespace OneHamsa.Dexterity
         // -- BaseStateNode overrides --------------------------------------------
         public override HashSet<string> GetStateNames()
         {
+            // initialState + every stateInputs entry. We deliberately do NOT
+            // auto-add StateFunction.kDefaultState ("<Default>") — historically that
+            // produced a duplicate "default-ish" state in modifiers whenever the
+            // designer set initialState to anything other than "<Default>". The
+            // initialState already serves as the fallback name.
             var set = new HashSet<string>();
-            set.Add(initialState);
-            set.Add(StateFunction.kDefaultState);
+            if (!string.IsNullOrEmpty(initialState)) set.Add(initialState);
             for (var i = 0; i < stateInputs.Count; i++)
             {
                 var s = stateInputs[i];
@@ -209,12 +219,13 @@ namespace OneHamsa.Dexterity
             EnsureCachesValid();
             if (_topoCycleDetected) return initialStateId;
             EvaluateSources();
+            EnsureStateIdCache();
 
             for (var i = 0; i < stateInputs.Count; i++)
             {
                 var port = stateInputs[i];
                 if (!string.IsNullOrEmpty(port) && PortIsActive(port))
-                    return Database.instance.GetStateID(port);
+                    return _stateInputIds[i];
             }
             return initialStateId;
         }
@@ -246,7 +257,17 @@ namespace OneHamsa.Dexterity
         /// (e.g. a click listener that fires on press even when <c>Disabled</c> wins).
         /// </summary>
         public bool GetRawInput(int stateId)
-            => GetRawInput(Database.instance.GetStateAsString(stateId));
+        {
+            EnsureCachesValid();
+            if (_topoCycleDetected) return false;
+            EvaluateSources();
+            EnsureStateIdCache();
+            for (var i = 0; i < _stateInputIds.Length; i++)
+            {
+                if (_stateInputIds[i] == stateId) return PortIsActive(stateInputs[i]);
+            }
+            return false;
+        }
 
         public bool GetRawInput(string portName)
         {
@@ -255,6 +276,26 @@ namespace OneHamsa.Dexterity
             if (_topoCycleDetected) return false;
             EvaluateSources();
             return PortIsActive(portName);
+        }
+
+        private void EnsureStateIdCache()
+        {
+            if (!_idsDirty && _stateInputIds != null && _stateInputIds.Length == stateInputs.Count) return;
+            if (_stateInputIds == null || _stateInputIds.Length != stateInputs.Count)
+                _stateInputIds = new int[stateInputs.Count];
+            for (var i = 0; i < stateInputs.Count; i++)
+            {
+                var port = stateInputs[i];
+                _stateInputIds[i] = string.IsNullOrEmpty(port) ? -1 : Database.instance.GetStateID(port);
+            }
+            _idsDirty = false;
+        }
+
+        protected override void Initialize()
+        {
+            base.Initialize();
+            _idsDirty = true;
+            EnsureStateIdCache();
         }
 
         /// <summary>Does this node declare a state-input port with the given name?</summary>
@@ -273,6 +314,7 @@ namespace OneHamsa.Dexterity
         {
             base.OnValidate();
             _topoDirty = true;
+            _idsDirty = true;
         }
 #endif
     }

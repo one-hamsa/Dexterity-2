@@ -98,7 +98,8 @@ namespace OneHamsa.Dexterity
                 ? (isAggregator ? Color.yellow : Color.green)
                 : new Color(0.6f, 0.6f, 0.6f);
 
-            var typeLabel = src.GetType().Name;
+            var typeLabel = DexterityGraphView.StripSuffix(src.GetType().Name,
+                isAggregator ? "Aggregator" : "Provider");
             EditorGUILayout.LabelField(
                 new GUIContent(typeLabel, isAggregator ? "Aggregator on host" : "Provider on host"),
                 GUILayout.MinWidth(180));

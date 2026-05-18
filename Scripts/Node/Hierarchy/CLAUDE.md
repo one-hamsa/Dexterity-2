@@ -25,9 +25,9 @@ GameObject "MyButton"
 ├─ HierarchyNode  (the Out node — stateInputs: ["Disabled", "Pressed", "Hover"])
 ├─ RaycastHoverProvider   ── edge → (Out, "Hover")
 ├─ RaycastPressProvider   ── edge → (Out, "Pressed")
-├─ AllOfAggregator        ── edge → (Out, "Disabled")
-├─ ConstantProvider       ── edge → (AllOfAggregator)
-└─ BindingProvider        ── edge → (AllOfAggregator)
+├─ AndAggregator        ── edge → (Out, "Disabled")
+├─ ConstantProvider       ── edge → (AndAggregator)
+└─ BindingProvider        ── edge → (AndAggregator)
 ```
 
 All sources implement `IDexteritySource`:
@@ -85,10 +85,13 @@ Also: `HasInputPort(string)` reports whether the node declares a port with that 
 `HierarchyNode.GetStateNames()` returns the union of:
 
 - The `initialState` field's value (fallback state).
-- `StateFunction.kDefaultState` (`"<Default>"`) — always included.
 - Every string in `stateInputs`.
 
 `Modifier.SyncStates` reads this set, so modifiers get one property per state automatically.
+
+> Note: prior versions auto-added `StateFunction.kDefaultState` ("<Default>"). That
+> produced a duplicate "default-ish" property whenever the designer set `initialState`
+> to anything else. Dropped — initialState is now the single fallback name.
 
 ## Override semantics
 

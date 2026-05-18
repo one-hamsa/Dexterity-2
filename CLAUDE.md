@@ -16,7 +16,7 @@ Dexterity has two ways to compute a node's current state. Pick the one that matc
 | **Authoring** | One central inspector on the node — gates + step tree | Add provider/aggregator components to the host GO; edit each one's outputs list (Phase 2 will add a graph window) |
 | **Evaluation** | Field bitmask + DFS step tree | Topologically-ordered bool evaluation of all sources on host; first state-input port with any active source wins |
 | **Edit-time** | Only runs inside the narrow `EditorTransitions` preview path | Always evaluable (host-local component scan + bool math); per-source override pills drive Modifier preview |
-| **State names** | Auto-discovered from the StateFunction | Explicit `List<string> stateInputs` on the Out node, plus `initialState` and `kDefaultState` |
+| **State names** | Auto-discovered from the StateFunction | Explicit `List<string> stateInputs` on the Out node, plus `initialState` (the fallback) |
 | **Built-in inputs** | `BaseField` subclasses: hover, press, raycast, binding, enum, node-state, constant, parent, children, AND, OR, … | `HierarchyStateProvider` subclasses (anonymous bool sources): hover, press, raycast, binding, enum, node-state, constant |
 | **Reuse pattern** | Wire same `BaseField` instance into multiple gates | Anonymous source can fan out via multiple edges; intermediate `HierarchyAggregator`s combine bools |
 | **Best for** | Complex logic-driven nodes with reusable `NodeReference` assets | UI components with drop-in inputs and live edit-mode previewing |
@@ -42,7 +42,7 @@ Scripts/
       HierarchyNode.cs                 — the Out node with stateInputs list + topo evaluation
       HierarchyPreviewOverrides.cs     — global IsActive override registry
       Aggregators/                     see Aggregators/CLAUDE.md
-        AllOfAggregator.cs             — logical AND over connected inputs
+        AndAggregator.cs             — logical AND over connected inputs (was AllOfAggregator)
     Editor/                            see Editor/CLAUDE.md
       ... (existing FieldNode editors)
       HierarchyNodeEditor.cs           — inspector with state banner + source list

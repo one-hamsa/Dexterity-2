@@ -14,6 +14,10 @@ namespace OneHamsa.Dexterity
     /// </summary>
     public class DexterityGraphView : GraphView
     {
+        // Highlight colors for the currently-winning state-input port + its edges.
+        internal static readonly Color s_activeColor = new Color(0.35f, 0.95f, 0.85f);
+        internal static readonly Color s_inactiveColor = new Color(0.55f, 0.55f, 0.55f);
+
         private HierarchyNode _node;
         private readonly Dictionary<Component, Node> _nodeByComponent = new();
         private readonly Dictionary<Port, string> _portStateName = new();   // for Out node ports
@@ -36,8 +40,16 @@ namespace OneHamsa.Dexterity
             style.backgroundColor = new Color(0.16f, 0.16f, 0.18f);
 
             graphViewChanged = OnGraphViewChanged;
-            nodeCreationRequest = ctx => ShowNodeCreationMenu(ctx);
+            // Note: we deliberately do NOT set nodeCreationRequest. The default
+            // "Create Node" entry in the contextual menu would fire it and route
+            // through a SearchWindow we don't provide. Instead, BuildContextualMenu
+            // below adds explicit "Add Provider/X" + "Add Aggregator/X" entries.
             this.RegisterCallback<KeyDownEvent>(OnKeyDown);
+
+            // Refresh active-port highlight whenever overrides change.
+            HierarchyPreviewOverrides.onChanged += RefreshActiveHighlight;
+            this.RegisterCallback<DetachFromPanelEvent>(_ =>
+                HierarchyPreviewOverrides.onChanged -= RefreshActiveHighlight);
         }
 
         public void RebuildGraph(HierarchyNode node)
@@ -76,6 +88,57 @@ namespace OneHamsa.Dexterity
 
             // Build edges
             BuildEdges();
+
+            // Apply initial active-port + edge highlight.
+            RefreshActiveHighlight();
+        }
+
+        /// <summary>
+        /// Highlight the currently-winning state-input port and the edges feeding it.
+        /// At edit time, uses <see cref="HierarchyNode.EvaluateTreeEditor"/>.
+        /// At runtime, uses <see cref="BaseStateNode.GetActiveState"/>.
+        /// </summary>
+        public void RefreshActiveHighlight()
+        {
+            if (_outNodeView == null) return;
+
+            // Reset all out-node port + edge colors to inactive.
+            foreach (var kv in _portStateName)
+            {
+                kv.Key.portColor = s_inactiveColor;
+            }
+            foreach (var e in edges.ToList())
+            {
+                e.edgeControl.inputColor = s_inactiveColor;
+                e.edgeControl.outputColor = s_inactiveColor;
+            }
+
+            if (_node == null) return;
+
+            string activeState = null;
+            if (Application.isPlaying && _node.initialized)
+            {
+                var id = _node.GetActiveState();
+                if (id != -1) activeState = Database.instance.GetStateAsString(id);
+            }
+            else
+            {
+                activeState = _node.EvaluateTreeEditor() ?? _node.initialState;
+            }
+            if (string.IsNullOrEmpty(activeState)) return;
+
+            var activePort = _outNodeView.GetInputPortForState(activeState);
+            if (activePort == null) return;
+
+            activePort.portColor = s_activeColor;
+            foreach (var e in edges.ToList())
+            {
+                if (e.input == activePort)
+                {
+                    e.edgeControl.inputColor = s_activeColor;
+                    e.edgeControl.outputColor = s_activeColor;
+                }
+            }
         }
 
         private void AddSourceNode(Component src, bool isAggregator)
@@ -286,8 +349,12 @@ namespace OneHamsa.Dexterity
 
         public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
         {
-            base.BuildContextualMenu(evt);
-            if (_node == null) return;
+            // Skip base.BuildContextualMenu — its "Create Node" entry routes to
+            // nodeCreationRequest (unset) and does nothing. We provide a clear
+            // reflection-based picker instead.
+            var status = _node != null
+                ? DropdownMenuAction.Status.Normal
+                : DropdownMenuAction.Status.Disabled;
 
             var providerTypes = TypeCache.GetTypesDerivedFrom<HierarchyStateProvider>()
                 .Where(t => !t.IsAbstract).OrderBy(t => t.Name).ToList();
@@ -297,37 +364,22 @@ namespace OneHamsa.Dexterity
             foreach (var t in providerTypes)
             {
                 var type = t;
-                evt.menu.AppendAction($"Add Provider/{type.Name}",
-                    _ => AddSourceOfType(type),
-                    DropdownMenuAction.Status.Normal);
+                evt.menu.AppendAction($"Add Provider/{StripSuffix(type.Name, "Provider")}",
+                    _ => AddSourceOfType(type), status);
             }
-            evt.menu.AppendSeparator("Add Provider/");
             foreach (var t in aggregatorTypes)
             {
                 var type = t;
-                evt.menu.AppendAction($"Add Aggregator/{type.Name}",
-                    _ => AddSourceOfType(type),
-                    DropdownMenuAction.Status.Normal);
+                evt.menu.AppendAction($"Add Aggregator/{StripSuffix(type.Name, "Aggregator")}",
+                    _ => AddSourceOfType(type), status);
             }
-        }
 
-        private void ShowNodeCreationMenu(NodeCreationContext ctx)
-        {
-            // Spacebar / two-finger-tap entry point — same menu as right-click, just centered.
-            var menu = new GenericMenu();
-            foreach (var t in TypeCache.GetTypesDerivedFrom<HierarchyStateProvider>())
+            if (_node == null)
             {
-                if (t.IsAbstract) continue;
-                var type = t;
-                menu.AddItem(new GUIContent($"Provider/{type.Name}"), false, () => AddSourceOfType(type));
+                evt.menu.AppendSeparator();
+                evt.menu.AppendAction("(select a GameObject with a HierarchyNode to enable)",
+                    null, DropdownMenuAction.Status.Disabled);
             }
-            foreach (var t in TypeCache.GetTypesDerivedFrom<HierarchyAggregator>())
-            {
-                if (t.IsAbstract) continue;
-                var type = t;
-                menu.AddItem(new GUIContent($"Aggregator/{type.Name}"), false, () => AddSourceOfType(type));
-            }
-            menu.ShowAsContext();
         }
 
         private void AddSourceOfType(System.Type type)
@@ -344,6 +396,13 @@ namespace OneHamsa.Dexterity
                 DeleteSelection();
                 evt.StopPropagation();
             }
+        }
+
+        internal static string StripSuffix(string name, string suffix)
+        {
+            if (name.EndsWith(suffix) && name.Length > suffix.Length)
+                return name.Substring(0, name.Length - suffix.Length);
+            return name;
         }
     }
 
@@ -433,11 +492,17 @@ namespace OneHamsa.Dexterity
         public Port OutputPort { get; private set; }
         public Port InputPort { get; private set; }   // aggregators only
 
+        private readonly DexterityGraphView _view;
+        private Button _stateBtn;
+        private Toggle _overrideToggle;
+
         public DexteritySourceNodeView(Component component, DexterityGraphView view, bool isAggregator)
         {
             Component = component;
             IsAggregator = isAggregator;
-            title = component.GetType().Name;
+            _view = view;
+            title = DexterityGraphView.StripSuffix(component.GetType().Name,
+                isAggregator ? "Aggregator" : "Provider");
             titleContainer.style.backgroundColor = isAggregator
                 ? new Color(0.70f, 0.55f, 0.15f)   // amber
                 : new Color(0.20f, 0.55f, 0.20f);  // green
@@ -455,18 +520,30 @@ namespace OneHamsa.Dexterity
             OutputPort.portName = "out";
             outputContainer.Add(OutputPort);
 
-            // Override pill (— / ON / OFF)
-            var overrideBtn = new Button(() => CycleOverride()) { text = "—" };
-            overrideBtn.style.width = 36f;
-            titleContainer.Add(overrideBtn);
-            // Refresh pill label each layout pass.
-            overrideBtn.schedule.Execute(() =>
-            {
-                if (Component == null) return;
-                var src = (IDexteritySource)Component;
-                overrideBtn.text = HierarchyPreviewOverrides.TryGet(src, out var ov)
-                    ? (ov ? "ON" : "OFF") : "—";
-            }).Every(200);
+            // Binary ON/OFF toggle (colored) + small "override" checkbox.
+            // Clicking ON/OFF auto-enables override. Unchecking override clears it.
+            _stateBtn = new Button(OnStateButtonClicked) { text = "OFF" };
+            _stateBtn.style.width = 44f;
+            _stateBtn.style.marginLeft = 4f;
+            _stateBtn.style.marginRight = 0f;
+            _stateBtn.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _stateBtn.tooltip = "Override IsActive. Click to flip; auto-enables override.";
+            titleContainer.Add(_stateBtn);
+
+            _overrideToggle = new Toggle { value = false };
+            _overrideToggle.style.marginLeft = 2f;
+            _overrideToggle.style.marginRight = 4f;
+            _overrideToggle.tooltip = "Override active";
+            _overrideToggle.RegisterValueChangedCallback(OnOverrideToggled);
+            titleContainer.Add(_overrideToggle);
+
+            // Periodic refresh — handles both override changes and real IsActive changes.
+            // Also pokes the view to refresh active-port highlighting (catches changes
+            // made directly to source fields without going through the override registry).
+            _stateBtn.schedule.Execute(() => {
+                RefreshOverrideUI();
+                _view?.RefreshActiveHighlight();
+            }).Every(150);
 
             // Embedded inspector (default inspector minus outputs + graphPosition + m_Script).
             var imgui = new IMGUIContainer(() => DrawSourceInspector(component));
@@ -476,16 +553,49 @@ namespace OneHamsa.Dexterity
             RefreshPorts();
         }
 
-        private void CycleOverride()
+        private void OnStateButtonClicked()
         {
             if (Component == null) return;
             var src = (IDexteritySource)Component;
-            if (!HierarchyPreviewOverrides.TryGet(src, out var ov))
-                HierarchyPreviewOverrides.Set(src, true);
-            else if (ov)
-                HierarchyPreviewOverrides.Set(src, false);
+            // Flip the current value. Auto-enables override (Set always overrides).
+            bool current = HierarchyPreviewOverrides.TryGet(src, out var ov) ? ov : src.IsActive;
+            HierarchyPreviewOverrides.Set(src, !current);
+            RefreshOverrideUI();
+        }
+
+        private void OnOverrideToggled(ChangeEvent<bool> evt)
+        {
+            if (Component == null) return;
+            var src = (IDexteritySource)Component;
+            if (evt.newValue)
+            {
+                // Enable override, capturing current actual IsActive as the override value.
+                HierarchyPreviewOverrides.Set(src, src.IsActive);
+            }
             else
+            {
                 HierarchyPreviewOverrides.Clear(src);
+            }
+            RefreshOverrideUI();
+        }
+
+        private void RefreshOverrideUI()
+        {
+            if (Component == null || _stateBtn == null) return;
+            var src = (IDexteritySource)Component;
+            bool hasOv = HierarchyPreviewOverrides.TryGet(src, out var ov);
+            bool current = hasOv ? ov : src.IsActive;
+
+            _stateBtn.text = current ? "ON" : "OFF";
+            _stateBtn.style.backgroundColor = current
+                ? new Color(0.18f, 0.62f, 0.22f)   // green
+                : new Color(0.62f, 0.22f, 0.18f);  // red
+            _stateBtn.style.color = Color.white;
+            // Dimmed when reflecting actual (non-overridden) state.
+            _stateBtn.style.opacity = hasOv ? 1f : 0.55f;
+
+            if (_overrideToggle.value != hasOv)
+                _overrideToggle.SetValueWithoutNotify(hasOv);
         }
 
         private static void DrawSourceInspector(Component component)

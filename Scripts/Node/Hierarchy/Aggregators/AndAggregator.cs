@@ -12,8 +12,8 @@ namespace OneHamsa.Dexterity
     /// pointing at this aggregator. The aggregator's own output edge(s) feed
     /// either a state-input port on the node or another aggregator.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/All-Of Aggregator")]
-    public class AllOfAggregator : HierarchyAggregator
+    [AddComponentMenu("Dexterity/Hierarchy/And Aggregator")]
+    public class AndAggregator : HierarchyAggregator
     {
         protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
         {

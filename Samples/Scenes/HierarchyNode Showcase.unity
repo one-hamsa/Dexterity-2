@@ -260,10 +260,10 @@ MonoBehaviour:
     rid: 7255259723964090245
   _node: {fileID: 0}
   properties:
-  - rid: 7255259722230530209
   - rid: 7255259722230530210
   - rid: 7255259722230530211
   - rid: 7255259722230530212
+  - rid: 3859146576742318114
   delays: []
   lastSeenStates:
   - <Default>
@@ -274,10 +274,10 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 7255259722230530209
+    - rid: 3859146576742318114
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
-        state: <Default>
+        state: Default
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 1}
@@ -555,7 +555,6 @@ MonoBehaviour:
   _node: {fileID: 0}
   properties:
   - rid: 7255259722230530199
-  - rid: 7255259722230530200
   - rid: 7255259722230530201
   - rid: 7255259722230530202
   delays: []
@@ -575,13 +574,6 @@ MonoBehaviour:
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 0}
-    - rid: 7255259722230530200
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: <Default>
-        savedPropertyKey: 
-        localStateReference: 
-        color: {r: 1, g: 1, b: 1, a: 1}
     - rid: 7255259722230530201
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
@@ -971,13 +963,13 @@ MonoBehaviour:
     rid: 7255259722230530217
   _node: {fileID: 0}
   properties:
-  - rid: 7255259722230530213
   - rid: 7255259722230530214
   - rid: 7255259722230530215
   - rid: 7255259722230530216
+  - rid: 3859146576742318115
   delays: []
   lastSeenStates:
-  - <Default>
+  - Default
   - Disabled
   - Hover
   - Pressed
@@ -985,10 +977,10 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 7255259722230530213
+    - rid: 3859146576742318115
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
-        state: <Default>
+        state: Default
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 1}
@@ -1272,14 +1264,12 @@ MonoBehaviour:
   _node: {fileID: 0}
   properties:
   - rid: 7255259722230530203
-  - rid: 7255259722230530204
   - rid: 7255259722230530205
   - rid: 7255259722230530206
   - rid: 7255259722230530207
   - rid: 7255259722230530208
   delays: []
   lastSeenStates:
-  - <Default>
   - Default
   - Disabled
   - Disabled Hover
@@ -1293,13 +1283,6 @@ MonoBehaviour:
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
         state: Default
-        savedPropertyKey: 
-        localStateReference: 
-        color: {r: 1, g: 1, b: 1, a: 1}
-    - rid: 7255259722230530204
-      type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
-      data:
-        state: <Default>
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 1}
@@ -1528,13 +1511,13 @@ MonoBehaviour:
     rid: 7255259722230530219
   _node: {fileID: 0}
   properties:
-  - rid: 7255259722230530195
   - rid: 7255259722230530196
   - rid: 7255259722230530197
   - rid: 7255259722230530198
+  - rid: 3859146576742318116
   delays: []
   lastSeenStates:
-  - <Default>
+  - Default
   - Hover
   - Toggled
   - Toggled Hover
@@ -1542,10 +1525,10 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 7255259722230530195
+    - rid: 3859146576742318116
       type: {class: ColorModifier/Property, ns: OneHamsa.Dexterity.Builtins, asm: Dexterity}
       data:
-        state: <Default>
+        state: Default
         savedPropertyKey: 
         localStateReference: 
         color: {r: 1, g: 1, b: 1, a: 1}
@@ -1648,7 +1631,7 @@ MonoBehaviour:
   outputs:
   - target: {fileID: 1032287161}
     targetPort: Toggled Hover
-  graphPosition: {x: 0, y: 0}
+  graphPosition: {x: 169, y: 61}
 --- !u!114 &1032287167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1666,7 +1649,7 @@ MonoBehaviour:
     targetPort: 
   - target: {fileID: 1032287161}
     targetPort: Hover
-  graphPosition: {x: 0, y: 0}
+  graphPosition: {x: -146, y: 264}
   active: 0
 --- !u!114 &1032287168
 MonoBehaviour:
@@ -1685,7 +1668,7 @@ MonoBehaviour:
     targetPort: 
   - target: {fileID: 1032287161}
     targetPort: Toggled
-  graphPosition: {x: 0, y: 0}
+  graphPosition: {x: -146, y: 139}
   active: 0
 --- !u!1 &1070935123
 GameObject:
