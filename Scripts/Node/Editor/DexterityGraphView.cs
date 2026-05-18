@@ -471,10 +471,23 @@ namespace OneHamsa.Dexterity
             if (_node == null) return;
             var provider = ScriptableObject.CreateInstance<DexterityAddSourceSearchProvider>();
             provider.view = this;
-            // Convert screen position → graph-local so newly-added nodes spawn at the cursor.
+
+            // SearchWindowContext gives a screen-space cursor; the previous chain
+            // (this.WorldToLocal then contentViewContainer.WorldToLocal) double-
+            // converted, treating screen-space as panel-world and dropping the
+            // window's screen origin entirely. The standard GraphView recipe is
+            // screen → window-local → contentViewContainer-local, which is what
+            // contentViewContainer.WorldToLocal expects (it applies pan/zoom).
+            // The result is then shifted by half the node size so the cursor lands
+            // near the node center instead of its top-left corner.
             var screenMouse = ctx.screenMousePosition;
-            var local = contentViewContainer.WorldToLocal(this.WorldToLocal(screenMouse));
-            provider.spawnGraphPos = local;
+            var hostWindow = EditorWindow.focusedWindow;
+            var windowMouse = hostWindow != null
+                ? screenMouse - hostWindow.position.position
+                : screenMouse;
+            var graphLocal = contentViewContainer.WorldToLocal(windowMouse);
+            provider.spawnGraphPos = graphLocal - new Vector2(130f, 60f);
+
             SearchWindow.Open(new SearchWindowContext(screenMouse), provider);
         }
 
