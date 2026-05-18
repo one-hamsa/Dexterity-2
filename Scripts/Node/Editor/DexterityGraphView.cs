@@ -2,23 +2,26 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// GraphView that visualizes and edits a single <see cref="HierarchyNode"/>'s graph.
+    /// GraphView that visualizes and edits a single <see cref="GraphNode"/>'s graph.
     /// Nodes correspond to the Out node and to each provider/aggregator on the host GO.
     /// Edges are derived from each source's <see cref="DexterityEdge"/> outputs.
     /// </summary>
     public class DexterityGraphView : GraphView
     {
         // Highlight colors for the currently-winning state-input port + its edges.
-        internal static readonly Color s_activeColor = new Color(0.35f, 0.95f, 0.85f);
+        // Active uses the current node's mode color so the visual tracks Preview vs Live
+        // for the specific GraphNode the graph is showing.
+        internal Color ActiveColor => DexterityPreview.GetNodeColor(_node);
         internal static readonly Color s_inactiveColor = new Color(0.55f, 0.55f, 0.55f);
 
-        private HierarchyNode _node;
+        private GraphNode _node;
         private readonly Dictionary<Component, Node> _nodeByComponent = new();
         private readonly Dictionary<Port, string> _portStateName = new();   // for Out node ports
         private DexterityOutNodeView _outNodeView;
@@ -47,12 +50,12 @@ namespace OneHamsa.Dexterity
             this.RegisterCallback<KeyDownEvent>(OnKeyDown);
 
             // Refresh active-port highlight whenever overrides change.
-            HierarchyPreviewOverrides.onChanged += RefreshActiveHighlight;
+            GraphPreviewOverrides.onChanged += RefreshActiveHighlight;
             this.RegisterCallback<DetachFromPanelEvent>(_ =>
-                HierarchyPreviewOverrides.onChanged -= RefreshActiveHighlight);
+                GraphPreviewOverrides.onChanged -= RefreshActiveHighlight);
         }
 
-        public void RebuildGraph(HierarchyNode node)
+        public void RebuildGraph(GraphNode node)
         {
             _node = node;
             _rebuilding = true;
@@ -78,9 +81,9 @@ namespace OneHamsa.Dexterity
             _nodeByComponent[node] = _outNodeView;
 
             // Build source nodes
-            foreach (var p in node.GetComponents<HierarchyStateProvider>())
+            foreach (var p in node.GetComponents<GraphStateProvider>())
                 AddSourceNode(p, isAggregator: false);
-            foreach (var a in node.GetComponents<HierarchyAggregator>())
+            foreach (var a in node.GetComponents<GraphAggregator>())
                 AddSourceNode(a, isAggregator: true);
 
             // Lay out / load positions
@@ -94,27 +97,25 @@ namespace OneHamsa.Dexterity
         }
 
         /// <summary>
-        /// Highlight the currently-winning state-input port and the edges feeding it.
-        /// At edit time, uses <see cref="HierarchyNode.EvaluateTreeEditor"/>.
-        /// At runtime, uses <see cref="BaseStateNode.GetActiveState"/>.
+        /// Highlight the currently-winning state-input port + every active edge.
+        /// An edge is active when its source's <see cref="IDexteritySource.IsActive"/>
+        /// is true. The node's <c>EvaluateTreeEditor()</c> call below ensures every
+        /// source (including aggregators via their `_cachedOutput`) reflects the
+        /// current pass — so no extra compute is needed to color edges, just a read.
         /// </summary>
         public void RefreshActiveHighlight()
         {
             if (_outNodeView == null) return;
 
-            // Reset all out-node port + edge colors to inactive.
+            // Reset all out-node port colors. (Edge colors are set per-edge below.)
             foreach (var kv in _portStateName)
-            {
                 kv.Key.portColor = s_inactiveColor;
-            }
-            foreach (var e in edges.ToList())
-            {
-                e.edgeControl.inputColor = s_inactiveColor;
-                e.edgeControl.outputColor = s_inactiveColor;
-            }
 
             if (_node == null) return;
 
+            // Drive a full evaluation so IsActive on every source is fresh.
+            // (At runtime, GetActiveState() reflects whatever the Manager last
+            //  evaluated; aggregator `_cachedOutput` lags by at most one frame.)
             string activeState = null;
             if (Application.isPlaying && _node.initialized)
             {
@@ -125,20 +126,24 @@ namespace OneHamsa.Dexterity
             {
                 activeState = _node.EvaluateTreeEditor() ?? _node.initialState;
             }
-            if (string.IsNullOrEmpty(activeState)) return;
 
-            var activePort = _outNodeView.GetInputPortForState(activeState);
-            if (activePort == null) return;
-
-            activePort.portColor = s_activeColor;
+            // Every edge: cyan if its source is active, gray otherwise. Covers
+            // provider→Out, provider→aggregator, and aggregator→Out/aggregator
+            // uniformly — they all carry a DexteritySourceNodeView on the output side.
             foreach (var e in edges.ToList())
             {
-                if (e.input == activePort)
-                {
-                    e.edgeControl.inputColor = s_activeColor;
-                    e.edgeControl.outputColor = s_activeColor;
-                }
+                bool sourceActive = e.output?.node is DexteritySourceNodeView srcView
+                                    && srcView.Component != null
+                                    && ((IDexteritySource)srcView.Component).IsActive;
+                var color = sourceActive ? ActiveColor : s_inactiveColor;
+                e.edgeControl.inputColor = color;
+                e.edgeControl.outputColor = color;
             }
+
+            // Highlight the winning state-input port (priority-respecting).
+            if (string.IsNullOrEmpty(activeState)) return;
+            var activePort = _outNodeView.GetInputPortForState(activeState);
+            if (activePort != null) activePort.portColor = ActiveColor;
         }
 
         private void AddSourceNode(Component src, bool isAggregator)
@@ -167,7 +172,7 @@ namespace OneHamsa.Dexterity
                 else
                 {
                     // Auto-place: Out on the right, sources on the left in a column.
-                    if (comp is HierarchyNode)
+                    if (comp is GraphNode)
                         pos = new Vector2(500f, 100f);
                     else
                         pos = new Vector2(defaultX, defaultY + autoLayoutIdx++ * 140f);
@@ -183,7 +188,7 @@ namespace OneHamsa.Dexterity
             foreach (var kv in _nodeByComponent)
             {
                 var src = kv.Key;
-                if (src is HierarchyNode) continue;   // Out node doesn't have outputs
+                if (src is GraphNode) continue;   // Out node doesn't have outputs
 
                 var so = new SerializedObject(src);
                 var outsProp = so.FindProperty("outputs");
@@ -356,9 +361,9 @@ namespace OneHamsa.Dexterity
                 ? DropdownMenuAction.Status.Normal
                 : DropdownMenuAction.Status.Disabled;
 
-            var providerTypes = TypeCache.GetTypesDerivedFrom<HierarchyStateProvider>()
+            var providerTypes = TypeCache.GetTypesDerivedFrom<GraphStateProvider>()
                 .Where(t => !t.IsAbstract).OrderBy(t => t.Name).ToList();
-            var aggregatorTypes = TypeCache.GetTypesDerivedFrom<HierarchyAggregator>()
+            var aggregatorTypes = TypeCache.GetTypesDerivedFrom<GraphAggregator>()
                 .Where(t => !t.IsAbstract).OrderBy(t => t.Name).ToList();
 
             foreach (var t in providerTypes)
@@ -377,7 +382,7 @@ namespace OneHamsa.Dexterity
             if (_node == null)
             {
                 evt.menu.AppendSeparator();
-                evt.menu.AppendAction("(select a GameObject with a HierarchyNode to enable)",
+                evt.menu.AppendAction("(select a GameObject with a GraphNode to enable)",
                     null, DropdownMenuAction.Status.Disabled);
             }
         }
@@ -410,27 +415,52 @@ namespace OneHamsa.Dexterity
     // Node views
     // ---------------------------------------------------------------------------
 
-    /// <summary>Node view for the Out node (HierarchyNode itself).</summary>
+    /// <summary>Node view for the Out node (GraphNode itself).</summary>
     public class DexterityOutNodeView : Node
     {
-        public HierarchyNode Node { get; }
+        public GraphNode Node { get; }
         private readonly DexterityGraphView _view;
         private readonly List<Port> _inputPorts = new();
         private readonly Dictionary<string, Port> _portByState = new();
 
-        public DexterityOutNodeView(HierarchyNode node, DexterityGraphView view)
+        public DexterityOutNodeView(GraphNode node, DexterityGraphView view)
         {
             Node = node;
             _view = view;
             title = "Out";
-            titleContainer.style.backgroundColor = new Color(0.20f, 0.40f, 0.70f);
+            ApplyModeTint();
+            DexterityPreview.onChanged += ApplyModeTint;
+            this.RegisterCallback<DetachFromPanelEvent>(_ => DexterityPreview.onChanged -= ApplyModeTint);
 
-            // Embed the Out node's inspector (stateInputs + initialState).
-            var imgui = new IMGUIContainer(() => DrawOutNodeInspector(node, view));
-            imgui.style.minWidth = 240f;
-            extensionContainer.Add(imgui);
+            // Embed the Out node's inspector via UIElements PropertyField — event-driven
+            // (redraws only when the bound serialized property actually changes), unlike
+            // IMGUIContainer which redraws on every UIElements layout pass.
+            var so = new SerializedObject(node);
+            var body = new VisualElement { style = { minWidth = 240f } };
+
+            var initialStateField = new PropertyField(so.FindProperty("initialState"),
+                "Initial / fallback state");
+            body.Add(initialStateField);
+
+            var stateInputsField = new PropertyField(so.FindProperty("stateInputs"), "State inputs");
+            body.Add(stateInputsField);
+
+            // When stateInputs changes (add/remove/rename a port), rebuild ports + edges.
+            stateInputsField.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+                EditorApplication.delayCall += () => view.RebuildGraph(node));
+
+            body.Bind(so);
+            extensionContainer.Add(body);
             RefreshExpandedState();
             RefreshPorts();
+        }
+
+        private void ApplyModeTint()
+        {
+            // Out node title bar reflects this node's current mode (None/Preview/Live)
+            // so the user always knows whether they're looking at a live runtime state
+            // or an edit-time preview — even with multiple windows showing different modes.
+            titleContainer.style.backgroundColor = DexterityPreview.GetNodeColor(Node);
         }
 
         public Port GetInputPortForState(string stateName)
@@ -467,21 +497,6 @@ namespace OneHamsa.Dexterity
             RefreshExpandedState();
         }
 
-        private static void DrawOutNodeInspector(HierarchyNode node, DexterityGraphView view)
-        {
-            var so = new SerializedObject(node);
-            so.Update();
-
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(so.FindProperty("initialState"), new GUIContent("Initial / fallback state"));
-            EditorGUILayout.PropertyField(so.FindProperty("stateInputs"), new GUIContent("State inputs"), true);
-            if (EditorGUI.EndChangeCheck())
-            {
-                so.ApplyModifiedProperties();
-                // Rebuild ports + edges to reflect stateInputs changes.
-                EditorApplication.delayCall += () => view.RebuildGraph(node);
-            }
-        }
     }
 
     /// <summary>Node view for a provider or aggregator source.</summary>
@@ -537,29 +552,60 @@ namespace OneHamsa.Dexterity
             _overrideToggle.RegisterValueChangedCallback(OnOverrideToggled);
             titleContainer.Add(_overrideToggle);
 
-            // Periodic refresh — handles both override changes and real IsActive changes.
-            // Also pokes the view to refresh active-port highlighting (catches changes
-            // made directly to source fields without going through the override registry).
-            _stateBtn.schedule.Execute(() => {
+            // Event-driven refresh — fires on:
+            //   • override Set/Clear (NotifyExternalChanged → onStateMayHaveChanged)
+            //   • the source's own state change (subclass MarkChanged)
+            //   • OnValidate from inspector field edits (the base class fires onStateMayHaveChanged)
+            // Replaces the previous 150ms polling, which was running on every source
+            // node regardless of activity (visible flicker in big graphs).
+            var src = (IDexteritySource)component;
+            _onSourceChanged = () =>
+            {
                 RefreshOverrideUI();
                 _view?.RefreshActiveHighlight();
-            }).Every(150);
+            };
+            src.onStateMayHaveChanged += _onSourceChanged;
+            // Also catch global ClearAll (which doesn't fire per-source events).
+            GraphPreviewOverrides.onChanged += _onSourceChanged;
+            this.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                if (Component != null)
+                    ((IDexteritySource)Component).onStateMayHaveChanged -= _onSourceChanged;
+                GraphPreviewOverrides.onChanged -= _onSourceChanged;
+            });
 
-            // Embedded inspector (default inspector minus outputs + graphPosition + m_Script).
-            var imgui = new IMGUIContainer(() => DrawSourceInspector(component));
-            imgui.style.minWidth = 220f;
-            extensionContainer.Add(imgui);
+            // Embedded inspector via UIElements PropertyField — event-driven, redraws
+            // only when bound props change. Crucially: during Modifier transitions
+            // (which mutate OTHER components, not this provider), this body sits idle.
+            var so = new SerializedObject(component);
+            var body = new VisualElement { style = { minWidth = 220f } };
+            var iter = so.GetIterator();
+            bool enterChildren = true;
+            while (iter.NextVisible(enterChildren))
+            {
+                enterChildren = false;
+                if (iter.name == "m_Script") continue;
+                if (iter.name == "outputs") continue;
+                if (iter.name == "graphPosition") continue;
+                body.Add(new PropertyField(iter.Copy()));
+            }
+            body.Bind(so);
+            extensionContainer.Add(body);
+
+            RefreshOverrideUI();
             RefreshExpandedState();
             RefreshPorts();
         }
+
+        private System.Action _onSourceChanged;
 
         private void OnStateButtonClicked()
         {
             if (Component == null) return;
             var src = (IDexteritySource)Component;
             // Flip the current value. Auto-enables override (Set always overrides).
-            bool current = HierarchyPreviewOverrides.TryGet(src, out var ov) ? ov : src.IsActive;
-            HierarchyPreviewOverrides.Set(src, !current);
+            bool current = GraphPreviewOverrides.TryGet(src, out var ov) ? ov : src.IsActive;
+            GraphPreviewOverrides.Set(src, !current);
             RefreshOverrideUI();
         }
 
@@ -570,11 +616,11 @@ namespace OneHamsa.Dexterity
             if (evt.newValue)
             {
                 // Enable override, capturing current actual IsActive as the override value.
-                HierarchyPreviewOverrides.Set(src, src.IsActive);
+                GraphPreviewOverrides.Set(src, src.IsActive);
             }
             else
             {
-                HierarchyPreviewOverrides.Clear(src);
+                GraphPreviewOverrides.Clear(src);
             }
             RefreshOverrideUI();
         }
@@ -583,7 +629,7 @@ namespace OneHamsa.Dexterity
         {
             if (Component == null || _stateBtn == null) return;
             var src = (IDexteritySource)Component;
-            bool hasOv = HierarchyPreviewOverrides.TryGet(src, out var ov);
+            bool hasOv = GraphPreviewOverrides.TryGet(src, out var ov);
             bool current = hasOv ? ov : src.IsActive;
 
             _stateBtn.text = current ? "ON" : "OFF";
@@ -598,25 +644,5 @@ namespace OneHamsa.Dexterity
                 _overrideToggle.SetValueWithoutNotify(hasOv);
         }
 
-        private static void DrawSourceInspector(Component component)
-        {
-            if (component == null) return;
-            var so = new SerializedObject(component);
-            so.Update();
-
-            EditorGUI.BeginChangeCheck();
-            var prop = so.GetIterator();
-            bool enterChildren = true;
-            while (prop.NextVisible(enterChildren))
-            {
-                enterChildren = false;
-                if (prop.name == "m_Script") continue;
-                if (prop.name == "outputs") continue;
-                if (prop.name == "graphPosition") continue;
-                EditorGUILayout.PropertyField(prop, true);
-            }
-            if (EditorGUI.EndChangeCheck())
-                so.ApplyModifiedProperties();
-        }
     }
 }

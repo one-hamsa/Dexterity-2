@@ -4,15 +4,15 @@ using UnityEngine.Scripting;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode-side counterpart of <see cref="FieldNodeLongPressListener"/>.
-    /// Inherits from <see cref="HierarchyNodeClickListener"/> so it auto-finds
-    /// providers in the surrounding HierarchyNode subtree.
+    /// GraphNode-side counterpart of <see cref="FieldNodeLongPressListener"/>.
+    /// Inherits from <see cref="GraphNodeClickListener"/> so it auto-finds
+    /// providers in the surrounding GraphNode subtree.
     ///
     /// Timer state is delegated to a shared <see cref="LongPressTimer"/> instance
     /// (same one <see cref="FieldNodeLongPressListener"/> uses) so the tick math
     /// can't drift between the two variants.
     /// </summary>
-    public class HierarchyNodeLongPressListener : HierarchyNodeClickListener
+    public class GraphNodeLongPressListener : GraphNodeClickListener
     {
         public float pressDuration = 1f;
         public float fillStartsAt = 0.05f;

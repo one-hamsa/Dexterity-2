@@ -4,11 +4,11 @@ using UnityEngine.EventSystems;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="UIPressField"/>.
+    /// GraphNode equivalent of <see cref="UIPressField"/>.
     /// Reports its state while a Unity EventSystem pointer is pressed on this UI element.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/UI Press Provider")]
-    public class UIPressProvider : HierarchyStateProvider, IPointerDownHandler, IPointerUpHandler
+    [AddComponentMenu("Dexterity/Graph/Providers/UI Press Provider")]
+    public class UIPressProvider : GraphStateProvider, IPointerDownHandler, IPointerUpHandler
     {
         private bool _pressed;
 

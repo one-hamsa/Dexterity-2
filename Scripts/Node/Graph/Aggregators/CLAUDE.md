@@ -1,10 +1,10 @@
 <!-- Last updated: 2026-05-17 (Phase 1 redesign — single-bool aggregator model) -->
 
-# HierarchyAggregator subclasses
+# GraphAggregator subclasses
 
 Aggregators are intermediate sources in a Dexterity graph: they consume the bool outputs of several upstream sources, combine them into a single bool, and feed that bool to either the Out node or another aggregator.
 
-To add a new aggregator: subclass `HierarchyAggregator` and override:
+To add a new aggregator: subclass `GraphAggregator` and override:
 
 ```csharp
 protected abstract bool ComputeOutput(IReadOnlyList<bool> inputs);
@@ -37,6 +37,6 @@ Removed in the Phase 1 redesign. The Out node's ordered `stateInputs` IS first-m
 
 ## See also
 
-- `../CLAUDE.md` — HierarchyNode runtime architecture overview.
-- `../HierarchyAggregator.cs` — the base class.
-- `../../../Builtins/HierarchyProviders/CLAUDE.md` — provider catalogue for what feeds aggregators.
+- `../CLAUDE.md` — GraphNode runtime architecture overview.
+- `../GraphAggregator.cs` — the base class.
+- `../../../Builtins/GraphProviders/CLAUDE.md` — provider catalogue for what feeds aggregators.

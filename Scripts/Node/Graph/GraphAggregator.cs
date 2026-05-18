@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity
     /// labeled inputs, the schema can grow then.
     /// </summary>
     [DefaultExecutionOrder(Manager.nodeExecutionPriority + 1)]
-    public abstract class HierarchyAggregator : MonoBehaviour, IDexteritySource
+    public abstract class GraphAggregator : MonoBehaviour, IDexteritySource
     {
         [SerializeField, Tooltip("Outgoing edges: where this aggregator's bool output feeds.")]
         protected List<DexterityEdge> outputs = new();
@@ -36,7 +36,7 @@ namespace OneHamsa.Dexterity
         /// </summary>
         protected abstract bool ComputeOutput(IReadOnlyList<bool> inputs);
 
-        // Re-evaluation state — managed by HierarchyNode during its eval pass.
+        // Re-evaluation state — managed by GraphNode during its eval pass.
         [NonSerialized] internal List<IDexteritySource> incomingSources = new();
         [NonSerialized] private bool _cachedOutput;
 
@@ -44,7 +44,7 @@ namespace OneHamsa.Dexterity
         {
             get
             {
-                if (HierarchyPreviewOverrides.TryGet(this, out var overridden))
+                if (GraphPreviewOverrides.TryGet(this, out var overridden))
                     return overridden;
 
                 if (!isActiveAndEnabled)
@@ -55,7 +55,7 @@ namespace OneHamsa.Dexterity
         }
 
         /// <summary>
-        /// Called by <see cref="HierarchyNode"/> in topological order during evaluation.
+        /// Called by <see cref="GraphNode"/> in topological order during evaluation.
         /// <paramref name="cache"/> contains pre-computed IsActive for every source already
         /// processed in this pass (including this aggregator's inputs).
         /// </summary>
@@ -75,13 +75,13 @@ namespace OneHamsa.Dexterity
 
         protected virtual void OnEnable()
         {
-            if (TryGetComponent<HierarchyNode>(out var node))
+            if (TryGetComponent<GraphNode>(out var node))
                 node.AttachSource(this);
         }
 
         protected virtual void OnDisable()
         {
-            if (TryGetComponent<HierarchyNode>(out var node))
+            if (TryGetComponent<GraphNode>(out var node))
                 node.DetachSource(this);
             onStateMayHaveChanged?.Invoke();
         }

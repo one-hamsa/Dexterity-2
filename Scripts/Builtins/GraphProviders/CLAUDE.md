@@ -1,8 +1,8 @@
 <!-- Last updated: 2026-05-17 (Phase 1 redesign — anonymous providers) -->
 
-# HierarchyProviders — Built-in leaf provider catalogue
+# GraphProviders — Built-in leaf provider catalogue
 
-Each file here is a concrete `HierarchyStateProvider` subclass that ports an existing `BaseField` to the HierarchyNode system. Add one to the same GameObject as your `HierarchyNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an aggregator).
+Each file here is a concrete `GraphStateProvider` subclass that ports an existing `BaseField` to the GraphNode system. Add one to the same GameObject as your `GraphNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an aggregator).
 
 Each provider has:
 - A `List<DexterityEdge> outputs` (inherited from base) — where its bool output is fed.
@@ -21,7 +21,7 @@ Providers are **anonymous** — no state name on the provider. The state name is
 | `RaycastPressProvider` | `RaycastPressField` | Any registered `IRaycastController` with the configured tag is pressing this collider. Has `stayPressedOutOfBounds` option. | inactive |
 | `BindingProvider` | `BindingField` | A reflection-bound boolean property/method on any `UnityEngine.Object` evaluates to true (or false, with `negate`). | inactive until binding initializes (runtime) |
 | `EnumProvider` | `EnumField` | A referenced `BindingEnumNode`'s current enum case equals the configured target case. | inactive (depends on binding initialization) |
-| `NodeStateProvider` | `NodeStateField` | A referenced `BaseStateNode` is currently in the configured target state. **Cross-node dependency bridge.** | active iff target is a `HierarchyNode` and its `EvaluateTreeEditor()` matches the target state |
+| `NodeStateProvider` | `NodeStateField` | A referenced `BaseStateNode` is currently in the configured target state. **Cross-node dependency bridge.** | active iff target is a `GraphNode` and its `EvaluateTreeEditor()` matches the target state |
 | `ConstantProvider` | `ConstantField` | Always-on or always-off, based on a serialized `active` bool. | honors `active` directly |
 
 ## Implementation patterns
@@ -36,19 +36,19 @@ Providers are **anonymous** — no state name on the provider. The state name is
 
 Edit-time behavior is special. The base `IsActive` getter calls `ComputeIsActive()` whose implementation has two branches:
 - Runtime: compares `targetNode.GetActiveState()` (int) against a cached state ID.
-- Edit-time: compares `targetNode.EvaluateTreeEditor()` (string) against `targetState` — works for `HierarchyNode` targets without `Database`.
+- Edit-time: compares `targetNode.EvaluateTreeEditor()` (string) against `targetState` — works for `GraphNode` targets without `Database`.
 
 This means cross-node dependencies "just work" at edit time: toggle a provider override in Node A, Node B's `NodeStateProvider`s that target Node A see the change immediately via the driver.
 
 ## Adding a new provider
 
-1. Create a `HierarchyStateProvider` subclass.
-2. Add an `[AddComponentMenu("Dexterity/Hierarchy/Providers/...")]` so designers can find it.
+1. Create a `GraphStateProvider` subclass.
+2. Add an `[AddComponentMenu("Dexterity/Graph/Providers/...")]` so designers can find it.
 3. Override `ComputeIsActive()`. Be defensive at edit time — if your inputs aren't wired (raycast controllers, UI events, runtime services), return `false`. The override registry covers simulation, so you don't need to invent edit-mode mocks.
 4. If your input has an event, subscribe in `OnEnable` and call `MarkChanged()` from the handler. If polled, add an `Update()` with a diff check.
 
 ## See also
 
-- `../../Node/Hierarchy/CLAUDE.md` — HierarchyNode runtime architecture (where these plug in).
-- `../../Node/Hierarchy/HierarchyStateProvider.cs` — base class.
+- `../../Node/Graph/CLAUDE.md` — GraphNode runtime architecture (where these plug in).
+- `../../Node/Graph/GraphStateProvider.cs` — base class.
 - `../Fields/` — original `BaseField` implementations these ports mirror.

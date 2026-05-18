@@ -9,10 +9,10 @@ namespace OneHamsa.Dexterity
     /// the new graph window lands.
     ///
     /// - target: dropdown of valid sink components on the SAME GameObject as the source
-    ///   (the host's <see cref="HierarchyNode"/> + every <see cref="HierarchyAggregator"/>
+    ///   (the host's <see cref="GraphNode"/> + every <see cref="GraphAggregator"/>
     ///   on the host). Hides ObjectField; designers can't accidentally point at a
     ///   foreign GO.
-    /// - targetPort: only shown when target is a HierarchyNode. Dropdown of the node's
+    /// - targetPort: only shown when target is a GraphNode. Dropdown of the node's
     ///   declared state-input port names (read live via SerializedProperty on the node).
     ///
     /// All writes route through <c>SerializedProperty</c> + <c>ApplyModifiedProperties</c>
@@ -28,7 +28,7 @@ namespace OneHamsa.Dexterity
         {
             var targetProp = property.FindPropertyRelative("target");
             var target = targetProp != null ? targetProp.objectReferenceValue : null;
-            var rows = target is HierarchyNode ? 2 : 1;
+            var rows = target is GraphNode ? 2 : 1;
             return rows * kRowHeight + (rows - 1) * kRowSpacing;
         }
 
@@ -47,7 +47,7 @@ namespace OneHamsa.Dexterity
             var targetRect = new Rect(position.x, position.y, position.width, kRowHeight);
             DrawTargetDropdown(targetRect, targetProp, sourceComponent, hostGo);
 
-            if (targetProp.objectReferenceValue is HierarchyNode node)
+            if (targetProp.objectReferenceValue is GraphNode node)
             {
                 var portRect = new Rect(position.x, position.y + kRowHeight + kRowSpacing,
                                         position.width, kRowHeight);
@@ -75,14 +75,14 @@ namespace OneHamsa.Dexterity
             var labels = new List<string>();
 
             // Out node always first if present.
-            if (hostGo.TryGetComponent<HierarchyNode>(out var outNode))
+            if (hostGo.TryGetComponent<GraphNode>(out var outNode))
             {
                 sinks.Add(outNode);
-                labels.Add("Out (HierarchyNode)");
+                labels.Add("Out (GraphNode)");
             }
 
             // Aggregators on host, in component order. Exclude the source itself (no self-edges).
-            foreach (var agg in hostGo.GetComponents<HierarchyAggregator>())
+            foreach (var agg in hostGo.GetComponents<GraphAggregator>())
             {
                 if (agg == sourceComponent) continue;
                 sinks.Add(agg);
@@ -109,7 +109,7 @@ namespace OneHamsa.Dexterity
             }
         }
 
-        private static void DrawPortDropdown(Rect rect, SerializedProperty portProp, HierarchyNode node)
+        private static void DrawPortDropdown(Rect rect, SerializedProperty portProp, GraphNode node)
         {
             // Read the node's stateInputs via SerializedObject so we don't depend on
             // node instance state (works in edit mode regardless of OnEnable state).

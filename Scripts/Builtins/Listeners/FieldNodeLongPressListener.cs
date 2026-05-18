@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity.Builtins
     /// auto-find via <c>GetComponent&lt;FieldNodeClickListener&gt;</c>, etc.).
     ///
     /// Timer state is delegated to a shared <see cref="LongPressTimer"/> instance
-    /// so this class and <see cref="HierarchyNodeLongPressListener"/> can't drift —
+    /// so this class and <see cref="GraphNodeLongPressListener"/> can't drift —
     /// only the wiring around the base class differs.
     ///
     /// The normal "release fires onClick" behaviour is suppressed via

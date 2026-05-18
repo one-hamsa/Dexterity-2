@@ -17,9 +17,9 @@ namespace OneHamsa.Dexterity
     /// before they are). Cycles fall back to <see cref="BaseStateNode.initialState"/>
     /// with an error log.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy Node")]
+    [AddComponentMenu("Dexterity/Graph Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class HierarchyNode : BaseStateNode
+    public class GraphNode : BaseStateNode
     {
         [SerializeField, Tooltip("Ordered state inputs. Port name = state name. First port with any active source wins.")]
         private List<string> stateInputs = new();
@@ -78,9 +78,9 @@ namespace OneHamsa.Dexterity
             // host-local sources every call and invalidate if the live set differs from
             // what we have cached (or if anything we held went null/destroyed).
             _liveScratch.Clear();
-            GetComponents(typeof(HierarchyStateProvider), _scratchComponents);
+            GetComponents(typeof(GraphStateProvider), _scratchComponents);
             foreach (var c in _scratchComponents) if (c != null) _liveScratch.Add((IDexteritySource)c);
-            GetComponents(typeof(HierarchyAggregator), _scratchComponents);
+            GetComponents(typeof(GraphAggregator), _scratchComponents);
             foreach (var c in _scratchComponents) if (c != null) _liveScratch.Add((IDexteritySource)c);
 
             if (!_topoDirty)
@@ -104,7 +104,7 @@ namespace OneHamsa.Dexterity
             _sourcesByPort.Clear();
             for (var i = 0; i < _allSources.Count; i++)
             {
-                if (_allSources[i] is HierarchyAggregator agg)
+                if (_allSources[i] is GraphAggregator agg)
                     agg.incomingSources.Clear();
             }
 
@@ -125,7 +125,7 @@ namespace OneHamsa.Dexterity
                             _sourcesByPort[edge.targetPort] = list = new List<IDexteritySource>();
                         list.Add(src);
                     }
-                    else if (edge.target is HierarchyAggregator targetAgg)
+                    else if (edge.target is GraphAggregator targetAgg)
                     {
                         targetAgg.incomingSources.Add(src);
                     }
@@ -142,7 +142,7 @@ namespace OneHamsa.Dexterity
             {
                 if (!Visit(_allSources[i]))
                 {
-                    Debug.LogError($"Dexterity: cycle detected in HierarchyNode '{name}'s graph; falling back to initial state until fixed.", this);
+                    Debug.LogError($"Dexterity: cycle detected in GraphNode '{name}'s graph; falling back to initial state until fixed.", this);
                     _topoCycleDetected = true;
                     break;
                 }
@@ -158,7 +158,7 @@ namespace OneHamsa.Dexterity
             if (_visited.Contains(source)) return true;
             if (!_inProgress.Add(source)) return false;
 
-            if (source is HierarchyAggregator agg)
+            if (source is GraphAggregator agg)
             {
                 for (var i = 0; i < agg.incomingSources.Count; i++)
                 {
@@ -178,7 +178,7 @@ namespace OneHamsa.Dexterity
             for (var i = 0; i < _topoOrdered.Count; i++)
             {
                 var src = _topoOrdered[i];
-                if (src is HierarchyAggregator agg)
+                if (src is GraphAggregator agg)
                     agg.RecomputeFrom(_activeCache, _aggInputScratch);
                 _activeCache[src] = src.IsActive;
             }

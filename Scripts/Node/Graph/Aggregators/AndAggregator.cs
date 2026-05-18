@@ -7,13 +7,13 @@ namespace OneHamsa.Dexterity
     /// Outputs <c>true</c> iff every connected input is currently active.
     /// Equivalent to a logical AND across the multiset of incoming bool sources.
     ///
-    /// To wire: drop this on the same GameObject as your <see cref="HierarchyNode"/>,
+    /// To wire: drop this on the same GameObject as your <see cref="GraphNode"/>,
     /// then have each contributing provider/aggregator add a <see cref="DexterityEdge"/>
     /// pointing at this aggregator. The aggregator's own output edge(s) feed
     /// either a state-input port on the node or another aggregator.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/And Aggregator")]
-    public class AndAggregator : HierarchyAggregator
+    [AddComponentMenu("Dexterity/Graph/And Aggregator")]
+    public class AndAggregator : GraphAggregator
     {
         protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
         {

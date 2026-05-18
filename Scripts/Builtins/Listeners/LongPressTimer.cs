@@ -3,7 +3,7 @@ namespace OneHamsa.Dexterity.Builtins
     /// <summary>
     /// Shared timer state for long-press listeners. Non-MonoBehaviour so both
     /// <see cref="FieldNodeLongPressListener"/> and
-    /// <see cref="HierarchyNodeLongPressListener"/> can compose it without
+    /// <see cref="GraphNodeLongPressListener"/> can compose it without
     /// duplicating the tick math.
     ///
     /// Owners drive the lifecycle: call <see cref="Press"/> / <see cref="Release"/>

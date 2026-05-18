@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity
     /// Keys are <see cref="IDexteritySource"/> so both providers (leaves) and aggregators
     /// (intermediates) can be forced — handy for debugging mid-graph signals.
     /// </summary>
-    public static class HierarchyPreviewOverrides
+    public static class GraphPreviewOverrides
     {
         private static readonly Dictionary<IDexteritySource, bool> s_overrides = new();
 

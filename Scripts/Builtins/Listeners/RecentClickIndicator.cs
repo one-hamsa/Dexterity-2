@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Builtins
             hasBaseClickListener = clickListener != null;
             if (!hasBaseClickListener)
                 Debug.LogError($"RecentClickIndicator on {name} needs a sibling BaseClickListener " +
-                               "(FieldNodeClickListener or HierarchyNodeClickListener) to time clicks against.", this);
+                               "(FieldNodeClickListener or GraphNodeClickListener) to time clicks against.", this);
         }
         
         [Preserve]

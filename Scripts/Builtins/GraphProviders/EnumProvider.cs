@@ -4,12 +4,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="EnumField"/>.
+    /// GraphNode equivalent of <see cref="EnumField"/>.
     /// Reports its state while the referenced <see cref="BindingEnumNode"/> is in
     /// the named enum case.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/Enum Provider")]
-    public class EnumProvider : HierarchyStateProvider
+    [AddComponentMenu("Dexterity/Graph/Providers/Enum Provider")]
+    public class EnumProvider : GraphStateProvider
     {
         public BindingEnumNode targetNode;
 

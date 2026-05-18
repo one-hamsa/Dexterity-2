@@ -3,12 +3,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="BindingField"/>.
+    /// GraphNode equivalent of <see cref="BindingField"/>.
     /// Reports its state while the referenced boolean property/method
     /// (configured via <see cref="BoolObjectBinding"/>) evaluates to true.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/Binding Provider")]
-    public class BindingProvider : HierarchyStateProvider
+    [AddComponentMenu("Dexterity/Graph/Providers/Binding Provider")]
+    public class BindingProvider : GraphStateProvider
     {
         public BoolObjectBinding binding = new();
 

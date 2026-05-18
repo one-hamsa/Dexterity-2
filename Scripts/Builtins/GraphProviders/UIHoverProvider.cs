@@ -4,11 +4,11 @@ using UnityEngine.EventSystems;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="UIHoverField"/>.
+    /// GraphNode equivalent of <see cref="UIHoverField"/>.
     /// Reports its state while a Unity EventSystem pointer is hovering this UI element.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/UI Hover Provider")]
-    public class UIHoverProvider : HierarchyStateProvider, IPointerEnterHandler, IPointerExitHandler
+    [AddComponentMenu("Dexterity/Graph/Providers/UI Hover Provider")]
+    public class UIHoverProvider : GraphStateProvider, IPointerEnterHandler, IPointerExitHandler
     {
         private bool _hovered;
 

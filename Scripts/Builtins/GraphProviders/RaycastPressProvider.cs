@@ -3,12 +3,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="RaycastPressField"/>.
+    /// GraphNode equivalent of <see cref="RaycastPressField"/>.
     /// Reports its state while any registered <see cref="IRaycastController"/> with
     /// the configured tag is pressing this GameObject's collider.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/Raycast Press Provider")]
-    public class RaycastPressProvider : HierarchyStateProvider, IRaycastReceiver
+    [AddComponentMenu("Dexterity/Graph/Providers/Raycast Press Provider")]
+    public class RaycastPressProvider : GraphStateProvider, IRaycastReceiver
     {
         [TagSelector, Tooltip("Raycast controller tag filter. Empty = any tag.")]
         public string raycastTag = "Untagged";

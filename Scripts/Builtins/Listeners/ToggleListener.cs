@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity.Builtins
             if (clickListener == null)
             {
                 Debug.LogError($"ToggleListener on {name} requires a sibling BaseClickListener " +
-                               "(FieldNodeClickListener or HierarchyNodeClickListener).", this);
+                               "(FieldNodeClickListener or GraphNodeClickListener).", this);
                 enabled = false;
             }
         }

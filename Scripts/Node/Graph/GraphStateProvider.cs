@@ -5,14 +5,14 @@ using UnityEngine;
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// Leaf source: a MonoBehaviour on the same GameObject as a <see cref="HierarchyNode"/>
+    /// Leaf source: a MonoBehaviour on the same GameObject as a <see cref="GraphNode"/>
     /// that produces a single bool output (<see cref="ComputeIsActive"/>).
     /// Anonymous — has no state name; routing is via the <see cref="outputs"/> edge list.
     ///
     /// Self-attaches to the host node's source set on <see cref="OnEnable"/>.
     /// </summary>
     [DefaultExecutionOrder(Manager.nodeExecutionPriority + 1)]
-    public abstract class HierarchyStateProvider : MonoBehaviour, IDexteritySource
+    public abstract class GraphStateProvider : MonoBehaviour, IDexteritySource
     {
         [SerializeField, Tooltip("Outgoing edges: where this provider's bool output feeds.")]
         protected List<DexterityEdge> outputs = new();
@@ -31,7 +31,7 @@ namespace OneHamsa.Dexterity
         {
             get
             {
-                if (HierarchyPreviewOverrides.TryGet(this, out var overridden))
+                if (GraphPreviewOverrides.TryGet(this, out var overridden))
                     return overridden;
 
                 if (!isActiveAndEnabled)
@@ -48,13 +48,13 @@ namespace OneHamsa.Dexterity
 
         protected virtual void OnEnable()
         {
-            if (TryGetComponent<HierarchyNode>(out var node))
+            if (TryGetComponent<GraphNode>(out var node))
                 node.AttachSource(this);
         }
 
         protected virtual void OnDisable()
         {
-            if (TryGetComponent<HierarchyNode>(out var node))
+            if (TryGetComponent<GraphNode>(out var node))
                 node.DetachSource(this);
             // Final notification so the node re-evaluates without our contribution.
             onStateMayHaveChanged?.Invoke();

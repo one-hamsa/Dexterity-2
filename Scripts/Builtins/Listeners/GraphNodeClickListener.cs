@@ -3,20 +3,20 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// Click listener for a <see cref="HierarchyNode"/>. Reads press/hover/disabled/hidden
+    /// Click listener for a <see cref="GraphNode"/>. Reads press/hover/disabled/hidden
     /// signals from the node's raw inputs (priority-independent) via
-    /// <see cref="HierarchyNode.GetRawInput(string)"/>.
+    /// <see cref="GraphNode.GetRawInput(string)"/>.
     ///
     /// "Raw" means: the listener fires on press even when a higher-priority state
     /// like <c>Disabled</c> currently masks the node's active state. If you want
     /// priority-respecting behavior (don't react when disabled wins), prefer
-    /// <see cref="HierarchyNode.GetActiveState"/> directly in a custom listener.
+    /// <see cref="GraphNode.GetActiveState"/> directly in a custom listener.
     ///
     /// A state name not declared on the node is treated as "no provider for that role".
     /// Hover is permissive (no hover providers → treated as always-hovered) to preserve
     /// the historical behavior of this listener.
     /// </summary>
-    public class HierarchyNodeClickListener : BaseClickListener
+    public class GraphNodeClickListener : BaseClickListener
     {
         [System.Serializable]
         public class Settings
@@ -35,23 +35,23 @@ namespace OneHamsa.Dexterity.Builtins
         }
 
         [SerializeField]
-        protected HierarchyNode node;
+        protected GraphNode node;
 
         public Settings settings = new();
 
-        public HierarchyNode GetNode() => node;
+        public GraphNode GetNode() => node;
 
         protected virtual void Awake()
         {
-            if (!node) node = GetComponentInParent<HierarchyNode>();
+            if (!node) node = GetComponentInParent<GraphNode>();
             if (!node)
             {
-                Debug.LogWarning($"HierarchyNode not found for listener ({gameObject.name})", this);
+                Debug.LogWarning($"GraphNode not found for listener ({gameObject.name})", this);
                 enabled = false;
             }
         }
 
-        // Empty hooks so subclasses (HierarchyNodeLongPressListener) can override safely.
+        // Empty hooks so subclasses (GraphNodeLongPressListener) can override safely.
         // The new model doesn't need provider subscription here — node.GetRawInput is polled.
         protected virtual void OnEnable() { }
         protected virtual void OnDisable() { }

@@ -3,12 +3,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="NodeStateField"/>.
+    /// GraphNode equivalent of <see cref="NodeStateField"/>.
     /// Reports its state while the referenced <see cref="BaseStateNode"/> is in
     /// the named state. Event-driven; no polling.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/Node State Provider")]
-    public class NodeStateProvider : HierarchyStateProvider
+    [AddComponentMenu("Dexterity/Graph/Providers/Node State Provider")]
+    public class NodeStateProvider : GraphStateProvider
     {
         public BaseStateNode targetNode;
 
@@ -60,8 +60,8 @@ namespace OneHamsa.Dexterity.Builtins
             }
 
             // Edit-time path: no Database, no init. Compare by string against
-            // the target's tree evaluation. Only HierarchyNodes support this.
-            if (targetNode is HierarchyNode hn)
+            // the target's tree evaluation. Only GraphNodes support this.
+            if (targetNode is GraphNode hn)
             {
                 var current = hn.EvaluateTreeEditor() ?? hn.initialState;
                 return (current == targetState) ^ negate;

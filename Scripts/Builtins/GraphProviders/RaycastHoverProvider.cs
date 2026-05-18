@@ -3,12 +3,12 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// HierarchyNode equivalent of <see cref="RaycastHoverField"/>.
+    /// GraphNode equivalent of <see cref="RaycastHoverField"/>.
     /// Reports its state while any registered <see cref="IRaycastController"/> with
     /// the configured tag is hovering this GameObject's collider.
     /// </summary>
-    [AddComponentMenu("Dexterity/Hierarchy/Providers/Raycast Hover Provider")]
-    public class RaycastHoverProvider : HierarchyStateProvider, IRaycastReceiver
+    [AddComponentMenu("Dexterity/Graph/Providers/Raycast Hover Provider")]
+    public class RaycastHoverProvider : GraphStateProvider, IRaycastReceiver
     {
         [TagSelector, Tooltip("Raycast controller tag filter. Empty = any tag.")]
         public string raycastTag = "Untagged";
