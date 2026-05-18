@@ -326,27 +326,41 @@ namespace OneHamsa.Dexterity
         {
             if (_rebuilding) return change;   // suppress commits during programmatic clear
 
-            if (change.edgesToCreate != null)
+            // Group every commit inside this dispatch into a single Undo entry — a
+            // multi-select drag, a multi-edge delete, an edge-creation-plus-move,
+            // etc., all collapse to one Ctrl+Z step.
+            Undo.IncrementCurrentGroup();
+            var group = Undo.GetCurrentGroup();
+            string groupName = null;
+
+            if (change.edgesToCreate != null && change.edgesToCreate.Count > 0)
             {
                 foreach (var edge in change.edgesToCreate)
                     CommitEdgeCreation(edge);
+                groupName = change.edgesToCreate.Count == 1 ? "Create Edge" : "Create Edges";
             }
-            if (change.elementsToRemove != null)
+            if (change.elementsToRemove != null && change.elementsToRemove.Count > 0)
             {
+                int edges = 0, srcs = 0;
                 foreach (var elem in change.elementsToRemove)
                 {
-                    if (elem is Edge edge)
-                        CommitEdgeRemoval(edge);
-                    else if (elem is DexteritySourceNodeView snv)
-                        CommitSourceRemoval(snv);
+                    if (elem is Edge edge) { CommitEdgeRemoval(edge); edges++; }
+                    else if (elem is DexteritySourceNodeView snv) { CommitSourceRemoval(snv); srcs++; }
                 }
+                if (srcs > 0)      groupName = srcs == 1 ? "Delete Graph Source" : "Delete Graph Sources";
+                else if (edges > 0) groupName = edges == 1 ? "Delete Edge" : "Delete Edges";
             }
-            if (change.movedElements != null)
+            if (change.movedElements != null && change.movedElements.Count > 0)
             {
                 foreach (var elem in change.movedElements)
-                {
                     if (elem is Node n) CommitMove(n);
-                }
+                groupName ??= change.movedElements.Count == 1 ? "Move Graph Node" : "Move Graph Nodes";
+            }
+
+            if (groupName != null)
+            {
+                Undo.SetCurrentGroupName(groupName);
+                Undo.CollapseUndoOperations(group);
             }
             return change;
         }
@@ -491,6 +505,9 @@ namespace OneHamsa.Dexterity
             if (_node == null || data == null || !data.StartsWith(kClipboardPrefix)) return;
             var body = data.Substring(kClipboardPrefix.Length);
             var pasted = new List<Component>();
+
+            Undo.IncrementCurrentGroup();
+            var group = Undo.GetCurrentGroup();
             foreach (var entry in body.Split(new[] { "\n---\n" }, System.StringSplitOptions.RemoveEmptyEntries))
             {
                 var splitIdx = entry.IndexOf('\n');
@@ -501,7 +518,12 @@ namespace OneHamsa.Dexterity
                 if (type == null) continue;
                 var newComp = Undo.AddComponent(_node.gameObject, type);
                 if (newComp == null) continue;
+                // FromJsonOverwrite bypasses the SerializedProperty path so Unity
+                // doesn't see it as a tracked change. RecordObject before snapshots
+                // the default state — undo restores it, redo replays the paste.
+                Undo.RecordObject(newComp, "Paste");
                 EditorJsonUtility.FromJsonOverwrite(json, newComp);
+                EditorUtility.SetDirty(newComp);
                 // Nudge position so the paste doesn't sit exactly on top of the original.
                 var so = new SerializedObject(newComp);
                 var posProp = so.FindProperty("graphPosition");
@@ -512,6 +534,8 @@ namespace OneHamsa.Dexterity
                 }
                 pasted.Add(newComp);
             }
+            Undo.SetCurrentGroupName(pasted.Count == 1 ? "Paste Graph Source" : "Paste Graph Sources");
+            Undo.CollapseUndoOperations(group);
             // Re-select pasted components in the graph view for immediate continued editing.
             RequestRebuild(onAfterRebuild: () =>
             {
@@ -529,6 +553,9 @@ namespace OneHamsa.Dexterity
         internal void AddSourceOfTypeAt(System.Type type, Vector2? graphPos)
         {
             if (_node == null) return;
+
+            Undo.IncrementCurrentGroup();
+            var group = Undo.GetCurrentGroup();
             var comp = Undo.AddComponent(_node.gameObject, type);
             if (comp != null && graphPos.HasValue)
             {
@@ -540,6 +567,9 @@ namespace OneHamsa.Dexterity
                     so.ApplyModifiedProperties();
                 }
             }
+            Undo.SetCurrentGroupName($"Add {type.Name}");
+            Undo.CollapseUndoOperations(group);
+
             RequestRebuild();
         }
 
