@@ -118,7 +118,11 @@ namespace OneHamsa.Dexterity
             {
                 var mods = new HashSet<Modifier>();
                 foreach (var m in BaseStateNodeEditor.GetModifiers(n))
-                    if (m.animatableInEditor && m.gameObject.hideFlags == HideFlags.None)
+                    // hideFlags filter mirrors BaseStateNodeEditor.GetModifiers — skip only
+                    // modifiers on user-hidden GameObjects (bespoke editor-driven animations).
+                    // DontSave / NotEditable alone are fine: EditorInstantiatePreview clones are
+                    // visible preview subtrees that should participate in the preview driver.
+                    if (m.animatableInEditor && (m.gameObject.hideFlags & (HideFlags.HideInHierarchy | HideFlags.HideInInspector)) == 0)
                         mods.Add(m);
                 s_mods[n] = mods;
             }

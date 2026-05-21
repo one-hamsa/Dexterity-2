@@ -376,8 +376,12 @@ namespace OneHamsa.Dexterity
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
                 if (modifier.GetNode() == baseNode
-                    // don't collect hidden modifiers - these are used for non-trivial editor animations
-                    && modifier.gameObject.hideFlags == HideFlags.None)
+                    // Skip modifiers on GameObjects hidden from the user — the convention is
+                    // that those are driven by bespoke editor animation code, so the standard
+                    // collector stays out of the way. DontSave / NotEditable alone don't qualify:
+                    // EditorInstantiatePreview spawns visible-but-DontSave preview subtrees that
+                    // legitimately want preview tooling.
+                    && (modifier.gameObject.hideFlags & (HideFlags.HideInHierarchy | HideFlags.HideInInspector)) == 0)
                     modifiers.Add(modifier);
             }
 
