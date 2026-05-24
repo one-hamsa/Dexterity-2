@@ -25,5 +25,8 @@ namespace OneHamsa.Dexterity.Builtins
                 MarkChanged();
             }
         }
+
+        /// <summary>Flips <see cref="Active"/>. Convenient for click-driven toggle wiring.</summary>
+        public void Toggle() => Active = !active;
     }
 }

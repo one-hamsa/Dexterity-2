@@ -300,6 +300,27 @@ namespace OneHamsa.Dexterity
             EnsureStateIdCache();
         }
 
+        /// <summary>
+        /// Returns the source attached to this node whose edge targets the state-input port
+        /// named <paramref name="portName"/>, cast to <typeparamref name="T"/>. First matching
+        /// source wins — if multiple sources feed the same port, only the first cast hit is
+        /// returned. Null if no source of type <typeparamref name="T"/> feeds that port.
+        ///
+        /// Lets behavior code address a specific provider declaratively ("the ConstantProvider
+        /// feeding the IsShelf port") instead of via a serialized component reference that
+        /// would duplicate the graph wiring.
+        /// </summary>
+        public T GetDependency<T>(string portName) where T : Component
+        {
+            if (string.IsNullOrEmpty(portName)) return null;
+            EnsureCachesValid();
+            if (_topoCycleDetected) return null;
+            if (!_sourcesByPort.TryGetValue(portName, out var srcs)) return null;
+            for (var i = 0; i < srcs.Count; i++)
+                if (srcs[i] is T t) return t;
+            return null;
+        }
+
         /// <summary>Does this node declare a state-input port with the given name?</summary>
         public bool HasInputPort(string portName)
         {
