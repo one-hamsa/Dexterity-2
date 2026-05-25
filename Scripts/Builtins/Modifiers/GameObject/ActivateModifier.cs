@@ -73,35 +73,30 @@ namespace OneHamsa.Dexterity.Builtins
 		void IPrefabEditingHooks.OnPrefabSaved() { PrepareForEdit(); }
 		void IPrefabEditingHooks.OnPrefabStageOpened() { PrepareForEdit(); }
 
-		void PrepareForSave() 
+		void PrepareForSave()
         {
 #if UNITY_EDITOR
 	        if (!enabled)
 		        return;
-	        
-	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
-	        if (!isInstance)
-	        {
-		        EditorUtility.SetDirty(this);
-		        activeInEdit = gameObject.activeSelf;
-	        }
-	        
-			gameObject.SetActive(true);
-			EditorUtility.SetDirty(gameObject);
+
+	        // Mirrors OneHumus.Utils.ActivateInPlay: direct field write + SetDirty on the
+	        // gameObject. The gameObject dirty propagation covers the prefab override
+	        // tracking for the activeInEdit field too, because the modifier lives on the
+	        // same gameObject. No SerializedObject indirection needed.
+	        activeInEdit = gameObject.activeSelf;
+	        gameObject.SetActive(true);
+	        EditorUtility.SetDirty(gameObject);
 #endif
 		}
 
-		void PrepareForEdit() 
+		void PrepareForEdit()
         {
 	        if (!enabled)
 		        return;
-	        
+
 #if UNITY_EDITOR
-	        bool isInstance = PrefabUtility.IsPartOfPrefabInstance(this);
-	        if (!isInstance)
-	        {
+	        if (gameObject.activeSelf != activeInEdit)
 		        gameObject.SetActive(activeInEdit);
-	        }
 #endif
 		}
 		

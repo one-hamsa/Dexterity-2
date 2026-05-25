@@ -303,6 +303,25 @@ namespace OneHamsa.Dexterity
             initialized = false;
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Tear down the transient state that <see cref="Initialize"/> sets up,
+        /// so the node can be safely re-initialized later. Called by the editor
+        /// preview driver when its session ends. Editor-only.
+        /// </summary>
+        public void ResetEditorState()
+        {
+            initialized = false;
+            _performedFirstInitialization = false;
+            activeState = StateFunction.emptyStateId;
+            cachedDelays.Clear();
+            pendingStateChangeTime = 0;
+            pendingState = -1;
+            overrideStateId = StateFunction.emptyStateId;
+            stateDirty = true;
+        }
+#endif
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<int> GetStateIDs()
         {
@@ -313,7 +332,14 @@ namespace OneHamsa.Dexterity
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetActiveState() => activeState;
         public void SetActiveState_Editor(int newState) => activeState = newState;
-        
+
+        /// <summary>
+        /// Flag this node for re-evaluation on its next <see cref="Refresh"/>.
+        /// Used at runtime by the source-attach event chain, and at edit time by
+        /// <c>GraphEditorPreviewDriver</c> to trigger per-frame re-evaluation.
+        /// </summary>
+        public void MarkStateDirty() => stateDirty = true;
+
         public bool IsStateDirty() => stateDirty;
         #endregion General Methods
 

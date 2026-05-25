@@ -4,21 +4,23 @@ using UnityEngine.Scripting;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [RequireComponent(typeof(ClickListener))]
     public class RecentClickIndicator : MonoBehaviour
     {
         public float recentDuration = 1f;
-        
-        private ClickListener clickListener;
-        private bool hasClickListener;
+
+        private BaseClickListener clickListener;
+        private bool hasBaseClickListener;
 
         private void Awake()
         {
-            clickListener = GetComponent<ClickListener>();
-            hasClickListener = clickListener != null;
+            clickListener = GetComponent<BaseClickListener>();
+            hasBaseClickListener = clickListener != null;
+            if (!hasBaseClickListener)
+                Debug.LogError($"RecentClickIndicator on {name} needs a sibling BaseClickListener " +
+                               "(FieldNodeClickListener or GraphNodeClickListener) to time clicks against.", this);
         }
         
         [Preserve]
-        public bool IsRecent() => hasClickListener && clickListener.GetTimeSinceClick() < recentDuration;
+        public bool IsRecent() => hasBaseClickListener && clickListener.GetTimeSinceClick() < recentDuration;
     }
 }

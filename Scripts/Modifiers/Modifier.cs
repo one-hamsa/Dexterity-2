@@ -219,7 +219,12 @@ namespace OneHamsa.Dexterity
                 return;
             
             CacheDelays();
-            cachedStates ??= node.GetStateIDs().ToArray();
+            // Runtime: cache once for the session (Database is stable).
+            // Edit time: re-fetch — Database is created/destroyed per preview
+            // session, so a sticky cache from a prior session holds stale state
+            // IDs that filter every current property out.
+            if (cachedStates == null || !Application.isPlaying)
+                cachedStates = node.GetStateIDs().ToArray();
             
             propertiesCache = new Dictionary<int, PropertyBase>();
             foreach (var prop in properties)

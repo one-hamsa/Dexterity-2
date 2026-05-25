@@ -136,9 +136,13 @@ namespace OneHamsa.Dexterity
                 return;
             var modifiers = _modifiers.ToList();
 
-            if (baseNode.ShouldAutoSyncModifiersStates())
+            // Skip auto-sync while the user is editing a text field. SyncStates
+            // reacts to the partial state name typed character-by-character, mutates
+            // the modifier's properties list, marks dirty, forces a repaint, and
+            // steals focus from the text field — making the field effectively
+            // un-editable. Resume syncing once focus leaves.
+            if (baseNode.ShouldAutoSyncModifiersStates() && !EditorGUIUtility.editingTextField)
             {
-                // make sure all are up to date
                 foreach (var modifier in modifiers)
                     modifier.SyncStates();
             }
@@ -352,18 +356,32 @@ namespace OneHamsa.Dexterity
             return modifiers;
         }
         
-        private static IEnumerable<Modifier> GetModifiers(BaseStateNode baseNode)
+        /// <summary>
+        /// Returns the modifiers attached to <paramref name="baseNode"/>. At runtime
+        /// uses the registered <c>nodeModifiers</c> set (populated by Modifier.OnEnable).
+        /// At edit time falls back to a scene-wide scan + filter, since modifiers don't
+        /// have <c>[ExecuteAlways]</c> and thus haven't registered themselves yet.
+        ///
+        /// Internal so the GraphNode preview driver can share the same discovery path
+        /// rather than duplicating it (one source of truth = same scene scoping/quirks
+        /// across FieldNode and GraphNode previews).
+        /// </summary>
+        internal static IEnumerable<Modifier> GetModifiers(BaseStateNode baseNode)
         {
             if (Application.IsPlaying(baseNode))
                 return baseNode.GetModifiers();
 
             var modifiers = new HashSet<Modifier>();
-            
+
             // see https://forum.unity.com/threads/findobjectsoftype-is-broken-when-invoked-from-inside-prefabstage-nested-prefabs.684037/
             foreach (var modifier in Resources.FindObjectsOfTypeAll<Modifier>()) {
-                if (modifier.GetNode() == baseNode 
-                    // don't collect hidden modifiers - these are used for non-trivial editor animations
-                    && modifier.gameObject.hideFlags == HideFlags.None) 
+                if (modifier.GetNode() == baseNode
+                    // Skip modifiers on GameObjects hidden from the user — the convention is
+                    // that those are driven by bespoke editor animation code, so the standard
+                    // collector stays out of the way. DontSave / NotEditable alone don't qualify:
+                    // EditorInstantiatePreview spawns visible-but-DontSave preview subtrees that
+                    // legitimately want preview tooling.
+                    && (modifier.gameObject.hideFlags & (HideFlags.HideInHierarchy | HideFlags.HideInInspector)) == 0)
                     modifiers.Add(modifier);
             }
 
