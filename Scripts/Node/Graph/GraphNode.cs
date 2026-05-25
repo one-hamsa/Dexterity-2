@@ -24,6 +24,17 @@ namespace OneHamsa.Dexterity
         [SerializeField, Tooltip("Ordered state inputs. Port name = state name. First port with any active source wins.")]
         private List<string> stateInputs = new();
 
+        // Parallel to stateInputs (same index, same length — enforced in OnValidate and
+        // EnsureRawOnlyListSize). A "raw-only" port is wire-able in the graph window so
+        // providers can edge into it and listeners can read its raw value via
+        // GetRawInput, but it is INVISIBLE to modifiers (GetStateNames skips it) and
+        // can never become the priority-resolved active state (GetNextStateWithoutOverride
+        // and EvaluateTreeEditor skip it). The canonical use case is a click listener
+        // reading raw Pressed/Hover signals on a toggle button whose "real" states are
+        // the mode-gated combinations (Shelf/ShelfHover/ShelfPress + Drop/...).
+        [SerializeField, HideInInspector]
+        private List<bool> stateInputsRawOnly = new();
+
         [SerializeField, HideInInspector]
         private Vector2 graphPosition;
 
@@ -199,15 +210,17 @@ namespace OneHamsa.Dexterity
         // -- BaseStateNode overrides --------------------------------------------
         public override HashSet<string> GetStateNames()
         {
-            // initialState + every stateInputs entry. We deliberately do NOT
-            // auto-add StateFunction.kDefaultState ("<Default>") — historically that
+            // initialState + every NON-raw-only stateInputs entry. We deliberately do
+            // NOT auto-add StateFunction.kDefaultState ("<Default>") — historically that
             // produced a duplicate "default-ish" state in modifiers whenever the
             // designer set initialState to anything other than "<Default>". The
-            // initialState already serves as the fallback name.
+            // initialState already serves as the fallback name. Raw-only ports are
+            // excluded so modifiers don't sync inert rows for them.
             var set = new HashSet<string>();
             if (!string.IsNullOrEmpty(initialState)) set.Add(initialState);
             for (var i = 0; i < stateInputs.Count; i++)
             {
+                if (IsRawOnly(i)) continue;
                 var s = stateInputs[i];
                 if (!string.IsNullOrEmpty(s)) set.Add(s);
             }
@@ -225,6 +238,7 @@ namespace OneHamsa.Dexterity
 
             for (var i = 0; i < stateInputs.Count; i++)
             {
+                if (IsRawOnly(i)) continue; // raw-only ports never become the active state
                 var port = stateInputs[i];
                 if (!string.IsNullOrEmpty(port) && PortIsActive(port))
                     return _stateInputIds[i];
@@ -244,6 +258,7 @@ namespace OneHamsa.Dexterity
 
             for (var i = 0; i < stateInputs.Count; i++)
             {
+                if (IsRawOnly(i)) continue; // raw-only ports never become the active state
                 var port = stateInputs[i];
                 if (!string.IsNullOrEmpty(port) && PortIsActive(port))
                     return port;
@@ -332,10 +347,45 @@ namespace OneHamsa.Dexterity
             return false;
         }
 
+        /// <summary>
+        /// Is the port at the given <c>stateInputs</c> index marked raw-only? Raw-only ports
+        /// are excluded from <see cref="GetStateNames"/> (so modifiers don't sync rows for
+        /// them) and from priority resolution in <see cref="GetNextStateWithoutOverride"/> /
+        /// <see cref="EvaluateTreeEditor"/> (so they can never be the active state), but
+        /// they remain wire-able and readable via <see cref="GetRawInput(string)"/>.
+        /// </summary>
+        public bool IsRawOnly(int index)
+        {
+            // Tolerate a short rawOnly list — treat missing entries as false. OnValidate
+            // pads the list to match stateInputs in the editor, but this guard means
+            // runtime code stays correct even when called before OnValidate has run
+            // (e.g. immediately after AddComponent in a procedural builder).
+            return index >= 0 && index < stateInputsRawOnly.Count && stateInputsRawOnly[index];
+        }
+
+        /// <summary>Convenience: is the named port marked raw-only?</summary>
+        public bool IsPortRawOnly(string portName)
+        {
+            if (string.IsNullOrEmpty(portName)) return false;
+            for (var i = 0; i < stateInputs.Count; i++)
+            {
+                if (stateInputs[i] == portName) return IsRawOnly(i);
+            }
+            return false;
+        }
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
+            // Keep the parallel raw-only list aligned with stateInputs so reads by index
+            // remain meaningful. Pad with false for new entries; truncate when stateInputs
+            // shrinks. (Reordering is the editor's responsibility — see GraphNodeEditor.)
+            while (stateInputsRawOnly.Count < stateInputs.Count) stateInputsRawOnly.Add(false);
+            if (stateInputsRawOnly.Count > stateInputs.Count)
+                stateInputsRawOnly.RemoveRange(stateInputs.Count,
+                    stateInputsRawOnly.Count - stateInputs.Count);
+
             _topoDirty = true;
             _idsDirty = true;
         }

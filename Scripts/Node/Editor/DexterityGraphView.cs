@@ -703,13 +703,27 @@ namespace OneHamsa.Dexterity
             var inputs = so.FindProperty("stateInputs");
             if (inputs == null || !inputs.isArray) { RefreshPorts(); return; }
 
+            // Read parallel raw-only flags so raw ports can be styled differently —
+            // they're wire-able like any other port (providers/aggregators edge into
+            // them to feed raw signals), but they're modifier-invisible and never
+            // priority-resolved, so we dim the label and tag it "(raw)" to make that
+            // distinction visible at a glance.
+            var rawOnly = so.FindProperty("stateInputsRawOnly");
             for (var i = 0; i < inputs.arraySize; i++)
             {
                 var stateName = inputs.GetArrayElementAtIndex(i).stringValue;
                 if (string.IsNullOrEmpty(stateName)) continue;
                 var port = InstantiatePort(Orientation.Horizontal, Direction.Input,
                     Port.Capacity.Multi, typeof(bool));
-                port.portName = stateName;
+                bool isRaw = rawOnly != null && i < rawOnly.arraySize
+                    && rawOnly.GetArrayElementAtIndex(i).boolValue;
+                port.portName = isRaw ? $"{stateName} (raw)" : stateName;
+                if (isRaw)
+                {
+                    // Dim raw-only ports so the priority-relevant ports stay visually dominant.
+                    var label = port.Q<Label>("type");
+                    if (label != null) label.style.color = new Color(0.55f, 0.55f, 0.55f);
+                }
                 inputContainer.Add(port);
                 _inputPorts.Add(port);
                 _portByState[stateName] = port;
