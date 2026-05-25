@@ -18,6 +18,13 @@ namespace OneHamsa.Dexterity
         int IThrottledLifecycle.Order => 1;
         void IThrottledLifecycle.OnPoolCreation() => Allocate();
 
+        // This is here to support "pre-warming" but also through the IThrottledLifecycleManager code path
+        // (vs. the single player Warmup path that uses OnPoolCreation())
+        IEnumerator IThrottledLifecycle.ThrottledSetup()
+        {
+            Allocate();
+            yield break;
+        }
 
         public enum DelayDirection
         {
