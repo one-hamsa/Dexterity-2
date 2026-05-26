@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity
     public abstract class Modifier : TransitionBehaviour, IReferencesNode, IThrottledLifecycle
     {
         public byte ThrottledState { get; set; }
-        int IThrottledLifecycle.Order => 1;
+        int IThrottledLifecycle.Order => IThrottledLifecycle.AfterDefault;
         void IThrottledLifecycle.OnPoolCreation() => Allocate();
 
         // This is here to support "pre-warming" but also through the IThrottledLifecycleManager code path
