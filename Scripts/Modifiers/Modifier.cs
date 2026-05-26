@@ -12,8 +12,13 @@ namespace OneHamsa.Dexterity
 {
     [DefaultExecutionOrder(Manager.modifierExecutionPriority)]
     [ModifierPropertyDefinition("Property")]
-    public abstract class Modifier : TransitionBehaviour, IReferencesNode
+    public abstract class Modifier : TransitionBehaviour, IReferencesNode, IThrottledLifecycle
     {
+        public byte ThrottledState { get; set; }
+        int IThrottledLifecycle.Order => 1;
+        void IThrottledLifecycle.OnPoolCreation() => Allocate();
+
+
         public enum DelayDirection
         {
             Enter,

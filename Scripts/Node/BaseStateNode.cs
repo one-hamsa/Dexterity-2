@@ -10,8 +10,12 @@ using UnityEngine.Serialization;
 
 namespace OneHamsa.Dexterity
 {
-    public abstract class BaseStateNode : MonoBehaviour, IHasStates
+    public abstract class BaseStateNode : MonoBehaviour, IHasStates, IThrottledLifecycle
     {
+        public byte ThrottledState { get; set; }
+        void IThrottledLifecycle.OnPoolCreation() => Allocate();
+
+
         [Serializable]
         public class TransitionDelay
         {
