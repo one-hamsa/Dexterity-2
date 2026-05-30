@@ -40,7 +40,14 @@ namespace OneHamsa.Dexterity
         // lock-step; the callbacks below do exactly that.
         private void EnsureStateInputsList()
         {
-            if (_stateInputsList != null && _stateInputsList.serializedProperty == serializedObject.FindProperty("stateInputs"))
+            // Reuse the existing list while it's still bound to this editor's SerializedObject.
+            // The list must persist across OnInspectorGUI calls: a ReorderableList keeps its
+            // in-progress drag state on the instance, so rebuilding it between the drag's
+            // mouse-down and mouse-up would discard the drag and the reorder would never commit.
+            // SerializedObject is a stable instance for the editor's lifetime (unlike the fresh
+            // SerializedProperty FindProperty hands back each call), so compare against it.
+            if (_stateInputsList?.serializedProperty != null
+                && _stateInputsList.serializedProperty.serializedObject == serializedObject)
                 return;
 
             var inputs = serializedObject.FindProperty("stateInputs");
