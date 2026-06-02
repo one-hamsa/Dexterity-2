@@ -668,8 +668,7 @@ namespace OneHamsa.Dexterity
         private readonly DexterityGraphView _view;
         private readonly List<Port> _inputPorts = new();
         private readonly Dictionary<string, Port> _portByState = new();
-        private PopupField<string> _previewDropdown;
-        private const string kLivePreviewOption = "(live)";
+        private readonly Dictionary<string, Button> _previewButtons = new();
 
         public DexterityOutNodeView(GraphNode node, DexterityGraphView view)
         {
@@ -694,27 +693,12 @@ namespace OneHamsa.Dexterity
             // them here caused the whole graph to rebuild on every keystroke (each change
             // event destroyed the text field and stole focus).
 
-            // Final-state preview: force the Out node to a chosen state, transiently (like the source
-            // override pills — never serialized). "(live)" returns to source-driven evaluation. The
-            // winner highlight + title always reflect the forced state; modifiers animate while the
-            // window's Preview toggle is on (the preview driver honors the same override).
-            var previewOptions = new List<string> { kLivePreviewOption };
-            previewOptions.AddRange(node.GetStateNames());
-            _previewDropdown = new PopupField<string>("Preview state", previewOptions, 0)
-            {
-                tooltip = "Force a final state for preview (transient, not serialized). " +
-                          "Turn on Preview to also animate the modifiers."
-            };
-            _previewDropdown.RegisterValueChangedCallback(evt =>
-            {
-                if (evt.newValue == kLivePreviewOption) GraphPreviewOverrides.ClearNodeState(Node);
-                else GraphPreviewOverrides.SetNodeState(Node, evt.newValue);
-                _view?.RefreshActiveHighlight();
-            });
-            body.Add(_previewDropdown);
-            SyncPreviewDropdown();
-            GraphPreviewOverrides.onChanged += SyncPreviewDropdown;
-            this.RegisterCallback<DetachFromPanelEvent>(_ => GraphPreviewOverrides.onChanged -= SyncPreviewDropdown);
+            // Final-state preview lives on the ports themselves — each state port carries a play
+            // button on its left (built in AddPorts). Keep their highlight in sync with the shared
+            // override here so external clears (ClearAll) and other windows toggling this node are
+            // reflected too.
+            GraphPreviewOverrides.onChanged += SyncPreviewButtons;
+            this.RegisterCallback<DetachFromPanelEvent>(_ => GraphPreviewOverrides.onChanged -= SyncPreviewButtons);
 
             body.Bind(so);
             extensionContainer.Add(body);
@@ -722,14 +706,59 @@ namespace OneHamsa.Dexterity
             RefreshPorts();
         }
 
-        // Reflect the current node-state override into the dropdown without re-firing its callback
-        // (covers external clears like ClearAll and another window toggling the same node).
-        private void SyncPreviewDropdown()
+        // One play button per state port, sitting on the port's left edge. Forcing a state
+        // replaces any previously-forced one (GraphPreviewOverrides keeps a single forced state
+        // per node), so picking another port auto-clears the old one; clicking the active port
+        // returns the node to live. Modifiers animate while the window's Preview toggle is on.
+        private Button MakePreviewButton(string stateName)
         {
-            if (_previewDropdown == null) return;
-            var value = GraphPreviewOverrides.TryGetNodeState(Node, out var forced) && !string.IsNullOrEmpty(forced)
-                ? forced : kLivePreviewOption;
-            if (_previewDropdown.value != value) _previewDropdown.SetValueWithoutNotify(value);
+            var btn = new Button(() =>
+            {
+                bool isForced = GraphPreviewOverrides.TryGetNodeState(Node, out var f) && f == stateName;
+                if (isForced) GraphPreviewOverrides.ClearNodeState(Node);
+                else GraphPreviewOverrides.SetNodeState(Node, stateName);
+                _view?.RefreshActiveHighlight();
+            })
+            {
+                tooltip = "Preview this state (transient, not serialized; replaces any other " +
+                          "previewed state). Turn on Preview to also animate the modifiers."
+            };
+            btn.style.width = 16f;
+            btn.style.height = 16f;
+            btn.style.marginLeft = 2f;
+            btn.style.marginRight = 4f;
+            btn.style.paddingLeft = 0; btn.style.paddingRight = 0;
+            btn.style.paddingTop = 0; btn.style.paddingBottom = 0;
+            btn.style.alignItems = Align.Center;
+            btn.style.justifyContent = Justify.Center;
+
+            // Unity's own play-control icon — matches editor preview design language.
+            var icon = EditorGUIUtility.IconContent("PlayButton")?.image;
+            if (icon != null)
+            {
+                var img = new UnityEngine.UIElements.Image { image = icon, scaleMode = ScaleMode.ScaleToFit };
+                img.style.width = 10f;
+                img.style.height = 10f;
+                btn.Add(img);
+            }
+            else btn.text = "P";
+
+            return btn;
+        }
+
+        // Reflect the current node-state override into the per-port buttons: cyan (kPreviewColor)
+        // on the forced state, dimmed gray (kNoneColor) on the rest. Covers external clears like
+        // ClearAll and another window toggling the same node.
+        private void SyncPreviewButtons()
+        {
+            GraphPreviewOverrides.TryGetNodeState(Node, out var forced);
+            foreach (var kv in _previewButtons)
+            {
+                bool active = !string.IsNullOrEmpty(forced) && kv.Key == forced;
+                var c = active ? DexterityPreview.kPreviewColor : DexterityPreview.kNoneColor;
+                if (!active) c.a = 0.5f;
+                kv.Value.style.backgroundColor = c;
+            }
         }
 
         private void ApplyModeTint()
@@ -774,6 +803,7 @@ namespace OneHamsa.Dexterity
             foreach (var p in _inputPorts) inputContainer.Remove(p);
             _inputPorts.Clear();
             _portByState.Clear();
+            _previewButtons.Clear();
 
             var so = new SerializedObject(Node);
             AddPorts(so.FindProperty("states"), isInput: false, portStateNameMap);
@@ -781,6 +811,7 @@ namespace OneHamsa.Dexterity
 
             RefreshPorts();
             RefreshExpandedState();
+            SyncPreviewButtons();
         }
 
         // Build one input port per name. State ports are the priority-resolved ports; raw
@@ -801,6 +832,13 @@ namespace OneHamsa.Dexterity
                 {
                     var label = port.Q<Label>("type");
                     if (label != null) label.style.color = new Color(0.55f, 0.55f, 0.55f);
+                }
+                else
+                {
+                    // State ports carry a preview play button on their left edge.
+                    var previewBtn = MakePreviewButton(stateName);
+                    _previewButtons[stateName] = previewBtn;
+                    port.Insert(0, previewBtn);
                 }
                 inputContainer.Add(port);
                 _inputPorts.Add(port);
