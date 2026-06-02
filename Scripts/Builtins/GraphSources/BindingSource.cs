@@ -7,8 +7,8 @@ namespace OneHamsa.Dexterity.Builtins
     /// Reports its state while the referenced boolean property/method
     /// (configured via <see cref="BoolObjectBinding"/>) evaluates to true.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/Providers/Binding Provider")]
-    public class BindingProvider : GraphStateProvider
+    [AddComponentMenu("Dexterity/Graph/Sources/Binding Source")]
+    public class BindingSource : GraphSource
     {
         public BoolObjectBinding binding = new();
 
@@ -26,7 +26,7 @@ namespace OneHamsa.Dexterity.Builtins
             {
                 if (!binding.Initialize())
                 {
-                    Debug.LogError($"{nameof(BindingProvider)}: failed to initialize binding on {name}", this);
+                    Debug.LogError($"{nameof(BindingSource)}: failed to initialize binding on {name}", this);
                     _stopped = true;
                 }
             }

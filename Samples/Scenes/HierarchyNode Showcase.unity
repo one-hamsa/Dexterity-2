@@ -324,10 +324,11 @@ MonoBehaviour:
   delays: []
   autoSyncModifiersStates: 1
   overrideState: 
-  stateInputs:
+  states:
   - Disabled Hover
   - Disabled
   - Hover
+  inputs: []
   graphPosition: {x: 0, y: 0}
 --- !u!114 &77392965
 MonoBehaviour:
@@ -819,10 +820,11 @@ MonoBehaviour:
   delays: []
   autoSyncModifiersStates: 1
   overrideState: 
-  stateInputs:
+  states:
   - Disabled
   - Pressed
   - Hover
+  inputs: []
   graphPosition: {x: 0, y: 0}
 --- !u!114 &543619558
 MonoBehaviour:
@@ -1128,11 +1130,12 @@ MonoBehaviour:
   delays: []
   autoSyncModifiersStates: 1
   overrideState: 
-  stateInputs:
+  states:
   - Disabled Hover
   - Disabled
   - Pressed
   - Hover
+  inputs: []
   graphPosition: {x: 0, y: 0}
 --- !u!114 &974667239
 MonoBehaviour:
@@ -1829,10 +1832,11 @@ MonoBehaviour:
   delays: []
   autoSyncModifiersStates: 1
   overrideState: 
-  stateInputs:
+  states:
   - Visible Hover
   - Visible
   - Hidden
+  inputs: []
   graphPosition: {x: 0, y: 0}
 --- !u!114 &1382887410
 MonoBehaviour:
@@ -1994,13 +1998,14 @@ MonoBehaviour:
   delays: []
   autoSyncModifiersStates: 1
   overrideState: 
-  stateInputs:
+  states:
   - Toggled Pressed
   - Toggled Hover
   - Toggled
   - Pressed
   - Hover
   - Default
+  inputs: []
   graphPosition: {x: 500, y: 99}
 --- !u!114 &1886422401
 MonoBehaviour:

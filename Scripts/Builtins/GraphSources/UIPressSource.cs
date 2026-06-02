@@ -7,8 +7,8 @@ namespace OneHamsa.Dexterity.Builtins
     /// GraphNode equivalent of <see cref="UIPressField"/>.
     /// Reports its state while a Unity EventSystem pointer is pressed on this UI element.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/Providers/UI Press Provider")]
-    public class UIPressProvider : GraphStateProvider, IPointerDownHandler, IPointerUpHandler
+    [AddComponentMenu("Dexterity/Graph/Sources/UI Press Source")]
+    public class UIPressSource : GraphSource, IPointerDownHandler, IPointerUpHandler
     {
         private bool _pressed;
 

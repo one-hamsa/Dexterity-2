@@ -17,7 +17,7 @@ namespace OneHamsa.Dexterity.Builtins
     ///
     /// Concrete implementations:
     /// - <see cref="FieldNodeClickListener"/> — subscribes to FieldNode OutputFields.
-    /// - <see cref="GraphNodeClickListener"/> — subscribes to GraphStateProvider events.
+    /// - <see cref="GraphNodeClickListener"/> — subscribes to GraphSource events.
     /// </summary>
     public abstract class BaseClickListener : MonoBehaviour
     {

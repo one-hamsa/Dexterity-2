@@ -12,9 +12,9 @@ namespace OneHamsa.Dexterity
     /// GraphView that visualizes and edits a single <see cref="GraphNode"/>'s graph.
     ///
     /// <b>Data model.</b> Components on the host GameObject are the single source of
-    /// truth — every <see cref="GraphStateProvider"/> / <see cref="GraphAggregator"/>
+    /// truth — every <see cref="GraphSource"/> / <see cref="GraphOperator"/>
     /// + the <see cref="GraphNode"/> itself. Their serialized fields (<c>outputs</c>,
-    /// <c>stateInputs</c>, <c>graphPosition</c>) define the graph. The view is a
+    /// <c>states</c>, <c>inputs</c>, <c>graphPosition</c>) define the graph. The view is a
     /// derived projection of those components — never mutated directly.
     ///
     /// <b>Mutation flow (visual → components):</b>
@@ -24,7 +24,7 @@ namespace OneHamsa.Dexterity
     ///       <see cref="CommitMove"/> / <see cref="CommitSourceRemoval"/> — each writes
     ///       to the underlying <see cref="SerializedObject"/> + calls
     ///       <see cref="RequestRebuild"/>.</item>
-    /// <item>Programmatic mutations (search-window add, paste, stateInputs edit) also
+    /// <item>Programmatic mutations (search-window add, paste, states/inputs edit) also
     ///       end in <see cref="RequestRebuild"/>.</item>
     /// </list>
     ///
@@ -44,6 +44,11 @@ namespace OneHamsa.Dexterity
         // for the specific GraphNode the graph is showing.
         internal Color ActiveColor => DexterityPreview.GetNodeColor(_node);
         internal static readonly Color s_inactiveColor = new Color(0.55f, 0.55f, 0.55f);
+
+        // The resolved (winning) state-input port — the one first-match priority selects as the
+        // node's current state. Distinct gold so the designer sees not just which signals are
+        // live (active color, possibly masked) but which state actually wins.
+        internal static readonly Color s_winnerColor = new Color(1f, 0.8f, 0.1f);
 
         // The graph window is the curation surface — providers + aggregators are
         // hidden from the Inspector so the host's component list stays clean.
@@ -104,7 +109,7 @@ namespace OneHamsa.Dexterity
         /// Queue a graph rebuild after current event handling completes. Deduplicates —
         /// any number of calls within a frame coalesce into one <see cref="RebuildGraph"/>.
         /// All mutation sites in this file (and external callers like the Out-node
-        /// inspector when stateInputs changes) should go through this method rather
+        /// inspector when states/inputs change) should go through this method rather
         /// than scheduling their own <c>delayCall</c>.
         /// </summary>
         /// <param name="onAfterRebuild">Optional callback invoked once after the
@@ -160,15 +165,15 @@ namespace OneHamsa.Dexterity
             // hideFlags on any existing source whose flags drifted (older scenes,
             // user accidentally cleared them via Debug Inspector, prefab serializer
             // strip, etc.).
-            foreach (var p in node.GetComponents<GraphStateProvider>())
+            foreach (var p in node.GetComponents<GraphSource>())
             {
                 EnsureHideFlags(p);
-                AddSourceNode(p, isAggregator: false);
+                AddSourceNode(p, isOperator: false);
             }
-            foreach (var a in node.GetComponents<GraphAggregator>())
+            foreach (var a in node.GetComponents<GraphOperator>())
             {
                 EnsureHideFlags(a);
-                AddSourceNode(a, isAggregator: true);
+                AddSourceNode(a, isOperator: true);
             }
 
             // Lay out / load positions
@@ -190,7 +195,7 @@ namespace OneHamsa.Dexterity
         /// <para><b>Rule (one principle, applied recursively via topo eval):</b></para>
         /// <list type="bullet">
         ///   <item><b>Source ports (input + output) on a provider/aggregator</b> →
-        ///         the owner's own <see cref="IDexteritySource.IsActive"/>. Aggregators
+        ///         the owner's own <see cref="IDexteritySource.IsActive"/>. Operators
         ///         compute IsActive from their inputs (AND/OR/etc.), so port color
         ///         chains naturally through <c>GraphNode.EvaluateSources</c>'s topo
         ///         order — no separate "any incoming active" heuristic.</item>
@@ -214,19 +219,27 @@ namespace OneHamsa.Dexterity
                 return;
             }
 
-            // Drive evaluation so every source's IsActive (and aggregator-cached
+            // Drive evaluation so every source's IsActive (and operator-cached
             // outputs) reflect the current pass. Topo order inside EvaluateSources
-            // guarantees aggregator results are correct when we read them below.
+            // guarantees operator results are correct when we read them below.
+            // Capture the resolved winning state name while we're here (priority-respecting):
+            // it's the port we mark as the winner, and the value we surface on the Out node.
+            string winningState;
             if (Application.isPlaying && _node.initialized)
-                _node.GetActiveState();
+            {
+                var id = _node.GetActiveState();
+                winningState = id != -1 ? Database.instance.GetStateAsString(id) : _node.initialState;
+            }
             else
-                _node.EvaluateTreeEditor();
+            {
+                winningState = _node.EvaluateTreeEditor() ?? _node.initialState;
+            }
 
             var activeColor = ActiveColor;
             var inactiveColor = s_inactiveColor;
 
             // Source nodes: every port (in + out) reflects the source's own IsActive.
-            // Aggregator IsActive already accounts for its incoming logic, so this
+            // Operator IsActive already accounts for its incoming logic, so this
             // gives us the chain the user wants: A→B→C edges light up one step at a
             // time as each node's IsActive flips true.
             foreach (var kv in _nodeByComponent)
@@ -236,16 +249,23 @@ namespace OneHamsa.Dexterity
                     var color = ((IDexteritySource)srcView.Component).IsActive
                         ? activeColor : inactiveColor;
                     srcView.OutputPort.portColor = color;
-                    if (srcView.IsAggregator && srcView.InputPort != null)
+                    if (srcView.IsOperator && srcView.InputPort != null)
                         srcView.InputPort.portColor = color;
                 }
             }
 
-            // Out-node state-input ports: "any source feeding is active". Out is the
-            // sink — no IsActive of its own; each port surfaces the raw signal for
-            // its named state (visible even when priority-masked).
+            // Out-node state-input ports: the winning port (first-match priority) gets the
+            // gold winner color; every other port still surfaces its raw signal (active when
+            // a source feeds it, even if priority-masked) so masked inputs stay visible.
             foreach (var kv in _portStateName)
-                kv.Key.portColor = AnyIncomingActive(kv.Key) ? activeColor : inactiveColor;
+            {
+                kv.Key.portColor = kv.Value == winningState ? s_winnerColor
+                    : AnyIncomingActive(kv.Key) ? activeColor : inactiveColor;
+            }
+
+            // Surface the resolved state on the Out node itself — also covers the
+            // initialState fallback, which wins when no port does and so has no port to mark.
+            _outNodeView.SetResolvedState(winningState);
 
             // Port-color changes don't auto-refresh edges — push the new colors now.
             foreach (var e in edges.ToList())
@@ -264,9 +284,9 @@ namespace OneHamsa.Dexterity
             return false;
         }
 
-        private void AddSourceNode(Component src, bool isAggregator)
+        private void AddSourceNode(Component src, bool isOperator)
         {
-            var view = new DexteritySourceNodeView(src, this, isAggregator);
+            var view = new DexteritySourceNodeView(src, this, isOperator);
             AddElement(view);
             _nodeByComponent[src] = view;
         }
@@ -326,7 +346,7 @@ namespace OneHamsa.Dexterity
                     Port targetPort = null;
                     if (targetNode is DexterityOutNodeView outView)
                         targetPort = outView.GetInputPortForState(port);
-                    else if (targetNode is DexteritySourceNodeView aggView && aggView.IsAggregator)
+                    else if (targetNode is DexteritySourceNodeView aggView && aggView.IsOperator)
                         targetPort = aggView.InputPort;
 
                     if (targetPort == null) continue;
@@ -407,7 +427,7 @@ namespace OneHamsa.Dexterity
                 targetComp = outView.Node;
                 portName = _portStateName.TryGetValue(edge.input, out var n) ? n : "";
             }
-            else if (edge.input?.node is DexteritySourceNodeView aggView && aggView.IsAggregator)
+            else if (edge.input?.node is DexteritySourceNodeView aggView && aggView.IsOperator)
             {
                 targetComp = aggView.Component;
                 portName = "";
@@ -648,6 +668,8 @@ namespace OneHamsa.Dexterity
         private readonly DexterityGraphView _view;
         private readonly List<Port> _inputPorts = new();
         private readonly Dictionary<string, Port> _portByState = new();
+        private PopupField<string> _previewDropdown;
+        private const string kLivePreviewOption = "(live)";
 
         public DexterityOutNodeView(GraphNode node, DexterityGraphView view)
         {
@@ -668,9 +690,31 @@ namespace OneHamsa.Dexterity
                 "Initial / fallback state");
             body.Add(initialStateField);
 
-            // stateInputs is edited in the GraphNode inspector — embedding the list
-            // here caused the whole graph to rebuild on every keystroke (each change
+            // the states / inputs lists are edited in the GraphNode inspector — embedding
+            // them here caused the whole graph to rebuild on every keystroke (each change
             // event destroyed the text field and stole focus).
+
+            // Final-state preview: force the Out node to a chosen state, transiently (like the source
+            // override pills — never serialized). "(live)" returns to source-driven evaluation. The
+            // winner highlight + title always reflect the forced state; modifiers animate while the
+            // window's Preview toggle is on (the preview driver honors the same override).
+            var previewOptions = new List<string> { kLivePreviewOption };
+            previewOptions.AddRange(node.GetStateNames());
+            _previewDropdown = new PopupField<string>("Preview state", previewOptions, 0)
+            {
+                tooltip = "Force a final state for preview (transient, not serialized). " +
+                          "Turn on Preview to also animate the modifiers."
+            };
+            _previewDropdown.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue == kLivePreviewOption) GraphPreviewOverrides.ClearNodeState(Node);
+                else GraphPreviewOverrides.SetNodeState(Node, evt.newValue);
+                _view?.RefreshActiveHighlight();
+            });
+            body.Add(_previewDropdown);
+            SyncPreviewDropdown();
+            GraphPreviewOverrides.onChanged += SyncPreviewDropdown;
+            this.RegisterCallback<DetachFromPanelEvent>(_ => GraphPreviewOverrides.onChanged -= SyncPreviewDropdown);
 
             body.Bind(so);
             extensionContainer.Add(body);
@@ -678,12 +722,35 @@ namespace OneHamsa.Dexterity
             RefreshPorts();
         }
 
+        // Reflect the current node-state override into the dropdown without re-firing its callback
+        // (covers external clears like ClearAll and another window toggling the same node).
+        private void SyncPreviewDropdown()
+        {
+            if (_previewDropdown == null) return;
+            var value = GraphPreviewOverrides.TryGetNodeState(Node, out var forced) && !string.IsNullOrEmpty(forced)
+                ? forced : kLivePreviewOption;
+            if (_previewDropdown.value != value) _previewDropdown.SetValueWithoutNotify(value);
+        }
+
         private void ApplyModeTint()
         {
             // Out node title bar reflects this node's current mode (None/Preview/Live)
             // so the user always knows whether they're looking at a live runtime state
             // or an edit-time preview — even with multiple windows showing different modes.
-            titleContainer.style.backgroundColor = DexterityPreview.GetNodeColor(Node);
+            var bg = DexterityPreview.GetNodeColor(Node);
+            titleContainer.style.backgroundColor = bg;
+            ApplyTitleContrast(bg);
+        }
+
+        // Title text defaults to near-white, which is unreadable over the bright preview/live
+        // tints (cyan/green). Pick black or white by background luminance so the resolved-state
+        // label stays legible in every mode.
+        private void ApplyTitleContrast(Color bg)
+        {
+            var titleLabel = titleContainer.Q<Label>("title-label") ?? titleContainer.Q<Label>();
+            if (titleLabel == null) return;
+            float luminance = 0.299f * bg.r + 0.587f * bg.g + 0.114f * bg.b;
+            titleLabel.style.color = luminance > 0.55f ? Color.black : Color.white;
         }
 
         public Port GetInputPortForState(string stateName)
@@ -693,6 +760,15 @@ namespace OneHamsa.Dexterity
             return p;
         }
 
+        /// <summary>
+        /// Show the node's currently-resolved state in the title bar, so the final preview
+        /// reads at a glance even when the winner is the initialState fallback (no port).
+        /// </summary>
+        public void SetResolvedState(string state)
+        {
+            title = string.IsNullOrEmpty(state) ? "Out" : $"Out: {state}";
+        }
+
         public void RebuildPorts(Dictionary<Port, string> portStateNameMap)
         {
             foreach (var p in _inputPorts) inputContainer.Remove(p);
@@ -700,27 +776,29 @@ namespace OneHamsa.Dexterity
             _portByState.Clear();
 
             var so = new SerializedObject(Node);
-            var inputs = so.FindProperty("stateInputs");
-            if (inputs == null || !inputs.isArray) { RefreshPorts(); return; }
+            AddPorts(so.FindProperty("states"), isInput: false, portStateNameMap);
+            AddPorts(so.FindProperty("inputs"), isInput: true, portStateNameMap);
 
-            // Read parallel raw-only flags so raw ports can be styled differently —
-            // they're wire-able like any other port (providers/aggregators edge into
-            // them to feed raw signals), but they're modifier-invisible and never
-            // priority-resolved, so we dim the label and tag it "(raw)" to make that
-            // distinction visible at a glance.
-            var rawOnly = so.FindProperty("stateInputsRawOnly");
-            for (var i = 0; i < inputs.arraySize; i++)
+            RefreshPorts();
+            RefreshExpandedState();
+        }
+
+        // Build one input port per name. State ports are the priority-resolved ports; raw
+        // input ports are wire-able like any other (providers/aggregators edge into them to
+        // feed raw signals) but are modifier-invisible and never priority-resolved, so we dim
+        // the label and tag it "(input)" to make that distinction visible at a glance.
+        private void AddPorts(SerializedProperty names, bool isInput, Dictionary<Port, string> portStateNameMap)
+        {
+            if (names == null || !names.isArray) return;
+            for (var i = 0; i < names.arraySize; i++)
             {
-                var stateName = inputs.GetArrayElementAtIndex(i).stringValue;
+                var stateName = names.GetArrayElementAtIndex(i).stringValue;
                 if (string.IsNullOrEmpty(stateName)) continue;
                 var port = InstantiatePort(Orientation.Horizontal, Direction.Input,
                     Port.Capacity.Multi, typeof(bool));
-                bool isRaw = rawOnly != null && i < rawOnly.arraySize
-                    && rawOnly.GetArrayElementAtIndex(i).boolValue;
-                port.portName = isRaw ? $"{stateName} (raw)" : stateName;
-                if (isRaw)
+                port.portName = isInput ? $"{stateName} (input)" : stateName;
+                if (isInput)
                 {
-                    // Dim raw-only ports so the priority-relevant ports stay visually dominant.
                     var label = port.Q<Label>("type");
                     if (label != null) label.style.color = new Color(0.55f, 0.55f, 0.55f);
                 }
@@ -729,9 +807,6 @@ namespace OneHamsa.Dexterity
                 _portByState[stateName] = port;
                 portStateNameMap[port] = stateName;
             }
-
-            RefreshPorts();
-            RefreshExpandedState();
         }
 
     }
@@ -740,7 +815,7 @@ namespace OneHamsa.Dexterity
     public class DexteritySourceNodeView : Node
     {
         public Component Component { get; }
-        public bool IsAggregator { get; }
+        public bool IsOperator { get; }
         public Port OutputPort { get; private set; }
         public Port InputPort { get; private set; }   // aggregators only
 
@@ -748,18 +823,18 @@ namespace OneHamsa.Dexterity
         private Button _stateBtn;
         private Toggle _overrideToggle;
 
-        public DexteritySourceNodeView(Component component, DexterityGraphView view, bool isAggregator)
+        public DexteritySourceNodeView(Component component, DexterityGraphView view, bool isOperator)
         {
             Component = component;
-            IsAggregator = isAggregator;
+            IsOperator = isOperator;
             _view = view;
             title = DexterityGraphView.StripSuffix(component.GetType().Name,
-                isAggregator ? "Aggregator" : "Provider");
-            titleContainer.style.backgroundColor = isAggregator
+                isOperator ? "Operator" : "Source");
+            titleContainer.style.backgroundColor = isOperator
                 ? new Color(0.70f, 0.55f, 0.15f)   // amber
                 : new Color(0.20f, 0.55f, 0.20f);  // green
 
-            if (isAggregator)
+            if (isOperator)
             {
                 InputPort = InstantiatePort(Orientation.Horizontal, Direction.Input,
                     Port.Capacity.Multi, typeof(bool));

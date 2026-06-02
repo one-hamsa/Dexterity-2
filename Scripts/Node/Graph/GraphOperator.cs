@@ -12,12 +12,12 @@ namespace OneHamsa.Dexterity
     /// Anonymous — no state name. Routing is via the <see cref="outputs"/> edge list.
     /// Self-attaches to the host node's source set on <see cref="OnEnable"/>.
     ///
-    /// Aggregators have no named input ports — they consume the multiset of bools
+    /// Operators have no named input ports — they consume the multiset of bools
     /// from whichever sources happen to point at them. If a future use case requires
     /// labeled inputs, the schema can grow then.
     /// </summary>
     [DefaultExecutionOrder(Manager.nodeExecutionPriority + 1)]
-    public abstract class GraphAggregator : MonoBehaviour, IDexteritySource
+    public abstract class GraphOperator : MonoBehaviour, IDexteritySource
     {
         [SerializeField, Tooltip("Outgoing edges: where this aggregator's bool output feeds.")]
         protected List<DexterityEdge> outputs = new();

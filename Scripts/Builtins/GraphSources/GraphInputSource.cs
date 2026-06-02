@@ -4,24 +4,35 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// Reports active when the referenced node(s) are in the named state — uses
-    /// <c>GetActiveState() == targetState</c>, so it respects priority and waits
-    /// for transitions to complete. For instant raw-input sampling, use
-    /// <see cref="GraphInputProvider"/>.
+    /// Samples a target <see cref="GraphNode"/>'s <b>raw state-input port</b> —
+    /// "is any source feeding the named port currently active?", bypassing the
+    /// target's priority-respecting active state and its transition delays.
     ///
-    /// <see cref="mode"/> chooses how the target node(s) are picked:
-    /// Reference / FirstParent / AnyChild / AllChildren — same semantics as
-    /// FieldNode's classic parent/children gates.
+    /// Difference vs <see cref="NodeStateSource"/>:
+    /// <list type="bullet">
+    ///   <item><c>NodeStateSource</c>: <c>target.GetActiveState() == X</c> — waits
+    ///         for the upstream node to transition before firing.</item>
+    ///   <item><c>GraphInputSource</c>: <c>target.GetRawInput(X)</c> — fires the
+    ///         instant the upstream signal turns on, even when masked by a higher-priority
+    ///         state. Useful for dependent nodes that need to track an upstream signal
+    ///         without animation lag.</item>
+    /// </list>
+    ///
+    /// <see cref="mode"/> picks the target the same way <see cref="NodeStateSource"/>
+    /// does (Reference / FirstParent / AnyChild / AllChildren).
+    ///
+    /// Constraint: only works with <see cref="GraphNode"/> targets (raw-input is a
+    /// GraphNode-specific API). FieldNodes etc. → use <c>NodeStateSource</c>.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/Providers/Node State Provider")]
-    public class NodeStateProvider : GraphStateProvider
+    [AddComponentMenu("Dexterity/Graph/Sources/Graph Input Source")]
+    public class GraphInputSource : GraphSource
     {
         [Tooltip("How to pick the target node(s). Reference uses the explicit field; " +
                  "FirstParent walks up; AnyChild/AllChildren scan direct-descendant nodes.")]
         public NodeRefMode mode = NodeRefMode.Reference;
 
         [Tooltip("Only used when mode is Reference.")]
-        public BaseStateNode targetNode;
+        public GraphNode targetNode;
 
         [State(objectFieldName: nameof(targetNode))]
         public string targetState;
@@ -30,7 +41,7 @@ namespace OneHamsa.Dexterity.Builtins
         public bool negate;
 
         private int _targetStateId = -1;
-        private readonly List<BaseStateNode> _subscribed = new();
+        private readonly List<GraphNode> _subscribed = new();
 
         protected override void OnEnable()
         {
@@ -48,7 +59,7 @@ namespace OneHamsa.Dexterity.Builtins
         private void SubscribeToTargets()
         {
             UnsubscribeFromTargets();
-            foreach (var n in ResolveTargets())
+            foreach (var n in NodeRefDiscovery.Resolve<GraphNode>(this, mode, targetNode))
             {
                 if (n == null) continue;
                 n.onStateChanged += OnTargetStateChanged;
@@ -70,15 +81,12 @@ namespace OneHamsa.Dexterity.Builtins
             _subscribed.Clear();
         }
 
-        private IEnumerable<BaseStateNode> ResolveTargets()
-            => NodeRefDiscovery.Resolve<BaseStateNode>(this, mode, targetNode);
-
         protected override bool ComputeIsActive()
         {
             bool result = mode switch
             {
                 NodeRefMode.Reference   => CheckOne(targetNode),
-                NodeRefMode.FirstParent => CheckOne(NodeRefDiscovery.FirstParent<BaseStateNode>(transform)),
+                NodeRefMode.FirstParent => CheckOne(NodeRefDiscovery.FirstParent<GraphNode>(transform)),
                 NodeRefMode.AnyChild    => CheckChildren(requireAll: false),
                 NodeRefMode.AllChildren => CheckChildren(requireAll: true),
                 _ => false,
@@ -86,34 +94,22 @@ namespace OneHamsa.Dexterity.Builtins
             return result ^ negate;
         }
 
-        private bool CheckOne(BaseStateNode n)
+        private bool CheckOne(GraphNode n)
         {
             if (n == null) return false;
-            // If the target is initialized (either by Manager at runtime, or by the
-            // editor preview driver), use its actual activeState — that respects
-            // priority, delays, and transitions. Otherwise fall back to the raw
-            // edit-time evaluation (only meaningful for GraphNode targets).
-            if (n.initialized)
-            {
-                // Lazy-init targetStateId — OnEnable doesn't fire at edit time, so the
-                // driver's path needs to discover the ID on demand once Database exists.
-                if (_targetStateId == -1 && Database.instance != null && !string.IsNullOrEmpty(targetState))
-                    _targetStateId = Database.instance.GetStateID(targetState);
-                if (_targetStateId == -1) return false;
-                return n.GetActiveState() == _targetStateId;
-            }
-            if (n is GraphNode gn)
-            {
-                var current = gn.EvaluateTreeEditor() ?? gn.initialState;
-                return current == targetState;
-            }
-            return false;
+            // Lazy-init targetStateId — OnEnable doesn't fire at edit time, so the
+            // driver's path needs to discover the ID on demand once Database exists.
+            if (_targetStateId == -1 && Database.instance != null && !string.IsNullOrEmpty(targetState))
+                _targetStateId = Database.instance.GetStateID(targetState);
+            if (n.initialized && _targetStateId != -1)
+                return n.GetRawInput(_targetStateId);
+            return n.GetRawInput(targetState);
         }
 
         private bool CheckChildren(bool requireAll)
         {
             bool sawAny = false;
-            foreach (var n in NodeRefDiscovery.Children<BaseStateNode>(transform))
+            foreach (var n in NodeRefDiscovery.Children<GraphNode>(transform))
             {
                 sawAny = true;
                 bool match = CheckOne(n);

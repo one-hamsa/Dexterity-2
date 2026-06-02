@@ -4,16 +4,26 @@ using UnityEngine;
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// State node whose state is decided by an explicit list of named state inputs
-    /// (the "Out node" of a Dexterity graph). Providers and aggregators living as
-    /// components on the SAME GameObject feed bool signals into named state-input
-    /// ports via their <see cref="DexterityEdge"/> output list.
+    /// State node whose state is decided by an explicit list of named ports (the "Out
+    /// node" of a Dexterity graph). Sources and aggregators living as components on the
+    /// SAME GameObject feed bool signals into named ports via their
+    /// <see cref="DexterityEdge"/> output list.
     ///
-    /// Evaluation: iterate <see cref="stateInputs"/> in order; the first port with
-    /// any active source feeding it wins. If no port is active, falls back to
-    /// <see cref="BaseStateNode.initialState"/>.
+    /// Ports come in two kinds:
+    /// <list type="bullet">
+    ///   <item><b><see cref="states"/></b> — priority-ordered. Evaluation iterates them in
+    ///         order; the first with any active source feeding it wins and becomes the
+    ///         active state. They appear in <see cref="GetStateNames"/> so modifiers sync
+    ///         rows for them. If none is active, falls back to
+    ///         <see cref="BaseStateNode.initialState"/>.</item>
+    ///   <item><b><see cref="inputs"/></b> — raw signal ports. Wire-able and readable via
+    ///         <see cref="GetRawInput(string)"/>, but they never become the active state and
+    ///         stay invisible to modifiers. The canonical use is a click listener reading
+    ///         raw Pressed/Hover signals on a toggle button whose real states are the
+    ///         mode-gated combinations (Shelf/ShelfHover/ShelfPress + Drop/...).</item>
+    /// </list>
     ///
-    /// Aggregators are computed in topological order (their inputs are resolved
+    /// Operators are computed in topological order (their inputs are resolved
     /// before they are). Cycles fall back to <see cref="BaseStateNode.initialState"/>
     /// with an error log.
     /// </summary>
@@ -21,19 +31,14 @@ namespace OneHamsa.Dexterity
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
     public class GraphNode : BaseStateNode
     {
-        [SerializeField, Tooltip("Ordered state inputs. Port name = state name. First port with any active source wins.")]
-        private List<string> stateInputs = new();
+        [SerializeField, Tooltip("Priority-ordered states (high → low). Port name = state name. " +
+            "First port with any active source wins; falls back to initialState when none is active.")]
+        private List<string> states = new();
 
-        // Parallel to stateInputs (same index, same length — enforced in OnValidate and
-        // EnsureRawOnlyListSize). A "raw-only" port is wire-able in the graph window so
-        // providers can edge into it and listeners can read its raw value via
-        // GetRawInput, but it is INVISIBLE to modifiers (GetStateNames skips it) and
-        // can never become the priority-resolved active state (GetNextStateWithoutOverride
-        // and EvaluateTreeEditor skip it). The canonical use case is a click listener
-        // reading raw Pressed/Hover signals on a toggle button whose "real" states are
-        // the mode-gated combinations (Shelf/ShelfHover/ShelfPress + Drop/...).
-        [SerializeField, HideInInspector]
-        private List<bool> stateInputsRawOnly = new();
+        [SerializeField, Tooltip("Raw input ports: wire-able and readable via GetRawInput(), but they " +
+            "never become the active state and stay invisible to modifiers. E.g. the Pressed/Hover " +
+            "signals a listener reads on a toggle whose real states are the mode-gated combinations.")]
+        private List<string> inputs = new();
 
         [SerializeField, HideInInspector]
         private Vector2 graphPosition;
@@ -90,10 +95,11 @@ namespace OneHamsa.Dexterity
         private readonly Dictionary<IDexteritySource, bool> _activeCache = new();
         private readonly List<bool> _aggInputScratch = new();
 
-        // Runtime-only: state-input port names resolved to Database int IDs.
-        // Built lazily on first runtime access (Database may not be alive at edit time).
-        // Parallel to stateInputs (same index, length == stateInputs.Count).
-        [System.NonSerialized] private int[] _stateInputIds;
+        // Runtime-only: port names resolved to Database int IDs, parallel to the
+        // states / inputs lists respectively. Built lazily on first runtime access
+        // (Database may not be alive at edit time).
+        [System.NonSerialized] private int[] _stateIds;
+        [System.NonSerialized] private int[] _inputIds;
         [System.NonSerialized] private bool _idsDirty = true;
 
         private void EnsureCachesValid()
@@ -109,15 +115,15 @@ namespace OneHamsa.Dexterity
             if (!_topoDirty) return;
 
             _allSources.Clear();
-            GetComponents(typeof(GraphStateProvider), _scratchComponents);
+            GetComponents(typeof(GraphSource), _scratchComponents);
             foreach (var c in _scratchComponents) _allSources.Add((IDexteritySource)c);
-            GetComponents(typeof(GraphAggregator), _scratchComponents);
+            GetComponents(typeof(GraphOperator), _scratchComponents);
             foreach (var c in _scratchComponents) _allSources.Add((IDexteritySource)c);
 
             _sourcesByPort.Clear();
             for (var i = 0; i < _allSources.Count; i++)
             {
-                if (_allSources[i] is GraphAggregator agg)
+                if (_allSources[i] is GraphOperator agg)
                     agg.incomingSources.Clear();
             }
 
@@ -138,7 +144,7 @@ namespace OneHamsa.Dexterity
                             _sourcesByPort[edge.targetPort] = list = new List<IDexteritySource>();
                         list.Add(src);
                     }
-                    else if (edge.target is GraphAggregator targetAgg)
+                    else if (edge.target is GraphOperator targetAgg)
                     {
                         targetAgg.incomingSources.Add(src);
                     }
@@ -171,7 +177,7 @@ namespace OneHamsa.Dexterity
             if (_visited.Contains(source)) return true;
             if (!_inProgress.Add(source)) return false;
 
-            if (source is GraphAggregator agg)
+            if (source is GraphOperator agg)
             {
                 for (var i = 0; i < agg.incomingSources.Count; i++)
                 {
@@ -191,7 +197,7 @@ namespace OneHamsa.Dexterity
             for (var i = 0; i < _topoOrdered.Count; i++)
             {
                 var src = _topoOrdered[i];
-                if (src is GraphAggregator agg)
+                if (src is GraphOperator agg)
                     agg.RecomputeFrom(_activeCache, _aggInputScratch);
                 _activeCache[src] = src.IsActive;
             }
@@ -210,18 +216,17 @@ namespace OneHamsa.Dexterity
         // -- BaseStateNode overrides --------------------------------------------
         public override HashSet<string> GetStateNames()
         {
-            // initialState + every NON-raw-only stateInputs entry. We deliberately do
-            // NOT auto-add StateFunction.kDefaultState ("<Default>") — historically that
-            // produced a duplicate "default-ish" state in modifiers whenever the
-            // designer set initialState to anything other than "<Default>". The
-            // initialState already serves as the fallback name. Raw-only ports are
-            // excluded so modifiers don't sync inert rows for them.
+            // initialState + every states entry. We deliberately do NOT auto-add
+            // StateFunction.kDefaultState ("<Default>") — historically that produced a
+            // duplicate "default-ish" state in modifiers whenever the designer set
+            // initialState to anything other than "<Default>". The initialState already
+            // serves as the fallback name. inputs ports are excluded by construction so
+            // modifiers don't sync inert rows for them.
             var set = new HashSet<string>();
             if (!string.IsNullOrEmpty(initialState)) set.Add(initialState);
-            for (var i = 0; i < stateInputs.Count; i++)
+            for (var i = 0; i < states.Count; i++)
             {
-                if (IsRawOnly(i)) continue;
-                var s = stateInputs[i];
+                var s = states[i];
                 if (!string.IsNullOrEmpty(s)) set.Add(s);
             }
             return set;
@@ -231,35 +236,45 @@ namespace OneHamsa.Dexterity
 
         public override int GetNextStateWithoutOverride()
         {
+#if UNITY_EDITOR
+            // Editor final-state preview: force the resolved state (drives the preview driver's
+            // modifier animation). Database is alive whenever this runs (runtime / preview driver).
+            if (GraphPreviewOverrides.TryGetNodeState(this, out var forcedId) && !string.IsNullOrEmpty(forcedId))
+                return Database.instance.GetStateID(forcedId);
+#endif
             EnsureCachesValid();
             if (_topoCycleDetected) return initialStateId;
             EvaluateSources();
             EnsureStateIdCache();
 
-            for (var i = 0; i < stateInputs.Count; i++)
+            for (var i = 0; i < states.Count; i++)
             {
-                if (IsRawOnly(i)) continue; // raw-only ports never become the active state
-                var port = stateInputs[i];
+                var port = states[i];
                 if (!string.IsNullOrEmpty(port) && PortIsActive(port))
-                    return _stateInputIds[i];
+                    return _stateIds[i];
             }
             return initialStateId;
         }
 
         /// <summary>
-        /// Edit-time evaluation. Returns the state-input port name that would currently
-        /// win, or null if none. Does not touch <see cref="Database"/> or <see cref="Manager"/>.
+        /// Edit-time evaluation. Returns the state port name that would currently win, or
+        /// null if none. Does not touch <see cref="Database"/> or <see cref="Manager"/>.
         /// </summary>
         public string EvaluateTreeEditor()
         {
+#if UNITY_EDITOR
+            // Editor final-state preview override wins (drives the winner highlight + Out-node title,
+            // and any edit-time cross-node NodeStateSource reading this node).
+            if (GraphPreviewOverrides.TryGetNodeState(this, out var forced))
+                return string.IsNullOrEmpty(forced) ? null : forced;
+#endif
             EnsureCachesValid();
             if (_topoCycleDetected) return null;
             EvaluateSources();
 
-            for (var i = 0; i < stateInputs.Count; i++)
+            for (var i = 0; i < states.Count; i++)
             {
-                if (IsRawOnly(i)) continue; // raw-only ports never become the active state
-                var port = stateInputs[i];
+                var port = states[i];
                 if (!string.IsNullOrEmpty(port) && PortIsActive(port))
                     return port;
             }
@@ -268,10 +283,11 @@ namespace OneHamsa.Dexterity
 
         // -- Raw-input query API ------------------------------------------------
         /// <summary>
-        /// Returns true iff any source whose edge feeds the given state-input port is
-        /// currently active, ignoring node priority. Use this when you want to react
-        /// to a raw input regardless of whether a higher-priority state masks it
-        /// (e.g. a click listener that fires on press even when <c>Disabled</c> wins).
+        /// Returns true iff any source whose edge feeds the port with the given state id is
+        /// currently active, ignoring node priority. The port may be a <see cref="states"/>
+        /// entry or an <see cref="inputs"/> entry. Use this when you want to react to a raw
+        /// input regardless of whether a higher-priority state masks it (e.g. a click
+        /// listener that fires on press even when <c>Disabled</c> wins).
         /// </summary>
         public bool GetRawInput(int stateId)
         {
@@ -279,10 +295,10 @@ namespace OneHamsa.Dexterity
             if (_topoCycleDetected) return false;
             EvaluateSources();
             EnsureStateIdCache();
-            for (var i = 0; i < _stateInputIds.Length; i++)
-            {
-                if (_stateInputIds[i] == stateId) return PortIsActive(stateInputs[i]);
-            }
+            for (var i = 0; i < _stateIds.Length; i++)
+                if (_stateIds[i] == stateId) return PortIsActive(states[i]);
+            for (var i = 0; i < _inputIds.Length; i++)
+                if (_inputIds[i] == stateId) return PortIsActive(inputs[i]);
             return false;
         }
 
@@ -297,13 +313,23 @@ namespace OneHamsa.Dexterity
 
         private void EnsureStateIdCache()
         {
-            if (!_idsDirty && _stateInputIds != null && _stateInputIds.Length == stateInputs.Count) return;
-            if (_stateInputIds == null || _stateInputIds.Length != stateInputs.Count)
-                _stateInputIds = new int[stateInputs.Count];
-            for (var i = 0; i < stateInputs.Count; i++)
+            if (!_idsDirty
+                && _stateIds != null && _stateIds.Length == states.Count
+                && _inputIds != null && _inputIds.Length == inputs.Count)
+                return;
+            if (_stateIds == null || _stateIds.Length != states.Count)
+                _stateIds = new int[states.Count];
+            if (_inputIds == null || _inputIds.Length != inputs.Count)
+                _inputIds = new int[inputs.Count];
+            for (var i = 0; i < states.Count; i++)
             {
-                var port = stateInputs[i];
-                _stateInputIds[i] = string.IsNullOrEmpty(port) ? -1 : Database.instance.GetStateID(port);
+                var port = states[i];
+                _stateIds[i] = string.IsNullOrEmpty(port) ? -1 : Database.instance.GetStateID(port);
+            }
+            for (var i = 0; i < inputs.Count; i++)
+            {
+                var port = inputs[i];
+                _inputIds[i] = string.IsNullOrEmpty(port) ? -1 : Database.instance.GetStateID(port);
             }
             _idsDirty = false;
         }
@@ -321,7 +347,7 @@ namespace OneHamsa.Dexterity
         /// source wins — if multiple sources feed the same port, only the first cast hit is
         /// returned. Null if no source of type <typeparamref name="T"/> feeds that port.
         ///
-        /// Lets behavior code address a specific provider declaratively ("the ConstantProvider
+        /// Lets behavior code address a specific provider declaratively ("the ConstantSource
         /// feeding the IsShelf port") instead of via a serialized component reference that
         /// would duplicate the graph wiring.
         /// </summary>
@@ -336,41 +362,17 @@ namespace OneHamsa.Dexterity
             return null;
         }
 
-        /// <summary>Does this node declare a state-input port with the given name?</summary>
+        /// <summary>
+        /// Does this node declare a port with the given name? Covers both
+        /// <see cref="states"/> and <see cref="inputs"/>.
+        /// </summary>
         public bool HasInputPort(string portName)
         {
             if (string.IsNullOrEmpty(portName)) return false;
-            for (var i = 0; i < stateInputs.Count; i++)
-            {
-                if (stateInputs[i] == portName) return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Is the port at the given <c>stateInputs</c> index marked raw-only? Raw-only ports
-        /// are excluded from <see cref="GetStateNames"/> (so modifiers don't sync rows for
-        /// them) and from priority resolution in <see cref="GetNextStateWithoutOverride"/> /
-        /// <see cref="EvaluateTreeEditor"/> (so they can never be the active state), but
-        /// they remain wire-able and readable via <see cref="GetRawInput(string)"/>.
-        /// </summary>
-        public bool IsRawOnly(int index)
-        {
-            // Tolerate a short rawOnly list — treat missing entries as false. OnValidate
-            // pads the list to match stateInputs in the editor, but this guard means
-            // runtime code stays correct even when called before OnValidate has run
-            // (e.g. immediately after AddComponent in a procedural builder).
-            return index >= 0 && index < stateInputsRawOnly.Count && stateInputsRawOnly[index];
-        }
-
-        /// <summary>Convenience: is the named port marked raw-only?</summary>
-        public bool IsPortRawOnly(string portName)
-        {
-            if (string.IsNullOrEmpty(portName)) return false;
-            for (var i = 0; i < stateInputs.Count; i++)
-            {
-                if (stateInputs[i] == portName) return IsRawOnly(i);
-            }
+            for (var i = 0; i < states.Count; i++)
+                if (states[i] == portName) return true;
+            for (var i = 0; i < inputs.Count; i++)
+                if (inputs[i] == portName) return true;
             return false;
         }
 
@@ -378,13 +380,12 @@ namespace OneHamsa.Dexterity
         protected override void OnValidate()
         {
             base.OnValidate();
-            // Keep the parallel raw-only list aligned with stateInputs so reads by index
-            // remain meaningful. Pad with false for new entries; truncate when stateInputs
-            // shrinks. (Reordering is the editor's responsibility — see GraphNodeEditor.)
-            while (stateInputsRawOnly.Count < stateInputs.Count) stateInputsRawOnly.Add(false);
-            if (stateInputsRawOnly.Count > stateInputs.Count)
-                stateInputsRawOnly.RemoveRange(stateInputs.Count,
-                    stateInputsRawOnly.Count - stateInputs.Count);
+
+            // The fallback state is always a port: if initialState isn't already a state,
+            // append it at the bottom (lowest priority) so it's visible and wire-able in the
+            // graph rather than an invisible implicit fallback.
+            if (!string.IsNullOrEmpty(initialState) && !states.Contains(initialState))
+                states.Add(initialState);
 
             _topoDirty = true;
             _idsDirty = true;

@@ -7,8 +7,8 @@ namespace OneHamsa.Dexterity.Builtins
     /// GraphNode equivalent of <see cref="UIHoverField"/>.
     /// Reports its state while a Unity EventSystem pointer is hovering this UI element.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/Providers/UI Hover Provider")]
-    public class UIHoverProvider : GraphStateProvider, IPointerEnterHandler, IPointerExitHandler
+    [AddComponentMenu("Dexterity/Graph/Sources/UI Hover Source")]
+    public class UIHoverSource : GraphSource, IPointerEnterHandler, IPointerExitHandler
     {
         private bool _hovered;
 

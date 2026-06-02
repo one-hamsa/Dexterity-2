@@ -23,9 +23,9 @@ namespace OneHamsa.Dexterity
     public class DexterityGraphWindow : EditorWindow
     {
         /// <summary>
-        /// Fired by <see cref="GraphNodeEditor"/> when the user edits the stateInputs
-        /// list in the inspector. Every open graph window subscribes so its ports + edges
-        /// re-render against the new list without a manual selection change.
+        /// Fired by <see cref="GraphNodeEditor"/> when the user edits the states / inputs
+        /// lists in the inspector. Every open graph window subscribes so its ports + edges
+        /// re-render against the new lists without a manual selection change.
         /// </summary>
         internal static event System.Action onStateInputsEditedInInspector;
         internal static void NotifyStateInputsEdited() => onStateInputsEditedInInspector?.Invoke();
@@ -74,6 +74,12 @@ namespace OneHamsa.Dexterity
         private int _lastSourceCount;
         private System.Collections.Generic.HashSet<Component> _lastSourceSet = new();
 
+        // Sources whose edit-time `onStateMayHaveChanged` we're subscribed to, so editing a
+        // source's fields (a ConstantSource's value, a BindingSource's path, …) re-evaluates
+        // and repaints the graph live — no selection change needed. Stored as Component for a
+        // proper Unity null-check on cleanup; the event itself lives on IDexteritySource.
+        private readonly System.Collections.Generic.List<Component> _subscribedSources = new();
+
         private void OnEnable()
         {
             rootVisualElement.Clear();
@@ -116,7 +122,7 @@ namespace OneHamsa.Dexterity
             Undo.undoRedoPerformed += RebuildFromSelection;
             EditorApplication.hierarchyChanged += RebuildFromSelection;
             DexterityPreview.onChanged += RefreshModePill;
-            onStateInputsEditedInInspector += RebuildFromSelection;
+            onStateInputsEditedInInspector += OnStateInputsEdited;
 
             RefreshModePill();
             RebuildFromSelection();
@@ -128,7 +134,8 @@ namespace OneHamsa.Dexterity
             Undo.undoRedoPerformed -= RebuildFromSelection;
             EditorApplication.hierarchyChanged -= RebuildFromSelection;
             DexterityPreview.onChanged -= RefreshModePill;
-            onStateInputsEditedInInspector -= RebuildFromSelection;
+            onStateInputsEditedInInspector -= OnStateInputsEdited;
+            UnsubscribeFromSources();
 
             // Drop our preview-set membership cleanly.
             if (_registeredTarget != null)
@@ -173,6 +180,15 @@ namespace OneHamsa.Dexterity
             return go != null ? go.GetComponent<GraphNode>() : null;
         }
 
+        // states / inputs define the Out node's ports, so any edit there is structural. Invalidate the
+        // cached signature and rebuild — the source-set diff in RebuildFromSelection can't see a
+        // port add / remove / rename on its own.
+        private void OnStateInputsEdited()
+        {
+            _lastRenderedTarget = null;
+            RebuildFromSelection();
+        }
+
         private void RebuildFromSelection()
         {
             var target = CurrentTargetNode();
@@ -192,6 +208,7 @@ namespace OneHamsa.Dexterity
                 _lastRenderedTarget = target;
                 CaptureSourceSet(target);
                 _view?.RebuildGraph(target);
+                ResubscribeToSources(target);
             }
             else
             {
@@ -199,11 +216,46 @@ namespace OneHamsa.Dexterity
             }
         }
 
+        /// <summary>
+        /// Re-subscribe to the edit-time change signal of every source on <paramref name="target"/>.
+        /// Drops all previous subscriptions first, so it's safe to call on every structural rebuild
+        /// (target switch or source add/remove). A fired signal repaints the live highlight; the
+        /// structural cases themselves still arrive via hierarchyChanged / edge-drag commits.
+        /// </summary>
+        private void ResubscribeToSources(GraphNode target)
+        {
+            UnsubscribeFromSources();
+            if (target == null) return;
+            foreach (var s in target.GetComponents<GraphSource>())
+            {
+                ((IDexteritySource)s).onStateMayHaveChanged += OnSourceFieldMayHaveChanged;
+                _subscribedSources.Add(s);
+            }
+            foreach (var s in target.GetComponents<GraphOperator>())
+            {
+                ((IDexteritySource)s).onStateMayHaveChanged += OnSourceFieldMayHaveChanged;
+                _subscribedSources.Add(s);
+            }
+        }
+
+        private void UnsubscribeFromSources()
+        {
+            foreach (var s in _subscribedSources)
+                if (s != null) ((IDexteritySource)s).onStateMayHaveChanged -= OnSourceFieldMayHaveChanged;
+            _subscribedSources.Clear();
+        }
+
+        // A source field changed at edit time (OnValidate → onStateMayHaveChanged). Re-evaluate and
+        // repaint the port/edge/state highlight. Deliberately NOT a structural rebuild: the edited
+        // source's inspector can be embedded in this window, and a rebuild would destroy it
+        // mid-keystroke. Component add/remove arrives via hierarchyChanged instead.
+        private void OnSourceFieldMayHaveChanged() => _view?.RefreshActiveHighlight();
+
         private bool HostSourceSetChanged(GraphNode target)
         {
             if (target == null) return _lastSourceCount != 0 || _lastSourceSet.Count != 0;
-            var providers = target.GetComponents<GraphStateProvider>();
-            var aggregators = target.GetComponents<GraphAggregator>();
+            var providers = target.GetComponents<GraphSource>();
+            var aggregators = target.GetComponents<GraphOperator>();
             int count = providers.Length + aggregators.Length;
             if (count != _lastSourceCount) return true;
             foreach (var p in providers) if (!_lastSourceSet.Contains(p)) return true;
@@ -215,8 +267,8 @@ namespace OneHamsa.Dexterity
         {
             _lastSourceSet.Clear();
             if (target == null) { _lastSourceCount = 0; return; }
-            foreach (var p in target.GetComponents<GraphStateProvider>()) _lastSourceSet.Add(p);
-            foreach (var a in target.GetComponents<GraphAggregator>()) _lastSourceSet.Add(a);
+            foreach (var p in target.GetComponents<GraphSource>()) _lastSourceSet.Add(p);
+            foreach (var a in target.GetComponents<GraphOperator>()) _lastSourceSet.Add(a);
             _lastSourceCount = _lastSourceSet.Count;
         }
     }

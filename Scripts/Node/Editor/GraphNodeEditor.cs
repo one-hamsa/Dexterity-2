@@ -8,7 +8,8 @@ namespace OneHamsa.Dexterity
     public class GraphNodeEditor : BaseStateNodeEditor
     {
         private GraphNode node => (GraphNode)target;
-        private ReorderableList _stateInputsList;
+        private ReorderableList _statesList;
+        private ReorderableList _inputsList;
 
         public override void OnInspectorGUI()
         {
@@ -19,13 +20,15 @@ namespace OneHamsa.Dexterity
         {
             DrawAggregatedResult();
 
-            EnsureStateInputsList();
+            EnsureLists();
             EditorGUI.BeginChangeCheck();
-            _stateInputsList.DoLayoutList();
+            _statesList.DoLayoutList();
+            EditorGUILayout.Space(2);
+            _inputsList.DoLayoutList();
             if (EditorGUI.EndChangeCheck())
             {
                 // Commit before notifying so graph windows reading the underlying
-                // GraphNode see the new list immediately.
+                // GraphNode see the new lists immediately.
                 serializedObject.ApplyModifiedProperties();
                 DexterityGraphWindow.NotifyStateInputsEdited();
             }
@@ -33,106 +36,51 @@ namespace OneHamsa.Dexterity
             DrawOpenGraphButton();
         }
 
-        // ReorderableList over `stateInputs` that also draws + maintains the parallel
-        // `stateInputsRawOnly` bool list. We keep two SerializedProperty arrays — the
-        // alternative (a struct with custom drawer) would break existing serialized
-        // prefabs. The cost is that reorder/add/remove must update both lists in
-        // lock-step; the callbacks below do exactly that.
-        private void EnsureStateInputsList()
+        // Two independent string ReorderableLists — one for priority-ordered states, one
+        // for raw input ports. Each must persist across OnInspectorGUI calls: a
+        // ReorderableList keeps its in-progress drag state on the instance, so rebuilding
+        // it between the drag's mouse-down and mouse-up would discard the drag and the
+        // reorder would never commit. SerializedObject is a stable instance for the
+        // editor's lifetime (unlike the fresh SerializedProperty FindProperty hands back
+        // each call), so compare against it to decide whether a rebuild is needed.
+        private void EnsureLists()
         {
-            // Reuse the existing list while it's still bound to this editor's SerializedObject.
-            // The list must persist across OnInspectorGUI calls: a ReorderableList keeps its
-            // in-progress drag state on the instance, so rebuilding it between the drag's
-            // mouse-down and mouse-up would discard the drag and the reorder would never commit.
-            // SerializedObject is a stable instance for the editor's lifetime (unlike the fresh
-            // SerializedProperty FindProperty hands back each call), so compare against it.
-            if (_stateInputsList?.serializedProperty != null
-                && _stateInputsList.serializedProperty.serializedObject == serializedObject)
+            if (_statesList?.serializedProperty != null
+                && _statesList.serializedProperty.serializedObject == serializedObject)
                 return;
 
-            var inputs = serializedObject.FindProperty("stateInputs");
-            _stateInputsList = new ReorderableList(serializedObject, inputs, true, true, true, true);
-
-            _stateInputsList.drawHeaderCallback = rect =>
-            {
-                const float rawColWidth = 56f;
-                var nameRect = new Rect(rect.x + 14f, rect.y, rect.width - rawColWidth - 18f, rect.height);
-                var rawRect  = new Rect(rect.xMax - rawColWidth, rect.y, rawColWidth, rect.height);
-                EditorGUI.LabelField(nameRect, "State Inputs (priority high → low)");
-                EditorGUI.LabelField(rawRect, new GUIContent("Raw",
-                    "Raw-only: wire-able and readable via GetRawInput, but excluded from modifiers and never the active state."));
-            };
-
-            _stateInputsList.drawElementCallback = (rect, index, isActive, isFocused) =>
-            {
-                EnsureRawListMatches();
-                var inputsArr = serializedObject.FindProperty("stateInputs");
-                var rawArr    = serializedObject.FindProperty("stateInputsRawOnly");
-                if (index < 0 || index >= inputsArr.arraySize) return;
-
-                const float rawColWidth = 56f;
-                const float pad = 4f;
-                var row = new Rect(rect.x, rect.y + 1f, rect.width, EditorGUIUtility.singleLineHeight);
-                var nameRect = new Rect(row.x, row.y, row.width - rawColWidth - pad, row.height);
-                var rawRect  = new Rect(row.xMax - rawColWidth, row.y, rawColWidth, row.height);
-
-                var nameProp = inputsArr.GetArrayElementAtIndex(index);
-                EditorGUI.PropertyField(nameRect, nameProp, GUIContent.none);
-
-                if (index < rawArr.arraySize)
-                {
-                    var rawProp = rawArr.GetArrayElementAtIndex(index);
-                    var toggleRect = new Rect(rawRect.x + (rawColWidth - 16f) * 0.5f, rawRect.y, 16f, rawRect.height);
-                    rawProp.boolValue = EditorGUI.Toggle(toggleRect, rawProp.boolValue);
-                }
-            };
-
-            _stateInputsList.onAddCallback = list =>
-            {
-                EnsureRawListMatches();
-                var inputsArr = serializedObject.FindProperty("stateInputs");
-                var rawArr    = serializedObject.FindProperty("stateInputsRawOnly");
-                inputsArr.InsertArrayElementAtIndex(inputsArr.arraySize);
-                inputsArr.GetArrayElementAtIndex(inputsArr.arraySize - 1).stringValue = "";
-                rawArr.InsertArrayElementAtIndex(rawArr.arraySize);
-                rawArr.GetArrayElementAtIndex(rawArr.arraySize - 1).boolValue = false;
-                list.index = inputsArr.arraySize - 1;
-            };
-
-            _stateInputsList.onRemoveCallback = list =>
-            {
-                EnsureRawListMatches();
-                var inputsArr = serializedObject.FindProperty("stateInputs");
-                var rawArr    = serializedObject.FindProperty("stateInputsRawOnly");
-                int idx = list.index >= 0 ? list.index : inputsArr.arraySize - 1;
-                if (idx < 0 || idx >= inputsArr.arraySize) return;
-                inputsArr.DeleteArrayElementAtIndex(idx);
-                if (idx < rawArr.arraySize) rawArr.DeleteArrayElementAtIndex(idx);
-                list.index = Mathf.Min(idx, inputsArr.arraySize - 1);
-            };
-
-            // Reorder both arrays in lock-step. Unity's ReorderableList has already
-            // moved the inputs array by the time this fires — we just need to apply
-            // the same move to the parallel raw-only array.
-            _stateInputsList.onReorderCallbackWithDetails = (list, oldIndex, newIndex) =>
-            {
-                var rawArr = serializedObject.FindProperty("stateInputsRawOnly");
-                if (oldIndex < 0 || oldIndex >= rawArr.arraySize) return;
-                if (newIndex < 0 || newIndex >= rawArr.arraySize) return;
-                rawArr.MoveArrayElement(oldIndex, newIndex);
-            };
+            _statesList = BuildStringList("states", "States (priority high → low)",
+                "Priority-ordered states. The first port with any active source wins and becomes the active state.");
+            _inputsList = BuildStringList("inputs", "Inputs (raw signals)",
+                "Raw input ports: wire-able and readable via GetRawInput(), but never a state and invisible to modifiers.");
         }
 
-        // Defensive: if the user edits the prefab outside this inspector (e.g. via a
-        // procedural script that only writes stateInputs), the raw-only list can fall
-        // out of sync. OnValidate on the GraphNode normalises in-editor, but we also
-        // pad here so the inspector's per-row toggle never indexes out of range.
-        private void EnsureRawListMatches()
+        private ReorderableList BuildStringList(string propName, string header, string headerTooltip)
         {
-            var inputsArr = serializedObject.FindProperty("stateInputs");
-            var rawArr    = serializedObject.FindProperty("stateInputsRawOnly");
-            while (rawArr.arraySize < inputsArr.arraySize) rawArr.InsertArrayElementAtIndex(rawArr.arraySize);
-            while (rawArr.arraySize > inputsArr.arraySize) rawArr.DeleteArrayElementAtIndex(rawArr.arraySize - 1);
+            var prop = serializedObject.FindProperty(propName);
+            var list = new ReorderableList(serializedObject, prop, true, true, true, true);
+
+            list.drawHeaderCallback = rect =>
+                EditorGUI.LabelField(new Rect(rect.x + 14f, rect.y, rect.width - 14f, rect.height),
+                    new GUIContent(header, headerTooltip));
+
+            list.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                var arr = serializedObject.FindProperty(propName);
+                if (index < 0 || index >= arr.arraySize) return;
+                var row = new Rect(rect.x, rect.y + 1f, rect.width, EditorGUIUtility.singleLineHeight);
+                EditorGUI.PropertyField(row, arr.GetArrayElementAtIndex(index), GUIContent.none);
+            };
+
+            list.onAddCallback = l =>
+            {
+                var arr = serializedObject.FindProperty(propName);
+                arr.InsertArrayElementAtIndex(arr.arraySize);
+                arr.GetArrayElementAtIndex(arr.arraySize - 1).stringValue = "";
+                l.index = arr.arraySize - 1;
+            };
+
+            return list;
         }
 
         private void DrawOpenGraphButton()

@@ -12,7 +12,7 @@ namespace OneHamsa.Dexterity
     /// Self-attaches to the host node's source set on <see cref="OnEnable"/>.
     /// </summary>
     [DefaultExecutionOrder(Manager.nodeExecutionPriority + 1)]
-    public abstract class GraphStateProvider : MonoBehaviour, IDexteritySource
+    public abstract class GraphSource : MonoBehaviour, IDexteritySource
     {
         [SerializeField, Tooltip("Outgoing edges: where this provider's bool output feeds.")]
         protected List<DexterityEdge> outputs = new();

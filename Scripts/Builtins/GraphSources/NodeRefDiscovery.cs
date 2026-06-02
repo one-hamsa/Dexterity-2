@@ -4,8 +4,8 @@ using UnityEngine;
 namespace OneHamsa.Dexterity.Builtins
 {
     /// <summary>
-    /// Transform-walk helpers used by <see cref="NodeStateProvider"/> and
-    /// <see cref="GraphInputProvider"/> to discover target node(s) per their
+    /// Transform-walk helpers used by <see cref="NodeStateSource"/> and
+    /// <see cref="GraphInputSource"/> to discover target node(s) per their
     /// <see cref="NodeRefMode"/>. Single source of truth so the two providers
     /// stay consistent.
     /// </summary>

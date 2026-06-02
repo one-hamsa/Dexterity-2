@@ -8,8 +8,8 @@ namespace OneHamsa.Dexterity.Builtins
     /// Reports its state while the referenced <see cref="BindingEnumNode"/> is in
     /// the named enum case.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/Providers/Enum Provider")]
-    public class EnumProvider : GraphStateProvider
+    [AddComponentMenu("Dexterity/Graph/Sources/Enum Source")]
+    public class EnumSource : GraphSource
     {
         public BindingEnumNode targetNode;
 
@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity.Builtins
 
             if (targetNode == null)
             {
-                Debug.LogError($"{nameof(EnumProvider)} on {name}: targetNode is null", this);
+                Debug.LogError($"{nameof(EnumSource)} on {name}: targetNode is null", this);
                 return;
             }
 
@@ -45,7 +45,7 @@ namespace OneHamsa.Dexterity.Builtins
             }
             catch (Exception e)
             {
-                Debug.LogError($"{nameof(EnumProvider)} on {name}: failed to parse '{targetField}': {e.Message}", this);
+                Debug.LogError($"{nameof(EnumSource)} on {name}: failed to parse '{targetField}': {e.Message}", this);
             }
         }
 

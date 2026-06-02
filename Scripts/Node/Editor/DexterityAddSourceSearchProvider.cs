@@ -8,7 +8,7 @@ namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// Search-window provider for adding sources to a Dexterity graph. Displays a
-    /// two-level tree: Provider / Aggregator → concrete types (reflected via
+    /// two-level tree: Source / Operator → concrete types (reflected via
     /// TypeCache, suffix stripped). Selecting an entry adds the component to the
     /// graph's host GameObject.
     ///
@@ -25,25 +25,25 @@ namespace OneHamsa.Dexterity
             var entries = new List<SearchTreeEntry>
             {
                 new SearchTreeGroupEntry(new GUIContent("Add Source"), 0),
-                new SearchTreeGroupEntry(new GUIContent("Provider"), 1),
+                new SearchTreeGroupEntry(new GUIContent("Source"), 1),
             };
 
-            foreach (var t in TypeCache.GetTypesDerivedFrom<GraphStateProvider>()
+            foreach (var t in TypeCache.GetTypesDerivedFrom<GraphSource>()
                                  .Where(t => !t.IsAbstract)
                                  .OrderBy(t => t.Name))
             {
                 entries.Add(new SearchTreeEntry(new GUIContent(
-                        DexterityGraphView.StripSuffix(t.Name, "Provider")))
+                        DexterityGraphView.StripSuffix(t.Name, "Source")))
                     { level = 2, userData = t });
             }
 
-            entries.Add(new SearchTreeGroupEntry(new GUIContent("Aggregator"), 1));
-            foreach (var t in TypeCache.GetTypesDerivedFrom<GraphAggregator>()
+            entries.Add(new SearchTreeGroupEntry(new GUIContent("Operator"), 1));
+            foreach (var t in TypeCache.GetTypesDerivedFrom<GraphOperator>()
                                  .Where(t => !t.IsAbstract)
                                  .OrderBy(t => t.Name))
             {
                 entries.Add(new SearchTreeEntry(new GUIContent(
-                        DexterityGraphView.StripSuffix(t.Name, "Aggregator")))
+                        DexterityGraphView.StripSuffix(t.Name, "Operator")))
                     { level = 2, userData = t });
             }
 

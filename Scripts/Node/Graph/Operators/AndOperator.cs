@@ -8,12 +8,12 @@ namespace OneHamsa.Dexterity
     /// Equivalent to a logical AND across the multiset of incoming bool sources.
     ///
     /// To wire: drop this on the same GameObject as your <see cref="GraphNode"/>,
-    /// then have each contributing provider/aggregator add a <see cref="DexterityEdge"/>
-    /// pointing at this aggregator. The aggregator's own output edge(s) feed
-    /// either a state-input port on the node or another aggregator.
+    /// then have each contributing source/operator add a <see cref="DexterityEdge"/>
+    /// pointing at this operator. The operator's own output edge(s) feed
+    /// either a state-input port on the node or another operator.
     /// </summary>
-    [AddComponentMenu("Dexterity/Graph/And Aggregator")]
-    public class AndAggregator : GraphAggregator
+    [AddComponentMenu("Dexterity/Graph/And Operator")]
+    public class AndOperator : GraphOperator
     {
         protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
         {

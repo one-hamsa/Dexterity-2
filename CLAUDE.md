@@ -7,7 +7,7 @@ Declarative state-machine library for animation/visual states. Two node families
 - FieldNode vs GraphNode (when to use which).
 - GraphNode runtime architecture (edges, topo evaluation, lifecycle, override semantics, preview groups).
 - Editor tooling (graph window, preview driver, edge drawer) and the patterns it enforces.
-- Built-in aggregators and providers.
+- Built-in operators and sources.
 
 ## Load-bearing rules (apply even before you've opened ENGINEERING.md)
 

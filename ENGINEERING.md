@@ -12,13 +12,13 @@ Dexterity has two ways to compute a node's current state. Pick the one that matc
 
 | | **FieldNode** (classic) | **GraphNode** (new) |
 |---|---|---|
-| **State source** | `Gate`s on the node wrap `BaseField`s; a `StateFunction` step tree maps field values → state | Anonymous provider/aggregator components on the SAME GameObject as the node, wired by serialized `DexterityEdge` lists |
+| **State source** | `Gate`s on the node wrap `BaseField`s; a `StateFunction` step tree maps field values → state | Anonymous source/operator components on the SAME GameObject as the node, wired by serialized `DexterityEdge` lists |
 | **Authoring** | One central inspector on the node — gates + step tree | Dexterity Graph window (`Tools → Dexterity → Graph`) — drag-to-connect edges, embedded node inspectors. Sources also live on the host GO but are `HideInInspector` by default, edited via the graph window |
 | **Evaluation** | Field bitmask + DFS step tree | Topologically-ordered bool evaluation of all sources on host; first state-input port with any active source wins |
 | **Edit-time** | Only runs inside the narrow `EditorTransitions` preview path | Always evaluable (host-local component scan + bool math); per-source override pills drive Modifier preview |
-| **State names** | Auto-discovered from the StateFunction | Explicit `List<string> stateInputs` on the Out node, plus `initialState` (the fallback) |
-| **Built-in inputs** | `BaseField` subclasses: hover, press, raycast, binding, enum, node-state, constant, parent, children, AND, OR, … | `GraphStateProvider` subclasses (anonymous bool sources): hover, press, raycast, binding, enum, node-state, constant |
-| **Reuse pattern** | Wire same `BaseField` instance into multiple gates | Anonymous source can fan out via multiple edges; intermediate `GraphAggregator`s combine bools |
+| **State names** | Auto-discovered from the StateFunction | Explicit `List<string> states` (+ a raw `inputs` list) on the Out node, plus `initialState` (the fallback) |
+| **Built-in inputs** | `BaseField` subclasses: hover, press, raycast, binding, enum, node-state, constant, parent, children, AND, OR, … | `GraphSource` subclasses (anonymous bool sources): hover, press, raycast, binding, enum, node-state, constant |
+| **Reuse pattern** | Wire same `BaseField` instance into multiple gates | Anonymous source can fan out via multiple edges; intermediate `GraphOperator`s combine bools |
 | **Best for** | Complex logic-driven nodes with reusable `NodeReference` assets | UI components with drop-in inputs and live edit-mode previewing |
 
 Both node types share the rest of Dexterity: `Modifier`s, transitions, `Database` state-ID lookup, the inspector debug panel, etc.
@@ -37,15 +37,15 @@ Scripts/
     NodeReference.cs                   — shared gate/step-tree asset
     OutputField.cs                     — internal FieldNode field result
     Graph/
-      IDexteritySource.cs              — common source interface (providers + aggregators)
+      IDexteritySource.cs              — common source interface (sources + operators)
       DexterityEdge.cs                 — source-side edge struct
-      GraphStateProvider.cs            — anonymous leaf base
-      GraphAggregator.cs               — anonymous intermediate base
-      GraphNode.cs                     — the Out node with stateInputs list + topo evaluation
+      GraphSource.cs            — anonymous leaf base
+      GraphOperator.cs               — anonymous intermediate base
+      GraphNode.cs                     — the Out node with states + inputs lists + topo evaluation
       GraphPreviewOverrides.cs         — global IsActive override registry
       GraphNodePreviewRoot.cs          — opt-in marker component to group GraphNodes for co-preview
-      Aggregators/
-        AndAggregator.cs               — logical AND over connected inputs (was AllOfAggregator)
+      Operators/
+        AndOperator.cs               — logical AND over connected inputs (was AllOfAggregator)
     Editor/
       ... (existing FieldNode editors)
       GraphNodeEditor.cs               — inspector with state banner + "Open Graph" button
@@ -57,15 +57,15 @@ Scripts/
       DexterityPreview.cs              — modifier preview helpers
   Builtins/
     Fields/                            — classic BaseField subclasses
-    GraphProviders/
-      UIHoverProvider.cs               ↔ UIHoverField
-      UIPressProvider.cs               ↔ UIPressField
-      RaycastHoverProvider.cs          ↔ RaycastHoverField
-      RaycastPressProvider.cs          ↔ RaycastPressField
-      BindingProvider.cs               ↔ BindingField
-      EnumProvider.cs                  ↔ EnumField
-      NodeStateProvider.cs             ↔ NodeStateField
-      ConstantProvider.cs              ↔ ConstantField
+    GraphSources/
+      UIHoverSource.cs               ↔ UIHoverField
+      UIPressSource.cs               ↔ UIPressField
+      RaycastHoverSource.cs          ↔ RaycastHoverField
+      RaycastPressSource.cs          ↔ RaycastPressField
+      BindingSource.cs               ↔ BindingField
+      EnumSource.cs                  ↔ EnumField
+      NodeStateSource.cs             ↔ NodeStateField
+      ConstantSource.cs              ↔ ConstantField
     Modifiers/                         — same modifiers serve both families
 ```
 
@@ -80,7 +80,7 @@ Scripts/
 
 ## Authoring surface
 
-GraphNode authoring lives in the Dexterity Graph window (`Tools → Dexterity → Graph`, or "Open Graph" on a `GraphNode` inspector). Sources carry `HideFlags.HideInInspector` so the Inspector shows the GraphNode and its modifiers but not the underlying providers/aggregators — `DexterityGraphView.EnsureHideFlags` patches older scenes when they're opened.
+GraphNode authoring lives in the Dexterity Graph window (`Tools → Dexterity → Graph`, or "Open Graph" on a `GraphNode` inspector). Sources carry `HideFlags.HideInInspector` so the Inspector shows the GraphNode and its modifiers but not the underlying sources/operators — `DexterityGraphView.EnsureHideFlags` patches older scenes when they're opened.
 
 The `DexterityEdge` property drawer remains as a fallback for inspector-side editing (debugging, or after manually clearing `hideFlags`).
 
@@ -88,7 +88,7 @@ The `DexterityEdge` property drawer remains as a fallback for inspector-side edi
 
 # GraphNode — Runtime
 
-State node whose current state is decided by an explicit list of **named state inputs** on the node, fed by **bool-output sources** (providers and aggregators) that live as components on the **same GameObject** as the node. Wiring is via serialized `DexterityEdge` lists on each source, not via the transform tree.
+State node whose current state is decided by an explicit list of **named state inputs** on the node, fed by **bool-output sources** (sources and operators) that live as components on the **same GameObject** as the node. Wiring is via serialized `DexterityEdge` lists on each source, not via the transform tree.
 
 ## Why this exists alongside FieldNode
 
@@ -99,21 +99,21 @@ State node whose current state is decided by an explicit list of **named state i
 
 `GraphNode` flips it:
 
-- **Decoupled inputs.** Each input is a separate MonoBehaviour (`GraphStateProvider` subclass), added to the host GameObject. Providers are anonymous bool sources — no state name on the provider.
-- **Explicit state list.** The Out node serializes an ordered `List<string> stateInputs` (port names = state names). First port with any active connected source wins. Falls back to `initialState`.
-- **Edges as references.** Each source has a `List<DexterityEdge> outputs`. Each edge = `{ Component target, string targetPort }`. Target is the Out node (with a port name) or another aggregator on the same GameObject.
+- **Decoupled inputs.** Each input is a separate MonoBehaviour (`GraphSource` subclass), added to the host GameObject. Sources are anonymous bool sources — no state name on the source.
+- **Explicit state list.** The Out node serializes an ordered `List<string> states` (port names = state names) plus a parallel `List<string> inputs` of raw signal ports. First state port with any active connected source wins. Falls back to `initialState`. Input ports are readable via `GetRawInput` but never become the active state.
+- **Edges as references.** Each source has a `List<DexterityEdge> outputs`. Each edge = `{ Component target, string targetPort }`. Target is the Out node (with a port name) or another operator on the same GameObject.
 - **Edit-time native.** Evaluation is pure host-local component scan + bool math — no `Database`, no `Manager`. `GraphPreviewOverrides` lets editor tooling force any source's `IsActive`.
 
 ## Mental model
 
 ```
 GameObject "MyButton"
-├─ GraphNode  (the Out node — stateInputs: ["Disabled", "Pressed", "Hover"])
-├─ RaycastHoverProvider   ── edge → (Out, "Hover")
-├─ RaycastPressProvider   ── edge → (Out, "Pressed")
-├─ AndAggregator          ── edge → (Out, "Disabled")
-├─ ConstantProvider       ── edge → (AndAggregator)
-└─ BindingProvider        ── edge → (AndAggregator)
+├─ GraphNode  (the Out node — states: ["Disabled", "Pressed", "Hover"])
+├─ RaycastHoverSource   ── edge → (Out, "Hover")
+├─ RaycastPressSource   ── edge → (Out, "Pressed")
+├─ AndOperator          ── edge → (Out, "Disabled")
+├─ ConstantSource       ── edge → (AndOperator)
+└─ BindingSource        ── edge → (AndOperator)
 ```
 
 All sources implement `IDexteritySource`:
@@ -125,25 +125,25 @@ event Action onStateMayHaveChanged;
 void NotifyExternalChanged();
 ```
 
-**Evaluation: first port with any active source wins.** The Out node walks `stateInputs` in order. Aggregators are evaluated in **topological order** (their inputs are resolved first). Cycles fall back to `initialState` with an error log.
+**Evaluation: first port with any active source wins.** The Out node walks `states` in order. Operators are evaluated in **topological order** (their inputs are resolved first). Cycles fall back to `initialState` with an error log.
 
 ## Files in `Scripts/Node/Graph/`
 
 | File | Purpose |
 |---|---|
 | `DexterityEdge.cs` | Source-side edge struct: `{ Component target, string targetPort }`. |
-| `IDexteritySource.cs` | Common interface for anything with a bool output (providers + aggregators). |
-| `GraphStateProvider.cs` | Abstract leaf base. Anonymous bool source. Subclasses override `bool ComputeIsActive()`. |
-| `GraphAggregator.cs` | Abstract intermediate base. Anonymous bool source. Subclasses override `bool ComputeOutput(IReadOnlyList<bool> inputs)`. |
-| `GraphNode.cs` | The `BaseStateNode` subclass. Owns `stateInputs`, topo-sorted evaluation, `EvaluateTreeEditor()` for edit-time, and `GetRawInput(stateId)` for priority-independent input queries. |
+| `IDexteritySource.cs` | Common interface for anything with a bool output (sources + operators). |
+| `GraphSource.cs` | Abstract leaf base. Anonymous bool source. Subclasses override `bool ComputeIsActive()`. |
+| `GraphOperator.cs` | Abstract intermediate base. Anonymous bool source. Subclasses override `bool ComputeOutput(IReadOnlyList<bool> inputs)`. |
+| `GraphNode.cs` | The `BaseStateNode` subclass. Owns the `states` + `inputs` port lists, topo-sorted evaluation, `EvaluateTreeEditor()` for edit-time, and `GetRawInput(stateId)` for priority-independent input queries. |
 | `GraphPreviewOverrides.cs` | Static override registry — `Set` / `Clear` / `ClearAll` on `IDexteritySource`, with an `onChanged` event the editor driver subscribes to. Runtime asmdef so overrides work in Play mode too. |
-| `Aggregators/` | Concrete aggregator subclasses (see Aggregators section below). |
+| `Operators/` | Concrete operator subclasses (see Operators section below). |
 
 ## Lifecycle
 
 ### Source attach/detach
 
-Each provider/aggregator's `OnEnable` calls `GetComponent<GraphNode>().AttachSource(this)`, which subscribes the node's `MarkStateDirty` handler to the source's `onStateMayHaveChanged`. Topology cache invalidates. `OnDisable` calls `DetachSource`.
+Each source/operator's `OnEnable` calls `GetComponent<GraphNode>().AttachSource(this)`, which subscribes the node's `MarkStateDirty` handler to the source's `onStateMayHaveChanged`. Topology cache invalidates. `OnDisable` calls `DetachSource`.
 
 Execution order ensures the host node enables first (`Manager.nodeExecutionPriority`) before its sources (`Manager.nodeExecutionPriority + 1`).
 
@@ -171,7 +171,7 @@ Also: `HasInputPort(string)` reports whether the node declares a port with that 
 `GraphNode.GetStateNames()` returns the union of:
 
 - The `initialState` field's value (fallback state).
-- Every string in `stateInputs`.
+- Every string in `states` (the `inputs` list is excluded).
 
 `Modifier.SyncStates` reads this set, so modifiers get one property per state automatically.
 
@@ -181,11 +181,11 @@ Also: `HasInputPort(string)` reports whether the node declares a port with that 
 
 ## Override semantics
 
-`IDexteritySource.IsActive` checks `GraphPreviewOverrides.TryGet(this, out var ov)` first. If an override exists, that value is returned regardless of `ComputeIsActive` / `ComputeOutput`. Overrides work on aggregators too — useful for debugging mid-graph signals.
+`IDexteritySource.IsActive` checks `GraphPreviewOverrides.TryGet(this, out var ov)` first. If an override exists, that value is returned regardless of `ComputeIsActive` / `ComputeOutput`. Overrides work on operators too — useful for debugging mid-graph signals.
 
 ## Cross-node dependencies
 
-`NodeStateProvider` (in `Builtins/GraphProviders/`) is still the bridge — a source that reports active when *another* `BaseStateNode` is in a named state. Runtime: subscribes to `targetNode.onStateChanged`; edit time: compares against `targetNode.EvaluateTreeEditor()` (GraphNode targets only).
+`NodeStateSource` (in `Builtins/GraphSources/`) is still the bridge — a source that reports active when *another* `BaseStateNode` is in a named state. Runtime: subscribes to `targetNode.onStateChanged`; edit time: compares against `targetNode.EvaluateTreeEditor()` (GraphNode targets only).
 
 ## Preview groups (`GraphNodePreviewRoot`)
 
@@ -193,11 +193,11 @@ Edit-time preview is opt-in per node (via a graph window's Preview toggle). To p
 
 Lookup is "topmost root wins": walking up from a node, the outermost `GraphNodePreviewRoot` ancestor defines the group. Nested roots are supported (an inner "Section" root inside an outer "Page" root → the Page is what previews).
 
-Without a preview root, previewing a node only animates that single node. The component is purely declarative — no fields, no upstream-walking. Cross-node deps (`NodeStateProvider`) still evaluate correctly via on-demand `EvaluateTreeEditor` calls; the preview root just decides what *gets animated*, not what gets *computed*.
+Without a preview root, previewing a node only animates that single node. The component is purely declarative — no fields, no upstream-walking. Cross-node deps (`NodeStateSource`) still evaluate correctly via on-demand `EvaluateTreeEditor` calls; the preview root just decides what *gets animated*, not what gets *computed*.
 
 ## Authoring path
 
-GraphNode authoring lives in the graph window (`Tools → Dexterity → Graph`, or the "Open Graph" button on a `GraphNode` inspector). Drag-to-connect edges, Spacebar to add a provider/aggregator, embedded inspectors per node.
+GraphNode authoring lives in the graph window (`Tools → Dexterity → Graph`, or the "Open Graph" button on a `GraphNode` inspector). Drag-to-connect edges, Spacebar to add a source/operator, embedded inspectors per node.
 
 Sources carry `HideFlags.HideInInspector` (enforced by `DexterityGraphView.EnsureHideFlags` whenever the window opens a node). They still serialize normally and still show up in component reflection — they just don't appear in the Inspector. The `DexterityEdge` property drawer (`Scripts/Node/Editor/`) remains as a fallback path, used by debug inspectors and by anyone who removes the hideFlags manually.
 
@@ -217,11 +217,11 @@ Editor scripts for both node families. This folder is mapped into `Dexterity.Edi
 | `BindingEnumNodeEditor.cs` | `BindingEnumNode` | Enum binding picker. |
 | `SimpleEnumNodeEditor.cs` | `SimpleEnumNode` | Manual state list. |
 | `StateProxyNodeEditor.cs` | `StateProxyNode` | Source-node → state-name remapping list. |
-| `GraphNodeEditor.cs` | `GraphNode` | Inspector: aggregated-state banner, `stateInputs` list, "Open Graph" button. Per-source override pills live in the graph window, not the inspector. |
+| `GraphNodeEditor.cs` | `GraphNode` | Inspector: aggregated-state banner, `states` + `inputs` lists, "Open Graph" button. Per-source override pills live in the graph window, not the inspector. |
 | `DexterityGraphWindow.cs` | (EditorWindow) | Host for a `DexterityGraphView`. Menu entry `Tools/Dexterity/Graph`; also opened per-node via `OpenFor(node)` from the inspector. Multiple windows can be open simultaneously. |
-| `DexterityGraphView.cs` | (UIElements GraphView) | The graph itself: drag-to-connect edges, embedded provider/aggregator inspectors, Spacebar add-source. Enforces `HideFlags.HideInInspector` on sources via `EnsureHideFlags`. All edits commit through `SerializedObject`. |
-| `DexterityAddSourceSearchProvider.cs` | (graph popup) | "Add Source" search popup — Spacebar or right-click in the graph. Enumerates `GraphStateProvider` / `GraphAggregator` subclasses. |
-| `DexterityEdgeDrawer.cs` | `DexterityEdge` | Fallback property drawer for source `outputs` lists when something opens a hidden source in the inspector. Target dropdown (Out node + aggregators on host) + port-name dropdown when target is the Out node. |
+| `DexterityGraphView.cs` | (UIElements GraphView) | The graph itself: drag-to-connect edges, embedded source/operator inspectors, Spacebar add-source. Enforces `HideFlags.HideInInspector` on sources via `EnsureHideFlags`. All edits commit through `SerializedObject`. |
+| `DexterityAddSourceSearchProvider.cs` | (graph popup) | "Add Source" search popup — Spacebar or right-click in the graph. Enumerates `GraphSource` / `GraphOperator` subclasses. |
+| `DexterityEdgeDrawer.cs` | `DexterityEdge` | Fallback property drawer for source `outputs` lists when something opens a hidden source in the inspector. Target dropdown (Out node + operators on host) + port-name dropdown when target is the Out node. |
 | `GraphEditorPreviewDriver.cs` | (static, `[InitializeOnLoadMethod]`) | Single global handler for `GraphPreviewOverrides.onChanged`. Walks every `GraphNode` in the scene, diffs against a per-node "rendered state" cache, and queues serialized Modifier transitions via `EditorTransitions`. |
 | `DexterityPreview.cs` | (static) | Modifier preview helpers shared by inspector + graph window. |
 
@@ -239,7 +239,7 @@ Why it exists: `EditorTransitions.TransitionAsync` owns the global `Database` si
 ### Consequences
 
 - Preview works for **every** GraphNode in the scene whenever overrides change — even nodes whose inspector isn't open.
-- Cross-node refs (`NodeStateProvider`) automatically cascade: change Node A → Node A repaints → Node B (depending on A) re-evaluates → Node B's modifiers also queue.
+- Cross-node refs (`NodeStateSource`) automatically cascade: change Node A → Node A repaints → Node B (depending on A) re-evaluates → Node B's modifiers also queue.
 - `kPreviewSpeed = 6f` keeps perceived latency low when multiple transitions chain.
 
 ## DexterityGraphWindow + DexterityGraphView
@@ -247,43 +247,43 @@ Why it exists: `EditorTransitions.TransitionAsync` owns the global `Database` si
 Primary authoring surface for GraphNodes. Open via `Tools → Dexterity → Graph`, or click "Open Graph" on a `GraphNode` inspector (each click opens a fresh window — multiple can be live at once).
 
 - **Drag-to-connect edges.** GraphView native edge handling routes through `OnGraphViewChanged` → `CommitEdgeCreation` / removal / move. All commits go via `SerializedObject` + `ApplyModifiedProperties`.
-- **Spacebar add-source.** `DexterityAddSourceSearchProvider` lists every `GraphStateProvider` / `GraphAggregator` subclass; selecting one adds the component to the host GO with `HideFlags.HideInInspector` already set.
-- **Embedded node inspectors.** Each provider/aggregator/Out-node view embeds its own inspector body — edit ports, fields, and binding paths inline.
+- **Spacebar add-source.** `DexterityAddSourceSearchProvider` lists every `GraphSource` / `GraphOperator` subclass; selecting one adds the component to the host GO with `HideFlags.HideInInspector` already set.
+- **Embedded node inspectors.** Each source/operator/Out-node view embeds its own inspector body — edit ports, fields, and binding paths inline.
 - **HideFlags enforcement.** `EnsureHideFlags` runs whenever a node opens or refreshes — patches older scenes/prefabs where a source's flags drifted to `None`.
 
 ## DexterityEdgeDrawer
 
 Fallback drawer for `DexterityEdge` lists when something opens a source in the inspector (debugging, or after manually clearing `hideFlags`).
 
-- **target**: dropdown of `GraphNode` + aggregators on the SAME GameObject as the source. ObjectField is hidden — can't accidentally point at a foreign GO.
-- **targetPort**: only shown when target is a `GraphNode`. Dropdown of the node's declared `stateInputs` port names (read live from the SerializedObject).
+- **target**: dropdown of `GraphNode` + operators on the SAME GameObject as the source. ObjectField is hidden — can't accidentally point at a foreign GO.
+- **targetPort**: only shown when target is a `GraphNode`. Dropdown of the node's declared port names — both `states` and `inputs` (read live from the SerializedObject); input ports are tagged `(input)`.
 - All writes go through `SerializedProperty` + `ApplyModifiedProperties` so Unity's prefab-override tracking sees them.
 
 ## Editor patterns to follow
 
 - **Static editor state belongs in the driver, not per-inspector.** The override registry is the single source of truth for edit-time state.
 - **All field writes via SerializedObject + ApplyModifiedProperties.** Direct reflection writes bypass Unity's prefab-override tracking (spike-verified).
-- **Source enumeration is host-local.** `node.GetComponents<GraphStateProvider>()` + `node.GetComponents<GraphAggregator>()`. No transform walks.
+- **Source enumeration is host-local.** `node.GetComponents<GraphSource>()` + `node.GetComponents<GraphOperator>()`. No transform walks.
 
 ---
 
-# GraphAggregator subclasses (`Scripts/Node/Graph/Aggregators/`)
+# GraphOperator subclasses (`Scripts/Node/Graph/Operators/`)
 
-Aggregators are intermediate sources in a Dexterity graph: they consume the bool outputs of several upstream sources, combine them into a single bool, and feed that bool to either the Out node or another aggregator.
+Operators are intermediate sources in a Dexterity graph: they consume the bool outputs of several upstream sources, combine them into a single bool, and feed that bool to either the Out node or another operator.
 
-To add a new aggregator: subclass `GraphAggregator` and override:
+To add a new operator: subclass `GraphOperator` and override:
 
 ```csharp
 protected abstract bool ComputeOutput(IReadOnlyList<bool> inputs);
 ```
 
-`inputs` is the IsActive value of every source whose `DexterityEdge` targets this aggregator, in stable but unspecified topological order. The base class handles override-aware `IsActive`, edge management, host attach/detach, and edit-time `OnValidate` signaling.
+`inputs` is the IsActive value of every source whose `DexterityEdge` targets this operator, in stable but unspecified topological order. The base class handles override-aware `IsActive`, edge management, host attach/detach, and edit-time `OnValidate` signaling.
 
-Aggregators have no named input ports — they consume their incoming sources as a multiset of bools. (If a future use case needs labeled inputs, the schema can grow then.)
+Operators have no named input ports — they consume their incoming sources as a multiset of bools. (If a future use case needs labeled inputs, the schema can grow then.)
 
 ## Built-ins
 
-### `AndAggregator`
+### `AndOperator`
 
 Outputs `true` iff every connected input is active. Logical AND.
 
@@ -296,58 +296,58 @@ protected override bool ComputeOutput(IReadOnlyList<bool> inputs)
 }
 ```
 
-Example: a "Disabled" state that requires both a `ConstantProvider` (forced disable) AND a `BindingProvider` (data-driven disable) to be active simultaneously.
+Example: a "Disabled" state that requires both a `ConstantSource` (forced disable) AND a `BindingSource` (data-driven disable) to be active simultaneously.
 
 ## First-match priority
 
-The Out node's ordered `stateInputs` is the first-match mechanism — the first port with any active source wins. Aggregators don't carry priority themselves; if you need nested priority within a sub-graph, compose with multiple aggregators feeding ordered ports.
+The Out node's ordered `states` list is the first-match mechanism — the first port with any active source wins. Operators don't carry priority themselves; if you need nested priority within a sub-graph, compose with multiple operators feeding ordered ports.
 
 ---
 
-# GraphProviders — Built-in leaf catalogue (`Scripts/Builtins/GraphProviders/`)
+# GraphSources — Built-in leaf catalogue (`Scripts/Builtins/GraphSources/`)
 
-Each file here is a concrete `GraphStateProvider` subclass that ports an existing `BaseField` to the GraphNode system. Add one to the same GameObject as your `GraphNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an aggregator).
+Each file here is a concrete `GraphSource` subclass that ports an existing `BaseField` to the GraphNode system. Add one to the same GameObject as your `GraphNode`, then wire its `outputs` list to feed a state-input port on the Out node (or to an operator).
 
-Each provider has:
+Each source has:
 - A `List<DexterityEdge> outputs` (inherited from base) — where its bool output is fed.
 - Subclass-specific input fields (raycast tag, binding target, target node, etc.).
-- A `ComputeIsActive()` override that returns the bool this provider currently contributes.
+- A `ComputeIsActive()` override that returns the bool this source currently contributes.
 
-Providers are **anonymous** — no state name on the provider. The state name is determined by which port the output edge feeds.
+Sources are **anonymous** — no state name on the source. The state name is determined by which port the output edge feeds.
 
 ## Catalogue
 
-| Provider | Ports | When it's active | Edit-time |
+| Source | Ports | When it's active | Edit-time |
 |---|---|---|---|
-| `UIHoverProvider` | `UIHoverField` | Unity EventSystem pointer is hovering this UI element (`IPointerEnterHandler`/`IPointerExitHandler`). | inactive (no pointer events fire) |
-| `UIPressProvider` | `UIPressField` | Unity EventSystem pointer is pressed on this UI element (`IPointerDownHandler`/`IPointerUpHandler`). | inactive |
-| `RaycastHoverProvider` | `RaycastHoverField` | Any registered `IRaycastController` with the configured tag is hovering this collider. | inactive |
-| `RaycastPressProvider` | `RaycastPressField` | Any registered `IRaycastController` with the configured tag is pressing this collider. Has `stayPressedOutOfBounds` option. | inactive |
-| `BindingProvider` | `BindingField` | A reflection-bound boolean property/method on any `UnityEngine.Object` evaluates to true (or false, with `negate`). | inactive until binding initializes (runtime) |
-| `EnumProvider` | `EnumField` | A referenced `BindingEnumNode`'s current enum case equals the configured target case. | inactive (depends on binding initialization) |
-| `NodeStateProvider` | `NodeStateField` | A referenced `BaseStateNode` is currently in the configured target state. **Cross-node dependency bridge.** | active iff target is a `GraphNode` and its `EvaluateTreeEditor()` matches the target state |
-| `ConstantProvider` | `ConstantField` | Always-on or always-off, based on a serialized `active` bool. | honors `active` directly |
+| `UIHoverSource` | `UIHoverField` | Unity EventSystem pointer is hovering this UI element (`IPointerEnterHandler`/`IPointerExitHandler`). | inactive (no pointer events fire) |
+| `UIPressSource` | `UIPressField` | Unity EventSystem pointer is pressed on this UI element (`IPointerDownHandler`/`IPointerUpHandler`). | inactive |
+| `RaycastHoverSource` | `RaycastHoverField` | Any registered `IRaycastController` with the configured tag is hovering this collider. | inactive |
+| `RaycastPressSource` | `RaycastPressField` | Any registered `IRaycastController` with the configured tag is pressing this collider. Has `stayPressedOutOfBounds` option. | inactive |
+| `BindingSource` | `BindingField` | A reflection-bound boolean property/method on any `UnityEngine.Object` evaluates to true (or false, with `negate`). | inactive until binding initializes (runtime) |
+| `EnumSource` | `EnumField` | A referenced `BindingEnumNode`'s current enum case equals the configured target case. | inactive (depends on binding initialization) |
+| `NodeStateSource` | `NodeStateField` | A referenced `BaseStateNode` is currently in the configured target state. **Cross-node dependency bridge.** | active iff target is a `GraphNode` and its `EvaluateTreeEditor()` matches the target state |
+| `ConstantSource` | `ConstantField` | Always-on or always-off, based on a serialized `active` bool. | honors `active` directly |
 
 ## Implementation patterns
 
-**Event-driven providers** (UIHover/Press, NodeStateProvider): override `OnEnable`/`OnDisable` to subscribe/unsubscribe, internal state is updated by handler callbacks calling `MarkChanged()`.
+**Event-driven sources** (UIHover/Press, NodeStateSource): override `OnEnable`/`OnDisable` to subscribe/unsubscribe, internal state is updated by handler callbacks calling `MarkChanged()`.
 
-**Polling providers** (Binding, Enum, Raycast): an internal `Update()` method compares current `ComputeIsActive()` against a cached `_lastActive` and fires `MarkChanged()` on diff. Necessary when the underlying source doesn't expose a change event.
+**Polling sources** (Binding, Enum, Raycast): an internal `Update()` method compares current `ComputeIsActive()` against a cached `_lastActive` and fires `MarkChanged()` on diff. Necessary when the underlying source doesn't expose a change event.
 
-**Constant providers**: trivial — `ComputeIsActive()` returns the serialized flag directly. Useful as a terminal fallback at the end of an aggregator's inputs.
+**Constant sources**: trivial — `ComputeIsActive()` returns the serialized flag directly. Useful as a terminal fallback at the end of an operator's inputs.
 
-## Note on `NodeStateProvider`
+## Note on `NodeStateSource`
 
 Edit-time behavior is special. The base `IsActive` getter calls `ComputeIsActive()` whose implementation has two branches:
 - Runtime: compares `targetNode.GetActiveState()` (int) against a cached state ID.
 - Edit-time: compares `targetNode.EvaluateTreeEditor()` (string) against `targetState` — works for `GraphNode` targets without `Database`.
 
-This means cross-node dependencies "just work" at edit time: toggle a provider override in Node A, Node B's `NodeStateProvider`s that target Node A see the change immediately via the driver.
+This means cross-node dependencies "just work" at edit time: toggle a source override in Node A, Node B's `NodeStateSource`s that target Node A see the change immediately via the driver.
 
-## Adding a new provider
+## Adding a new source
 
-1. Create a `GraphStateProvider` subclass.
-2. Add an `[AddComponentMenu("Dexterity/Graph/Providers/...")]` so designers can find it.
+1. Create a `GraphSource` subclass.
+2. Add an `[AddComponentMenu("Dexterity/Graph/Sources/...")]` so designers can find it.
 3. Override `ComputeIsActive()`. Be defensive at edit time — if your inputs aren't wired (raycast controllers, UI events, runtime services), return `false`. The override registry covers simulation, so you don't need to invent edit-mode mocks.
 4. If your input has an event, subscribe in `OnEnable` and call `MarkChanged()` from the handler. If polled, add an `Update()` with a diff check.
 

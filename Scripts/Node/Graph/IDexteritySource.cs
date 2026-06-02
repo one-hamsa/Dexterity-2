@@ -5,9 +5,9 @@ namespace OneHamsa.Dexterity
 {
     /// <summary>
     /// Anything that produces a single bool output and can feed a <see cref="GraphNode"/>
-    /// or a <see cref="GraphAggregator"/> via a <see cref="DexterityEdge"/>.
-    /// Implemented by <see cref="GraphStateProvider"/> (leaves) and
-    /// <see cref="GraphAggregator"/> (intermediates).
+    /// or a <see cref="GraphOperator"/> via a <see cref="DexterityEdge"/>.
+    /// Implemented by <see cref="GraphSource"/> (leaves) and
+    /// <see cref="GraphOperator"/> (intermediates).
     /// </summary>
     public interface IDexteritySource
     {

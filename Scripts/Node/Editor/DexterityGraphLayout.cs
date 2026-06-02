@@ -15,7 +15,7 @@ namespace OneHamsa.Dexterity
     /// hand-positioning each box.
     ///
     /// Algorithm:
-    /// 1. Collect all <see cref="GraphStateProvider"/> + <see cref="GraphAggregator"/>
+    /// 1. Collect all <see cref="GraphSource"/> + <see cref="GraphOperator"/>
     ///    components on the same GameObject as <c>node</c>.
     /// 2. Assign each source a layer = longest path from a root (a source with no
     ///    sibling source feeding it). Leaves are layer 0, aggregators settle on
@@ -62,8 +62,8 @@ namespace OneHamsa.Dexterity
             if (opts.columnSpacing <= 0f) opts = Options.Default;
 
             var host = node.gameObject;
-            var providers  = host.GetComponents<GraphStateProvider>();
-            var aggregators = host.GetComponents<GraphAggregator>();
+            var providers  = host.GetComponents<GraphSource>();
+            var aggregators = host.GetComponents<GraphOperator>();
 
             // Order matters for the layer-0 "stable" ordering: providers first (sources
             // of truth, top-of-pipeline) then aggregators (which always end up in layers ≥ 1 anyway).
@@ -175,9 +175,9 @@ namespace OneHamsa.Dexterity
             var node = cmd.context as GraphNode;
             if (node == null) return;
             Undo.RegisterCompleteObjectUndo(node, "Re-layout graph sources");
-            foreach (var p in node.GetComponents<GraphStateProvider>())
+            foreach (var p in node.GetComponents<GraphSource>())
                 Undo.RegisterCompleteObjectUndo(p, "Re-layout graph sources");
-            foreach (var a in node.GetComponents<GraphAggregator>())
+            foreach (var a in node.GetComponents<GraphOperator>())
                 Undo.RegisterCompleteObjectUndo(a, "Re-layout graph sources");
             AutoLayout(node);
         }

@@ -9,7 +9,7 @@ namespace OneHamsa.Dexterity
     /// the new graph window lands.
     ///
     /// - target: dropdown of valid sink components on the SAME GameObject as the source
-    ///   (the host's <see cref="GraphNode"/> + every <see cref="GraphAggregator"/>
+    ///   (the host's <see cref="GraphNode"/> + every <see cref="GraphOperator"/>
     ///   on the host). Hides ObjectField; designers can't accidentally point at a
     ///   foreign GO.
     /// - targetPort: only shown when target is a GraphNode. Dropdown of the node's
@@ -81,8 +81,8 @@ namespace OneHamsa.Dexterity
                 labels.Add("Out (GraphNode)");
             }
 
-            // Aggregators on host, in component order. Exclude the source itself (no self-edges).
-            foreach (var agg in hostGo.GetComponents<GraphAggregator>())
+            // Operators on host, in component order. Exclude the source itself (no self-edges).
+            foreach (var agg in hostGo.GetComponents<GraphOperator>())
             {
                 if (agg == sourceComponent) continue;
                 sinks.Add(agg);
@@ -111,30 +111,47 @@ namespace OneHamsa.Dexterity
 
         private static void DrawPortDropdown(Rect rect, SerializedProperty portProp, GraphNode node)
         {
-            // Read the node's stateInputs via SerializedObject so we don't depend on
-            // node instance state (works in edit mode regardless of OnEnable state).
+            // Read the node's ports via SerializedObject so we don't depend on node
+            // instance state (works in edit mode regardless of OnEnable state). Edges can
+            // target either a priority-resolved state port or a raw input port, so offer
+            // both — input ports are tagged "(input)" in the dropdown while the stored
+            // value stays the bare port name.
             var nodeSo = new SerializedObject(node);
-            var stateInputsProp = nodeSo.FindProperty("stateInputs");
             var portNames = new List<string>();
-            if (stateInputsProp != null && stateInputsProp.isArray)
+            var displayLabels = new List<string>();
+            var statesProp = nodeSo.FindProperty("states");
+            if (statesProp != null && statesProp.isArray)
             {
-                for (var i = 0; i < stateInputsProp.arraySize; i++)
+                for (var i = 0; i < statesProp.arraySize; i++)
                 {
-                    var name = stateInputsProp.GetArrayElementAtIndex(i).stringValue;
-                    if (!string.IsNullOrEmpty(name)) portNames.Add(name);
+                    var name = statesProp.GetArrayElementAtIndex(i).stringValue;
+                    if (string.IsNullOrEmpty(name)) continue;
+                    portNames.Add(name);
+                    displayLabels.Add(name);
+                }
+            }
+            var inputsProp = nodeSo.FindProperty("inputs");
+            if (inputsProp != null && inputsProp.isArray)
+            {
+                for (var i = 0; i < inputsProp.arraySize; i++)
+                {
+                    var name = inputsProp.GetArrayElementAtIndex(i).stringValue;
+                    if (string.IsNullOrEmpty(name)) continue;
+                    portNames.Add(name);
+                    displayLabels.Add($"{name} (input)");
                 }
             }
 
             if (portNames.Count == 0)
             {
                 EditorGUI.LabelField(rect, "targetPort",
-                    "(no state inputs declared on Out node)", EditorStyles.miniLabel);
+                    "(no ports declared on Out node)", EditorStyles.miniLabel);
                 return;
             }
 
             var labels = new string[portNames.Count + 1];
             labels[0] = "(none)";
-            for (var i = 0; i < portNames.Count; i++) labels[i + 1] = portNames[i];
+            for (var i = 0; i < portNames.Count; i++) labels[i + 1] = displayLabels[i];
 
             var currentIdx = 0;
             for (var i = 0; i < portNames.Count; i++)
