@@ -79,11 +79,16 @@ namespace OneHamsa.Dexterity.Builtins
 	        if (!enabled)
 		        return;
 
-	        // Mirrors OneHumus.Utils.ActivateInPlay: direct field write + SetDirty on the
-	        // gameObject. The gameObject dirty propagation covers the prefab override
-	        // tracking for the activeInEdit field too, because the modifier lives on the
-	        // same gameObject. No SerializedObject indirection needed.
-	        activeInEdit = gameObject.activeSelf;
+	        // Persist the pre-save visible state through SerializedObject so Unity records it
+	        // as a prefab-instance property override (m_Modifications). A plain field write is
+	        // not tracked as an override, so on reload a prefab instance reverts activeInEdit
+	        // to the prefab asset's value and PrepareForEdit restores the wrong state. Force
+	        // the gameObject active for serialization so the modifier still runs on load and
+	        // can re-apply its state.
+	        var so = new SerializedObject(this);
+	        so.FindProperty(nameof(activeInEdit)).boolValue = gameObject.activeSelf;
+	        so.ApplyModifiedProperties();
+
 	        gameObject.SetActive(true);
 	        EditorUtility.SetDirty(gameObject);
 #endif
