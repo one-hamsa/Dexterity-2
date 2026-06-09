@@ -1,0 +1,10 @@
+# Auto-added by 15OS: forward each pushed commit to 15OS commit-to-node analysis.
+# Thin caller; all logic + secrets live in one-hamsa/15os.
+name: 15OS commit analysis
+on:
+  push:
+    branches: ["**"]
+jobs:
+  analyze:
+    uses: one-hamsa/15os/.github/workflows/commit-analyze.yml@main
+    secrets: inherit
