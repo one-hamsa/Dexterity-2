@@ -62,6 +62,7 @@ namespace OneHamsa.Dexterity
         private GraphNode _registeredTarget; // last node we added to the preview set
         private Toggle _pinToggle;
         private Toggle _previewToggle;
+        private Slider _speedSlider;
         private Label _headerLabel;
         private Label _modePill;
 
@@ -103,6 +104,19 @@ namespace OneHamsa.Dexterity
                                      "Turn off to edit graph structure without driving Modifier transitions.";
             _previewToggle.RegisterValueChangedCallback(_ => SyncPreviewRegistration());
             toolbar.Add(_previewToggle);
+
+            // Preview playback speed — drives Database.timeScale via GraphEditorPreviewDriver, shared
+            // across all graph windows. 1x plays transitions and delays at their authored durations.
+            _speedSlider = new Slider("Speed", GraphEditorPreviewDriver.kMinSpeed, GraphEditorPreviewDriver.kMaxSpeed)
+            {
+                value = GraphEditorPreviewDriver.PreviewSpeed,
+                showInputField = true,
+            };
+            _speedSlider.tooltip = "Preview playback speed (Database.timeScale). 1x plays transitions " +
+                                   "and modifier/node delays at their authored durations.";
+            _speedSlider.style.width = 180f;
+            _speedSlider.RegisterValueChangedCallback(evt => GraphEditorPreviewDriver.PreviewSpeed = evt.newValue);
+            toolbar.Add(_speedSlider);
 
             _pinToggle = new Toggle("Pin") { value = false };
             _pinToggle.tooltip = "Pin the graph to the currently displayed node. While pinned, " +

@@ -63,6 +63,12 @@ namespace OneHamsa.Dexterity
         private double myTimeSinceStateChange = 0d;
         private int activeState;
 
+        // Edit-time preview only: a transition target awaiting its modifier-level delay before it
+        // becomes activeState. -1 = nothing pending. Refresh's delay gate (GetNodeActiveStateWithDelay)
+        // is behind Application.IsPlaying, so it never runs in preview; ProgressTime_Editor performs
+        // the equivalent flip instead.
+        private int editorDelayedTargetState = -1;
+
         private bool _initialized;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,13 +105,31 @@ namespace OneHamsa.Dexterity
             myTimeSinceStateChange = 0d;
             
             renderedState = activeState;
-            activeState = targetStateId;
+            // Honor modifier-level TransitionDelays in preview, mirroring runtime: hold the rendered
+            // (initial) state until the initial->target delay elapses, then flip activeState so the
+            // transition strategy animates. ProgressTime_Editor performs the flip.
+            if (targetStateId != initialStateId && GetStateDelay(initialStateId, targetStateId) > 0d)
+                editorDelayedTargetState = targetStateId;
+            else
+            {
+                activeState = targetStateId;
+                editorDelayedTargetState = -1;
+            }
         }
 
         public void ProgressTime_Editor(double dt)
         {
             myDeltaTime = dt;
             myTimeSinceStateChange += dt;
+
+            // Flip to the delayed target once its modifier-level delay has elapsed — edit-time mirror
+            // of GetNodeActiveStateWithDelay, which the runtime path applies every Refresh.
+            if (editorDelayedTargetState != -1
+                && myTimeSinceStateChange >= GetStateDelay(renderedState, editorDelayedTargetState))
+            {
+                activeState = editorDelayedTargetState;
+                editorDelayedTargetState = -1;
+            }
         }
 
         private Dictionary<int, PropertyBase> propertiesCache = null;
@@ -119,8 +143,9 @@ namespace OneHamsa.Dexterity
 
         public override bool IsChanged()
         {
-            return base.IsChanged() 
-                   || IsTransitionDelayed() 
+            return base.IsChanged()
+                   || IsTransitionDelayed()
+                   || editorDelayedTargetState != -1
                    || (Application.IsPlaying(this) && GetNodeActiveStateWithoutDelay() != activeState);
         }
 

@@ -222,25 +222,36 @@ Editor scripts for both node families. This folder is mapped into `Dexterity.Edi
 | `DexterityGraphView.cs` | (UIElements GraphView) | The graph itself: drag-to-connect edges, embedded source/operator inspectors, Spacebar add-source. Enforces `HideFlags.HideInInspector` on sources via `EnsureHideFlags`. All edits commit through `SerializedObject`. |
 | `DexterityAddSourceSearchProvider.cs` | (graph popup) | "Add Source" search popup — Spacebar or right-click in the graph. Enumerates `GraphSource` / `GraphOperator` subclasses. |
 | `DexterityEdgeDrawer.cs` | `DexterityEdge` | Fallback property drawer for source `outputs` lists when something opens a hidden source in the inspector. Target dropdown (Out node + operators on host) + port-name dropdown when target is the Out node. |
-| `GraphEditorPreviewDriver.cs` | (static, `[InitializeOnLoadMethod]`) | Single global handler for `GraphPreviewOverrides.onChanged`. Walks every `GraphNode` in the scene, diffs against a per-node "rendered state" cache, and queues serialized Modifier transitions via `EditorTransitions`. |
+| `GraphEditorPreviewDriver.cs` | (static, `[InitializeOnLoadMethod]`) | Edit-time transition engine for the preview set. Holds one `Database` session while previewing and ticks the driven nodes + their modifiers every frame, so transitions, cross-node deps, and delays animate exactly like runtime. See the section below. |
 | `DexterityPreview.cs` | (static) | Modifier preview helpers shared by inspector + graph window. |
 
 ## GraphEditorPreviewDriver
 
-Why it exists: `EditorTransitions.TransitionAsync` owns the global `Database` singleton with a `using` scope. Two concurrent calls race over Database create/destroy. The driver serializes all preview transitions through one coroutine.
+Edit-time driver that animates the preview set (`DexterityPreview.AnimatableNodes`) by **mirroring the runtime `Manager` loop** instead of running one-shot transitions. Running a real per-frame loop — rather than firing `EditorTransitions.TransitionAsync` one-shots — is what lets node/modifier delays and cross-node dependency cascades behave exactly as they do at runtime, under a single `Database` session (no per-transition Destroy/Create races).
 
-### Design
+### Lifecycle (two states; `Resync` moves between them)
 
-- Subscribes to `GraphPreviewOverrides.onChanged` once at editor load via `[InitializeOnLoadMethod]`.
-- On every change: scans every `GraphNode` in the scene, evaluates each via `EvaluateTreeEditor()`, diffs against `s_renderedState` cache.
-- Affected nodes' modifiers are queued in `s_pending` keyed by owner — coalesced (only the latest target state survives per owner).
-- A single coroutine pumps the queue, running one `EditorTransitions.TransitionAsync` at a time.
+- **Idle** — no preview targets: no `Database`, no coroutine, no node subscriptions.
+- **Running** — `Database` alive with `timeScale = PreviewSpeed`; every driven node + modifier `Allocate()`'d (registered with the Database, IDs cached); a per-node `onStateChanged` handler bridges state changes to the modifiers; a coroutine ticks every frame.
+
+`Resync` runs on `DexterityPreview.onChanged`, `GraphPreviewOverrides.onChanged`, scene open/close, and play-mode changes; it diffs the desired set against the running set and restarts cleanly when they differ. In play mode the driver stops entirely — `Manager` owns everything.
+
+### Frame loop (per tick)
+
+1. Mark each driven node dirty + `BaseStateNode.Refresh()`. Cheap when nothing changed; applies node-level delays + state changes when something did. Re-evaluating every node every frame is what gives cross-node deps their cascade — Node A's transition this frame is visible to Node B's eval next frame (via `GetActiveState()`, not raw `EvaluateTreeEditor`).
+2. For each modifier: `ProgressTime_Editor` (advance edit-time clock; flip past modifier-level delays) + `Refresh` (re-run the transition strategy) + `IsChanged` → `SetDirty` + `SceneView.RepaintAll`.
+
+### State-change bridge
+
+At runtime a Modifier subscribes to its node's `onStateChanged` in `OnEnable`. `OnEnable` doesn't run at edit time, so the driver hooks each driven node's `onStateChanged` itself and calls `Modifier.PrepareTransition_Editor(old, new)` on the owned modifiers. The modifier then interpolates old→new over its own configured speed/curve.
 
 ### Consequences
 
-- Preview works for **every** GraphNode in the scene whenever overrides change — even nodes whose inspector isn't open.
-- Cross-node refs (`NodeStateSource`) automatically cascade: change Node A → Node A repaints → Node B (depending on A) re-evaluates → Node B's modifiers also queue.
-- `kPreviewSpeed = 6f` keeps perceived latency low when multiple transitions chain.
+- Only nodes in `DexterityPreview.AnimatableNodes` animate — opt-in per node (the graph window's Preview toggle), expanded by `GraphNodePreviewRoot` groups. Big scenes don't pay for every GraphNode every frame.
+- Cross-node refs (`NodeStateSource`) cascade automatically through the per-frame re-evaluation: change Node A → Node B (depending on A) sees it next frame and transitions too.
+- Playback speed is `GraphEditorPreviewDriver.PreviewSpeed` (drives `Database.timeScale`), scrubbed by the graph window's Speed slider (0.1×–10×, default 1×, persisted via EditorPrefs). At 1× the preview plays at authored durations.
+- Both **node-level** delays (`BaseStateNode.delays`, via `RefreshInternal.pendingStateChangeTime`) and **modifier-level** delays (`Modifier.delays`) are honored. Modifier delays run through `Modifier.PrepareTransition_Editor` / `ProgressTime_Editor`, which hold the rendered state until the delay elapses before flipping `activeState` — the edit-time mirror of the runtime `GetNodeActiveStateWithDelay` gate. `Modifier.IsChanged()` reports the pending flip so the inspector preview's transition loop also stays alive through the delay.
+- On teardown (`Stop`), every driven node's edit-time state is reset (`ResetEditorState`) before the `Database` is destroyed, so dependents don't stay locked on the last preview state.
 
 ## DexterityGraphWindow + DexterityGraphView
 

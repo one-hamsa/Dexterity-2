@@ -29,7 +29,7 @@ namespace OneHamsa.Dexterity
     /// <list type="bullet">
     ///   <item><b>Idle</b>: no preview targets. No Database, no coroutine, no subscriptions
     ///         on nodes.</item>
-    ///   <item><b>Running</b>: Database alive (timeScale = kPreviewSpeed); each driven
+    ///   <item><b>Running</b>: Database alive (timeScale = PreviewSpeed); each driven
     ///         node Allocate()'d (registered with Database, IDs cached); each driven
     ///         modifier Allocate()'d; per-node onStateChanged handler subscribed to
     ///         trigger modifier transitions; coroutine ticking every frame.</item>
@@ -58,7 +58,37 @@ namespace OneHamsa.Dexterity
     /// </summary>
     internal static class GraphEditorPreviewDriver
     {
-        private const float kPreviewSpeed = 6f;
+        public const float kMinSpeed = 0.1f;
+        public const float kMaxSpeed = 10f;
+        private const string kSpeedPrefKey = "Dexterity.GraphPreview.Speed";
+
+        private static float s_speed = -1f;
+
+        /// <summary>
+        /// Edit-time preview playback speed — drives <see cref="Database.timeScale"/>. 1x plays
+        /// transitions and delays at their authored durations; the graph window's slider scrubs
+        /// <see cref="kMinSpeed"/>–<see cref="kMaxSpeed"/>. Persisted via EditorPrefs and applied
+        /// live to a running preview session.
+        /// </summary>
+        public static float PreviewSpeed
+        {
+            get
+            {
+                if (s_speed < 0f)
+                    s_speed = Mathf.Clamp(EditorPrefs.GetFloat(kSpeedPrefKey, 1f), kMinSpeed, kMaxSpeed);
+                return s_speed;
+            }
+            set
+            {
+                var clamped = Mathf.Clamp(value, kMinSpeed, kMaxSpeed);
+                if (Mathf.Approximately(clamped, s_speed)) return;
+                s_speed = clamped;
+                EditorPrefs.SetFloat(kSpeedPrefKey, clamped);
+                // Apply live so dragging the slider re-times an in-flight preview immediately.
+                if (Database.instance != null)
+                    Database.instance.timeScale = clamped;
+            }
+        }
 
         private static EditorCoroutine s_loop;
         private static readonly HashSet<GraphNode> s_nodes = new();
@@ -108,7 +138,7 @@ namespace OneHamsa.Dexterity
             //    + modifier below uses Database.instance during Refresh / time tracking.
             Database.Destroy();
             var db = Database.Create(DexteritySettingsProvider.settings);
-            db.timeScale = kPreviewSpeed;
+            db.timeScale = PreviewSpeed;
 
             // 2) Discover modifiers per driven node. Shares the FieldNode-preview
             //    discovery path (BaseStateNodeEditor.GetModifiers) so we behave the
