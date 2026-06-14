@@ -280,12 +280,46 @@ namespace OneHamsa.Dexterity.Builtins
             lastReceivers.Clear();
         }
 
+        /// <summary>
+        /// Whether the per-frame physics cast and receiver resolution should run.
+        /// Override to suppress the cast when this controller can neither show a ray
+        /// nor trigger any receiver.
+        /// </summary>
+        protected virtual bool ShouldRaycast() => true;
+
+        private void ClearActiveReceivers()
+        {
+            if (lastReceivers.Count == 0)
+                return;
+
+            for (var i = 0; i < lastReceivers.Count; i++)
+            {
+                try
+                {
+                    lastReceivers[i].ClearHit(this);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e, lastReceivers[i] as MonoBehaviour);
+                }
+            }
+            lastReceivers.Clear();
+        }
+
         void Update()
         {
             didHit = false;
 
             if (!current)
                 return;
+
+            // Idle controllers still tick here; skip the expensive cast when there is nothing
+            // to point at or click, releasing any receiver left hovered from the previous frame.
+            if (!ShouldRaycast())
+            {
+                ClearActiveReceivers();
+                return;
+            }
 
             var pos = _transform.position;
             var f = _transform.forward;
