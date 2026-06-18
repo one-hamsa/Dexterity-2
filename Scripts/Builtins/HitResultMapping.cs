@@ -21,7 +21,7 @@ namespace OneHamsa.Dexterity.Builtins
         [Serializable]
         public struct Entry
         {
-            [Tooltip("State name on this GameObject's node (matches a Dexterity state, e.g. \"Selected\").")]
+            [Tooltip("State name on this GameObject's node (matches a Dexterity state, e.g. \"Selected\")."), State]
             public string state;
 
             [Tooltip("Pointer result reported while the node is in this state.")]
