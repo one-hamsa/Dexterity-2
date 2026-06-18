@@ -781,8 +781,9 @@ namespace OneHamsa.Dexterity
                 receiver.ReceiveHit(controller, ref hitResult);
             }
             
-            // Set the result back to the rayCastEvent that hit me
-            var result = Manager.instance.settings.GetResultFromState(GetActiveState());
+            // Set the result back to the rayCastEvent that hit me — a per-node
+            // HitResultMapping override wins, else the global settings table.
+            var result = Builtins.HitResultMapping.Resolve(this);
             if (result != IRaycastController.RaycastResult.Result.Default)
             {
                 hitResult.result = result;

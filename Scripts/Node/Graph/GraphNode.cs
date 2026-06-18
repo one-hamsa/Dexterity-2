@@ -29,7 +29,7 @@ namespace OneHamsa.Dexterity
     /// </summary>
     [AddComponentMenu("Dexterity/Graph Node")]
     [DefaultExecutionOrder(Manager.nodeExecutionPriority)]
-    public class GraphNode : BaseStateNode
+    public class GraphNode : BaseStateNode, IRaycastReceiver
     {
         [SerializeField, Tooltip("Priority-ordered states (high → low). Port name = state name. " +
             "First port with any active source wins; falls back to initialState when none is active.")]
@@ -375,6 +375,26 @@ namespace OneHamsa.Dexterity
                 if (inputs[i] == portName) return true;
             return false;
         }
+
+        // -- IRaycastReceiver ---------------------------------------------------
+        // Report this node's aggregate state back to the pointer the same way
+        // FieldNode does: map the priority-resolved active state to a result
+        // (Hover → CanAccept, Pressed → Accepted, …), via a per-node
+        // HitResultMapping override if present, else the global settings table.
+        // The node's RaycastHover/PressSources are themselves IRaycastReceivers
+        // found independently by the controller, so there's nothing to forward
+        // here — we only contribute the result hint.
+        void IRaycastReceiver.ReceiveHit(IRaycastController controller, ref IRaycastController.RaycastResult hitResult)
+        {
+            var result = Builtins.HitResultMapping.Resolve(this);
+            if (result != IRaycastController.RaycastResult.Result.Default)
+            {
+                hitResult.result = result;
+                hitResult.hitReceiver = this;
+            }
+        }
+
+        void IRaycastReceiver.ClearHit(IRaycastController controller) { }
 
 #if UNITY_EDITOR
         protected override void OnValidate()
