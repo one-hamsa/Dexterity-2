@@ -515,6 +515,12 @@ namespace OneHamsa.Dexterity
         
         public bool SyncStates()
         {
+            // State sync rewrites the serialized properties list (add / remove / freeze), which is an
+            // authoring operation. Running it against a live runtime instance would mutate the asset
+            // from transient play-mode state, so never generate properties while this object is playing.
+            if (Application.IsPlaying(this))
+                return false;
+
             if (manualStateEditing)
             {
                 if (properties.FindIndex(p => p.state == StateFunction.kDefaultState) == 0)
@@ -577,7 +583,7 @@ namespace OneHamsa.Dexterity
             var newProp = (Modifier.PropertyBase)Activator.CreateInstance(propType);
             newProp.state = state;
             properties.Add(newProp);
-            if (this is ISupportPropertyFreeze supportPropertyFreeze) 
+            if (this is ISupportPropertyFreeze supportPropertyFreeze)
                 supportPropertyFreeze.FreezeProperty(newProp);
             
             #if UNITY_EDITOR
