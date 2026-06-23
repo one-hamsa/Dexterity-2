@@ -13,4 +13,26 @@ namespace OneHamsa.Dexterity
         public void SetTexture(int kvKey, Texture kvValue);
         public void SetMatrix(int kvKey, Matrix4x4 kvValue);
     }
+
+    public static class IExternalMaterialControlFactory
+    {
+        public delegate IExternalMaterialControl GenerateExternalMaterialControlDelegate(Renderer renderer);
+
+        static private GenerateExternalMaterialControlDelegate _factory;
+
+        public static IExternalMaterialControl GenerateExternalMaterialControl(Renderer renderer)
+        {
+            if (_factory == null)
+            {
+                return null;
+            }
+
+            return _factory(renderer);
+        }
+
+        public static void SetFactory(GenerateExternalMaterialControlDelegate factory)
+        {
+            _factory = factory;
+        }
+    }
 }

@@ -314,7 +314,7 @@ namespace OneHamsa.Dexterity
         {
             if (rendererControlType == RendererControlType.None)
             {
-                _externalMaterialControl= GetComponent<IExternalMaterialControl>();
+                _externalMaterialControl= IExternalMaterialControlFactory.GenerateExternalMaterialControl((Renderer)component);
                 rendererControlType = _externalMaterialControl != null ? RendererControlType.ExternalControl : RendererControlType.PropertyBlock;
             }
             if(rendererControlType == RendererControlType.PropertyBlock){
