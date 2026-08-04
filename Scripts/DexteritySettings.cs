@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity
 {
-    [CreateAssetMenu(menuName = "Dexterity/Settings", fileName = "Dexterity Settings")]
+    [CreateAssetMenu(menuName = "One Hamsa/Dexterity/Settings", fileName = "Dexterity Settings")]
     public class DexteritySettings : ScriptableObject
     {
         [Serializable]

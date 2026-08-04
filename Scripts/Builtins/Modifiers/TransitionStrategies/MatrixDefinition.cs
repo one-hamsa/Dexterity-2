@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace OneHamsa.Dexterity.Builtins
 {
-    [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "Dexterity/Matrix Definition", order = 100)]
+    [CreateAssetMenu(fileName = "New Matrix Definition", menuName = "One Hamsa/Dexterity/Matrix Definition", order = 100)]
     public class MatrixDefinition : ScriptableObject, IHasStates {
         [Serializable]
         public class Row

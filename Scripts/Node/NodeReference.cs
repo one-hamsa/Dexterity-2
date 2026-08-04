@@ -6,7 +6,7 @@ using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
-    [CreateAssetMenu(fileName = "New Node Reference", menuName = "Dexterity/Node Reference", order = 100)]
+    [CreateAssetMenu(fileName = "New Node Reference", menuName = "One Hamsa/Dexterity/Node Reference", order = 100)]
     public class NodeReference : ScriptableObject, IGateContainer, IHasStates
     {
         // stores the coupling between input fields and their output name

@@ -6,7 +6,7 @@ using UnityEngine.Pool;
 
 namespace OneHamsa.Dexterity
 {
-    [CreateAssetMenu(menuName = "Dexterity/State Function", fileName = "State Function")]
+    [CreateAssetMenu(menuName = "One Hamsa/Dexterity/State Function", fileName = "State Function")]
     public class StateFunction : ScriptableObject, IStepList
     {
         public const int emptyStateId = -1;

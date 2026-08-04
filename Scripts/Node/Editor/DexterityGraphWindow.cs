@@ -30,7 +30,7 @@ namespace OneHamsa.Dexterity
         internal static event System.Action onStateInputsEditedInInspector;
         internal static void NotifyStateInputsEdited() => onStateInputsEditedInInspector?.Invoke();
 
-        [MenuItem("Tools/Dexterity/Graph")]
+        [MenuItem("Window/One Hamsa/Dexterity/Graph")]
         public static void Open()
         {
             // Generic menu entry — single shared window that follows Selection.
