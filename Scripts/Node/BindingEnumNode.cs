@@ -52,9 +52,9 @@ namespace OneHamsa.Dexterity
 
         public void InitializeBinding()
         {
-            if (!binding.IsValid()) 
+            if (!binding.IsValid() || binding.IsResolved())
                 return;
-            
+
             if (!binding.Initialize())
             {
                 if (Application.IsPlaying(this))
@@ -133,7 +133,8 @@ namespace OneHamsa.Dexterity
             
             try 
             {
-                // cache for sake of showing options in editor (enumToStateId.Keys)
+                // binding.type feeds GetEnumOptions() below and isn't serialized, so it has to be
+                // resolved here. no-op unless the binding just loaded or its target/methodName changed.
                 InitializeBinding();
             } catch (ArgumentException) 
             {

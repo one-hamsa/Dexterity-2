@@ -39,6 +39,11 @@ namespace OneHamsa.Dexterity
         protected ValueType actualObjectValueType;
         private StringBuilder sb;
 
+        // target/methodName Initialize() last ran against. nothing here is serialized, so the binding
+        // is cold after every domain reload / asset load and re-resolves on the next Initialize().
+        private UnityEngine.Object resolvedTarget;
+        private string resolvedMethodName;
+
         public override string ToString()
         {
             sb ??= new StringBuilder();
@@ -52,10 +57,36 @@ namespace OneHamsa.Dexterity
 
         public bool IsValid() => target != null && !string.IsNullOrEmpty(methodName);
         public bool IsInitialized() => assign != null;
+
+        /// <summary>
+        /// whether Initialize() already ran for the current target/methodName, successfully or not.
+        /// callers that report failures should check this so a broken binding logs once per change
+        /// instead of once per OnValidate.
+        /// </summary>
+        public bool IsResolved() => resolvedTarget == target && resolvedMethodName == methodName;
+
+        private void Invalidate()
+        {
+            assign = null;
+            boolean_get = null;
+            int_get = null;
+            type = null;
+            resolvedTarget = null;
+            resolvedMethodName = null;
+        }
+
         public bool Initialize()
         {
             if (!IsValid())
                 return false;
+
+            if (IsResolved())
+                return IsInitialized();
+
+            Invalidate();
+            // stamped before the lookup so a throw from FindActualValueType also counts as resolved
+            resolvedTarget = target;
+            resolvedMethodName = methodName;
 
             var methodInfo = Reflection.GetMethod(target.GetType(), methodName,
                 BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
