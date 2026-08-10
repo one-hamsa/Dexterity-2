@@ -1,0 +1,6 @@
+{
+  "id": "dexterity-binding",
+  "trigger": "methodName",
+  "member": "methodName",
+  "targetRef": "target"
+}

@@ -5,7 +5,8 @@
         "Dexterity",
         "Unity.InputSystem",
         "Unity.EditorCoroutines.Editor",
-        "OneHumus.Warmer"
+        "OneHumus.Warmer",
+        "OneHumus.Editor.Codecierge"
     ],
     "includePlatforms": [
         "Editor"
