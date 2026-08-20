@@ -7,6 +7,10 @@
 -- 71% of bindings in this project store a compiler-generated accessor name (get_isDay for
 -- property isDay), because ObjectBinding records whatever GetMethod matched. Stripping the
 -- get_/set_ prefix is therefore load-bearing, not a nicety: without it only 29% resolve.
+--
+-- The context columns come from the capture rule's `context` list, which reads keys off the
+-- mapping chain around a binding: relatedFieldName is a sibling of `binding` inside a
+-- BindingField record, while the state names sit on the node component itself.
 
 DROP VIEW IF EXISTS v_dexterity_bindings;
 CREATE VIEW v_dexterity_bindings AS
@@ -23,7 +27,13 @@ SELECT r.asset_path,
        md.name       AS member,
        md.kind       AS member_kind,
        td.file_path,
-       md.line_number
+       md.line_number,
+       -- The declaration's own text, so the editor can report a column without the index
+       -- storing one: the member name's offset within this line is the column.
+       md.line_text,
+       json_extract(r.context, '$.relatedFieldName') AS dexterity_field,
+       json_extract(r.context, '$.booleanTrueState')  AS true_state,
+       json_extract(r.context, '$.booleanFalseState') AS false_state
   FROM asset_member_refs r
   LEFT JOIN asset_components owner ON owner.asset_path = r.asset_path AND owner.file_id = r.owner_fileid
   LEFT JOIN guid_map owner_gm ON owner_gm.guid = owner.script_guid

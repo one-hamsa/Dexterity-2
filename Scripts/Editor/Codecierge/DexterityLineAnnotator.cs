@@ -6,9 +6,9 @@ using OneHumus.AssetReferenceIndex;
 namespace OneHamsa.Dexterity
 {
     /// <summary>
-    /// Badges above a member's declaration in Codecierge's View Source, naming the GameObjects
-    /// whose Dexterity bindings drive it — one badge per binding site, since a member is
-    /// regularly driven from several.
+    /// Badges above a member's declaration in Codecierge's View Source, naming what each
+    /// Dexterity binding drives and the GameObject it sits on — one badge per binding
+    /// site, since a member is regularly driven from several.
     ///
     /// Dexterity contributes these in C# rather than through the generic member-binding
     /// contract because that contract only knows the containing asset, and "Used in Joint" is
@@ -37,9 +37,14 @@ namespace OneHamsa.Dexterity
                     ? $"Dexterity binding\n{path}\n{site.AssetPath}"
                     : $"Dexterity binding\n{path}\n{site.AssetPath}\nOpen it to select the component directly.";
 
+                // What the binding drives, when the mapping recorded it: "Used in X" alone
+                // says the member is bound somewhere without saying to what.
+                var effect = DexterityBindingSites.DescribeEffect(site);
+                var text = effect != null ? $"{effect} on {Elide(path)}" : $"Used in {Elide(path)}";
+
                 yield return new CodeciergeLineBadge(
                     site.LineNumber,
-                    $"Used in {Elide(path)}",
+                    text,
                     tooltip,
                     "d_GameObject Icon",
                     () => DexterityBindingSites.Ping(

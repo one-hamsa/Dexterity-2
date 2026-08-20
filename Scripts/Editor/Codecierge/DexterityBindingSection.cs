@@ -68,6 +68,19 @@ namespace OneHamsa.Dexterity
 
             var name = new Label(member);
             name.AddToClassList("type-name");
+
+            // The declaration is the other half of the answer: the section says which
+            // GameObject drives the member, the link says where the member lives.
+            var declaringFile = sites[0].FilePath;
+            if (!string.IsNullOrEmpty(declaringFile))
+            {
+                var declaringLine = sites[0].LineNumber;
+                // `type-name` already carries cursor: link and a hover colour; `line-link`
+                // is the right-aligned "line N" style and would float the name to the edge.
+                name.tooltip = DexterityBindingSites.DescribeSource(sites[0]);
+                name.RegisterCallback<ClickEvent>(_ =>
+                    CodeciergeNavigation.OpenSource(declaringFile, declaringLine));
+            }
             header.Add(name);
 
             // The stored name is the accessor Dexterity actually reflects on; showing it makes an
@@ -115,13 +128,40 @@ namespace OneHamsa.Dexterity
                 DexterityBindingSites.ResolveComponent(capturedPath, capturedFileId), capturedPath));
             row.Add(pathLabel);
 
+            var effect = DexterityBindingSites.DescribeEffect(site);
+            if (effect != null)
+            {
+                var effectLabel = new Label(effect);
+                effectLabel.AddToClassList("ref-kind");
+                row.Add(effectLabel);
+            }
+
             // A real object reference when it's loaded — draggable, and it survives a rename that
             // would stale the cached name. Falls back to pinging the containing asset.
             if (component != null)
             {
+                // The field stays disabled - it is a view of the binding site, not an edit
+                // surface - and a disabled element receives no events, so the click that
+                // selects the GameObject comes from an overlay beside it rather than from it.
+                var holder = new VisualElement();
+                holder.style.position = Position.Relative;
+
                 var field = new ObjectField { value = component, objectType = typeof(Component) };
-                field.SetEnabled(false);   // a view of the binding site, not an edit surface
-                row.Add(field);
+                field.SetEnabled(false);
+                holder.Add(field);
+
+                var selector = new VisualElement();
+                selector.style.position = Position.Absolute;
+                selector.style.left = 0;
+                selector.style.right = 0;
+                selector.style.top = 0;
+                selector.style.bottom = 0;
+                selector.tooltip = "Select this GameObject";
+                selector.RegisterCallback<ClickEvent>(_ => DexterityBindingSites.Ping(
+                    DexterityBindingSites.ResolveComponent(capturedPath, capturedFileId), capturedPath));
+                holder.Add(selector);
+
+                row.Add(holder);
             }
             else
             {

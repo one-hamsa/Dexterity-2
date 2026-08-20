@@ -2,5 +2,6 @@
   "id": "dexterity-binding",
   "trigger": "methodName",
   "member": "methodName",
-  "targetRef": "target"
+  "targetRef": "target",
+  "context": ["relatedFieldName", "booleanTrueState", "booleanFalseState"]
 }
