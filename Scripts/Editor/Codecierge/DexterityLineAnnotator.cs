@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using OneHumus.AssetReferenceIndex;
 
 // Namespace matches the rest of Dexterity's editor code deliberately: a nested `.Editor`
@@ -21,12 +23,22 @@ namespace OneHamsa.Dexterity
         // beside code. The tooltip always carries the whole thing.
         const int MaxPathChars = 44;
 
-        public IEnumerable<CodeciergeLineBadge> Annotate(string scriptPath)
-        {
-            if (!CodeciergeQuery.IsAvailable) yield break;
+        // GlobalObjectIdentifierToObjectSlow is as slow as its name, and a member is regularly
+        // driven from several sites, so the resolve loop hands the editor a tick this often.
+        const int SitesPerYield = 16;
 
-            foreach (var site in DexterityBindingSites.ForScript(scriptPath))
+        public async Task<IEnumerable<CodeciergeLineBadge>> AnnotateAsync(string scriptPath, CancellationToken cancellationToken)
+        {
+            var badges = new List<CodeciergeLineBadge>();
+            if (!CodeciergeQuery.IsAvailable) return badges;
+
+            var sites = DexterityBindingSites.ForScript(scriptPath);
+            for (int i = 0; i < sites.Count; i++)
             {
+                if (i > 0 && i % SitesPerYield == 0) await Task.Yield();
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var site = sites[i];
                 if (site.LineNumber <= 0) continue;
 
                 var component = DexterityBindingSites.ResolveComponent(site.AssetPath, site.OwnerFileId);
@@ -42,15 +54,16 @@ namespace OneHamsa.Dexterity
                 var effect = DexterityBindingSites.DescribeEffect(site);
                 var text = effect != null ? $"{effect} on {Elide(path)}" : $"Used in {Elide(path)}";
 
-                yield return new CodeciergeLineBadge(
+                badges.Add(new CodeciergeLineBadge(
                     site.LineNumber,
                     text,
                     tooltip,
                     "d_GameObject Icon",
                     () => DexterityBindingSites.Ping(
                         DexterityBindingSites.ResolveComponent(captured.AssetPath, captured.OwnerFileId),
-                        captured.AssetPath));
+                        captured.AssetPath)));
             }
+            return badges;
         }
 
         // Keeps the two ends — the container tells you where, the leaf tells you what.
