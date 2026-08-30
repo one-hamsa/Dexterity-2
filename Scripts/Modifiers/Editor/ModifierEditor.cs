@@ -54,6 +54,15 @@ namespace OneHamsa.Dexterity
                 }
             }
             
+            // a modifier's states come from its node, which may not have built its list yet. resolve
+            // before reading, or the sync below runs against states the node does not actually report.
+            foreach (var m in targets.Cast<Modifier>())
+            {
+                var node = m.GetNode();
+                if (node != null)
+                    node.RefreshStates_Editor();
+            }
+
             var alphabetically = ((IHasStates)target).GetStateNames().OrderBy(x => x).ToList();
             var states = alphabetically.ToHashSet();
             

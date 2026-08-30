@@ -145,7 +145,7 @@ namespace OneHamsa.Dexterity
 #if UNITY_EDITOR
             // resolve before base reads GetStateNames(): it rewrites initialState to the first state it
             // knows about, so it must not see a list built from an unresolved binding.
-            RefreshBinding_Editor();
+            RefreshStates_Editor();
 #endif
 
             base.OnValidate();
@@ -153,11 +153,11 @@ namespace OneHamsa.Dexterity
 
 #if UNITY_EDITOR
         /// <summary>
-        /// re-resolves the binding and the state list when they are still cold. call before reading
-        /// states in the editor: <see cref="OnValidate"/> runs while the scene is loading, where the
-        /// binding target may not be reachable yet, and nothing re-validates the node afterwards.
+        /// <see cref="OnValidate"/> runs while the scene is loading, where the binding target may not be
+        /// reachable yet, and nothing re-validates the node afterwards - so the state list stays cold
+        /// until something asks for it again.
         /// </summary>
-        public void RefreshBinding_Editor()
+        public override void RefreshStates_Editor()
         {
             if (Application.IsPlaying(this) || binding.IsResolved())
                 return;

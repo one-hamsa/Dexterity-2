@@ -536,6 +536,14 @@ namespace OneHamsa.Dexterity
         #if UNITY_EDITOR
         public virtual void InitializeEditor() { }
 
+        /// <summary>
+        /// re-resolves whatever this node derives its state list from, when that state list is stale.
+        /// editors that read states without owning the node's inspector call this first - a node whose
+        /// states come from a runtime lookup can otherwise report a list it has not built yet.
+        /// idempotent and cheap; the default node has nothing to resolve.
+        /// </summary>
+        public virtual void RefreshStates_Editor() { }
+
         public virtual void RenameState(string oldStateName, string newStateName)
         {
             if (initialState == oldStateName)

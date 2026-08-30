@@ -34,6 +34,9 @@ namespace OneHamsa.Dexterity
         
         protected virtual void Legacy_OnInspectorGUI()
         {
+            foreach (var t in targets)
+                ((BaseStateNode)t).RefreshStates_Editor();
+
             states.Clear();
             var first = true;
             foreach (var t in targets) {

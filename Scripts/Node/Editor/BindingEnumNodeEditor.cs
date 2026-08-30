@@ -7,9 +7,6 @@ namespace OneHamsa.Dexterity
     public class BindingEnumNodeEditor : BaseStateNodeEditor
     {
         public override void OnInspectorGUI() {
-            foreach (var t in targets)
-                ((BindingEnumNode)t).RefreshBinding_Editor();
-
             Legacy_OnInspectorGUI();
         }
         
