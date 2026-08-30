@@ -7,6 +7,9 @@ namespace OneHamsa.Dexterity
     public class BindingEnumNodeEditor : BaseStateNodeEditor
     {
         public override void OnInspectorGUI() {
+            foreach (var t in targets)
+                ((BindingEnumNode)t).RefreshBinding_Editor();
+
             Legacy_OnInspectorGUI();
         }
         
@@ -27,6 +30,11 @@ namespace OneHamsa.Dexterity
             var binding = ((BindingEnumNode)target).binding;
             if (!binding.IsValid())
                 EditorGUILayout.HelpBox("Binding is not valid, states will not be auto-synced with modifiers", MessageType.Warning);
+            else if (!binding.IsInitialized())
+                EditorGUILayout.HelpBox($"Binding {binding} did not resolve, states will not be auto-synced with " +
+                                        $"modifiers. Syncing now would overwrite them with " +
+                                        $"{((BindingEnumNode)target).booleanFalseState}/{((BindingEnumNode)target).booleanTrueState}.",
+                    MessageType.Error);
             else
                 base.ShowAutoSyncDisabledWarning();
         }

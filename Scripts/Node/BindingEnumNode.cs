@@ -43,29 +43,38 @@ namespace OneHamsa.Dexterity
             }
         }
 
+        /// <summary>
+        /// an unresolved binding reports the boolean fallback state list (see <see cref="GetEnumOptions"/>).
+        /// syncing modifiers against that overwrites their real states, so this requires a binding that
+        /// actually resolved - being configured is not enough.
+        /// </summary>
         public override bool ShouldAutoSyncModifiersStates()
         {
-            return base.ShouldAutoSyncModifiersStates() && binding.IsValid();
+            return base.ShouldAutoSyncModifiersStates() && binding.IsInitialized();
         }
 
         public Type bindingType => binding.IsInitialized() ? binding.type : null;
 
         public void InitializeBinding()
         {
-            if (!binding.IsValid() || binding.IsResolved())
+            // IsResolved() means the lookup already ran against these exact values. a binding that is
+            // unresolved only because its target had not loaded yet never stamps, so it retries on the
+            // next call, while a binding naming a member that does not exist stamps and reports once.
+            if (binding.IsResolved())
                 return;
 
-            if (!binding.Initialize())
+            // an unconfigured binding is not a failure - it has a boolean fallback state list.
+            if (binding.Initialize() || !binding.IsValid())
+                return;
+
+            if (Application.IsPlaying(this))
             {
-                if (Application.IsPlaying(this))
-                {
-                    Debug.LogError($"Failed to initialize binding for {name}: {binding}", this);
-                    enabled = false;
-                }
-                else
-                {
-                    Debug.LogWarning($"Failed to initialize binding for {name}: {binding}", this);
-                }
+                Debug.LogError($"Failed to initialize binding for {name}: {binding}", this);
+                enabled = false;
+            }
+            else
+            {
+                Debug.LogWarning($"Failed to initialize binding for {name}: {binding}", this);
             }
         }
 
@@ -83,6 +92,13 @@ namespace OneHamsa.Dexterity
         {
             if (bindingType == null)
             {
+                // an absent binding legitimately falls back to a boolean state list. a binding that has
+                // not resolved yet must not: OnValidate runs while the scene is still loading, and
+                // reporting the fallback there lets the editor write it into initialState and into every
+                // modifier's state list. an empty list is skipped by both instead.
+                if (binding.IsValid() && !Application.IsPlaying(this))
+                    yield break;
+
                 yield return (booleanFalseState, 0);
                 yield return (booleanTrueState, 1);
                 yield break;
@@ -126,22 +142,39 @@ namespace OneHamsa.Dexterity
 
         protected override void OnValidate() 
         {
+#if UNITY_EDITOR
+            // resolve before base reads GetStateNames(): it rewrites initialState to the first state it
+            // knows about, so it must not see a list built from an unresolved binding.
+            RefreshBinding_Editor();
+#endif
+
             base.OnValidate();
-            
-            if (Application.IsPlaying(this)) 
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// re-resolves the binding and the state list when they are still cold. call before reading
+        /// states in the editor: <see cref="OnValidate"/> runs while the scene is loading, where the
+        /// binding target may not be reachable yet, and nothing re-validates the node afterwards.
+        /// </summary>
+        public void RefreshBinding_Editor()
+        {
+            if (Application.IsPlaying(this) || binding.IsResolved())
                 return;
-            
-            try 
+
+            try
             {
                 // binding.type feeds GetEnumOptions() below and isn't serialized, so it has to be
-                // resolved here. no-op unless the binding just loaded or its target/methodName changed.
+                // resolved here.
                 InitializeBinding();
-            } catch (ArgumentException) 
+            }
+            catch (ArgumentException)
             {
                 // it's ok in editor!
             }
             CacheEnumOptions();
         }
+#endif
 
         public override string ToString()
         {

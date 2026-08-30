@@ -78,7 +78,12 @@ namespace OneHamsa.Dexterity
         public bool Initialize()
         {
             if (!IsValid())
+            {
+                // target / methodName were cleared (component Reset, retarget mid-edit). the stamp goes
+                // with them, so re-picking the same member resolves instead of matching the stale one.
+                Invalidate();
                 return false;
+            }
 
             if (IsResolved())
                 return IsInitialized();
