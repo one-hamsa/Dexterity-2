@@ -6,5 +6,5 @@ on:
     branches: ["**"]
 jobs:
   analyze:
-    uses: one-hamsa/15os/.github/workflows/commit-analyze.yml@main
+    uses: one-hamsa/totalo5/.github/workflows/commit-analyze.yml@main
     secrets: inherit
