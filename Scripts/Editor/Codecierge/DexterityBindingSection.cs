@@ -19,10 +19,57 @@ namespace OneHamsa.Dexterity
     /// One member is regularly bound from several GameObjects, so each is listed separately with
     /// the component itself as a live object reference when its scene or prefab is open.
     /// </summary>
-    public class DexterityBindingSection : ICodeciergeSection
+    public class DexterityBindingSection : ICodeciergeSection, ICodeciergePortableSection
     {
         // After Codecierge's own sections.
         public int Order => 100;
+
+        public CodeciergeSectionData BuildPortable(CodeciergeTarget target)
+        {
+            if (!CodeciergeQuery.IsAvailable) return null;
+            var sites = target.IsScript ? DexterityBindingSites.ForScript(target.Path) : DexterityBindingSites.ForAsset(target.Path);
+            var unresolved = target.IsScript ? new List<string[]>() : CodeciergeQuery.Select(
+                "SELECT member_name FROM v_dexterity_bindings_unresolved WHERE asset_path = ?", target.Path);
+            if (sites.Count == 0 && unresolved.Count == 0) return null;
+            return BuildPortableRows(sites, unresolved);
+        }
+
+        internal static CodeciergeSectionData BuildPortableRows(List<DexterityBindingSite> sites, List<string[]> unresolved)
+        {
+            var groups = DexterityBindingSites.GroupByMember(sites);
+            var section = new CodeciergeSectionData { Title = $"Dexterity Bindings ({groups.Count + unresolved.Count})" };
+            foreach (var group in groups)
+            {
+                var first = group.Value[0];
+                var row = new CodeciergeRowData { Label = group.Key, Detail = DexterityBindingSites.DescribeSource(first) };
+                if (!string.IsNullOrEmpty(first.StoredName) && first.StoredName != group.Key)
+                    row.Children.Add(new CodeciergeRowData { Label = "reflects " + first.StoredName });
+                if (group.Value.Count > 1) row.Children.Add(new CodeciergeRowData { Label = group.Value.Count + " GameObjects" });
+                if (!string.IsNullOrEmpty(first.FilePath)) row.Actions.Add(new CodeciergeRowAction {
+                    Label = "Source", Invoke = () => CodeciergeNavigation.OpenSource(first.FilePath, first.LineNumber)
+                });
+                foreach (var site in group.Value)
+                {
+                    var component = DexterityBindingSites.ResolveComponent(site.AssetPath, site.OwnerFileId);
+                    var child = new CodeciergeRowData {
+                        Label = DexterityBindingSites.DescribeLocation(site, component),
+                        Detail = DexterityBindingSites.DescribeEffect(site),
+                        Hint = component != null ? site.AssetPath : site.AssetPath + "\nOpen it to select the component directly.",
+                        Muted = component == null
+                    };
+                    if (component != null) child.Children.Add(new CodeciergeRowData { Label = component.name + " (" + component.GetType().Name + ")", Detail = "Read-only binding-site reference" });
+                    var capturedPath = site.AssetPath; var capturedFileId = site.OwnerFileId;
+                    child.Actions.Add(new CodeciergeRowAction {
+                        Label = component != null ? "Select GameObject" : "Ping " + System.IO.Path.GetFileNameWithoutExtension(site.AssetPath),
+                        Invoke = () => DexterityBindingSites.Ping(DexterityBindingSites.ResolveComponent(capturedPath, capturedFileId), capturedPath)
+                    });
+                    row.Children.Add(child);
+                }
+                section.Rows.Add(row);
+            }
+            foreach (var item in unresolved) section.Rows.Add(new CodeciergeRowData { Label = item[0] + " — target set by a prefab override, not resolvable from this asset", Muted = true });
+            return section;
+        }
 
         public VisualElement Build(CodeciergeTarget target)
         {
